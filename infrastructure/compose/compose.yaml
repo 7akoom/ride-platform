@@ -1,0 +1,31 @@
+services:
+  identity-postgres:
+    image: postgres:17-alpine3.24
+    container_name: ride-identity-postgres
+
+    environment:
+      POSTGRES_DB: ${IDENTITY_DB_NAME:?IDENTITY_DB_NAME is required}
+      POSTGRES_USER: ${IDENTITY_DB_USER:?IDENTITY_DB_USER is required}
+      POSTGRES_PASSWORD: ${IDENTITY_DB_PASSWORD:?IDENTITY_DB_PASSWORD is required}
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - identity-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${IDENTITY_DB_USER} -d ${IDENTITY_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+volumes:
+  identity-postgres-data:

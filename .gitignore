@@ -1,0 +1,47 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Go
+bin/
+coverage.out
+*.test
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+build/
+
+# Node
+node_modules/
+dist/
+.vite/
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Local runtime data
+.local/
+data/
+tmp/
+
+# Secrets
+*.pem
+*.key
+*.crt
