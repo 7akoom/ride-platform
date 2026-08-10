@@ -9,6 +9,7 @@ import (
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/config"
+	cleanupinfra "github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/cleanup"
 	clockinfra "github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/clock"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/database"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/identifier"
@@ -130,6 +131,20 @@ func run() int {
 			databasePool,
 		)
 
+	cleanupStore :=
+		postgresrepo.NewCleanupStore(
+			databasePool,
+		)
+
+	cleanupRunner := cleanupinfra.NewRunner(
+		cleanupStore,
+		logger,
+		durations.CleanupInterval,
+		durations.OTPRequestEventRetention,
+		durations.OTPChallengeRetention,
+		durations.AuthSessionRetention,
+	)
+
 	tokenIssuer, err := token.NewIssuer(
 		token.NewSessionIDGenerator(),
 		refreshTokenGenerator,
@@ -212,6 +227,16 @@ func run() int {
 	)
 	defer stopSignals()
 
+	cleanupDone := make(chan struct{})
+
+	go func() {
+		defer close(cleanupDone)
+
+		cleanupRunner.Run(
+			shutdownContext,
+		)
+	}()
+
 	serverError := make(chan error, 1)
 
 	go func() {
@@ -220,6 +245,10 @@ func run() int {
 
 	select {
 	case err := <-serverError:
+		stopSignals()
+
+		<-cleanupDone
+
 		if err != nil {
 			logger.Error(
 				"identity service stopped with error",
@@ -261,6 +290,8 @@ func run() int {
 
 		<-gracefulShutdownDone
 	}
+
+	<-cleanupDone
 
 	return 0
 }

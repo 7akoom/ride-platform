@@ -24,6 +24,11 @@ type Config struct {
 
 	SessionTTL      string
 	RefreshTokenTTL string
+
+	CleanupInterval          string
+	OTPRequestEventRetention string
+	OTPChallengeRetention    string
+	AuthSessionRetention     string
 }
 
 func Load() Config {
@@ -49,6 +54,11 @@ func Load() Config {
 
 		SessionTTL:      getEnv("SESSION_TTL", "720h"),
 		RefreshTokenTTL: getEnv("REFRESH_TOKEN_TTL", "696h"),
+
+		CleanupInterval:          getEnv("CLEANUP_INTERVAL", "1h"),
+		OTPRequestEventRetention: getEnv("OTP_REQUEST_EVENT_RETENTION", "24h"),
+		OTPChallengeRetention:    getEnv("OTP_CHALLENGE_RETENTION", "24h"),
+		AuthSessionRetention:     getEnv("AUTH_SESSION_RETENTION", "720h"),
 	}
 }
 
