@@ -8,6 +8,8 @@ service IdentityService {
   rpc RequestOTP(RequestOTPRequest) returns (RequestOTPResponse);
   rpc VerifyOTP(VerifyOTPRequest) returns (VerifyOTPResponse);
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc LogoutAllSessions(LogoutAllSessionsRequest) returns (LogoutAllSessionsResponse);
 }
 
 message RequestOTPRequest {
@@ -41,3 +43,15 @@ message RefreshTokenResponse {
   string refresh_token = 3;
   int32 access_token_expires_in_seconds = 4;
 }
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {}
+
+message LogoutAllSessionsRequest {
+  string refresh_token = 1;
+}
+
+message LogoutAllSessionsResponse {}

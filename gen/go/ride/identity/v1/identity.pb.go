@@ -349,6 +349,166 @@ func (x *RefreshTokenResponse) GetAccessTokenExpiresInSeconds() int32 {
 	return 0
 }
 
+type LogoutRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutRequest) Reset() {
+	*x = LogoutRequest{}
+	mi := &file_ride_identity_v1_identity_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutRequest) ProtoMessage() {}
+
+func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_identity_v1_identity_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
+func (*LogoutRequest) Descriptor() ([]byte, []int) {
+	return file_ride_identity_v1_identity_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *LogoutRequest) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+type LogoutResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutResponse) Reset() {
+	*x = LogoutResponse{}
+	mi := &file_ride_identity_v1_identity_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutResponse) ProtoMessage() {}
+
+func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_identity_v1_identity_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
+func (*LogoutResponse) Descriptor() ([]byte, []int) {
+	return file_ride_identity_v1_identity_proto_rawDescGZIP(), []int{7}
+}
+
+type LogoutAllSessionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutAllSessionsRequest) Reset() {
+	*x = LogoutAllSessionsRequest{}
+	mi := &file_ride_identity_v1_identity_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutAllSessionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutAllSessionsRequest) ProtoMessage() {}
+
+func (x *LogoutAllSessionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_identity_v1_identity_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutAllSessionsRequest.ProtoReflect.Descriptor instead.
+func (*LogoutAllSessionsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_identity_v1_identity_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *LogoutAllSessionsRequest) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+type LogoutAllSessionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutAllSessionsResponse) Reset() {
+	*x = LogoutAllSessionsResponse{}
+	mi := &file_ride_identity_v1_identity_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutAllSessionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutAllSessionsResponse) ProtoMessage() {}
+
+func (x *LogoutAllSessionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_identity_v1_identity_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutAllSessionsResponse.ProtoReflect.Descriptor instead.
+func (*LogoutAllSessionsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_identity_v1_identity_proto_rawDescGZIP(), []int{9}
+}
+
 var File_ride_identity_v1_identity_proto protoreflect.FileDescriptor
 
 const file_ride_identity_v1_identity_proto_rawDesc = "" +
@@ -375,12 +535,20 @@ const file_ride_identity_v1_identity_proto_rawDesc = "" +
 	"identityId\x12!\n" +
 	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\x12#\n" +
 	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\x12D\n" +
-	"\x1faccess_token_expires_in_seconds\x18\x04 \x01(\x05R\x1baccessTokenExpiresInSeconds2\x9f\x02\n" +
+	"\x1faccess_token_expires_in_seconds\x18\x04 \x01(\x05R\x1baccessTokenExpiresInSeconds\"4\n" +
+	"\rLogoutRequest\x12#\n" +
+	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"\x10\n" +
+	"\x0eLogoutResponse\"?\n" +
+	"\x18LogoutAllSessionsRequest\x12#\n" +
+	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"\x1b\n" +
+	"\x19LogoutAllSessionsResponse2\xda\x03\n" +
 	"\x0fIdentityService\x12W\n" +
 	"\n" +
 	"RequestOTP\x12#.ride.identity.v1.RequestOTPRequest\x1a$.ride.identity.v1.RequestOTPResponse\x12T\n" +
 	"\tVerifyOTP\x12\".ride.identity.v1.VerifyOTPRequest\x1a#.ride.identity.v1.VerifyOTPResponse\x12]\n" +
-	"\fRefreshToken\x12%.ride.identity.v1.RefreshTokenRequest\x1a&.ride.identity.v1.RefreshTokenResponseBDZBgithub.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1b\x06proto3"
+	"\fRefreshToken\x12%.ride.identity.v1.RefreshTokenRequest\x1a&.ride.identity.v1.RefreshTokenResponse\x12K\n" +
+	"\x06Logout\x12\x1f.ride.identity.v1.LogoutRequest\x1a .ride.identity.v1.LogoutResponse\x12l\n" +
+	"\x11LogoutAllSessions\x12*.ride.identity.v1.LogoutAllSessionsRequest\x1a+.ride.identity.v1.LogoutAllSessionsResponseBDZBgithub.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1b\x06proto3"
 
 var (
 	file_ride_identity_v1_identity_proto_rawDescOnce sync.Once
@@ -394,24 +562,32 @@ func file_ride_identity_v1_identity_proto_rawDescGZIP() []byte {
 	return file_ride_identity_v1_identity_proto_rawDescData
 }
 
-var file_ride_identity_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_ride_identity_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_ride_identity_v1_identity_proto_goTypes = []any{
-	(*RequestOTPRequest)(nil),    // 0: ride.identity.v1.RequestOTPRequest
-	(*RequestOTPResponse)(nil),   // 1: ride.identity.v1.RequestOTPResponse
-	(*VerifyOTPRequest)(nil),     // 2: ride.identity.v1.VerifyOTPRequest
-	(*VerifyOTPResponse)(nil),    // 3: ride.identity.v1.VerifyOTPResponse
-	(*RefreshTokenRequest)(nil),  // 4: ride.identity.v1.RefreshTokenRequest
-	(*RefreshTokenResponse)(nil), // 5: ride.identity.v1.RefreshTokenResponse
+	(*RequestOTPRequest)(nil),         // 0: ride.identity.v1.RequestOTPRequest
+	(*RequestOTPResponse)(nil),        // 1: ride.identity.v1.RequestOTPResponse
+	(*VerifyOTPRequest)(nil),          // 2: ride.identity.v1.VerifyOTPRequest
+	(*VerifyOTPResponse)(nil),         // 3: ride.identity.v1.VerifyOTPResponse
+	(*RefreshTokenRequest)(nil),       // 4: ride.identity.v1.RefreshTokenRequest
+	(*RefreshTokenResponse)(nil),      // 5: ride.identity.v1.RefreshTokenResponse
+	(*LogoutRequest)(nil),             // 6: ride.identity.v1.LogoutRequest
+	(*LogoutResponse)(nil),            // 7: ride.identity.v1.LogoutResponse
+	(*LogoutAllSessionsRequest)(nil),  // 8: ride.identity.v1.LogoutAllSessionsRequest
+	(*LogoutAllSessionsResponse)(nil), // 9: ride.identity.v1.LogoutAllSessionsResponse
 }
 var file_ride_identity_v1_identity_proto_depIdxs = []int32{
 	0, // 0: ride.identity.v1.IdentityService.RequestOTP:input_type -> ride.identity.v1.RequestOTPRequest
 	2, // 1: ride.identity.v1.IdentityService.VerifyOTP:input_type -> ride.identity.v1.VerifyOTPRequest
 	4, // 2: ride.identity.v1.IdentityService.RefreshToken:input_type -> ride.identity.v1.RefreshTokenRequest
-	1, // 3: ride.identity.v1.IdentityService.RequestOTP:output_type -> ride.identity.v1.RequestOTPResponse
-	3, // 4: ride.identity.v1.IdentityService.VerifyOTP:output_type -> ride.identity.v1.VerifyOTPResponse
-	5, // 5: ride.identity.v1.IdentityService.RefreshToken:output_type -> ride.identity.v1.RefreshTokenResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	6, // 3: ride.identity.v1.IdentityService.Logout:input_type -> ride.identity.v1.LogoutRequest
+	8, // 4: ride.identity.v1.IdentityService.LogoutAllSessions:input_type -> ride.identity.v1.LogoutAllSessionsRequest
+	1, // 5: ride.identity.v1.IdentityService.RequestOTP:output_type -> ride.identity.v1.RequestOTPResponse
+	3, // 6: ride.identity.v1.IdentityService.VerifyOTP:output_type -> ride.identity.v1.VerifyOTPResponse
+	5, // 7: ride.identity.v1.IdentityService.RefreshToken:output_type -> ride.identity.v1.RefreshTokenResponse
+	7, // 8: ride.identity.v1.IdentityService.Logout:output_type -> ride.identity.v1.LogoutResponse
+	9, // 9: ride.identity.v1.IdentityService.LogoutAllSessions:output_type -> ride.identity.v1.LogoutAllSessionsResponse
+	5, // [5:10] is the sub-list for method output_type
+	0, // [0:5] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -428,7 +604,7 @@ func file_ride_identity_v1_identity_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_identity_v1_identity_proto_rawDesc), len(file_ride_identity_v1_identity_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -179,6 +179,46 @@ func (s *testRefreshTokenRotationStore) Rotate(
 	return s.rotateErr
 }
 
+type testSessionRevocationStore struct {
+	err   error
+	calls int
+
+	refreshTokenHash string
+	revokedAt        time.Time
+}
+
+func (s *testSessionRevocationStore) RevokeByRefreshTokenHash(
+	ctx context.Context,
+	refreshTokenHash string,
+	revokedAt time.Time,
+) error {
+	s.calls++
+	s.refreshTokenHash = refreshTokenHash
+	s.revokedAt = revokedAt
+
+	return s.err
+}
+
+type testAllSessionsRevocationStore struct {
+	err   error
+	calls int
+
+	refreshTokenHash string
+	revokedAt        time.Time
+}
+
+func (s *testAllSessionsRevocationStore) RevokeAllByRefreshTokenHash(
+	ctx context.Context,
+	refreshTokenHash string,
+	revokedAt time.Time,
+) error {
+	s.calls++
+	s.refreshTokenHash = refreshTokenHash
+	s.revokedAt = revokedAt
+
+	return s.err
+}
+
 type testRefreshTokenGenerator struct {
 	token string
 	err   error
@@ -284,6 +324,8 @@ func TestRequestOTPStopsBeforeGeneratingOTPWhenRateLimited(
 		challengeIDGenerator,
 		&testTokenIssuer{},
 		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
 		&testRefreshTokenGenerator{},
 		&testRefreshTokenHasher{},
 		&testAccessTokenSigner{},
@@ -392,6 +434,8 @@ func TestRequestOTPContinuesWhenRateLimiterAllows(
 		challengeIDGenerator,
 		&testTokenIssuer{},
 		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
 		&testRefreshTokenGenerator{},
 		&testRefreshTokenHasher{},
 		&testAccessTokenSigner{},
@@ -492,6 +536,8 @@ func TestRequestOTPCancelsChallengeWhenDeliveryFails(
 		&testChallengeIDGenerator{},
 		&testTokenIssuer{},
 		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
 		&testRefreshTokenGenerator{},
 		&testRefreshTokenHasher{},
 		&testAccessTokenSigner{},
@@ -610,6 +656,8 @@ func TestRefreshTokenRotatesTokenAndClampsExpirationToSession(
 		&testChallengeIDGenerator{},
 		&testTokenIssuer{},
 		refreshStore,
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
 		refreshGenerator,
 		refreshHasher,
 		accessSigner,
@@ -784,6 +832,8 @@ func TestRefreshTokenDoesNotRotateWhenAccessTokenSigningFails(
 		&testChallengeIDGenerator{},
 		&testTokenIssuer{},
 		refreshStore,
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
 		refreshGenerator,
 		refreshHasher,
 		accessSigner,
@@ -877,6 +927,8 @@ func TestRefreshTokenReturnsReuseErrorWhenRotationDetectsReuse(
 		&testChallengeIDGenerator{},
 		&testTokenIssuer{},
 		refreshStore,
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
 		refreshGenerator,
 		refreshHasher,
 		accessSigner,
@@ -935,6 +987,354 @@ func TestRefreshTokenReturnsReuseErrorWhenRotationDetectsReuse(
 		t.Fatalf(
 			"AccessTokenSigner calls = %d, expected 1",
 			accessSigner.calls,
+		)
+	}
+}
+
+func TestLogoutHashesRefreshTokenAndRevokesSession(
+	t *testing.T,
+) {
+	now := time.Date(
+		2026,
+		time.August,
+		10,
+		11,
+		30,
+		0,
+		0,
+		time.UTC,
+	)
+
+	sessionRevocationStore :=
+		&testSessionRevocationStore{}
+
+	refreshHasher :=
+		&testRefreshTokenHasher{}
+
+	service := NewService(
+		&testChallengeRepository{},
+		&testIdentityRepository{},
+		&testOTPGenerator{},
+		&testOTPHasher{},
+		&testOTPDelivery{},
+		&testOTPRequestRateLimiter{},
+		&testChallengeIDGenerator{},
+		&testTokenIssuer{},
+		&testRefreshTokenRotationStore{},
+		sessionRevocationStore,
+		&testAllSessionsRevocationStore{},
+		&testRefreshTokenGenerator{},
+		refreshHasher,
+		&testAccessTokenSigner{},
+		&testClock{
+			now: now,
+		},
+		5*time.Minute,
+		OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		29*24*time.Hour,
+	)
+
+	err := service.Logout(
+		context.Background(),
+		LogoutInput{
+			RefreshToken: "rt_current",
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"Logout() returned an error: %v",
+			err,
+		)
+	}
+
+	if refreshHasher.calls != 1 {
+		t.Fatalf(
+			"RefreshTokenHasher calls = %d, expected 1",
+			refreshHasher.calls,
+		)
+	}
+
+	if len(refreshHasher.inputs) != 1 {
+		t.Fatalf(
+			"RefreshTokenHasher inputs = %d, expected 1",
+			len(refreshHasher.inputs),
+		)
+	}
+
+	if refreshHasher.inputs[0] != "rt_current" {
+		t.Fatalf(
+			"hashed refresh token input = %q, expected %q",
+			refreshHasher.inputs[0],
+			"rt_current",
+		)
+	}
+
+	if sessionRevocationStore.calls != 1 {
+		t.Fatalf(
+			"SessionRevocationStore calls = %d, expected 1",
+			sessionRevocationStore.calls,
+		)
+	}
+
+	if sessionRevocationStore.refreshTokenHash !=
+		"hashed_rt_current" {
+		t.Fatalf(
+			"refresh token hash = %q, expected %q",
+			sessionRevocationStore.refreshTokenHash,
+			"hashed_rt_current",
+		)
+	}
+
+	if !sessionRevocationStore.revokedAt.Equal(now) {
+		t.Fatalf(
+			"revokedAt = %v, expected %v",
+			sessionRevocationStore.revokedAt,
+			now,
+		)
+	}
+}
+
+func TestLogoutRejectsEmptyRefreshToken(
+	t *testing.T,
+) {
+	sessionRevocationStore :=
+		&testSessionRevocationStore{}
+
+	refreshHasher :=
+		&testRefreshTokenHasher{}
+
+	service := NewService(
+		&testChallengeRepository{},
+		&testIdentityRepository{},
+		&testOTPGenerator{},
+		&testOTPHasher{},
+		&testOTPDelivery{},
+		&testOTPRequestRateLimiter{},
+		&testChallengeIDGenerator{},
+		&testTokenIssuer{},
+		&testRefreshTokenRotationStore{},
+		sessionRevocationStore,
+		&testAllSessionsRevocationStore{},
+		&testRefreshTokenGenerator{},
+		refreshHasher,
+		&testAccessTokenSigner{},
+		&testClock{},
+		5*time.Minute,
+		OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		29*24*time.Hour,
+	)
+
+	err := service.Logout(
+		context.Background(),
+		LogoutInput{
+			RefreshToken: "",
+		},
+	)
+
+	if !errors.Is(
+		err,
+		ErrInvalidRefreshToken,
+	) {
+		t.Fatalf(
+			"Logout() error = %v, expected %v",
+			err,
+			ErrInvalidRefreshToken,
+		)
+	}
+
+	if refreshHasher.calls != 0 {
+		t.Fatalf(
+			"RefreshTokenHasher calls = %d, expected 0",
+			refreshHasher.calls,
+		)
+	}
+
+	if sessionRevocationStore.calls != 0 {
+		t.Fatalf(
+			"SessionRevocationStore calls = %d, expected 0",
+			sessionRevocationStore.calls,
+		)
+	}
+}
+
+func TestLogoutAllSessionsHashesRefreshTokenAndRevokesAllSessions(
+	t *testing.T,
+) {
+	now := time.Date(
+		2026,
+		time.August,
+		10,
+		12,
+		30,
+		0,
+		0,
+		time.UTC,
+	)
+
+	allSessionsRevocationStore :=
+		&testAllSessionsRevocationStore{}
+
+	refreshHasher :=
+		&testRefreshTokenHasher{}
+
+	service := NewService(
+		&testChallengeRepository{},
+		&testIdentityRepository{},
+		&testOTPGenerator{},
+		&testOTPHasher{},
+		&testOTPDelivery{},
+		&testOTPRequestRateLimiter{},
+		&testChallengeIDGenerator{},
+		&testTokenIssuer{},
+		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		allSessionsRevocationStore,
+		&testRefreshTokenGenerator{},
+		refreshHasher,
+		&testAccessTokenSigner{},
+		&testClock{
+			now: now,
+		},
+		5*time.Minute,
+		OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		29*24*time.Hour,
+	)
+
+	err := service.LogoutAllSessions(
+		context.Background(),
+		LogoutAllSessionsInput{
+			RefreshToken: "rt_current",
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"LogoutAllSessions() returned an error: %v",
+			err,
+		)
+	}
+
+	if refreshHasher.calls != 1 {
+		t.Fatalf(
+			"RefreshTokenHasher calls = %d, expected 1",
+			refreshHasher.calls,
+		)
+	}
+
+	if len(refreshHasher.inputs) != 1 {
+		t.Fatalf(
+			"RefreshTokenHasher inputs = %d, expected 1",
+			len(refreshHasher.inputs),
+		)
+	}
+
+	if refreshHasher.inputs[0] != "rt_current" {
+		t.Fatalf(
+			"hashed refresh token input = %q, expected %q",
+			refreshHasher.inputs[0],
+			"rt_current",
+		)
+	}
+
+	if allSessionsRevocationStore.calls != 1 {
+		t.Fatalf(
+			"AllSessionsRevocationStore calls = %d, expected 1",
+			allSessionsRevocationStore.calls,
+		)
+	}
+
+	if allSessionsRevocationStore.refreshTokenHash !=
+		"hashed_rt_current" {
+		t.Fatalf(
+			"refresh token hash = %q, expected %q",
+			allSessionsRevocationStore.refreshTokenHash,
+			"hashed_rt_current",
+		)
+	}
+
+	if !allSessionsRevocationStore.revokedAt.Equal(now) {
+		t.Fatalf(
+			"revokedAt = %v, expected %v",
+			allSessionsRevocationStore.revokedAt,
+			now,
+		)
+	}
+}
+
+func TestLogoutAllSessionsRejectsEmptyRefreshToken(
+	t *testing.T,
+) {
+	allSessionsRevocationStore :=
+		&testAllSessionsRevocationStore{}
+
+	refreshHasher :=
+		&testRefreshTokenHasher{}
+
+	service := NewService(
+		&testChallengeRepository{},
+		&testIdentityRepository{},
+		&testOTPGenerator{},
+		&testOTPHasher{},
+		&testOTPDelivery{},
+		&testOTPRequestRateLimiter{},
+		&testChallengeIDGenerator{},
+		&testTokenIssuer{},
+		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		allSessionsRevocationStore,
+		&testRefreshTokenGenerator{},
+		refreshHasher,
+		&testAccessTokenSigner{},
+		&testClock{},
+		5*time.Minute,
+		OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		29*24*time.Hour,
+	)
+
+	err := service.LogoutAllSessions(
+		context.Background(),
+		LogoutAllSessionsInput{
+			RefreshToken: "",
+		},
+	)
+
+	if !errors.Is(
+		err,
+		ErrInvalidRefreshToken,
+	) {
+		t.Fatalf(
+			"LogoutAllSessions() error = %v, expected %v",
+			err,
+			ErrInvalidRefreshToken,
+		)
+	}
+
+	if refreshHasher.calls != 0 {
+		t.Fatalf(
+			"RefreshTokenHasher calls = %d, expected 0",
+			refreshHasher.calls,
+		)
+	}
+
+	if allSessionsRevocationStore.calls != 0 {
+		t.Fatalf(
+			"AllSessionsRevocationStore calls = %d, expected 0",
+			allSessionsRevocationStore.calls,
 		)
 	}
 }

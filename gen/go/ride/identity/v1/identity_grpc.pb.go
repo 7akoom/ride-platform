@@ -19,9 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	IdentityService_RequestOTP_FullMethodName   = "/ride.identity.v1.IdentityService/RequestOTP"
-	IdentityService_VerifyOTP_FullMethodName    = "/ride.identity.v1.IdentityService/VerifyOTP"
-	IdentityService_RefreshToken_FullMethodName = "/ride.identity.v1.IdentityService/RefreshToken"
+	IdentityService_RequestOTP_FullMethodName        = "/ride.identity.v1.IdentityService/RequestOTP"
+	IdentityService_VerifyOTP_FullMethodName         = "/ride.identity.v1.IdentityService/VerifyOTP"
+	IdentityService_RefreshToken_FullMethodName      = "/ride.identity.v1.IdentityService/RefreshToken"
+	IdentityService_Logout_FullMethodName            = "/ride.identity.v1.IdentityService/Logout"
+	IdentityService_LogoutAllSessions_FullMethodName = "/ride.identity.v1.IdentityService/LogoutAllSessions"
 )
 
 // IdentityServiceClient is the client API for IdentityService service.
@@ -31,6 +33,8 @@ type IdentityServiceClient interface {
 	RequestOTP(ctx context.Context, in *RequestOTPRequest, opts ...grpc.CallOption) (*RequestOTPResponse, error)
 	VerifyOTP(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*VerifyOTPResponse, error)
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
+	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
+	LogoutAllSessions(ctx context.Context, in *LogoutAllSessionsRequest, opts ...grpc.CallOption) (*LogoutAllSessionsResponse, error)
 }
 
 type identityServiceClient struct {
@@ -71,6 +75,26 @@ func (c *identityServiceClient) RefreshToken(ctx context.Context, in *RefreshTok
 	return out, nil
 }
 
+func (c *identityServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LogoutResponse)
+	err := c.cc.Invoke(ctx, IdentityService_Logout_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) LogoutAllSessions(ctx context.Context, in *LogoutAllSessionsRequest, opts ...grpc.CallOption) (*LogoutAllSessionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LogoutAllSessionsResponse)
+	err := c.cc.Invoke(ctx, IdentityService_LogoutAllSessions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IdentityServiceServer is the server API for IdentityService service.
 // All implementations must embed UnimplementedIdentityServiceServer
 // for forward compatibility.
@@ -78,6 +102,8 @@ type IdentityServiceServer interface {
 	RequestOTP(context.Context, *RequestOTPRequest) (*RequestOTPResponse, error)
 	VerifyOTP(context.Context, *VerifyOTPRequest) (*VerifyOTPResponse, error)
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
+	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
+	LogoutAllSessions(context.Context, *LogoutAllSessionsRequest) (*LogoutAllSessionsResponse, error)
 	mustEmbedUnimplementedIdentityServiceServer()
 }
 
@@ -96,6 +122,12 @@ func (UnimplementedIdentityServiceServer) VerifyOTP(context.Context, *VerifyOTPR
 }
 func (UnimplementedIdentityServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedIdentityServiceServer) Logout(context.Context, *LogoutRequest) (*LogoutResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
+}
+func (UnimplementedIdentityServiceServer) LogoutAllSessions(context.Context, *LogoutAllSessionsRequest) (*LogoutAllSessionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method LogoutAllSessions not implemented")
 }
 func (UnimplementedIdentityServiceServer) mustEmbedUnimplementedIdentityServiceServer() {}
 func (UnimplementedIdentityServiceServer) testEmbeddedByValue()                         {}
@@ -172,6 +204,42 @@ func _IdentityService_RefreshToken_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IdentityService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LogoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).Logout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_Logout_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).Logout(ctx, req.(*LogoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_LogoutAllSessions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LogoutAllSessionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).LogoutAllSessions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_LogoutAllSessions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).LogoutAllSessions(ctx, req.(*LogoutAllSessionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IdentityService_ServiceDesc is the grpc.ServiceDesc for IdentityService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +258,14 @@ var IdentityService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshToken",
 			Handler:    _IdentityService_RefreshToken_Handler,
+		},
+		{
+			MethodName: "Logout",
+			Handler:    _IdentityService_Logout_Handler,
+		},
+		{
+			MethodName: "LogoutAllSessions",
+			Handler:    _IdentityService_LogoutAllSessions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

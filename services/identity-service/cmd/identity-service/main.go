@@ -117,6 +117,16 @@ func run() int {
 			databasePool,
 		)
 
+	sessionRevocationStore :=
+		postgresrepo.NewSessionRevocationStore(
+			databasePool,
+		)
+
+	allSessionsRevocationStore :=
+		postgresrepo.NewAllSessionsRevocationStore(
+			databasePool,
+		)
+
 	tokenIssuer, err := token.NewIssuer(
 		token.NewSessionIDGenerator(),
 		refreshTokenGenerator,
@@ -159,6 +169,8 @@ func run() int {
 		identifier.NewChallengeIDGenerator(),
 		tokenIssuer,
 		refreshTokenRotationStore,
+		sessionRevocationStore,
+		allSessionsRevocationStore,
 		refreshTokenGenerator,
 		refreshTokenHasher,
 		accessTokenSigner,

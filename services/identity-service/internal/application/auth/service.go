@@ -34,6 +34,14 @@ type RefreshTokenResult struct {
 	AccessTokenExpiresInSeconds int32
 }
 
+type LogoutInput struct {
+	RefreshToken string
+}
+
+type LogoutAllSessionsInput struct {
+	RefreshToken string
+}
+
 type Service interface {
 	RequestOTP(
 		ctx context.Context,
@@ -49,4 +57,11 @@ type Service interface {
 		ctx context.Context,
 		input RefreshTokenInput,
 	) (RefreshTokenResult, error)
+
+	Logout(ctx context.Context, input LogoutInput) error
+
+	LogoutAllSessions(
+		ctx context.Context,
+		input LogoutAllSessionsInput,
+	) error
 }

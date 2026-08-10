@@ -157,3 +157,19 @@ type AccessTokenSigner interface {
 		issuedAt time.Time,
 	) (string, int32, error)
 }
+
+type SessionRevocationStore interface {
+	RevokeByRefreshTokenHash(
+		ctx context.Context,
+		refreshTokenHash string,
+		revokedAt time.Time,
+	) error
+}
+
+type AllSessionsRevocationStore interface {
+	RevokeAllByRefreshTokenHash(
+		ctx context.Context,
+		refreshTokenHash string,
+		revokedAt time.Time,
+	) error
+}

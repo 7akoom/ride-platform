@@ -19,6 +19,8 @@ type service struct {
 	tokenIssuer          TokenIssuer
 
 	refreshTokenRotationStore RefreshTokenRotationStore
+	sessionRevocationStore SessionRevocationStore
+	allSessionsRevocationStore AllSessionsRevocationStore
 	refreshTokenGenerator     RefreshTokenGenerator
 	refreshTokenHasher        RefreshTokenHasher
 	accessTokenSigner         AccessTokenSigner
@@ -42,6 +44,8 @@ func NewService(
 	challengeIDGenerator ChallengeIDGenerator,
 	tokenIssuer TokenIssuer,
 	refreshTokenRotationStore RefreshTokenRotationStore,
+	sessionRevocationStore SessionRevocationStore,
+	allSessionsRevocationStore AllSessionsRevocationStore,
 	refreshTokenGenerator RefreshTokenGenerator,
 	refreshTokenHasher RefreshTokenHasher,
 	accessTokenSigner AccessTokenSigner,
@@ -60,6 +64,8 @@ func NewService(
 		challengeIDGenerator:      challengeIDGenerator,
 		tokenIssuer:               tokenIssuer,
 		refreshTokenRotationStore: refreshTokenRotationStore,
+		sessionRevocationStore:    sessionRevocationStore,
+		allSessionsRevocationStore: allSessionsRevocationStore,
 		refreshTokenGenerator:     refreshTokenGenerator,
 		refreshTokenHasher:        refreshTokenHasher,
 		accessTokenSigner:         accessTokenSigner,
@@ -483,4 +489,56 @@ func (s *service) RefreshToken(
 		RefreshToken: replacementRefreshToken,
 		AccessTokenExpiresInSeconds: accessTokenExpiresInSeconds,
 	}, nil
+}
+
+func (s *service) Logout(
+	ctx context.Context,
+	input LogoutInput,
+) error {
+	if input.RefreshToken == "" {
+		return ErrInvalidRefreshToken
+	}
+
+	refreshTokenHash := s.refreshTokenHasher.Hash(
+		input.RefreshToken,
+	)
+
+	if err := s.sessionRevocationStore.RevokeByRefreshTokenHash(
+		ctx,
+		refreshTokenHash,
+		s.clock.Now().UTC(),
+	); err != nil {
+		return fmt.Errorf(
+			"revoke authentication session: %w",
+			err,
+		)
+	}
+
+	return nil
+}
+
+func (s *service) LogoutAllSessions(
+	ctx context.Context,
+	input LogoutAllSessionsInput,
+) error {
+	if input.RefreshToken == "" {
+		return ErrInvalidRefreshToken
+	}
+
+	refreshTokenHash := s.refreshTokenHasher.Hash(
+		input.RefreshToken,
+	)
+
+	if err := s.allSessionsRevocationStore.RevokeAllByRefreshTokenHash(
+		ctx,
+		refreshTokenHash,
+		s.clock.Now().UTC(),
+	); err != nil {
+		return fmt.Errorf(
+			"revoke all authentication sessions: %w",
+			err,
+		)
+	}
+
+	return nil
 }
