@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/config"
@@ -202,12 +205,61 @@ func run() int {
 		"grpc_address", cfg.GRPCAddress,
 	)
 
-	if err := server.Run(); err != nil {
-		logger.Error(
-			"identity service stopped with error",
-			"error", err,
+	shutdownContext, stopSignals := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer stopSignals()
+
+	serverError := make(chan error, 1)
+
+	go func() {
+		serverError <- server.Run()
+	}()
+
+	select {
+	case err := <-serverError:
+		if err != nil {
+			logger.Error(
+				"identity service stopped with error",
+				"error", err,
+			)
+			return 1
+		}
+
+		return 0
+
+	case <-shutdownContext.Done():
+		logger.Info(
+			"shutdown signal received",
 		)
-		return 1
+	}
+
+	gracefulShutdownDone := make(chan struct{})
+
+	go func() {
+		server.GracefulStop()
+		close(gracefulShutdownDone)
+	}()
+
+	const gracefulShutdownTimeout = 10 * time.Second
+
+	select {
+	case <-gracefulShutdownDone:
+		logger.Info(
+			"identity service stopped gracefully",
+		)
+
+	case <-time.After(gracefulShutdownTimeout):
+		logger.Warn(
+			"graceful shutdown timed out; forcing gRPC server stop",
+			"timeout", gracefulShutdownTimeout,
+		)
+
+		server.Stop()
+
+		<-gracefulShutdownDone
 	}
 
 	return 0

@@ -47,3 +47,11 @@ func (s *Server) Run() error {
 
 	return nil
 }
+
+func (s *Server) GracefulStop() {
+	s.grpcServer.GracefulStop()
+}
+
+func (s *Server) Stop() {
+	s.grpcServer.Stop()
+}
