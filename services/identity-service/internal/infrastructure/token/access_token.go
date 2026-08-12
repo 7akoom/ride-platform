@@ -89,26 +89,71 @@ func NewAccessTokenSigner(
 	}, nil
 }
 
-func (s *AccessTokenSigner) Issue(
+func (s *AccessTokenSigner) IssueForSession(
 	identityID string,
 	sessionID string,
 	issuedAt time.Time,
+	sessionExpiresAt time.Time,
+) (string, int32, error) {
+	if sessionExpiresAt.IsZero() {
+		return "", 0, errors.New(
+			"session expiration cannot be zero",
+		)
+	}
+
+	issuedAt = issuedAt.UTC()
+	sessionExpiresAt = sessionExpiresAt.UTC()
+
+	if !sessionExpiresAt.After(issuedAt) {
+		return "", 0, errors.New(
+			"session must expire after access token issue time",
+		)
+	}
+
+	expiresAt := issuedAt.Add(
+		s.ttl,
+	)
+
+	if sessionExpiresAt.Before(expiresAt) {
+		expiresAt = sessionExpiresAt
+	}
+
+	return s.issueWithExpiration(
+		identityID,
+		sessionID,
+		issuedAt,
+		expiresAt,
+	)
+}
+
+func (s *AccessTokenSigner) issueWithExpiration(
+	identityID string,
+	sessionID string,
+	issuedAt time.Time,
+	expiresAt time.Time,
 ) (string, int32, error) {
 	if identityID == "" {
-		return "", 0, errors.New("identity ID cannot be empty")
+		return "", 0, errors.New(
+			"identity ID cannot be empty",
+		)
 	}
 
 	if sessionID == "" {
-		return "", 0, errors.New("session ID cannot be empty")
+		return "", 0, errors.New(
+			"session ID cannot be empty",
+		)
+	}
+
+	if !expiresAt.After(issuedAt) {
+		return "", 0, errors.New(
+			"access token expiration must be after issue time",
+		)
 	}
 
 	tokenID, err := generateAccessTokenID()
 	if err != nil {
 		return "", 0, err
 	}
-
-	issuedAt = issuedAt.UTC()
-	expiresAt := issuedAt.Add(s.ttl)
 
 	claims := AccessTokenClaims{
 		SessionID: sessionID,
@@ -140,7 +185,11 @@ func (s *AccessTokenSigner) Issue(
 		)
 	}
 
-	return signedToken, int32(s.ttl.Seconds()), nil
+	expiresInSeconds := int32(
+		expiresAt.Sub(issuedAt).Seconds(),
+	)
+
+	return signedToken, expiresInSeconds, nil
 }
 
 func generateAccessTokenID() (string, error) {

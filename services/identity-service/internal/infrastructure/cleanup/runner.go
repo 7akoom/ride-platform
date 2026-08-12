@@ -25,6 +25,29 @@ func NewRunner(
 	otpChallengeRetention time.Duration,
 	authSessionRetention time.Duration,
 ) *Runner {
+	if store == nil {
+		panic("cleanup store is required")
+	}
+
+	if logger == nil {
+		panic("cleanup logger is required")
+	}
+
+	if interval <= 0 {
+		panic("cleanup interval must be positive")
+	}
+
+	if otpRequestEventRetention <= 0 {
+		panic("OTP request event retention must be positive")
+	}
+
+	if otpChallengeRetention <= 0 {
+		panic("OTP challenge retention must be positive")
+	}
+
+	if authSessionRetention <= 0 {
+		panic("auth session retention must be positive")
+	}
 	return &Runner{
 		store:                    store,
 		logger:                   logger,

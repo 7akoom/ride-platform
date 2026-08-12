@@ -15,6 +15,7 @@ import (
 	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/identifier"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/otp"
 	postgresrepo "github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/persistence/postgres"
+	valkeyrepo "github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/persistence/valkey"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/token"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/observability"
 	grpcserver "github.com/7akoom/ride-platform/services/identity-service/internal/transport/grpc"
@@ -89,6 +90,22 @@ func run() int {
 
 	logger.Info("PostgreSQL connection established")
 
+	valkeyClient, err := database.NewValkeyClient(
+		ctx,
+		cfg.ValkeyAddress,
+		cfg.ValkeyPassword,
+	)
+	if err != nil {
+		logger.Error(
+			"failed to connect to Valkey",
+			"error", err,
+		)
+		return 1
+	}
+	defer valkeyClient.Close()
+
+	logger.Info("Valkey connection established")
+
 	accessTokenSigner, err := token.NewAccessTokenSigner(
 		cfg.AccessTokenPrivateKeyPath,
 		cfg.AccessTokenIssuer,
@@ -126,10 +143,43 @@ func run() int {
 			databasePool,
 		)
 
+	sessionAccessRevocationStore :=
+		valkeyrepo.NewSessionAccessRevocationStore(
+			valkeyClient,
+		)
+
+	coordinatedSessionRevocationStore, err :=
+		auth.NewCoordinatedSessionRevocationStore(
+			sessionRevocationStore,
+			sessionAccessRevocationStore,
+			sessionRevocationStore,
+		)
+	if err != nil {
+		logger.Error(
+			"failed to configure coordinated session revocation",
+			"error", err,
+		)
+		return 1
+	}
+
 	allSessionsRevocationStore :=
 		postgresrepo.NewAllSessionsRevocationStore(
 			databasePool,
 		)
+
+	coordinatedAllSessionsRevocationStore, err :=
+		auth.NewCoordinatedAllSessionsRevocationStore(
+			allSessionsRevocationStore,
+			sessionAccessRevocationStore,
+			allSessionsRevocationStore,
+		)
+	if err != nil {
+		logger.Error(
+			"failed to configure coordinated all sessions revocation",
+			"error", err,
+		)
+		return 1
+	}
 
 	cleanupStore :=
 		postgresrepo.NewCleanupStore(
@@ -187,8 +237,8 @@ func run() int {
 		identifier.NewChallengeIDGenerator(),
 		tokenIssuer,
 		refreshTokenRotationStore,
-		sessionRevocationStore,
-		allSessionsRevocationStore,
+		coordinatedSessionRevocationStore,
+		coordinatedAllSessionsRevocationStore,
 		refreshTokenGenerator,
 		refreshTokenHasher,
 		accessTokenSigner,

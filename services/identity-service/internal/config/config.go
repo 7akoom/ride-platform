@@ -9,6 +9,9 @@ type Config struct {
 	DatabaseURL   string
 	OTPHashSecret string
 
+	ValkeyAddress  string
+	ValkeyPassword string
+
 	OTPChallengeTTL string
 
 	OTPRequestCooldown    string
@@ -34,10 +37,13 @@ type Config struct {
 func Load() Config {
 	return Config{
 		ServiceName:   "identity-service",
-		Environment:   getEnv("APP_ENV", "development"),
+		Environment:   getEnv("APP_ENV", ""),
 		GRPCAddress:   getEnv("GRPC_ADDRESS", ":50051"),
 		DatabaseURL:   getEnv("DATABASE_URL", ""),
 		OTPHashSecret: getEnv("OTP_HASH_SECRET", ""),
+
+		ValkeyAddress:  getEnv("VALKEY_ADDRESS", "127.0.0.1:6380"),
+		ValkeyPassword: getEnv("VALKEY_PASSWORD", ""),
 
 		OTPChallengeTTL: getEnv("OTP_CHALLENGE_TTL", "5m"),
 

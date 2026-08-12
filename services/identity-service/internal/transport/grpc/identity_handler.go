@@ -20,6 +20,10 @@ type IdentityHandler struct {
 func NewIdentityHandler(
 	authService auth.Service,
 ) *IdentityHandler {
+	if authService == nil {
+		panic("auth service is required")
+	}
+
 	return &IdentityHandler{
 		authService: authService,
 	}
@@ -146,22 +150,22 @@ func (h *IdentityHandler) VerifyOTP(
 				"OTP challenge already used",
 			)
 
-			case errors.Is(
-				err,
-				auth.ErrChallengeCancelled,
-			):
-				return nil, status.Error(
-					codes.FailedPrecondition,
-					"OTP challenge cancelled",
-				)
 		case errors.Is(
-				err,
-				auth.ErrChallengeAttemptsExceeded,
-			):
-				return nil, status.Error(
-					codes.ResourceExhausted,
-					"OTP challenge attempts exceeded",
-				)
+			err,
+			auth.ErrChallengeCancelled,
+		):
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				"OTP challenge cancelled",
+			)
+		case errors.Is(
+			err,
+			auth.ErrChallengeAttemptsExceeded,
+		):
+			return nil, status.Error(
+				codes.ResourceExhausted,
+				"OTP challenge attempts exceeded",
+			)
 
 		case errors.Is(err, auth.ErrInvalidOTP):
 			return nil, status.Error(
@@ -184,9 +188,9 @@ func (h *IdentityHandler) VerifyOTP(
 	}
 
 	return &identityv1.VerifyOTPResponse{
-		IdentityId: result.IdentityID,
-		AccessToken: result.AccessToken,
-		RefreshToken: result.RefreshToken,
+		IdentityId:                  result.IdentityID,
+		AccessToken:                 result.AccessToken,
+		RefreshToken:                result.RefreshToken,
 		AccessTokenExpiresInSeconds: result.AccessTokenExpiresInSeconds,
 	}, nil
 }
@@ -204,7 +208,7 @@ func (h *IdentityHandler) RefreshToken(
 
 	refreshToken := request.GetRefreshToken()
 
-	if refreshToken == "" {
+	if strings.TrimSpace(refreshToken) == "" {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			"refresh token is required",
@@ -266,9 +270,9 @@ func (h *IdentityHandler) RefreshToken(
 	}
 
 	return &identityv1.RefreshTokenResponse{
-		IdentityId: result.IdentityID,
-		AccessToken: result.AccessToken,
-		RefreshToken: result.RefreshToken,
+		IdentityId:                  result.IdentityID,
+		AccessToken:                 result.AccessToken,
+		RefreshToken:                result.RefreshToken,
 		AccessTokenExpiresInSeconds: result.AccessTokenExpiresInSeconds,
 	}, nil
 }
@@ -286,7 +290,7 @@ func (h *IdentityHandler) Logout(
 
 	refreshToken := request.GetRefreshToken()
 
-	if refreshToken == "" {
+	if strings.TrimSpace(refreshToken) == "" {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			"refresh token is required",
@@ -332,7 +336,7 @@ func (h *IdentityHandler) LogoutAllSessions(
 
 	refreshToken := request.GetRefreshToken()
 
-	if refreshToken == "" {
+	if strings.TrimSpace(refreshToken) == "" {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			"refresh token is required",

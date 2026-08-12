@@ -49,3 +49,24 @@ func TestNewDevelopmentDeliveryRejectsProduction(t *testing.T) {
 		)
 	}
 }
+
+func TestNewDevelopmentDeliveryRejectsNilLogger(
+	t *testing.T,
+) {
+	delivery, err := NewDevelopmentDelivery(
+		"development",
+		nil,
+	)
+
+	if err == nil {
+		t.Fatal(
+			"NewDevelopmentDelivery() accepted nil logger",
+		)
+	}
+
+	if delivery != nil {
+		t.Fatal(
+			"NewDevelopmentDelivery() returned delivery for nil logger",
+		)
+	}
+}

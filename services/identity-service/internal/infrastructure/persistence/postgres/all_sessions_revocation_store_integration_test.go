@@ -507,3 +507,370 @@ func TestAllSessionsRevocationStoreRevokesAllSessionsAndOldTokenCannotRevokeNewS
 		)
 	}
 }
+
+func TestAllSessionsRevocationStoreRevokesOnlySnapshotSessions(
+	t *testing.T,
+) {
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		t.Fatal("DATABASE_URL is required for integration test")
+	}
+
+	ctx := context.Background()
+
+	pool, err := database.NewPostgresPool(
+		ctx,
+		databaseURL,
+	)
+	if err != nil {
+		t.Fatalf(
+			"connect to PostgreSQL: %v",
+			err,
+		)
+	}
+
+	t.Cleanup(pool.Close)
+
+	const phoneNumber = "+9647500000053"
+
+	_, err = pool.Exec(
+		ctx,
+		`
+			DELETE FROM identities
+			WHERE phone_number = $1
+		`,
+		phoneNumber,
+	)
+	if err != nil {
+		t.Fatalf(
+			"clean existing test identity: %v",
+			err,
+		)
+	}
+
+	t.Cleanup(func() {
+		_, cleanupErr := pool.Exec(
+			context.Background(),
+			`
+				DELETE FROM identities
+				WHERE phone_number = $1
+			`,
+			phoneNumber,
+		)
+		if cleanupErr != nil {
+			t.Errorf(
+				"clean test identity: %v",
+				cleanupErr,
+			)
+		}
+	})
+
+	now := time.Now().
+		UTC().
+		Truncate(time.Microsecond)
+
+	var identityID string
+
+	err = pool.QueryRow(
+		ctx,
+		`
+			INSERT INTO identities (
+				phone_number,
+				created_at,
+				updated_at
+			)
+			VALUES (
+				$1,
+				$2,
+				$2
+			)
+			RETURNING id::text
+		`,
+		phoneNumber,
+		now,
+	).Scan(
+		&identityID,
+	)
+	if err != nil {
+		t.Fatalf(
+			"create test identity: %v",
+			err,
+		)
+	}
+
+	createSession := func(
+		createdAt time.Time,
+		tokenHash string,
+	) string {
+		t.Helper()
+
+		var sessionID string
+
+		err := pool.QueryRow(
+			ctx,
+			`
+				INSERT INTO auth_sessions (
+					identity_id,
+					expires_at,
+					created_at,
+					updated_at
+				)
+				VALUES (
+					$1::uuid,
+					$2,
+					$3,
+					$3
+				)
+				RETURNING id::text
+			`,
+			identityID,
+			createdAt.Add(30*24*time.Hour),
+			createdAt,
+		).Scan(
+			&sessionID,
+		)
+		if err != nil {
+			t.Fatalf(
+				"create authentication session: %v",
+				err,
+			)
+		}
+
+		_, err = pool.Exec(
+			ctx,
+			`
+				INSERT INTO refresh_tokens (
+					session_id,
+					token_hash,
+					expires_at,
+					created_at
+				)
+				VALUES (
+					$1::uuid,
+					$2,
+					$3,
+					$4
+				)
+			`,
+			sessionID,
+			tokenHash,
+			createdAt.Add(29*24*time.Hour),
+			createdAt,
+		)
+		if err != nil {
+			t.Fatalf(
+				"create refresh token: %v",
+				err,
+			)
+		}
+
+		return sessionID
+	}
+
+	firstTokenHash := strings.Repeat(
+		"a",
+		64,
+	)
+
+	secondTokenHash := strings.Repeat(
+		"b",
+		64,
+	)
+
+	thirdTokenHash := strings.Repeat(
+		"c",
+		64,
+	)
+
+	firstSessionID := createSession(
+		now,
+		firstTokenHash,
+	)
+
+	secondSessionID := createSession(
+		now.Add(time.Second),
+		secondTokenHash,
+	)
+
+	store := NewAllSessionsRevocationStore(
+		pool,
+	)
+
+	snapshotAt := now.Add(
+		time.Minute,
+	)
+
+	target, found, err :=
+		store.FindAllSessionRevocationTargetsByRefreshTokenHash(
+			ctx,
+			firstTokenHash,
+			snapshotAt,
+		)
+	if err != nil {
+		t.Fatalf(
+			"FindAllSessionRevocationTargetsByRefreshTokenHash() returned an error: %v",
+			err,
+		)
+	}
+
+	if !found {
+		t.Fatal(
+			"expected all sessions revocation target to be found",
+		)
+	}
+
+	if target.IdentityID != identityID {
+		t.Fatalf(
+			"target identity ID = %q, expected %q",
+			target.IdentityID,
+			identityID,
+		)
+	}
+
+	if len(target.Sessions) != 2 {
+		t.Fatalf(
+			"snapshot session count = %d, expected 2",
+			len(target.Sessions),
+		)
+	}
+
+	snapshotSessionIDs := make(
+		[]string,
+		0,
+		len(target.Sessions),
+	)
+
+	snapshotSessionSet := make(
+		map[string]bool,
+		len(target.Sessions),
+	)
+
+	for _, session := range target.Sessions {
+		snapshotSessionIDs = append(
+			snapshotSessionIDs,
+			session.SessionID,
+		)
+
+		snapshotSessionSet[session.SessionID] = true
+	}
+
+	if !snapshotSessionSet[firstSessionID] {
+		t.Fatal(
+			"first session is missing from revocation snapshot",
+		)
+	}
+
+	if !snapshotSessionSet[secondSessionID] {
+		t.Fatal(
+			"second session is missing from revocation snapshot",
+		)
+	}
+
+	thirdSessionCreatedAt := snapshotAt.Add(
+		time.Minute,
+	)
+
+	thirdSessionID := createSession(
+		thirdSessionCreatedAt,
+		thirdTokenHash,
+	)
+
+	revokeAt := thirdSessionCreatedAt.Add(
+		time.Minute,
+	)
+
+	err = store.RevokeSessions(
+		ctx,
+		target.IdentityID,
+		snapshotSessionIDs,
+		revokeAt,
+	)
+	if err != nil {
+		t.Fatalf(
+			"RevokeSessions() returned an error: %v",
+			err,
+		)
+	}
+
+	type revocationState struct {
+		sessionRevokedAt *time.Time
+		tokenRevokedAt   *time.Time
+	}
+
+	readRevocationState := func(
+		sessionID string,
+		tokenHash string,
+	) revocationState {
+		t.Helper()
+
+		var state revocationState
+
+		err := pool.QueryRow(
+			ctx,
+			`
+				SELECT
+					s.revoked_at,
+					rt.revoked_at
+				FROM auth_sessions AS s
+				INNER JOIN refresh_tokens AS rt
+					ON rt.session_id = s.id
+				WHERE s.id = $1::uuid
+				  AND rt.token_hash = $2
+			`,
+			sessionID,
+			tokenHash,
+		).Scan(
+			&state.sessionRevokedAt,
+			&state.tokenRevokedAt,
+		)
+		if err != nil {
+			t.Fatalf(
+				"query revocation state: %v",
+				err,
+			)
+		}
+
+		return state
+	}
+
+	firstState := readRevocationState(
+		firstSessionID,
+		firstTokenHash,
+	)
+
+	secondState := readRevocationState(
+		secondSessionID,
+		secondTokenHash,
+	)
+
+	thirdState := readRevocationState(
+		thirdSessionID,
+		thirdTokenHash,
+	)
+
+	if firstState.sessionRevokedAt == nil ||
+		firstState.tokenRevokedAt == nil {
+		t.Fatal(
+			"first snapshot session and refresh token were not revoked",
+		)
+	}
+
+	if secondState.sessionRevokedAt == nil ||
+		secondState.tokenRevokedAt == nil {
+		t.Fatal(
+			"second snapshot session and refresh token were not revoked",
+		)
+	}
+
+	if thirdState.sessionRevokedAt != nil {
+		t.Fatal(
+			"session created after snapshot was revoked",
+		)
+	}
+
+	if thirdState.tokenRevokedAt != nil {
+		t.Fatal(
+			"refresh token created after snapshot was revoked",
+		)
+	}
+}

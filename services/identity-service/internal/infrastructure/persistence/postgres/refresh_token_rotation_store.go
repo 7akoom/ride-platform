@@ -20,6 +20,10 @@ var _ auth.RefreshTokenRotationStore = (*RefreshTokenRotationStore)(nil)
 func NewRefreshTokenRotationStore(
 	pool *pgxpool.Pool,
 ) *RefreshTokenRotationStore {
+	if pool == nil {
+		panic("PostgreSQL pool is required")
+	}
+
 	return &RefreshTokenRotationStore{
 		pool: pool,
 	}
@@ -33,6 +37,13 @@ func (s *RefreshTokenRotationStore) Inspect(
 	if currentTokenHash == "" {
 		return auth.RefreshTokenContext{},
 			auth.ErrInvalidRefreshToken
+	}
+
+	if now.IsZero() {
+		return auth.RefreshTokenContext{},
+			errors.New(
+				"refresh token inspection time cannot be zero",
+			)
 	}
 
 	now = now.UTC()
@@ -151,6 +162,18 @@ func (s *RefreshTokenRotationStore) Rotate(
 		input.ReplacementTokenHash {
 		return errors.New(
 			"replacement refresh token hash must differ from current token hash",
+		)
+	}
+
+	if input.RotatedAt.IsZero() {
+		return errors.New(
+			"refresh token rotation time cannot be zero",
+		)
+	}
+
+	if input.ReplacementExpiresAt.IsZero() {
+		return errors.New(
+			"replacement refresh token expiration cannot be zero",
 		)
 	}
 

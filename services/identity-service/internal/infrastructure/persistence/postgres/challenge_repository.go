@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
@@ -18,6 +19,10 @@ type ChallengeRepository struct {
 func NewChallengeRepository(
 	pool *pgxpool.Pool,
 ) *ChallengeRepository {
+	if pool == nil {
+		panic("PostgreSQL pool is required")
+	}
+
 	return &ChallengeRepository{
 		pool: pool,
 	}
@@ -27,7 +32,78 @@ func (r *ChallengeRepository) Create(
 	ctx context.Context,
 	challenge auth.OTPChallenge,
 ) error {
-	const query = `
+	if strings.TrimSpace(challenge.ID) == "" {
+		return errors.New(
+			"OTP challenge ID cannot be blank",
+		)
+	}
+
+	if strings.TrimSpace(challenge.PhoneNumber) == "" {
+		return errors.New(
+			"OTP challenge phone number cannot be blank",
+		)
+	}
+
+	if strings.TrimSpace(challenge.CodeHash) == "" {
+		return errors.New(
+			"OTP challenge code hash cannot be blank",
+		)
+	}
+
+	if challenge.ExpiresAt.IsZero() {
+		return errors.New(
+			"OTP challenge expiration cannot be zero",
+		)
+	}
+
+	challenge.ExpiresAt = challenge.ExpiresAt.UTC()
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf(
+			"begin OTP challenge creation transaction: %w",
+			err,
+		)
+	}
+	defer tx.Rollback(ctx)
+
+	const lockQuery = `
+		SELECT pg_advisory_xact_lock(
+			hashtextextended($1, 0)
+		)
+	`
+
+	if _, err := tx.Exec(
+		ctx,
+		lockQuery,
+		challenge.PhoneNumber,
+	); err != nil {
+		return fmt.Errorf(
+			"lock OTP challenges for phone number: %w",
+			err,
+		)
+	}
+
+	const cancelPreviousQuery = `
+		UPDATE otp_challenges
+		SET cancelled_at = statement_timestamp()
+		WHERE phone_number = $1
+		AND verified_at IS NULL
+		AND cancelled_at IS NULL
+		AND expires_at > statement_timestamp()
+	`
+
+	if _, err := tx.Exec(
+		ctx,
+		cancelPreviousQuery,
+		challenge.PhoneNumber,
+	); err != nil {
+		return fmt.Errorf(
+			"cancel previous OTP challenges: %w",
+			err,
+		)
+	}
+
+	const insertQuery = `
 		INSERT INTO otp_challenges (
 			id,
 			phone_number,
@@ -37,16 +113,25 @@ func (r *ChallengeRepository) Create(
 		VALUES ($1, $2, $3, $4)
 	`
 
-	_, err := r.pool.Exec(
+	if _, err := tx.Exec(
 		ctx,
-		query,
+		insertQuery,
 		challenge.ID,
 		challenge.PhoneNumber,
 		challenge.CodeHash,
 		challenge.ExpiresAt,
-	)
-	if err != nil {
-		return fmt.Errorf("insert OTP challenge: %w", err)
+	); err != nil {
+		return fmt.Errorf(
+			"insert OTP challenge: %w",
+			err,
+		)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf(
+			"commit OTP challenge creation transaction: %w",
+			err,
+		)
 	}
 
 	return nil
@@ -106,6 +191,13 @@ func (r *ChallengeRepository) RecordFailedAttempt(
 	challengeID string,
 	attemptedAt time.Time,
 ) error {
+	if attemptedAt.IsZero() {
+		return errors.New(
+			"OTP failed attempt time cannot be zero",
+		)
+	}
+
+	attemptedAt = attemptedAt.UTC()
 	const updateQuery = `
 		UPDATE otp_challenges
 		SET failed_attempts = failed_attempts + 1
@@ -211,6 +303,13 @@ func (r *ChallengeRepository) MarkVerified(
 	challengeID string,
 	verifiedAt time.Time,
 ) error {
+	if verifiedAt.IsZero() {
+		return errors.New(
+			"OTP verification time cannot be zero",
+		)
+	}
+
+	verifiedAt = verifiedAt.UTC()
 	const updateQuery = `
 		UPDATE otp_challenges
 		SET verified_at = $1
@@ -310,6 +409,13 @@ func (r *ChallengeRepository) Cancel(
 	challengeID string,
 	cancelledAt time.Time,
 ) error {
+	if cancelledAt.IsZero() {
+		return errors.New(
+			"OTP cancellation time cannot be zero",
+		)
+	}
+
+	cancelledAt = cancelledAt.UTC()
 	const updateQuery = `
 		UPDATE otp_challenges
 		SET cancelled_at = $1

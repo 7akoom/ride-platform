@@ -24,39 +24,96 @@ func NewHasher(secret string) (*Hasher, error) {
 	}, nil
 }
 
-func (h *Hasher) Hash(code string) (string, error) {
+func (h *Hasher) Hash(
+	challengeID string,
+	code string,
+) (string, error) {
+	if challengeID == "" {
+		return "", errors.New("OTP challenge ID cannot be empty")
+	}
+
 	if code == "" {
 		return "", errors.New("OTP code cannot be empty")
 	}
 
-	mac := hmac.New(sha256.New, h.secret)
-
-	if _, err := mac.Write([]byte(code)); err != nil {
-		return "", fmt.Errorf("write OTP to HMAC: %w", err)
+	hash, err := h.computeHash(
+		challengeID,
+		code,
+	)
+	if err != nil {
+		return "", err
 	}
-
-	hash := mac.Sum(nil)
 
 	return base64.RawURLEncoding.EncodeToString(hash), nil
 }
 
-func (h *Hasher) Compare(hash, code string) error {
-	expectedHash, err := base64.RawURLEncoding.DecodeString(hash)
+func (h *Hasher) Compare(
+	hash string,
+	challengeID string,
+	code string,
+) (bool, error) {
+	if challengeID == "" {
+		return false, errors.New(
+			"OTP challenge ID cannot be empty",
+		)
+	}
+
+	if code == "" {
+		return false, errors.New(
+			"OTP code cannot be empty",
+		)
+	}
+
+	expectedHash, err := base64.RawURLEncoding.DecodeString(
+		hash,
+	)
 	if err != nil {
-		return fmt.Errorf("decode OTP hash: %w", err)
+		return false, fmt.Errorf(
+			"decode OTP hash: %w",
+			err,
+		)
 	}
 
-	mac := hmac.New(sha256.New, h.secret)
-
-	if _, err := mac.Write([]byte(code)); err != nil {
-		return fmt.Errorf("write OTP to HMAC: %w", err)
+	actualHash, err := h.computeHash(
+		challengeID,
+		code,
+	)
+	if err != nil {
+		return false, err
 	}
 
-	actualHash := mac.Sum(nil)
-
-	if !hmac.Equal(expectedHash, actualHash) {
-		return errors.New("OTP does not match")
+	if !hmac.Equal(
+		expectedHash,
+		actualHash,
+	) {
+		return false, nil
 	}
 
-	return nil
+	return true, nil
+}
+
+func (h *Hasher) computeHash(
+	challengeID string,
+	code string,
+) ([]byte, error) {
+	mac := hmac.New(
+		sha256.New,
+		h.secret,
+	)
+
+	if _, err := fmt.Fprintf(
+		mac,
+		"otp:v1:%d:%s:%d:%s",
+		len(challengeID),
+		challengeID,
+		len(code),
+		code,
+	); err != nil {
+		return nil, fmt.Errorf(
+			"write challenge-bound OTP to HMAC: %w",
+			err,
+		)
+	}
+
+	return mac.Sum(nil), nil
 }

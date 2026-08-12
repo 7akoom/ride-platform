@@ -78,6 +78,52 @@ func TestIssuerIssuePersistsSessionAndReturnsValidTokens(t *testing.T) {
 		t.Fatalf("create test identity: %v", err)
 	}
 
+	challengeID := "otp-issuer-integration-" + identityID
+
+	var verifiedAt time.Time
+
+	err = pool.QueryRow(
+		ctx,
+		`
+			INSERT INTO otp_challenges (
+				id,
+				phone_number,
+				code_hash,
+				expires_at
+			)
+			VALUES (
+				$1,
+				$2,
+				$3,
+				statement_timestamp() + INTERVAL '5 minutes'
+			)
+			RETURNING created_at
+		`,
+		challengeID,
+		phoneNumber,
+		strings.Repeat("a", 64),
+	).Scan(&verifiedAt)
+	if err != nil {
+		t.Fatalf(
+			"create OTP challenge: %v",
+			err,
+		)
+	}
+
+	t.Cleanup(func() {
+		_, cleanupErr := pool.Exec(
+			context.Background(),
+			"DELETE FROM otp_challenges WHERE id = $1",
+			challengeID,
+		)
+		if cleanupErr != nil {
+			t.Errorf(
+				"clean OTP challenge: %v",
+				cleanupErr,
+			)
+		}
+	})
+
 	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		t.Fatalf("generate Ed25519 key pair: %v", err)
@@ -109,12 +155,12 @@ func TestIssuerIssuePersistsSessionAndReturnsValidTokens(t *testing.T) {
 	}
 
 	const (
-		issuer       = "ride-identity"
-		audience     = "ride-platform"
-		keyID        = "identity-integration-1"
-		accessTTL    = 15 * time.Minute
-		sessionTTL   = 30 * 24 * time.Hour
-		refreshTTL   = 29 * 24 * time.Hour
+		issuer     = "ride-identity"
+		audience   = "ride-platform"
+		keyID      = "identity-integration-1"
+		accessTTL  = 15 * time.Minute
+		sessionTTL = 30 * 24 * time.Hour
+		refreshTTL = 29 * 24 * time.Hour
 	)
 
 	accessTokenSigner, err := NewAccessTokenSigner(
@@ -146,14 +192,50 @@ func TestIssuerIssuePersistsSessionAndReturnsValidTokens(t *testing.T) {
 
 	tokenPair, err := issuerService.Issue(
 		ctx,
-		auth.Identity{
-			ID:          identityID,
-			PhoneNumber: phoneNumber,
-			IsActive:    true,
+		auth.TokenIssueInput{
+			Identity: auth.Identity{
+				ID:          identityID,
+				PhoneNumber: phoneNumber,
+				IsActive:    true,
+			},
+			ChallengeID: challengeID,
+			VerifiedAt:  verifiedAt,
 		},
 	)
 	if err != nil {
 		t.Fatalf("Issue() returned an error: %v", err)
+	}
+
+	var storedVerifiedAt *time.Time
+
+	err = pool.QueryRow(
+		ctx,
+		`
+			SELECT verified_at
+			FROM otp_challenges
+			WHERE id = $1
+		`,
+		challengeID,
+	).Scan(&storedVerifiedAt)
+	if err != nil {
+		t.Fatalf(
+			"query verified OTP challenge: %v",
+			err,
+		)
+	}
+
+	if storedVerifiedAt == nil {
+		t.Fatal(
+			"OTP challenge was not marked verified after successful token issuance",
+		)
+	}
+
+	if !storedVerifiedAt.Equal(verifiedAt) {
+		t.Fatalf(
+			"OTP challenge verification time = %v, expected %v",
+			*storedVerifiedAt,
+			verifiedAt,
+		)
 	}
 
 	if tokenPair.AccessToken == "" {

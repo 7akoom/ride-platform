@@ -8,12 +8,22 @@ import (
 )
 
 type testChallengeRepository struct {
-	createCalled bool
-	cancelCalled bool
+	createCalled              bool
+	cancelCalled              bool
+	recordFailedAttemptCalled bool
+	markVerifiedCalled        bool
 
-	cancelledChallengeID string
-	cancelledAt          time.Time
-	cancelErr             error
+	findResult             OTPChallenge
+	findErr                error
+	recordFailedAttemptErr error
+	markVerifiedErr        error
+
+	cancelledChallengeID     string
+	cancelledAt              time.Time
+	cancelErr                error
+	cancelContextErr         error
+	cancelContextHasDeadline bool
+	cancelContextDeadline    time.Time
 }
 
 func (r *testChallengeRepository) Create(
@@ -28,7 +38,7 @@ func (r *testChallengeRepository) FindByID(
 	ctx context.Context,
 	challengeID string,
 ) (OTPChallenge, error) {
-	return OTPChallenge{}, nil
+	return r.findResult, r.findErr
 }
 
 func (r *testChallengeRepository) RecordFailedAttempt(
@@ -36,7 +46,9 @@ func (r *testChallengeRepository) RecordFailedAttempt(
 	challengeID string,
 	attemptedAt time.Time,
 ) error {
-	return nil
+	r.recordFailedAttemptCalled = true
+
+	return r.recordFailedAttemptErr
 }
 
 func (r *testChallengeRepository) MarkVerified(
@@ -44,7 +56,9 @@ func (r *testChallengeRepository) MarkVerified(
 	challengeID string,
 	verifiedAt time.Time,
 ) error {
-	return nil
+	r.markVerifiedCalled = true
+
+	return r.markVerifiedErr
 }
 
 func (r *testChallengeRepository) Cancel(
@@ -55,17 +69,27 @@ func (r *testChallengeRepository) Cancel(
 	r.cancelCalled = true
 	r.cancelledChallengeID = challengeID
 	r.cancelledAt = cancelledAt
+	r.cancelContextErr = ctx.Err()
+	r.cancelContextDeadline, r.cancelContextHasDeadline =
+		ctx.Deadline()
 
 	return r.cancelErr
 }
 
-type testIdentityRepository struct{}
+type testIdentityRepository struct {
+	result Identity
+	err    error
+}
 
 func (r *testIdentityRepository) FindOrCreateByPhoneNumber(
 	ctx context.Context,
 	phoneNumber string,
 ) (Identity, error) {
-	return Identity{}, nil
+	if r.err != nil {
+		return Identity{}, r.err
+	}
+
+	return r.result, nil
 }
 
 type testOTPGenerator struct {
@@ -78,26 +102,54 @@ func (g *testOTPGenerator) Generate() (string, error) {
 }
 
 type testOTPHasher struct {
-	hashCalled bool
+	hashCalled         bool
+	hashChallengeID    string
+	hashCode           string
+	compareCalled      bool
+	compareHash        string
+	compareChallengeID string
+	compareCode        string
+	compareMatches     bool
+	compareMatchesSet  bool
+	compareErr         error
 }
 
 func (h *testOTPHasher) Hash(
+	challengeID string,
 	code string,
 ) (string, error) {
 	h.hashCalled = true
+	h.hashChallengeID = challengeID
+	h.hashCode = code
+
 	return "hashed-code", nil
 }
 
 func (h *testOTPHasher) Compare(
 	hash string,
+	challengeID string,
 	code string,
-) error {
-	return nil
+) (bool, error) {
+	h.compareCalled = true
+	h.compareHash = hash
+	h.compareChallengeID = challengeID
+	h.compareCode = code
+
+	if h.compareErr != nil {
+		return false, h.compareErr
+	}
+
+	if h.compareMatchesSet {
+		return h.compareMatches, nil
+	}
+
+	return true, nil
 }
 
 type testOTPDelivery struct {
 	called bool
 	err    error
+	onSend func()
 }
 
 func (d *testOTPDelivery) Send(
@@ -106,6 +158,10 @@ func (d *testOTPDelivery) Send(
 	code string,
 ) error {
 	d.called = true
+
+	if d.onSend != nil {
+		d.onSend()
+	}
 
 	return d.err
 }
@@ -134,13 +190,21 @@ func (g *testChallengeIDGenerator) Generate() (string, error) {
 	return "otp_ch_test", nil
 }
 
-type testTokenIssuer struct{}
+type testTokenIssuer struct {
+	result TokenPair
+	err    error
+	calls  int
+	input  TokenIssueInput
+}
 
 func (i *testTokenIssuer) Issue(
 	ctx context.Context,
-	identity Identity,
+	input TokenIssueInput,
 ) (TokenPair, error) {
-	return TokenPair{}, nil
+	i.calls++
+	i.input = input
+
+	return i.result, i.err
 }
 
 type testRefreshTokenRotationStore struct {
@@ -262,9 +326,10 @@ type testAccessTokenSigner struct {
 	err              error
 	calls            int
 
-	identityID string
-	sessionID  string
-	issuedAt   time.Time
+	identityID       string
+	sessionID        string
+	issuedAt         time.Time
+	sessionExpiresAt time.Time
 }
 
 func (s *testAccessTokenSigner) Issue(
@@ -294,12 +359,274 @@ func (s *testAccessTokenSigner) Issue(
 	return accessToken, expiresInSeconds, nil
 }
 
+func (s *testAccessTokenSigner) IssueForSession(
+	identityID string,
+	sessionID string,
+	issuedAt time.Time,
+	sessionExpiresAt time.Time,
+) (string, int32, error) {
+	s.calls++
+	s.identityID = identityID
+	s.sessionID = sessionID
+	s.issuedAt = issuedAt
+	s.sessionExpiresAt = sessionExpiresAt
+
+	if s.err != nil {
+		return "", 0, s.err
+	}
+
+	accessToken := s.accessToken
+	if accessToken == "" {
+		accessToken = "test-access-token"
+	}
+
+	expiresInSeconds := s.expiresInSeconds
+	if expiresInSeconds == 0 {
+		expiresInSeconds = 900
+	}
+
+	return accessToken, expiresInSeconds, nil
+}
+
 type testClock struct {
 	now time.Time
 }
 
 func (c *testClock) Now() time.Time {
 	return c.now
+}
+
+type serviceConstructorTestDependencies struct {
+	challengeRepository        ChallengeRepository
+	identityRepository         IdentityRepository
+	otpGenerator               OTPGenerator
+	otpHasher                  OTPHasher
+	otpDelivery                OTPDelivery
+	otpRequestRateLimiter      OTPRequestRateLimiter
+	challengeIDGenerator       ChallengeIDGenerator
+	tokenIssuer                TokenIssuer
+	refreshTokenRotationStore  RefreshTokenRotationStore
+	sessionRevocationStore     SessionRevocationStore
+	allSessionsRevocationStore AllSessionsRevocationStore
+	refreshTokenGenerator      RefreshTokenGenerator
+	refreshTokenHasher         RefreshTokenHasher
+	accessTokenSigner          AccessTokenSigner
+	clock                      Clock
+
+	otpTTL                    time.Duration
+	otpRequestRateLimitPolicy OTPRequestRateLimitPolicy
+	refreshTokenTTL           time.Duration
+}
+
+func newValidServiceConstructorTestDependencies() serviceConstructorTestDependencies {
+	return serviceConstructorTestDependencies{
+		challengeRepository:        &testChallengeRepository{},
+		identityRepository:         &testIdentityRepository{},
+		otpGenerator:               &testOTPGenerator{},
+		otpHasher:                  &testOTPHasher{},
+		otpDelivery:                &testOTPDelivery{},
+		otpRequestRateLimiter:      &testOTPRequestRateLimiter{},
+		challengeIDGenerator:       &testChallengeIDGenerator{},
+		tokenIssuer:                &testTokenIssuer{},
+		refreshTokenRotationStore:  &testRefreshTokenRotationStore{},
+		sessionRevocationStore:     &testSessionRevocationStore{},
+		allSessionsRevocationStore: &testAllSessionsRevocationStore{},
+		refreshTokenGenerator:      &testRefreshTokenGenerator{},
+		refreshTokenHasher:         &testRefreshTokenHasher{},
+		accessTokenSigner:          &testAccessTokenSigner{},
+		clock:                      &testClock{},
+
+		otpTTL: 5 * time.Minute,
+		otpRequestRateLimitPolicy: OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		refreshTokenTTL: 29 * 24 * time.Hour,
+	}
+}
+
+func newServiceFromConstructorTestDependencies(
+	dependencies serviceConstructorTestDependencies,
+) Service {
+	return NewService(
+		dependencies.challengeRepository,
+		dependencies.identityRepository,
+		dependencies.otpGenerator,
+		dependencies.otpHasher,
+		dependencies.otpDelivery,
+		dependencies.otpRequestRateLimiter,
+		dependencies.challengeIDGenerator,
+		dependencies.tokenIssuer,
+		dependencies.refreshTokenRotationStore,
+		dependencies.sessionRevocationStore,
+		dependencies.allSessionsRevocationStore,
+		dependencies.refreshTokenGenerator,
+		dependencies.refreshTokenHasher,
+		dependencies.accessTokenSigner,
+		dependencies.clock,
+		dependencies.otpTTL,
+		dependencies.otpRequestRateLimitPolicy,
+		dependencies.refreshTokenTTL,
+	)
+}
+
+func TestNewServicePanicsForInvalidConfiguration(
+	t *testing.T,
+) {
+	tests := []struct {
+		name   string
+		mutate func(*serviceConstructorTestDependencies)
+	}{
+		{
+			name: "nil challenge repository",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.challengeRepository = nil
+			},
+		},
+		{
+			name: "nil identity repository",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.identityRepository = nil
+			},
+		},
+		{
+			name: "nil OTP generator",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.otpGenerator = nil
+			},
+		},
+		{
+			name: "nil OTP hasher",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.otpHasher = nil
+			},
+		},
+		{
+			name: "nil OTP delivery",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.otpDelivery = nil
+			},
+		},
+		{
+			name: "nil OTP request rate limiter",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.otpRequestRateLimiter = nil
+			},
+		},
+		{
+			name: "nil challenge ID generator",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.challengeIDGenerator = nil
+			},
+		},
+		{
+			name: "nil token issuer",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.tokenIssuer = nil
+			},
+		},
+		{
+			name: "nil refresh token rotation store",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.refreshTokenRotationStore = nil
+			},
+		},
+		{
+			name: "nil session revocation store",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.sessionRevocationStore = nil
+			},
+		},
+		{
+			name: "nil all sessions revocation store",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.allSessionsRevocationStore = nil
+			},
+		},
+		{
+			name: "nil refresh token generator",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.refreshTokenGenerator = nil
+			},
+		},
+		{
+			name: "nil refresh token hasher",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.refreshTokenHasher = nil
+			},
+		},
+		{
+			name: "nil access token signer",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.accessTokenSigner = nil
+			},
+		},
+		{
+			name: "nil clock",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.clock = nil
+			},
+		},
+		{
+			name: "zero OTP TTL",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.otpTTL = 0
+			},
+		},
+		{
+			name: "zero OTP request cooldown",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.otpRequestRateLimitPolicy.Cooldown = 0
+			},
+		},
+		{
+			name: "zero OTP request window",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.otpRequestRateLimitPolicy.Window = 0
+			},
+		},
+		{
+			name: "zero OTP request max requests",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.otpRequestRateLimitPolicy.MaxRequests = 0
+			},
+		},
+		{
+			name: "OTP cooldown exceeds window",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.otpRequestRateLimitPolicy.Cooldown =
+					d.otpRequestRateLimitPolicy.Window + time.Second
+			},
+		},
+		{
+			name: "zero refresh token TTL",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.refreshTokenTTL = 0
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dependencies :=
+				newValidServiceConstructorTestDependencies()
+
+			tt.mutate(&dependencies)
+
+			defer func() {
+				if recovered := recover(); recovered == nil {
+					t.Fatal(
+						"NewService() did not panic for invalid configuration",
+					)
+				}
+			}()
+
+			newServiceFromConstructorTestDependencies(
+				dependencies,
+			)
+		})
+	}
 }
 
 func TestRequestOTPStopsBeforeGeneratingOTPWhenRateLimited(
@@ -347,7 +674,7 @@ func TestRequestOTPStopsBeforeGeneratingOTPWhenRateLimited(
 			Window:      15 * time.Minute,
 			MaxRequests: 5,
 		},
-		29 * 24 * time.Hour,
+		29*24*time.Hour,
 	)
 
 	_, err := service.RequestOTP(
@@ -448,7 +775,7 @@ func TestRequestOTPContinuesWhenRateLimiterAllows(
 			Window:      15 * time.Minute,
 			MaxRequests: 5,
 		},
-		29 * 24 * time.Hour,
+		29*24*time.Hour,
 	)
 
 	result, err := service.RequestOTP(
@@ -479,6 +806,22 @@ func TestRequestOTPContinuesWhenRateLimiterAllows(
 	if !otpHasher.hashCalled {
 		t.Fatal(
 			"OTP hasher was not called",
+		)
+	}
+
+	if otpHasher.hashChallengeID != "otp_ch_test" {
+		t.Fatalf(
+			"OTP hasher challenge ID = %q, expected %q",
+			otpHasher.hashChallengeID,
+			"otp_ch_test",
+		)
+	}
+
+	if otpHasher.hashCode != "123456" {
+		t.Fatalf(
+			"OTP hasher code = %q, expected %q",
+			otpHasher.hashCode,
+			"123456",
 		)
 	}
 
@@ -559,7 +902,7 @@ func TestRequestOTPCancelsChallengeWhenDeliveryFails(
 			Window:      15 * time.Minute,
 			MaxRequests: 5,
 		},
-		29 * 24 * time.Hour,
+		29*24*time.Hour,
 	)
 
 	_, err := service.RequestOTP(
@@ -606,6 +949,631 @@ func TestRequestOTPCancelsChallengeWhenDeliveryFails(
 			challengeRepository.cancelledChallengeID,
 			"otp_ch_test",
 		)
+	}
+}
+
+func TestRequestOTPCancelsChallengeWithIndependentBoundedContextWhenRequestIsCancelled(
+	t *testing.T,
+) {
+	deliveryError := errors.New(
+		"SMS delivery interrupted",
+	)
+
+	requestCtx, cancelRequest :=
+		context.WithCancel(context.Background())
+	defer cancelRequest()
+
+	challengeRepository := &testChallengeRepository{}
+
+	otpDelivery := &testOTPDelivery{
+		err: deliveryError,
+		onSend: func() {
+			cancelRequest()
+		},
+	}
+
+	service := NewService(
+		challengeRepository,
+		&testIdentityRepository{},
+		&testOTPGenerator{},
+		&testOTPHasher{},
+		otpDelivery,
+		&testOTPRequestRateLimiter{},
+		&testChallengeIDGenerator{},
+		&testTokenIssuer{},
+		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
+		&testRefreshTokenGenerator{},
+		&testRefreshTokenHasher{},
+		&testAccessTokenSigner{},
+		&testClock{
+			now: time.Date(
+				2026,
+				time.August,
+				12,
+				12,
+				0,
+				0,
+				0,
+				time.UTC,
+			),
+		},
+		5*time.Minute,
+		OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		29*24*time.Hour,
+	)
+
+	_, err := service.RequestOTP(
+		requestCtx,
+		RequestOTPInput{
+			PhoneNumber: "+9647501234567",
+		},
+	)
+
+	if !errors.Is(err, deliveryError) {
+		t.Fatalf(
+			"RequestOTP() error = %v, expected delivery error",
+			err,
+		)
+	}
+
+	if requestCtx.Err() != context.Canceled {
+		t.Fatalf(
+			"request context error = %v, expected context canceled",
+			requestCtx.Err(),
+		)
+	}
+
+	if !challengeRepository.cancelCalled {
+		t.Fatal(
+			"OTP challenge was not cancelled after delivery failure",
+		)
+	}
+
+	if challengeRepository.cancelContextErr != nil {
+		t.Fatalf(
+			"Cancel() received cancelled context: %v",
+			challengeRepository.cancelContextErr,
+		)
+	}
+
+	if !challengeRepository.cancelContextHasDeadline {
+		t.Fatal(
+			"Cancel() compensation context has no deadline",
+		)
+	}
+}
+
+func TestRequestOTPReturnsDeliveryAndCancellationErrors(
+	t *testing.T,
+) {
+	deliveryError := errors.New(
+		"SMS provider unavailable",
+	)
+
+	cancellationError := errors.New(
+		"challenge cancellation failed",
+	)
+
+	challengeRepository := &testChallengeRepository{
+		cancelErr: cancellationError,
+	}
+
+	otpDelivery := &testOTPDelivery{
+		err: deliveryError,
+	}
+
+	service := NewService(
+		challengeRepository,
+		&testIdentityRepository{},
+		&testOTPGenerator{},
+		&testOTPHasher{},
+		otpDelivery,
+		&testOTPRequestRateLimiter{},
+		&testChallengeIDGenerator{},
+		&testTokenIssuer{},
+		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
+		&testRefreshTokenGenerator{},
+		&testRefreshTokenHasher{},
+		&testAccessTokenSigner{},
+		&testClock{
+			now: time.Date(
+				2026,
+				time.August,
+				12,
+				12,
+				0,
+				0,
+				0,
+				time.UTC,
+			),
+		},
+		5*time.Minute,
+		OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		29*24*time.Hour,
+	)
+
+	_, err := service.RequestOTP(
+		context.Background(),
+		RequestOTPInput{
+			PhoneNumber: "+9647501234567",
+		},
+	)
+
+	if err == nil {
+		t.Fatal(
+			"RequestOTP() returned nil error when delivery and cancellation failed",
+		)
+	}
+
+	if !errors.Is(err, deliveryError) {
+		t.Fatalf(
+			"RequestOTP() error = %v, expected delivery error to be preserved",
+			err,
+		)
+	}
+
+	if !errors.Is(err, cancellationError) {
+		t.Fatalf(
+			"RequestOTP() error = %v, expected cancellation error to be preserved",
+			err,
+		)
+	}
+
+	if !challengeRepository.cancelCalled {
+		t.Fatal(
+			"OTP challenge cancellation was not attempted after delivery failure",
+		)
+	}
+}
+
+func TestVerifyOTPMapsConcurrentCancellationFromRecordFailedAttempt(
+	t *testing.T,
+) {
+	now := time.Date(
+		2026,
+		time.August,
+		11,
+		12,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	challengeRepository := &testChallengeRepository{
+		findResult: OTPChallenge{
+			ID:             "otp_ch_test",
+			PhoneNumber:    "+9647501234567",
+			CodeHash:       "hashed-code",
+			ExpiresAt:      now.Add(5 * time.Minute),
+			FailedAttempts: 0,
+			MaxAttempts:    5,
+		},
+		recordFailedAttemptErr: ErrChallengeCancelled,
+	}
+
+	otpHasher := &testOTPHasher{
+		compareMatchesSet: true,
+		compareMatches:    false,
+	}
+
+	service := NewService(
+		challengeRepository,
+		&testIdentityRepository{},
+		&testOTPGenerator{},
+		otpHasher,
+		&testOTPDelivery{},
+		&testOTPRequestRateLimiter{},
+		&testChallengeIDGenerator{},
+		&testTokenIssuer{},
+		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
+		&testRefreshTokenGenerator{},
+		&testRefreshTokenHasher{},
+		&testAccessTokenSigner{},
+		&testClock{
+			now: now,
+		},
+		5*time.Minute,
+		OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		29*24*time.Hour,
+	)
+
+	_, err := service.VerifyOTP(
+		context.Background(),
+		VerifyOTPInput{
+			ChallengeID: "otp_ch_test",
+			Code:        "000000",
+		},
+	)
+
+	if !errors.Is(
+		err,
+		ErrChallengeCancelled,
+	) {
+		t.Fatalf(
+			"VerifyOTP() error = %v, expected %v",
+			err,
+			ErrChallengeCancelled,
+		)
+	}
+
+	if !otpHasher.compareCalled {
+		t.Fatal(
+			"OTP hasher Compare() was not called",
+		)
+	}
+
+	if otpHasher.compareHash != "hashed-code" {
+		t.Fatalf(
+			"OTP hasher comparison hash = %q, expected %q",
+			otpHasher.compareHash,
+			"hashed-code",
+		)
+	}
+
+	if otpHasher.compareChallengeID != "otp_ch_test" {
+		t.Fatalf(
+			"OTP hasher comparison challenge ID = %q, expected %q",
+			otpHasher.compareChallengeID,
+			"otp_ch_test",
+		)
+	}
+
+	if otpHasher.compareCode != "000000" {
+		t.Fatalf(
+			"OTP hasher comparison code = %q, expected %q",
+			otpHasher.compareCode,
+			"000000",
+		)
+	}
+
+	if !challengeRepository.recordFailedAttemptCalled {
+		t.Fatal(
+			"RecordFailedAttempt() was not called",
+		)
+	}
+
+	if challengeRepository.markVerifiedCalled {
+		t.Fatal(
+			"MarkVerified() was called after concurrent cancellation",
+		)
+	}
+}
+
+func TestVerifyOTPDoesNotRecordFailedAttemptWhenHasherFails(
+	t *testing.T,
+) {
+	now := time.Date(
+		2026,
+		time.August,
+		12,
+		7,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	compareError := errors.New(
+		"corrupted OTP hash",
+	)
+
+	challengeRepository := &testChallengeRepository{
+		findResult: OTPChallenge{
+			ID:             "otp_ch_test",
+			PhoneNumber:    "+9647501234567",
+			CodeHash:       "corrupted-hash",
+			ExpiresAt:      now.Add(5 * time.Minute),
+			FailedAttempts: 0,
+			MaxAttempts:    5,
+		},
+	}
+
+	otpHasher := &testOTPHasher{
+		compareErr: compareError,
+	}
+
+	service := NewService(
+		challengeRepository,
+		&testIdentityRepository{},
+		&testOTPGenerator{},
+		otpHasher,
+		&testOTPDelivery{},
+		&testOTPRequestRateLimiter{},
+		&testChallengeIDGenerator{},
+		&testTokenIssuer{},
+		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
+		&testRefreshTokenGenerator{},
+		&testRefreshTokenHasher{},
+		&testAccessTokenSigner{},
+		&testClock{
+			now: now,
+		},
+		5*time.Minute,
+		OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		29*24*time.Hour,
+	)
+
+	_, err := service.VerifyOTP(
+		context.Background(),
+		VerifyOTPInput{
+			ChallengeID: "otp_ch_test",
+			Code:        "123456",
+		},
+	)
+
+	if err == nil {
+		t.Fatal(
+			"VerifyOTP() returned nil error when OTP hasher failed",
+		)
+	}
+
+	if !errors.Is(err, compareError) {
+		t.Fatalf(
+			"VerifyOTP() error = %v, expected wrapped hasher error",
+			err,
+		)
+	}
+
+	if challengeRepository.recordFailedAttemptCalled {
+		t.Fatal(
+			"RecordFailedAttempt() was called when OTP hasher failed",
+		)
+	}
+}
+
+func TestVerifyOTPMapsConcurrentCancellationFromTokenIssuer(
+	t *testing.T,
+) {
+	now := time.Date(
+		2026,
+		time.August,
+		11,
+		12,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	challengeRepository := &testChallengeRepository{
+		findResult: OTPChallenge{
+			ID:             "otp_ch_test",
+			PhoneNumber:    "+9647501234567",
+			CodeHash:       "hashed-code",
+			ExpiresAt:      now.Add(5 * time.Minute),
+			FailedAttempts: 0,
+			MaxAttempts:    5,
+		},
+	}
+
+	identity := Identity{
+		ID:          "identity-123",
+		PhoneNumber: "+9647501234567",
+		IsActive:    true,
+	}
+
+	identityRepository := &testIdentityRepository{
+		result: identity,
+	}
+
+	tokenIssuer := &testTokenIssuer{
+		err: ErrChallengeCancelled,
+	}
+
+	service := NewService(
+		challengeRepository,
+		identityRepository,
+		&testOTPGenerator{},
+		&testOTPHasher{},
+		&testOTPDelivery{},
+		&testOTPRequestRateLimiter{},
+		&testChallengeIDGenerator{},
+		tokenIssuer,
+		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
+		&testRefreshTokenGenerator{},
+		&testRefreshTokenHasher{},
+		&testAccessTokenSigner{},
+		&testClock{
+			now: now,
+		},
+		5*time.Minute,
+		OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		29*24*time.Hour,
+	)
+
+	_, err := service.VerifyOTP(
+		context.Background(),
+		VerifyOTPInput{
+			ChallengeID: "otp_ch_test",
+			Code:        "123456",
+		},
+	)
+
+	if !errors.Is(
+		err,
+		ErrChallengeCancelled,
+	) {
+		t.Fatalf(
+			"VerifyOTP() error = %v, expected %v",
+			err,
+			ErrChallengeCancelled,
+		)
+	}
+
+	if tokenIssuer.calls != 1 {
+		t.Fatalf(
+			"TokenIssuer.Issue() calls = %d, expected 1",
+			tokenIssuer.calls,
+		)
+	}
+
+	if tokenIssuer.input.ChallengeID != "otp_ch_test" {
+		t.Fatalf(
+			"TokenIssuer.Issue() challenge ID = %q, expected %q",
+			tokenIssuer.input.ChallengeID,
+			"otp_ch_test",
+		)
+	}
+
+	if !tokenIssuer.input.VerifiedAt.Equal(now) {
+		t.Fatalf(
+			"TokenIssuer.Issue() verification time = %v, expected %v",
+			tokenIssuer.input.VerifiedAt,
+			now,
+		)
+	}
+
+	if tokenIssuer.input.Identity.ID != identity.ID {
+		t.Fatalf(
+			"TokenIssuer.Issue() identity ID = %q, expected %q",
+			tokenIssuer.input.Identity.ID,
+			identity.ID,
+		)
+	}
+
+	if challengeRepository.markVerifiedCalled {
+		t.Fatal(
+			"MarkVerified() was called outside atomic token issuance",
+		)
+	}
+
+	if challengeRepository.recordFailedAttemptCalled {
+		t.Fatal(
+			"RecordFailedAttempt() was called for a valid OTP",
+		)
+	}
+}
+
+func TestRefreshTokenRejectsBlankRefreshToken(
+	t *testing.T,
+) {
+	testCases := []struct {
+		name         string
+		refreshToken string
+	}{
+		{
+			name:         "empty",
+			refreshToken: "",
+		},
+		{
+			name:         "spaces",
+			refreshToken: "   ",
+		},
+		{
+			name:         "tabs and newlines",
+			refreshToken: "\t\n ",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			refreshStore := &testRefreshTokenRotationStore{}
+			refreshHasher := &testRefreshTokenHasher{}
+			refreshGenerator := &testRefreshTokenGenerator{}
+			accessSigner := &testAccessTokenSigner{}
+
+			service := NewService(
+				&testChallengeRepository{},
+				&testIdentityRepository{},
+				&testOTPGenerator{},
+				&testOTPHasher{},
+				&testOTPDelivery{},
+				&testOTPRequestRateLimiter{},
+				&testChallengeIDGenerator{},
+				&testTokenIssuer{},
+				refreshStore,
+				&testSessionRevocationStore{},
+				&testAllSessionsRevocationStore{},
+				refreshGenerator,
+				refreshHasher,
+				accessSigner,
+				&testClock{},
+				5*time.Minute,
+				OTPRequestRateLimitPolicy{
+					Cooldown:    time.Minute,
+					Window:      15 * time.Minute,
+					MaxRequests: 5,
+				},
+				29*24*time.Hour,
+			)
+
+			_, err := service.RefreshToken(
+				context.Background(),
+				RefreshTokenInput{
+					RefreshToken: testCase.refreshToken,
+				},
+			)
+
+			if !errors.Is(
+				err,
+				ErrInvalidRefreshToken,
+			) {
+				t.Fatalf(
+					"RefreshToken() error = %v, expected %v",
+					err,
+					ErrInvalidRefreshToken,
+				)
+			}
+
+			if refreshHasher.calls != 0 {
+				t.Fatalf(
+					"RefreshTokenHasher calls = %d, expected 0",
+					refreshHasher.calls,
+				)
+			}
+
+			if refreshStore.inspectCalls != 0 {
+				t.Fatalf(
+					"RefreshTokenRotationStore Inspect calls = %d, expected 0",
+					refreshStore.inspectCalls,
+				)
+			}
+
+			if refreshGenerator.calls != 0 {
+				t.Fatalf(
+					"RefreshTokenGenerator calls = %d, expected 0",
+					refreshGenerator.calls,
+				)
+			}
+
+			if accessSigner.calls != 0 {
+				t.Fatalf(
+					"AccessTokenSigner calls = %d, expected 0",
+					accessSigner.calls,
+				)
+			}
+		})
 	}
 }
 
@@ -779,6 +1747,24 @@ func TestRefreshTokenRotatesTokenAndClampsExpirationToSession(
 			"signed SessionID = %q, expected %q",
 			accessSigner.sessionID,
 			"session-123",
+		)
+	}
+
+	if !accessSigner.issuedAt.Equal(now) {
+		t.Fatalf(
+			"signed issuedAt = %v, expected %v",
+			accessSigner.issuedAt,
+			now,
+		)
+	}
+
+	if !accessSigner.sessionExpiresAt.Equal(
+		sessionExpiresAt,
+	) {
+		t.Fatalf(
+			"signed sessionExpiresAt = %v, expected %v",
+			accessSigner.sessionExpiresAt,
+			sessionExpiresAt,
 		)
 	}
 
@@ -1098,70 +2084,92 @@ func TestLogoutHashesRefreshTokenAndRevokesSession(
 	}
 }
 
-func TestLogoutRejectsEmptyRefreshToken(
+func TestLogoutRejectsBlankRefreshToken(
 	t *testing.T,
 ) {
-	sessionRevocationStore :=
-		&testSessionRevocationStore{}
-
-	refreshHasher :=
-		&testRefreshTokenHasher{}
-
-	service := NewService(
-		&testChallengeRepository{},
-		&testIdentityRepository{},
-		&testOTPGenerator{},
-		&testOTPHasher{},
-		&testOTPDelivery{},
-		&testOTPRequestRateLimiter{},
-		&testChallengeIDGenerator{},
-		&testTokenIssuer{},
-		&testRefreshTokenRotationStore{},
-		sessionRevocationStore,
-		&testAllSessionsRevocationStore{},
-		&testRefreshTokenGenerator{},
-		refreshHasher,
-		&testAccessTokenSigner{},
-		&testClock{},
-		5*time.Minute,
-		OTPRequestRateLimitPolicy{
-			Cooldown:    time.Minute,
-			Window:      15 * time.Minute,
-			MaxRequests: 5,
+	testCases := []struct {
+		name         string
+		refreshToken string
+	}{
+		{
+			name:         "empty",
+			refreshToken: "",
 		},
-		29*24*time.Hour,
-	)
-
-	err := service.Logout(
-		context.Background(),
-		LogoutInput{
-			RefreshToken: "",
+		{
+			name:         "spaces",
+			refreshToken: "   ",
 		},
-	)
-
-	if !errors.Is(
-		err,
-		ErrInvalidRefreshToken,
-	) {
-		t.Fatalf(
-			"Logout() error = %v, expected %v",
-			err,
-			ErrInvalidRefreshToken,
-		)
+		{
+			name:         "tabs and newlines",
+			refreshToken: "\t\n ",
+		},
 	}
 
-	if refreshHasher.calls != 0 {
-		t.Fatalf(
-			"RefreshTokenHasher calls = %d, expected 0",
-			refreshHasher.calls,
-		)
-	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			sessionRevocationStore :=
+				&testSessionRevocationStore{}
 
-	if sessionRevocationStore.calls != 0 {
-		t.Fatalf(
-			"SessionRevocationStore calls = %d, expected 0",
-			sessionRevocationStore.calls,
-		)
+			refreshHasher :=
+				&testRefreshTokenHasher{}
+
+			service := NewService(
+				&testChallengeRepository{},
+				&testIdentityRepository{},
+				&testOTPGenerator{},
+				&testOTPHasher{},
+				&testOTPDelivery{},
+				&testOTPRequestRateLimiter{},
+				&testChallengeIDGenerator{},
+				&testTokenIssuer{},
+				&testRefreshTokenRotationStore{},
+				sessionRevocationStore,
+				&testAllSessionsRevocationStore{},
+				&testRefreshTokenGenerator{},
+				refreshHasher,
+				&testAccessTokenSigner{},
+				&testClock{},
+				5*time.Minute,
+				OTPRequestRateLimitPolicy{
+					Cooldown:    time.Minute,
+					Window:      15 * time.Minute,
+					MaxRequests: 5,
+				},
+				29*24*time.Hour,
+			)
+
+			err := service.Logout(
+				context.Background(),
+				LogoutInput{
+					RefreshToken: testCase.refreshToken,
+				},
+			)
+
+			if !errors.Is(
+				err,
+				ErrInvalidRefreshToken,
+			) {
+				t.Fatalf(
+					"Logout() error = %v, expected %v",
+					err,
+					ErrInvalidRefreshToken,
+				)
+			}
+
+			if refreshHasher.calls != 0 {
+				t.Fatalf(
+					"RefreshTokenHasher calls = %d, expected 0",
+					refreshHasher.calls,
+				)
+			}
+
+			if sessionRevocationStore.calls != 0 {
+				t.Fatalf(
+					"SessionRevocationStore calls = %d, expected 0",
+					sessionRevocationStore.calls,
+				)
+			}
+		})
 	}
 }
 
@@ -1272,69 +2280,91 @@ func TestLogoutAllSessionsHashesRefreshTokenAndRevokesAllSessions(
 	}
 }
 
-func TestLogoutAllSessionsRejectsEmptyRefreshToken(
+func TestLogoutAllSessionsRejectsBlankRefreshToken(
 	t *testing.T,
 ) {
-	allSessionsRevocationStore :=
-		&testAllSessionsRevocationStore{}
-
-	refreshHasher :=
-		&testRefreshTokenHasher{}
-
-	service := NewService(
-		&testChallengeRepository{},
-		&testIdentityRepository{},
-		&testOTPGenerator{},
-		&testOTPHasher{},
-		&testOTPDelivery{},
-		&testOTPRequestRateLimiter{},
-		&testChallengeIDGenerator{},
-		&testTokenIssuer{},
-		&testRefreshTokenRotationStore{},
-		&testSessionRevocationStore{},
-		allSessionsRevocationStore,
-		&testRefreshTokenGenerator{},
-		refreshHasher,
-		&testAccessTokenSigner{},
-		&testClock{},
-		5*time.Minute,
-		OTPRequestRateLimitPolicy{
-			Cooldown:    time.Minute,
-			Window:      15 * time.Minute,
-			MaxRequests: 5,
+	testCases := []struct {
+		name         string
+		refreshToken string
+	}{
+		{
+			name:         "empty",
+			refreshToken: "",
 		},
-		29*24*time.Hour,
-	)
-
-	err := service.LogoutAllSessions(
-		context.Background(),
-		LogoutAllSessionsInput{
-			RefreshToken: "",
+		{
+			name:         "spaces",
+			refreshToken: "   ",
 		},
-	)
-
-	if !errors.Is(
-		err,
-		ErrInvalidRefreshToken,
-	) {
-		t.Fatalf(
-			"LogoutAllSessions() error = %v, expected %v",
-			err,
-			ErrInvalidRefreshToken,
-		)
+		{
+			name:         "tabs and newlines",
+			refreshToken: "\t\n ",
+		},
 	}
 
-	if refreshHasher.calls != 0 {
-		t.Fatalf(
-			"RefreshTokenHasher calls = %d, expected 0",
-			refreshHasher.calls,
-		)
-	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			allSessionsRevocationStore :=
+				&testAllSessionsRevocationStore{}
 
-	if allSessionsRevocationStore.calls != 0 {
-		t.Fatalf(
-			"AllSessionsRevocationStore calls = %d, expected 0",
-			allSessionsRevocationStore.calls,
-		)
+			refreshHasher :=
+				&testRefreshTokenHasher{}
+
+			service := NewService(
+				&testChallengeRepository{},
+				&testIdentityRepository{},
+				&testOTPGenerator{},
+				&testOTPHasher{},
+				&testOTPDelivery{},
+				&testOTPRequestRateLimiter{},
+				&testChallengeIDGenerator{},
+				&testTokenIssuer{},
+				&testRefreshTokenRotationStore{},
+				&testSessionRevocationStore{},
+				allSessionsRevocationStore,
+				&testRefreshTokenGenerator{},
+				refreshHasher,
+				&testAccessTokenSigner{},
+				&testClock{},
+				5*time.Minute,
+				OTPRequestRateLimitPolicy{
+					Cooldown:    time.Minute,
+					Window:      15 * time.Minute,
+					MaxRequests: 5,
+				},
+				29*24*time.Hour,
+			)
+
+			err := service.LogoutAllSessions(
+				context.Background(),
+				LogoutAllSessionsInput{
+					RefreshToken: testCase.refreshToken,
+				},
+			)
+
+			if !errors.Is(
+				err,
+				ErrInvalidRefreshToken,
+			) {
+				t.Fatalf(
+					"LogoutAllSessions() error = %v, expected %v",
+					err,
+					ErrInvalidRefreshToken,
+				)
+			}
+
+			if refreshHasher.calls != 0 {
+				t.Fatalf(
+					"RefreshTokenHasher calls = %d, expected 0",
+					refreshHasher.calls,
+				)
+			}
+
+			if allSessionsRevocationStore.calls != 0 {
+				t.Fatalf(
+					"AllSessionsRevocationStore calls = %d, expected 0",
+					allSessionsRevocationStore.calls,
+				)
+			}
+		})
 	}
 }

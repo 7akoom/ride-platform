@@ -585,6 +585,18 @@ func TestIdentityHandlerRefreshTokenRejectsInvalidInput(
 				RefreshToken: "",
 			},
 		},
+		{
+			name: "spaces only refresh token",
+			request: &identityv1.RefreshTokenRequest{
+				RefreshToken: "   ",
+			},
+		},
+		{
+			name: "tabs and newlines refresh token",
+			request: &identityv1.RefreshTokenRequest{
+				RefreshToken: "\t\n ",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -768,6 +780,18 @@ func TestIdentityHandlerLogoutRejectsInvalidInput(
 				RefreshToken: "",
 			},
 		},
+		{
+			name: "spaces only refresh token",
+			request: &identityv1.LogoutRequest{
+				RefreshToken: "   ",
+			},
+		},
+		{
+			name: "tabs and newlines refresh token",
+			request: &identityv1.LogoutRequest{
+				RefreshToken: "\t\n ",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -799,6 +823,45 @@ func TestIdentityHandlerLogoutRejectsInvalidInput(
 					)
 				}
 			},
+		)
+	}
+}
+
+func TestIdentityHandlerLogoutMapsInvalidRefreshTokenToInvalidArgument(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{
+		logoutErr: auth.ErrInvalidRefreshToken,
+	}
+
+	handler := NewIdentityHandler(
+		authService,
+	)
+
+	response, err := handler.Logout(
+		context.Background(),
+		&identityv1.LogoutRequest{
+			RefreshToken: "current-refresh-token",
+		},
+	)
+
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf(
+			"Logout() code = %v, expected %v",
+			status.Code(err),
+			codes.InvalidArgument,
+		)
+	}
+
+	if response != nil {
+		t.Fatal(
+			"Logout() returned a response for invalid refresh token",
+		)
+	}
+
+	if !authService.logoutCalled {
+		t.Fatal(
+			"auth service Logout() was not called",
 		)
 	}
 }
@@ -903,6 +966,18 @@ func TestIdentityHandlerLogoutAllSessionsRejectsInvalidInput(
 				RefreshToken: "",
 			},
 		},
+		{
+			name: "spaces only refresh token",
+			request: &identityv1.LogoutAllSessionsRequest{
+				RefreshToken: "   ",
+			},
+		},
+		{
+			name: "tabs and newlines refresh token",
+			request: &identityv1.LogoutAllSessionsRequest{
+				RefreshToken: "\t\n ",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -936,6 +1011,59 @@ func TestIdentityHandlerLogoutAllSessionsRejectsInvalidInput(
 			},
 		)
 	}
+}
+
+func TestIdentityHandlerLogoutAllSessionsMapsInvalidRefreshTokenToInvalidArgument(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{
+		logoutAllSessionsErr: auth.ErrInvalidRefreshToken,
+	}
+
+	handler := NewIdentityHandler(
+		authService,
+	)
+
+	response, err := handler.LogoutAllSessions(
+		context.Background(),
+		&identityv1.LogoutAllSessionsRequest{
+			RefreshToken: "current-refresh-token",
+		},
+	)
+
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf(
+			"LogoutAllSessions() code = %v, expected %v",
+			status.Code(err),
+			codes.InvalidArgument,
+		)
+	}
+
+	if response != nil {
+		t.Fatal(
+			"LogoutAllSessions() returned a response for invalid refresh token",
+		)
+	}
+
+	if !authService.logoutAllSessionsCalled {
+		t.Fatal(
+			"auth service LogoutAllSessions() was not called",
+		)
+	}
+}
+
+func TestNewIdentityHandlerPanicsWhenAuthServiceIsNil(
+	t *testing.T,
+) {
+	defer func() {
+		if recovered := recover(); recovered == nil {
+			t.Fatal(
+				"NewIdentityHandler() did not panic for nil auth service",
+			)
+		}
+	}()
+
+	NewIdentityHandler(nil)
 }
 
 func TestIdentityHandlerLogoutAllSessionsMapsServiceFailureToInternal(

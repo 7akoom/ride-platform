@@ -17,12 +17,111 @@ type SessionRevocationStore struct {
 
 var _ auth.SessionRevocationStore = (*SessionRevocationStore)(nil)
 
+var _ auth.SessionRevocationTargetStore = (*SessionRevocationStore)(nil)
+
+var _ auth.SessionAccessStateStore = (*SessionRevocationStore)(nil)
+
 func NewSessionRevocationStore(
 	pool *pgxpool.Pool,
 ) *SessionRevocationStore {
+	if pool == nil {
+		panic("PostgreSQL pool is required")
+	}
+
 	return &SessionRevocationStore{
 		pool: pool,
 	}
+}
+
+func (s *SessionRevocationStore) FindSessionAccessState(
+	ctx context.Context,
+	sessionID string,
+) (auth.SessionAccessState, bool, error) {
+	if sessionID == "" {
+		return auth.SessionAccessState{}, false, errors.New(
+			"session ID cannot be empty",
+		)
+	}
+
+	const query = `
+		SELECT
+			expires_at,
+			revoked_at IS NOT NULL
+		FROM auth_sessions
+		WHERE id = $1
+	`
+
+	var state auth.SessionAccessState
+
+	err := s.pool.QueryRow(
+		ctx,
+		query,
+		sessionID,
+	).Scan(
+		&state.SessionExpiresAt,
+		&state.Revoked,
+	)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return auth.SessionAccessState{}, false, nil
+	}
+
+	if err != nil {
+		return auth.SessionAccessState{}, false, fmt.Errorf(
+			"find session access state: %w",
+			err,
+		)
+	}
+
+	state.SessionExpiresAt =
+		state.SessionExpiresAt.UTC()
+
+	return state, true, nil
+}
+
+func (s *SessionRevocationStore) FindRevocationTargetByRefreshTokenHash(
+	ctx context.Context,
+	refreshTokenHash string,
+) (auth.SessionRevocationTarget, bool, error) {
+	if refreshTokenHash == "" {
+		return auth.SessionRevocationTarget{}, false, auth.ErrInvalidRefreshToken
+	}
+
+	const query = `
+		SELECT
+			s.id::text,
+			s.expires_at
+		FROM refresh_tokens AS rt
+		INNER JOIN auth_sessions AS s
+			ON s.id = rt.session_id
+		WHERE rt.token_hash = $1
+	`
+
+	var target auth.SessionRevocationTarget
+
+	err := s.pool.QueryRow(
+		ctx,
+		query,
+		refreshTokenHash,
+	).Scan(
+		&target.SessionID,
+		&target.SessionExpiresAt,
+	)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return auth.SessionRevocationTarget{}, false, nil
+	}
+
+	if err != nil {
+		return auth.SessionRevocationTarget{}, false, fmt.Errorf(
+			"find session revocation target by refresh token hash: %w",
+			err,
+		)
+	}
+
+	target.SessionExpiresAt = target.SessionExpiresAt.UTC()
+
+	return target, true, nil
 }
 
 func (s *SessionRevocationStore) RevokeByRefreshTokenHash(

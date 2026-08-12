@@ -1,6 +1,7 @@
 package token
 
 import (
+	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/x509"
@@ -80,22 +81,33 @@ func TestAccessTokenSignerIssueAndVerify(t *testing.T) {
 
 	issuedAt := time.Now().UTC()
 
-	signedToken, expiresInSeconds, err := signer.Issue(
-		identityID,
-		sessionID,
-		issuedAt,
+	sessionExpiresAt := issuedAt.Add(
+		24 * time.Hour,
 	)
+
+	signedToken, expiresInSeconds, err :=
+		signer.IssueForSession(
+			identityID,
+			sessionID,
+			issuedAt,
+			sessionExpiresAt,
+		)
 	if err != nil {
-		t.Fatalf("Issue() returned an error: %v", err)
+		t.Fatalf(
+			"IssueForSession() returned an error: %v",
+			err,
+		)
 	}
 
 	if signedToken == "" {
-		t.Fatal("Issue() returned an empty access token")
+		t.Fatal(
+			"IssueForSession() returned an empty access token",
+		)
 	}
 
 	if expiresInSeconds != int32(ttl.Seconds()) {
 		t.Fatalf(
-			"Issue() returned expires_in=%d, expected %d",
+			"IssueForSession() returned expires_in=%d, expected %d",
 			expiresInSeconds,
 			int32(ttl.Seconds()),
 		)
@@ -211,6 +223,140 @@ func TestAccessTokenSignerIssueAndVerify(t *testing.T) {
 			"access token TTL is %d seconds, expected %d",
 			actualTTL,
 			int64(ttl.Seconds()),
+		)
+	}
+}
+
+func TestAccessTokenSignerIssueForSessionClampsExpirationToSession(
+	t *testing.T,
+) {
+	signer, verifier, _ :=
+		newAccessTokenVerifierTestSetup(t)
+
+	issuedAt := time.Now().
+		UTC().
+		Truncate(time.Second)
+
+	sessionExpiresAt := issuedAt.Add(
+		2 * time.Minute,
+	)
+
+	signedToken, expiresInSeconds, err :=
+		signer.IssueForSession(
+			"identity-test-123",
+			"session-test-456",
+			issuedAt,
+			sessionExpiresAt,
+		)
+	if err != nil {
+		t.Fatalf(
+			"IssueForSession() returned an error: %v",
+			err,
+		)
+	}
+
+	if expiresInSeconds != 120 {
+		t.Fatalf(
+			"expires_in = %d, expected 120",
+			expiresInSeconds,
+		)
+	}
+
+	claims, err := verifier.Verify(
+		context.Background(),
+		signedToken,
+	)
+	if err != nil {
+		t.Fatalf(
+			"Verify() returned an error: %v",
+			err,
+		)
+	}
+
+	if claims.ExpiresAt == nil {
+		t.Fatal(
+			"access token has no expiration claim",
+		)
+	}
+
+	if !claims.ExpiresAt.Time.Equal(
+		sessionExpiresAt,
+	) {
+		t.Fatalf(
+			"access token expiration = %v, expected session expiration %v",
+			claims.ExpiresAt.Time,
+			sessionExpiresAt,
+		)
+	}
+}
+
+func TestAccessTokenSignerIssueForSessionUsesConfiguredTTLWhenSessionLivesLonger(
+	t *testing.T,
+) {
+	signer, verifier, _ :=
+		newAccessTokenVerifierTestSetup(t)
+
+	issuedAt := time.Now().
+		UTC().
+		Truncate(time.Second)
+
+	sessionExpiresAt := issuedAt.Add(
+		24 * time.Hour,
+	)
+
+	signedToken, expiresInSeconds, err :=
+		signer.IssueForSession(
+			"identity-test-123",
+			"session-test-456",
+			issuedAt,
+			sessionExpiresAt,
+		)
+	if err != nil {
+		t.Fatalf(
+			"IssueForSession() returned an error: %v",
+			err,
+		)
+	}
+
+	const expectedTTL = 15 * time.Minute
+
+	if expiresInSeconds !=
+		int32(expectedTTL.Seconds()) {
+		t.Fatalf(
+			"expires_in = %d, expected %d",
+			expiresInSeconds,
+			int32(expectedTTL.Seconds()),
+		)
+	}
+
+	claims, err := verifier.Verify(
+		context.Background(),
+		signedToken,
+	)
+	if err != nil {
+		t.Fatalf(
+			"Verify() returned an error: %v",
+			err,
+		)
+	}
+
+	if claims.ExpiresAt == nil {
+		t.Fatal(
+			"access token has no expiration claim",
+		)
+	}
+
+	expectedExpiresAt := issuedAt.Add(
+		expectedTTL,
+	)
+
+	if !claims.ExpiresAt.Time.Equal(
+		expectedExpiresAt,
+	) {
+		t.Fatalf(
+			"access token expiration = %v, expected %v",
+			claims.ExpiresAt.Time,
+			expectedExpiresAt,
 		)
 	}
 }

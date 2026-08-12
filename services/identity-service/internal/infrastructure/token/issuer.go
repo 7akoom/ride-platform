@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
@@ -18,21 +19,28 @@ type refreshTokenGenerator interface {
 }
 
 type accessTokenSigner interface {
-	Issue(
+	IssueForSession(
 		identityID string,
 		sessionID string,
 		issuedAt time.Time,
+		sessionExpiresAt time.Time,
 	) (string, int32, error)
+}
+
+type SessionCreationInput struct {
+	ChallengeID           string
+	VerifiedAt            time.Time
+	SessionID             string
+	IdentityID            string
+	SessionExpiresAt      time.Time
+	RefreshTokenHash      string
+	RefreshTokenExpiresAt time.Time
 }
 
 type sessionStore interface {
 	Create(
 		ctx context.Context,
-		sessionID string,
-		identityID string,
-		sessionExpiresAt time.Time,
-		refreshTokenHash string,
-		refreshTokenExpiresAt time.Time,
+		input SessionCreationInput,
 	) (IssuedSession, error)
 }
 
@@ -106,11 +114,23 @@ func NewIssuer(
 
 func (i *Issuer) Issue(
 	ctx context.Context,
-	identity auth.Identity,
+	input auth.TokenIssueInput,
 ) (auth.TokenPair, error) {
-	if identity.ID == "" {
+	if input.Identity.ID == "" {
 		return auth.TokenPair{}, errors.New(
 			"identity ID cannot be empty",
+		)
+	}
+
+	if strings.TrimSpace(input.ChallengeID) == "" {
+		return auth.TokenPair{}, errors.New(
+			"challenge ID cannot be blank",
+		)
+	}
+
+	if input.VerifiedAt.IsZero() {
+		return auth.TokenPair{}, errors.New(
+			"OTP verification time cannot be zero",
 		)
 	}
 
@@ -138,10 +158,11 @@ func (i *Issuer) Issue(
 	refreshTokenExpiresAt := now.Add(i.refreshTokenTTL)
 
 	accessToken, accessTokenExpiresInSeconds, err :=
-		i.accessTokenSigner.Issue(
-			identity.ID,
+		i.accessTokenSigner.IssueForSession(
+			input.Identity.ID,
 			sessionID,
 			now,
+			sessionExpiresAt,
 		)
 	if err != nil {
 		return auth.TokenPair{}, fmt.Errorf(
@@ -152,11 +173,15 @@ func (i *Issuer) Issue(
 
 	if _, err := i.sessionStore.Create(
 		ctx,
-		sessionID,
-		identity.ID,
-		sessionExpiresAt,
-		refreshTokenHash,
-		refreshTokenExpiresAt,
+		SessionCreationInput{
+			ChallengeID:           input.ChallengeID,
+			VerifiedAt:            input.VerifiedAt.UTC(),
+			SessionID:             sessionID,
+			IdentityID:            input.Identity.ID,
+			SessionExpiresAt:      sessionExpiresAt,
+			RefreshTokenHash:      refreshTokenHash,
+			RefreshTokenExpiresAt: refreshTokenExpiresAt,
+		},
 	); err != nil {
 		return auth.TokenPair{}, fmt.Errorf(
 			"persist authentication session: %w",

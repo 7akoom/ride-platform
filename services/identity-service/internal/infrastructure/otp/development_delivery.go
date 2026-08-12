@@ -20,6 +20,12 @@ func NewDevelopmentDelivery(
 		)
 	}
 
+	if logger == nil {
+		return nil, errors.New(
+			"development OTP delivery logger is required",
+		)
+	}
+
 	return &DevelopmentDelivery{
 		logger: logger,
 	}, nil

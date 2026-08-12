@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -18,12 +19,12 @@ type service struct {
 	challengeIDGenerator ChallengeIDGenerator
 	tokenIssuer          TokenIssuer
 
-	refreshTokenRotationStore RefreshTokenRotationStore
-	sessionRevocationStore SessionRevocationStore
+	refreshTokenRotationStore  RefreshTokenRotationStore
+	sessionRevocationStore     SessionRevocationStore
 	allSessionsRevocationStore AllSessionsRevocationStore
-	refreshTokenGenerator     RefreshTokenGenerator
-	refreshTokenHasher        RefreshTokenHasher
-	accessTokenSigner         AccessTokenSigner
+	refreshTokenGenerator      RefreshTokenGenerator
+	refreshTokenHasher         RefreshTokenHasher
+	accessTokenSigner          AccessTokenSigner
 
 	clock Clock
 
@@ -54,25 +55,110 @@ func NewService(
 	otpRequestRateLimitPolicy OTPRequestRateLimitPolicy,
 	refreshTokenTTL time.Duration,
 ) Service {
+
+	if challengeRepository == nil {
+		panic("challenge repository is required")
+	}
+
+	if identityRepository == nil {
+		panic("identity repository is required")
+	}
+
+	if otpGenerator == nil {
+		panic("OTP generator is required")
+	}
+
+	if otpHasher == nil {
+		panic("OTP hasher is required")
+	}
+
+	if otpDelivery == nil {
+		panic("OTP delivery is required")
+	}
+
+	if otpRequestRateLimiter == nil {
+		panic("OTP request rate limiter is required")
+	}
+
+	if challengeIDGenerator == nil {
+		panic("challenge ID generator is required")
+	}
+
+	if tokenIssuer == nil {
+		panic("token issuer is required")
+	}
+
+	if refreshTokenRotationStore == nil {
+		panic("refresh token rotation store is required")
+	}
+
+	if sessionRevocationStore == nil {
+		panic("session revocation store is required")
+	}
+
+	if allSessionsRevocationStore == nil {
+		panic("all sessions revocation store is required")
+	}
+
+	if refreshTokenGenerator == nil {
+		panic("refresh token generator is required")
+	}
+
+	if refreshTokenHasher == nil {
+		panic("refresh token hasher is required")
+	}
+
+	if accessTokenSigner == nil {
+		panic("access token signer is required")
+	}
+
+	if clock == nil {
+		panic("clock is required")
+	}
+
+	if otpTTL <= 0 {
+		panic("OTP TTL must be positive")
+	}
+
+	if otpRequestRateLimitPolicy.Cooldown <= 0 {
+		panic("OTP request cooldown must be positive")
+	}
+
+	if otpRequestRateLimitPolicy.Window <= 0 {
+		panic("OTP request window must be positive")
+	}
+
+	if otpRequestRateLimitPolicy.MaxRequests <= 0 {
+		panic("OTP request max requests must be positive")
+	}
+
+	if otpRequestRateLimitPolicy.Cooldown >
+		otpRequestRateLimitPolicy.Window {
+		panic("OTP request cooldown cannot exceed window")
+	}
+
+	if refreshTokenTTL <= 0 {
+		panic("refresh token TTL must be positive")
+	}
 	return &service{
-		challengeRepository:       challengeRepository,
-		identityRepository:        identityRepository,
-		otpGenerator:              otpGenerator,
-		otpHasher:                 otpHasher,
-		otpDelivery:               otpDelivery,
-		otpRequestRateLimiter:     otpRequestRateLimiter,
-		challengeIDGenerator:      challengeIDGenerator,
-		tokenIssuer:               tokenIssuer,
-		refreshTokenRotationStore: refreshTokenRotationStore,
-		sessionRevocationStore:    sessionRevocationStore,
+		challengeRepository:        challengeRepository,
+		identityRepository:         identityRepository,
+		otpGenerator:               otpGenerator,
+		otpHasher:                  otpHasher,
+		otpDelivery:                otpDelivery,
+		otpRequestRateLimiter:      otpRequestRateLimiter,
+		challengeIDGenerator:       challengeIDGenerator,
+		tokenIssuer:                tokenIssuer,
+		refreshTokenRotationStore:  refreshTokenRotationStore,
+		sessionRevocationStore:     sessionRevocationStore,
 		allSessionsRevocationStore: allSessionsRevocationStore,
-		refreshTokenGenerator:     refreshTokenGenerator,
-		refreshTokenHasher:        refreshTokenHasher,
-		accessTokenSigner:         accessTokenSigner,
-		clock:                     clock,
-		otpTTL:                    otpTTL,
-		otpRequestRateLimitPolicy: otpRequestRateLimitPolicy,
-		refreshTokenTTL:           refreshTokenTTL,
+		refreshTokenGenerator:      refreshTokenGenerator,
+		refreshTokenHasher:         refreshTokenHasher,
+		accessTokenSigner:          accessTokenSigner,
+		clock:                      clock,
+		otpTTL:                     otpTTL,
+		otpRequestRateLimitPolicy:  otpRequestRateLimitPolicy,
+		refreshTokenTTL:            refreshTokenTTL,
 	}
 }
 
@@ -117,18 +203,21 @@ func (s *service) RequestOTP(
 		)
 	}
 
-	codeHash, err := s.otpHasher.Hash(code)
-	if err != nil {
-		return RequestOTPResult{}, fmt.Errorf(
-			"hash OTP: %w",
-			err,
-		)
-	}
-
 	challengeID, err := s.challengeIDGenerator.Generate()
 	if err != nil {
 		return RequestOTPResult{}, fmt.Errorf(
 			"generate challenge ID: %w",
+			err,
+		)
+	}
+
+	codeHash, err := s.otpHasher.Hash(
+		challengeID,
+		code,
+	)
+	if err != nil {
+		return RequestOTPResult{}, fmt.Errorf(
+			"hash OTP: %w",
 			err,
 		)
 	}
@@ -157,8 +246,15 @@ func (s *service) RequestOTP(
 	); deliveryErr != nil {
 		cancelledAt := s.clock.Now()
 
+		compensationCtx, cancelCompensation :=
+			context.WithTimeout(
+				context.WithoutCancel(ctx),
+				5*time.Second,
+			)
+		defer cancelCompensation()
+
 		if cancelErr := s.challengeRepository.Cancel(
-			ctx,
+			compensationCtx,
 			challenge.ID,
 			cancelledAt,
 		); cancelErr != nil {
@@ -223,10 +319,19 @@ func (s *service) VerifyOTP(
 		return VerifyOTPResult{}, ErrChallengeAttemptsExceeded
 	}
 
-	if err := s.otpHasher.Compare(
+	otpMatches, err := s.otpHasher.Compare(
 		challenge.CodeHash,
+		challenge.ID,
 		input.Code,
-	); err != nil {
+	)
+	if err != nil {
+		return VerifyOTPResult{}, fmt.Errorf(
+			"compare OTP: %w",
+			err,
+		)
+	}
+
+	if !otpMatches {
 		recordErr := s.challengeRepository.RecordFailedAttempt(
 			ctx,
 			challenge.ID,
@@ -252,6 +357,13 @@ func (s *service) VerifyOTP(
 				ErrChallengeUsed,
 			):
 				return VerifyOTPResult{}, ErrChallengeUsed
+
+			case errors.Is(
+				recordErr,
+				ErrChallengeCancelled,
+			):
+				return VerifyOTPResult{},
+					ErrChallengeCancelled
 
 			case errors.Is(
 				recordErr,
@@ -287,11 +399,15 @@ func (s *service) VerifyOTP(
 		return VerifyOTPResult{}, ErrIdentityInactive
 	}
 
-	if err := s.challengeRepository.MarkVerified(
+	tokenPair, err := s.tokenIssuer.Issue(
 		ctx,
-		challenge.ID,
-		now,
-	); err != nil {
+		TokenIssueInput{
+			Identity:    identity,
+			ChallengeID: challenge.ID,
+			VerifiedAt:  now,
+		},
+	)
+	if err != nil {
 		switch {
 		case errors.Is(err, ErrChallengeNotFound):
 			return VerifyOTPResult{}, ErrChallengeNotFound
@@ -304,6 +420,13 @@ func (s *service) VerifyOTP(
 
 		case errors.Is(
 			err,
+			ErrChallengeCancelled,
+		):
+			return VerifyOTPResult{},
+				ErrChallengeCancelled
+
+		case errors.Is(
+			err,
 			ErrChallengeAttemptsExceeded,
 		):
 			return VerifyOTPResult{},
@@ -311,27 +434,16 @@ func (s *service) VerifyOTP(
 
 		default:
 			return VerifyOTPResult{}, fmt.Errorf(
-				"mark OTP challenge verified: %w",
+				"issue token pair: %w",
 				err,
 			)
 		}
 	}
 
-	tokenPair, err := s.tokenIssuer.Issue(
-		ctx,
-		identity,
-	)
-	if err != nil {
-		return VerifyOTPResult{}, fmt.Errorf(
-			"issue token pair: %w",
-			err,
-		)
-	}
-
 	return VerifyOTPResult{
-		IdentityID: identity.ID,
-		AccessToken: tokenPair.AccessToken,
-		RefreshToken: tokenPair.RefreshToken,
+		IdentityID:                  identity.ID,
+		AccessToken:                 tokenPair.AccessToken,
+		RefreshToken:                tokenPair.RefreshToken,
 		AccessTokenExpiresInSeconds: tokenPair.AccessTokenExpiresInSeconds,
 	}, nil
 }
@@ -340,7 +452,7 @@ func (s *service) RefreshToken(
 	ctx context.Context,
 	input RefreshTokenInput,
 ) (RefreshTokenResult, error) {
-	if input.RefreshToken == "" {
+	if strings.TrimSpace(input.RefreshToken) == "" {
 		return RefreshTokenResult{}, ErrInvalidRefreshToken
 	}
 
@@ -424,11 +536,13 @@ func (s *service) RefreshToken(
 	}
 
 	accessToken, accessTokenExpiresInSeconds, err :=
-		s.accessTokenSigner.Issue(
+		s.accessTokenSigner.IssueForSession(
 			refreshContext.IdentityID,
 			refreshContext.SessionID,
 			now,
+			refreshContext.SessionExpiresAt,
 		)
+
 	if err != nil {
 		return RefreshTokenResult{}, fmt.Errorf(
 			"issue refreshed access token: %w",
@@ -484,9 +598,9 @@ func (s *service) RefreshToken(
 	}
 
 	return RefreshTokenResult{
-		IdentityID: refreshContext.IdentityID,
-		AccessToken: accessToken,
-		RefreshToken: replacementRefreshToken,
+		IdentityID:                  refreshContext.IdentityID,
+		AccessToken:                 accessToken,
+		RefreshToken:                replacementRefreshToken,
 		AccessTokenExpiresInSeconds: accessTokenExpiresInSeconds,
 	}, nil
 }
@@ -495,7 +609,7 @@ func (s *service) Logout(
 	ctx context.Context,
 	input LogoutInput,
 ) error {
-	if input.RefreshToken == "" {
+	if strings.TrimSpace(input.RefreshToken) == "" {
 		return ErrInvalidRefreshToken
 	}
 
@@ -521,7 +635,7 @@ func (s *service) LogoutAllSessions(
 	ctx context.Context,
 	input LogoutAllSessionsInput,
 ) error {
-	if input.RefreshToken == "" {
+	if strings.TrimSpace(input.RefreshToken) == "" {
 		return ErrInvalidRefreshToken
 	}
 

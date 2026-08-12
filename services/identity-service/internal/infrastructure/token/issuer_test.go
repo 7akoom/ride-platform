@@ -32,9 +32,10 @@ type fakeAccessTokenSigner struct {
 	expiresInSeconds int32
 	err              error
 
-	identityID string
-	sessionID  string
-	issuedAt   time.Time
+	identityID       string
+	sessionID        string
+	issuedAt         time.Time
+	sessionExpiresAt time.Time
 }
 
 func (f *fakeAccessTokenSigner) Issue(
@@ -53,8 +54,27 @@ func (f *fakeAccessTokenSigner) Issue(
 	return f.accessToken, f.expiresInSeconds, nil
 }
 
+func (f *fakeAccessTokenSigner) IssueForSession(
+	identityID string,
+	sessionID string,
+	issuedAt time.Time,
+	sessionExpiresAt time.Time,
+) (string, int32, error) {
+	f.identityID = identityID
+	f.sessionID = sessionID
+	f.issuedAt = issuedAt
+	f.sessionExpiresAt = sessionExpiresAt
+
+	if f.err != nil {
+		return "", 0, f.err
+	}
+
+	return f.accessToken, f.expiresInSeconds, nil
+}
+
 type fakeSessionStore struct {
 	called bool
+	input  SessionCreationInput
 
 	sessionID             string
 	identityID            string
@@ -67,25 +87,23 @@ type fakeSessionStore struct {
 
 func (f *fakeSessionStore) Create(
 	ctx context.Context,
-	sessionID string,
-	identityID string,
-	sessionExpiresAt time.Time,
-	refreshTokenHash string,
-	refreshTokenExpiresAt time.Time,
+	input SessionCreationInput,
 ) (IssuedSession, error) {
 	f.called = true
-	f.sessionID = sessionID
-	f.identityID = identityID
-	f.sessionExpiresAt = sessionExpiresAt
-	f.refreshTokenHash = refreshTokenHash
-	f.refreshTokenExpiresAt = refreshTokenExpiresAt
+	f.input = input
+
+	f.sessionID = input.SessionID
+	f.identityID = input.IdentityID
+	f.sessionExpiresAt = input.SessionExpiresAt
+	f.refreshTokenHash = input.RefreshTokenHash
+	f.refreshTokenExpiresAt = input.RefreshTokenExpiresAt
 
 	if f.err != nil {
 		return IssuedSession{}, f.err
 	}
 
 	return IssuedSession{
-		SessionID:      sessionID,
+		SessionID:      input.SessionID,
 		RefreshTokenID: "refresh-token-record-id",
 	}, nil
 }
@@ -155,7 +173,11 @@ func TestIssuerIssueReturnsTokenPairAndPersistsSession(t *testing.T) {
 
 	tokenPair, err := issuer.Issue(
 		context.Background(),
-		identity,
+		auth.TokenIssueInput{
+			Identity:    identity,
+			ChallengeID: "otp_ch_test",
+			VerifiedAt:  fixedTime,
+		},
 	)
 	if err != nil {
 		t.Fatalf("Issue() returned an error: %v", err)
@@ -205,6 +227,20 @@ func TestIssuerIssueReturnsTokenPairAndPersistsSession(t *testing.T) {
 			"access token signer received issuedAt %v, expected %v",
 			accessTokenSigner.issuedAt,
 			fixedTime,
+		)
+	}
+
+	expectedSessionExpiresAt := fixedTime.Add(
+		sessionTTL,
+	)
+
+	if !accessTokenSigner.sessionExpiresAt.Equal(
+		expectedSessionExpiresAt,
+	) {
+		t.Fatalf(
+			"access token signer received sessionExpiresAt %v, expected %v",
+			accessTokenSigner.sessionExpiresAt,
+			expectedSessionExpiresAt,
 		)
 	}
 
@@ -299,9 +335,13 @@ func TestIssuerIssueDoesNotPersistSessionWhenAccessTokenSigningFails(
 
 	_, err = issuer.Issue(
 		context.Background(),
-		auth.Identity{
-			ID:       "44444444-4444-4444-8444-444444444444",
-			IsActive: true,
+		auth.TokenIssueInput{
+			Identity: auth.Identity{
+				ID:       "44444444-4444-4444-8444-444444444444",
+				IsActive: true,
+			},
+			ChallengeID: "otp_ch_test",
+			VerifiedAt:  time.Now().UTC(),
 		},
 	)
 

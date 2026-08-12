@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -230,10 +231,10 @@ func TestRefreshTokenRotationStoreRotatesAndDetectsReuse(
 	err = store.Rotate(
 		ctx,
 		auth.RefreshTokenRotationInput{
-			CurrentTokenHash:      currentTokenHash,
-			ReplacementTokenHash:  replacementTokenHash,
-			RotatedAt:             rotatedAt,
-			ReplacementExpiresAt:  replacementExpiresAt,
+			CurrentTokenHash:     currentTokenHash,
+			ReplacementTokenHash: replacementTokenHash,
+			RotatedAt:            rotatedAt,
+			ReplacementExpiresAt: replacementExpiresAt,
 		},
 	)
 	if err != nil {
@@ -244,12 +245,12 @@ func TestRefreshTokenRotationStoreRotatesAndDetectsReuse(
 	}
 
 	var (
-		currentUsedAt          *time.Time
-		replacedByTokenID      *string
-		currentRevokedAt       *time.Time
-		replacementTokenID     string
-		replacementUsedAt      *time.Time
-		replacementRevokedAt   *time.Time
+		currentUsedAt        *time.Time
+		replacedByTokenID    *string
+		currentRevokedAt     *time.Time
+		replacementTokenID   string
+		replacementUsedAt    *time.Time
+		replacementRevokedAt *time.Time
 	)
 
 	err = pool.QueryRow(
@@ -413,6 +414,329 @@ func TestRefreshTokenRotationStoreRotatesAndDetectsReuse(
 	if activeRefreshTokenCount != 0 {
 		t.Fatalf(
 			"active refresh tokens after reuse = %d, expected 0",
+			activeRefreshTokenCount,
+		)
+	}
+}
+
+func TestRefreshTokenRotationStoreAllowsOnlyOneConcurrentRotation(
+	t *testing.T,
+) {
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		t.Fatal("DATABASE_URL is required for integration test")
+	}
+
+	ctx := context.Background()
+
+	pool, err := database.NewPostgresPool(
+		ctx,
+		databaseURL,
+	)
+	if err != nil {
+		t.Fatalf(
+			"connect to PostgreSQL: %v",
+			err,
+		)
+	}
+
+	t.Cleanup(pool.Close)
+
+	const phoneNumber = "+9647500000054"
+
+	_, err = pool.Exec(
+		ctx,
+		`
+			DELETE FROM identities
+			WHERE phone_number = $1
+		`,
+		phoneNumber,
+	)
+	if err != nil {
+		t.Fatalf(
+			"clean existing test identity: %v",
+			err,
+		)
+	}
+
+	t.Cleanup(func() {
+		_, cleanupErr := pool.Exec(
+			context.Background(),
+			`
+				DELETE FROM identities
+				WHERE phone_number = $1
+			`,
+			phoneNumber,
+		)
+		if cleanupErr != nil {
+			t.Errorf(
+				"clean test identity: %v",
+				cleanupErr,
+			)
+		}
+	})
+
+	now := time.Now().
+		UTC().
+		Truncate(time.Microsecond)
+
+	var identityID string
+
+	err = pool.QueryRow(
+		ctx,
+		`
+			INSERT INTO identities (
+				phone_number,
+				created_at,
+				updated_at
+			)
+			VALUES ($1, $2, $2)
+			RETURNING id::text
+		`,
+		phoneNumber,
+		now,
+	).Scan(
+		&identityID,
+	)
+	if err != nil {
+		t.Fatalf(
+			"create test identity: %v",
+			err,
+		)
+	}
+
+	sessionExpiresAt := now.Add(
+		30 * 24 * time.Hour,
+	)
+
+	var sessionID string
+
+	err = pool.QueryRow(
+		ctx,
+		`
+			INSERT INTO auth_sessions (
+				identity_id,
+				expires_at,
+				created_at,
+				updated_at
+			)
+			VALUES (
+				$1::uuid,
+				$2,
+				$3,
+				$3
+			)
+			RETURNING id::text
+		`,
+		identityID,
+		sessionExpiresAt,
+		now,
+	).Scan(
+		&sessionID,
+	)
+	if err != nil {
+		t.Fatalf(
+			"create authentication session: %v",
+			err,
+		)
+	}
+
+	currentTokenHash := strings.Repeat(
+		"1",
+		64,
+	)
+
+	currentTokenExpiresAt := now.Add(
+		29 * 24 * time.Hour,
+	)
+
+	_, err = pool.Exec(
+		ctx,
+		`
+			INSERT INTO refresh_tokens (
+				session_id,
+				token_hash,
+				expires_at,
+				created_at
+			)
+			VALUES (
+				$1::uuid,
+				$2,
+				$3,
+				$4
+			)
+		`,
+		sessionID,
+		currentTokenHash,
+		currentTokenExpiresAt,
+		now,
+	)
+	if err != nil {
+		t.Fatalf(
+			"create current refresh token: %v",
+			err,
+		)
+	}
+
+	store := NewRefreshTokenRotationStore(
+		pool,
+	)
+
+	rotatedAt := now.Add(
+		time.Minute,
+	)
+
+	replacementExpiresAt := rotatedAt.Add(
+		29 * 24 * time.Hour,
+	)
+
+	if replacementExpiresAt.After(
+		sessionExpiresAt,
+	) {
+		replacementExpiresAt =
+			sessionExpiresAt
+	}
+
+	inputs := []auth.RefreshTokenRotationInput{
+		{
+			CurrentTokenHash: currentTokenHash,
+			ReplacementTokenHash: strings.Repeat(
+				"2",
+				64,
+			),
+			RotatedAt:            rotatedAt,
+			ReplacementExpiresAt: replacementExpiresAt,
+		},
+		{
+			CurrentTokenHash: currentTokenHash,
+			ReplacementTokenHash: strings.Repeat(
+				"3",
+				64,
+			),
+			RotatedAt:            rotatedAt,
+			ReplacementExpiresAt: replacementExpiresAt,
+		},
+	}
+
+	start := make(chan struct{})
+
+	results := make(
+		chan error,
+		len(inputs),
+	)
+
+	var wg sync.WaitGroup
+
+	for _, input := range inputs {
+		input := input
+
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			<-start
+
+			results <- store.Rotate(
+				ctx,
+				input,
+			)
+		}()
+	}
+
+	close(start)
+
+	wg.Wait()
+	close(results)
+
+	var (
+		successCount int
+		reuseCount   int
+	)
+
+	for rotateErr := range results {
+		switch {
+		case rotateErr == nil:
+			successCount++
+
+		case errors.Is(
+			rotateErr,
+			auth.ErrRefreshTokenReused,
+		):
+			reuseCount++
+
+		default:
+			t.Fatalf(
+				"unexpected concurrent rotation error: %v",
+				rotateErr,
+			)
+		}
+	}
+
+	if successCount != 1 {
+		t.Fatalf(
+			"successful concurrent rotations = %d, expected 1",
+			successCount,
+		)
+	}
+
+	if reuseCount != 1 {
+		t.Fatalf(
+			"refresh token reuse results = %d, expected 1",
+			reuseCount,
+		)
+	}
+
+	var sessionRevokedAt *time.Time
+
+	err = pool.QueryRow(
+		ctx,
+		`
+			SELECT revoked_at
+			FROM auth_sessions
+			WHERE id = $1::uuid
+		`,
+		sessionID,
+	).Scan(
+		&sessionRevokedAt,
+	)
+	if err != nil {
+		t.Fatalf(
+			"query authentication session: %v",
+			err,
+		)
+	}
+
+	if sessionRevokedAt == nil {
+		t.Fatal(
+			"session was not revoked after concurrent refresh token reuse",
+		)
+	}
+
+	var activeRefreshTokenCount int
+
+	err = pool.QueryRow(
+		ctx,
+		`
+			SELECT COUNT(*)
+			FROM refresh_tokens
+			WHERE session_id = $1::uuid
+			  AND revoked_at IS NULL
+		`,
+		sessionID,
+	).Scan(
+		&activeRefreshTokenCount,
+	)
+	if err != nil {
+		t.Fatalf(
+			"count active refresh tokens: %v",
+			err,
+		)
+	}
+
+	if activeRefreshTokenCount != 0 {
+		t.Fatalf(
+			"active refresh tokens after concurrent reuse = %d, expected 0",
 			activeRefreshTokenCount,
 		)
 	}

@@ -20,6 +20,10 @@ var _ auth.OTPRequestRateLimiter = (*OTPRequestRateLimiter)(nil)
 func NewOTPRequestRateLimiter(
 	pool *pgxpool.Pool,
 ) *OTPRequestRateLimiter {
+	if pool == nil {
+		panic("PostgreSQL pool is required")
+	}
+
 	return &OTPRequestRateLimiter{
 		pool: pool,
 	}
@@ -33,6 +37,12 @@ func (r *OTPRequestRateLimiter) Allow(
 ) error {
 	if phoneNumber == "" {
 		return errors.New("phone number cannot be empty")
+	}
+
+	if now.IsZero() {
+		return errors.New(
+			"OTP request time cannot be zero",
+		)
 	}
 
 	if policy.Cooldown <= 0 {

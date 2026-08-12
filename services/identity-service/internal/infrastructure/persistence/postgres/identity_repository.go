@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,6 +19,10 @@ var _ auth.IdentityRepository = (*IdentityRepository)(nil)
 func NewIdentityRepository(
 	pool *pgxpool.Pool,
 ) *IdentityRepository {
+	if pool == nil {
+		panic("PostgreSQL pool is required")
+	}
+
 	return &IdentityRepository{
 		pool: pool,
 	}
@@ -26,6 +32,11 @@ func (r *IdentityRepository) FindOrCreateByPhoneNumber(
 	ctx context.Context,
 	phoneNumber string,
 ) (auth.Identity, error) {
+	if strings.TrimSpace(phoneNumber) == "" {
+		return auth.Identity{}, errors.New(
+			"phone number cannot be blank",
+		)
+	}
 	const insertQuery = `
 		INSERT INTO identities (
 			phone_number

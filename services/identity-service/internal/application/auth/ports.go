@@ -64,12 +64,16 @@ type OTPGenerator interface {
 }
 
 type OTPHasher interface {
-	Hash(code string) (string, error)
+	Hash(
+		challengeID string,
+		code string,
+	) (string, error)
 
 	Compare(
 		hash string,
+		challengeID string,
 		code string,
-	) error
+	) (bool, error)
 }
 
 type OTPDelivery interface {
@@ -86,10 +90,16 @@ type TokenPair struct {
 	AccessTokenExpiresInSeconds int32
 }
 
+type TokenIssueInput struct {
+	Identity    Identity
+	ChallengeID string
+	VerifiedAt  time.Time
+}
+
 type TokenIssuer interface {
 	Issue(
 		ctx context.Context,
-		identity Identity,
+		input TokenIssueInput,
 	) (TokenPair, error)
 }
 
@@ -102,8 +112,8 @@ type Clock interface {
 }
 
 type OTPRequestRateLimitPolicy struct {
-	Cooldown   time.Duration
-	Window     time.Duration
+	Cooldown    time.Duration
+	Window      time.Duration
 	MaxRequests int
 }
 
@@ -123,10 +133,10 @@ type RefreshTokenContext struct {
 }
 
 type RefreshTokenRotationInput struct {
-	CurrentTokenHash      string
-	ReplacementTokenHash  string
-	RotatedAt             time.Time
-	ReplacementExpiresAt  time.Time
+	CurrentTokenHash     string
+	ReplacementTokenHash string
+	RotatedAt            time.Time
+	ReplacementExpiresAt time.Time
 }
 
 type RefreshTokenRotationStore interface {
@@ -151,17 +161,77 @@ type RefreshTokenHasher interface {
 }
 
 type AccessTokenSigner interface {
-	Issue(
+	IssueForSession(
 		identityID string,
 		sessionID string,
 		issuedAt time.Time,
+		sessionExpiresAt time.Time,
 	) (string, int32, error)
+}
+
+type SessionRevocationTarget struct {
+	SessionID        string
+	SessionExpiresAt time.Time
+}
+
+type SessionRevocationTargetStore interface {
+	FindRevocationTargetByRefreshTokenHash(
+		ctx context.Context,
+		refreshTokenHash string,
+	) (SessionRevocationTarget, bool, error)
+}
+
+type SessionAccessRevocationStore interface {
+	MarkRevoked(
+		ctx context.Context,
+		sessionID string,
+		ttl time.Duration,
+	) error
+
+	IsRevoked(
+		ctx context.Context,
+		sessionID string,
+	) (bool, error)
+}
+
+type SessionAccessState struct {
+	SessionExpiresAt time.Time
+	Revoked          bool
+}
+
+type SessionAccessStateStore interface {
+	FindSessionAccessState(
+		ctx context.Context,
+		sessionID string,
+	) (SessionAccessState, bool, error)
 }
 
 type SessionRevocationStore interface {
 	RevokeByRefreshTokenHash(
 		ctx context.Context,
 		refreshTokenHash string,
+		revokedAt time.Time,
+	) error
+}
+
+type AllSessionsRevocationTarget struct {
+	IdentityID string
+	Sessions   []SessionRevocationTarget
+}
+
+type AllSessionsRevocationTargetStore interface {
+	FindAllSessionRevocationTargetsByRefreshTokenHash(
+		ctx context.Context,
+		refreshTokenHash string,
+		now time.Time,
+	) (AllSessionsRevocationTarget, bool, error)
+}
+
+type AllSessionsPersistentRevocationStore interface {
+	RevokeSessions(
+		ctx context.Context,
+		identityID string,
+		sessionIDs []string,
 		revokedAt time.Time,
 	) error
 }

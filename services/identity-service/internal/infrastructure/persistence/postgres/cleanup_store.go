@@ -13,6 +13,10 @@ type CleanupStore struct {
 }
 
 func NewCleanupStore(pool *pgxpool.Pool) *CleanupStore {
+	if pool == nil {
+		panic("PostgreSQL pool is required")
+	}
+
 	return &CleanupStore{
 		pool: pool,
 	}
