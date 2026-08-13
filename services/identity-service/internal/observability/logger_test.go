@@ -71,8 +71,8 @@ func TestRedactSensitiveAttributePreservesNonSensitiveValues(
 			value: "123456",
 		},
 		{
-			name:  "phone number remains available",
-			key:   "phone_number",
+			name:  "OTP identifier remains available for development delivery",
+			key:   "otp_identifier",
 			value: "+9647500000000",
 		},
 		{

@@ -22,6 +22,7 @@ type Server struct {
 func NewServer(
 	address string,
 	logger *slog.Logger,
+	unaryInterceptors ...googlegrpc.UnaryServerInterceptor,
 ) *Server {
 	if strings.TrimSpace(address) == "" {
 		panic("gRPC server address is required")
@@ -31,7 +32,20 @@ func NewServer(
 		panic("gRPC server logger is required")
 	}
 
-	grpcServer := googlegrpc.NewServer()
+	serverOptions := make([]googlegrpc.ServerOption, 0, 1)
+
+	if len(unaryInterceptors) > 0 {
+		serverOptions = append(
+			serverOptions,
+			googlegrpc.ChainUnaryInterceptor(
+				unaryInterceptors...,
+			),
+		)
+	}
+
+	grpcServer := googlegrpc.NewServer(
+		serverOptions...,
+	)
 	healthServer := health.NewServer()
 
 	healthv1.RegisterHealthServer(

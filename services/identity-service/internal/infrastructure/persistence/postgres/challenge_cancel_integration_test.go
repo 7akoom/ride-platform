@@ -38,10 +38,14 @@ func TestChallengeRepositoryCancelMakesChallengeUnusable(
 	now := time.Now().UTC()
 
 	challenge := auth.OTPChallenge{
-		ID:          "otp_ch_cancel_integration_test",
-		PhoneNumber: "+9647500000040",
-		CodeHash:    "integration-test-code-hash",
-		ExpiresAt:   now.Add(10 * time.Minute),
+		ID: "otp_ch_cancel_integration_test",
+		Identifier: auth.Identifier{
+			Type:  auth.IdentifierTypePhone,
+			Value: "+9647500000040",
+		},
+		Purpose:   auth.OTPPurposeLogin,
+		CodeHash:  "integration-test-code-hash",
+		ExpiresAt: now.Add(10 * time.Minute),
 	}
 
 	_, err = pool.Exec(
@@ -117,8 +121,8 @@ func TestChallengeRepositoryCancelMakesChallengeUnusable(
 	}
 
 	storedCancelledAt := storedChallenge.CancelledAt.
-	UTC().
-	Truncate(time.Microsecond)
+		UTC().
+		Truncate(time.Microsecond)
 
 	expectedCancelledAt := cancelledAt.
 		UTC().

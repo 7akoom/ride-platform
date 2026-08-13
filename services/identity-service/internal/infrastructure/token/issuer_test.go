@@ -166,9 +166,8 @@ func TestIssuerIssueReturnsTokenPairAndPersistsSession(t *testing.T) {
 	}
 
 	identity := auth.Identity{
-		ID:          "22222222-2222-4222-8222-222222222222",
-		PhoneNumber: "+9647500000004",
-		IsActive:    true,
+		ID:       "22222222-2222-4222-8222-222222222222",
+		IsActive: true,
 	}
 
 	tokenPair, err := issuer.Issue(

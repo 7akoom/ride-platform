@@ -148,6 +148,21 @@ func run() int {
 			valkeyClient,
 		)
 
+	accessTokenVerifier, err := token.NewAccessTokenVerifier(
+		cfg.AccessTokenPublicKeyPath,
+		cfg.AccessTokenIssuer,
+		cfg.AccessTokenAudience,
+		cfg.AccessTokenKeyID,
+		sessionAccessRevocationStore,
+	)
+	if err != nil {
+		logger.Error(
+			"failed to configure access token verifier",
+			"error", err,
+		)
+		return 1
+	}
+
 	coordinatedSessionRevocationStore, err :=
 		auth.NewCoordinatedSessionRevocationStore(
 			sessionRevocationStore,
@@ -217,8 +232,13 @@ func run() int {
 			databasePool,
 		)
 
-	identityRepository :=
-		postgresrepo.NewIdentityRepository(
+	identityIdentifierRepository :=
+		postgresrepo.NewIdentityIdentifierRepository(
+			databasePool,
+		)
+
+	identifierLinkCompletionStore :=
+		postgresrepo.NewIdentifierLinkCompletionStore(
 			databasePool,
 		)
 
@@ -227,9 +247,10 @@ func run() int {
 			databasePool,
 		)
 
-	authService := auth.NewService(
+	authService := auth.NewServiceWithIdentityIdentifiers(
 		challengeRepository,
-		identityRepository,
+		identityIdentifierRepository,
+		identifierLinkCompletionStore,
 		otp.NewGenerator(),
 		otpHasher,
 		otpDelivery,
@@ -255,6 +276,22 @@ func run() int {
 	server := grpcserver.NewServer(
 		cfg.GRPCAddress,
 		logger,
+		grpcserver.NewAuthenticationUnaryInterceptor(
+			func(
+				ctx context.Context,
+				rawToken string,
+			) (string, string, error) {
+				claims, err := accessTokenVerifier.Verify(
+					ctx,
+					rawToken,
+				)
+				if err != nil {
+					return "", "", err
+				}
+
+				return claims.Subject, claims.SessionID, nil
+			},
+		),
 	)
 
 	identityHandler := grpcserver.NewIdentityHandler(

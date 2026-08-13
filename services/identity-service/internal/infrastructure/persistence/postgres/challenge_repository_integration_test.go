@@ -6,66 +6,51 @@ import (
 	"context"
 	"errors"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 	databaseinfra "github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/database"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func TestChallengeRepositoryCreateFindAndConsumeOnce(t *testing.T) {
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		t.Fatal("DATABASE_URL is required for integration test")
+func TestChallengeRepositoryCreateFindAndConsumePhoneLoginChallenge(
+	t *testing.T,
+) {
+	ctx, pool, repository := newChallengeRepositoryIntegrationTest(t)
+
+	const challengeID = "otp_ch_integration_phone_single_use"
+
+	identifier := auth.Identifier{
+		Type:  auth.IdentifierTypePhone,
+		Value: "+9647500000001",
 	}
 
-	ctx := context.Background()
-
-	pool, err := databaseinfra.NewPostgresPool(
-		ctx,
-		databaseURL,
-	)
-	if err != nil {
-		t.Fatalf("connect to PostgreSQL: %v", err)
-	}
-	t.Cleanup(pool.Close)
-
-	repository := NewChallengeRepository(pool)
-
-	const challengeID = "otp_ch_integration_single_use"
-	const phoneNumber = "+9647500000001"
-
-	_, err = pool.Exec(
-		ctx,
-		"DELETE FROM otp_challenges WHERE id = $1",
+	cleanupChallengeIDs(
+		t,
+		pool,
 		challengeID,
 	)
-	if err != nil {
-		t.Fatalf("clean existing test challenge: %v", err)
-	}
-
-	t.Cleanup(func() {
-		_, cleanupErr := pool.Exec(
-			context.Background(),
-			"DELETE FROM otp_challenges WHERE id = $1",
-			challengeID,
-		)
-		if cleanupErr != nil {
-			t.Errorf("clean test challenge: %v", cleanupErr)
-		}
-	})
 
 	now := time.Now().UTC()
 
 	challenge := auth.OTPChallenge{
-		ID:          challengeID,
-		PhoneNumber: phoneNumber,
-		CodeHash:    "integration-test-code-hash",
-		ExpiresAt:   now.Add(5 * time.Minute),
+		ID:         challengeID,
+		Identifier: identifier,
+		Purpose:    auth.OTPPurposeLogin,
+		CodeHash:   "integration-test-code-hash",
+		ExpiresAt:  now.Add(5 * time.Minute),
 	}
 
-	if err := repository.Create(ctx, challenge); err != nil {
-		t.Fatalf("Create() returned an error: %v", err)
+	if err := repository.Create(
+		ctx,
+		challenge,
+	); err != nil {
+		t.Fatalf(
+			"Create() returned an error: %v",
+			err,
+		)
 	}
 
 	storedChallenge, err := repository.FindByID(
@@ -73,33 +58,53 @@ func TestChallengeRepositoryCreateFindAndConsumeOnce(t *testing.T) {
 		challengeID,
 	)
 	if err != nil {
-		t.Fatalf("FindByID() returned an error: %v", err)
+		t.Fatalf(
+			"FindByID() returned an error: %v",
+			err,
+		)
 	}
 
 	if storedChallenge.ID != challenge.ID {
 		t.Fatalf(
-			"FindByID() returned ID %q, expected %q",
+			"FindByID() returned ID %q, want %q",
 			storedChallenge.ID,
 			challenge.ID,
 		)
 	}
 
-	if storedChallenge.PhoneNumber != challenge.PhoneNumber {
+	if storedChallenge.Identifier != identifier {
 		t.Fatalf(
-			"FindByID() returned phone number %q, expected %q",
-			storedChallenge.PhoneNumber,
-			challenge.PhoneNumber,
+			"FindByID() returned identifier %+v, want %+v",
+			storedChallenge.Identifier,
+			identifier,
+		)
+	}
+
+	if storedChallenge.Purpose != auth.OTPPurposeLogin {
+		t.Fatalf(
+			"FindByID() returned purpose %q, want %q",
+			storedChallenge.Purpose,
+			auth.OTPPurposeLogin,
+		)
+	}
+
+	if storedChallenge.TargetIdentityID != nil {
+		t.Fatalf(
+			"login challenge target identity = %v, want nil",
+			storedChallenge.TargetIdentityID,
 		)
 	}
 
 	if storedChallenge.CodeHash != challenge.CodeHash {
-		t.Fatalf(
+		t.Fatal(
 			"FindByID() returned unexpected code hash",
 		)
 	}
 
 	if storedChallenge.VerifiedAt != nil {
-		t.Fatal("new challenge is already marked as verified")
+		t.Fatal(
+			"new challenge is already marked as verified",
+		)
 	}
 
 	verifiedAt := time.Now().UTC()
@@ -109,7 +114,10 @@ func TestChallengeRepositoryCreateFindAndConsumeOnce(t *testing.T) {
 		challengeID,
 		verifiedAt,
 	); err != nil {
-		t.Fatalf("first MarkVerified() returned an error: %v", err)
+		t.Fatalf(
+			"first MarkVerified() returned an error: %v",
+			err,
+		)
 	}
 
 	err = repository.MarkVerified(
@@ -118,10 +126,14 @@ func TestChallengeRepositoryCreateFindAndConsumeOnce(t *testing.T) {
 		verifiedAt.Add(time.Second),
 	)
 
-	if !errors.Is(err, auth.ErrChallengeUsed) {
+	if !errors.Is(
+		err,
+		auth.ErrChallengeUsed,
+	) {
 		t.Fatalf(
-			"second MarkVerified() returned %v, expected ErrChallengeUsed",
+			"second MarkVerified() error = %v, want %v",
 			err,
+			auth.ErrChallengeUsed,
 		)
 	}
 
@@ -137,99 +149,226 @@ func TestChallengeRepositoryCreateFindAndConsumeOnce(t *testing.T) {
 	}
 
 	if consumedChallenge.VerifiedAt == nil {
-		t.Fatal("consumed challenge has nil VerifiedAt")
+		t.Fatal(
+			"consumed challenge has nil VerifiedAt",
+		)
+	}
+}
+
+func TestChallengeRepositoryNormalizesAndRestoresEmailLoginChallenge(
+	t *testing.T,
+) {
+	ctx, pool, repository := newChallengeRepositoryIntegrationTest(t)
+
+	const challengeID = "otp_ch_integration_email_login"
+
+	cleanupChallengeIDs(
+		t,
+		pool,
+		challengeID,
+	)
+
+	challenge := auth.OTPChallenge{
+		ID: challengeID,
+		Identifier: auth.Identifier{
+			Type:  auth.IdentifierTypeEmail,
+			Value: "Login.User@EXAMPLE.COM",
+		},
+		Purpose:  auth.OTPPurposeLogin,
+		CodeHash: "email-login-code-hash",
+		ExpiresAt: time.Now().
+			UTC().
+			Add(5 * time.Minute),
+	}
+
+	if err := repository.Create(
+		ctx,
+		challenge,
+	); err != nil {
+		t.Fatalf(
+			"Create() returned an error: %v",
+			err,
+		)
+	}
+
+	storedChallenge, err := repository.FindByID(
+		ctx,
+		challengeID,
+	)
+	if err != nil {
+		t.Fatalf(
+			"FindByID() returned an error: %v",
+			err,
+		)
+	}
+
+	expectedIdentifier := auth.Identifier{
+		Type:  auth.IdentifierTypeEmail,
+		Value: "login.user@example.com",
+	}
+
+	if storedChallenge.Identifier != expectedIdentifier {
+		t.Fatalf(
+			"stored identifier = %+v, want %+v",
+			storedChallenge.Identifier,
+			expectedIdentifier,
+		)
+	}
+
+	if storedChallenge.Purpose != auth.OTPPurposeLogin {
+		t.Fatalf(
+			"stored purpose = %q, want %q",
+			storedChallenge.Purpose,
+			auth.OTPPurposeLogin,
+		)
+	}
+
+	if storedChallenge.TargetIdentityID != nil {
+		t.Fatal(
+			"email login challenge unexpectedly targets an identity",
+		)
+	}
+}
+
+func TestChallengeRepositoryStoresLinkIdentifierTarget(
+	t *testing.T,
+) {
+	ctx, pool, repository := newChallengeRepositoryIntegrationTest(t)
+
+	const challengeID = "otp_ch_integration_link_identifier"
+
+	identityID := createIntegrationIdentity(
+		t,
+		ctx,
+		pool,
+	)
+
+	cleanupChallengeIDs(
+		t,
+		pool,
+		challengeID,
+	)
+
+	challenge := auth.OTPChallenge{
+		ID: challengeID,
+		Identifier: auth.Identifier{
+			Type:  auth.IdentifierTypeEmail,
+			Value: "linked@example.com",
+		},
+		Purpose:          auth.OTPPurposeLinkIdentifier,
+		TargetIdentityID: &identityID,
+		CodeHash:         "link-identifier-code-hash",
+		ExpiresAt: time.Now().
+			UTC().
+			Add(5 * time.Minute),
+	}
+
+	if err := repository.Create(
+		ctx,
+		challenge,
+	); err != nil {
+		t.Fatalf(
+			"Create() returned an error: %v",
+			err,
+		)
+	}
+
+	storedChallenge, err := repository.FindByID(
+		ctx,
+		challengeID,
+	)
+	if err != nil {
+		t.Fatalf(
+			"FindByID() returned an error: %v",
+			err,
+		)
+	}
+
+	if storedChallenge.TargetIdentityID == nil {
+		t.Fatal(
+			"link identifier challenge has nil target identity",
+		)
+	}
+
+	if *storedChallenge.TargetIdentityID != identityID {
+		t.Fatalf(
+			"target identity = %q, want %q",
+			*storedChallenge.TargetIdentityID,
+			identityID,
+		)
+	}
+
+	if storedChallenge.Purpose !=
+		auth.OTPPurposeLinkIdentifier {
+		t.Fatalf(
+			"purpose = %q, want %q",
+			storedChallenge.Purpose,
+			auth.OTPPurposeLinkIdentifier,
+		)
 	}
 }
 
 func TestChallengeRepositoryKeepsOnlyLatestChallengeActiveConcurrently(
 	t *testing.T,
 ) {
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		t.Fatal("DATABASE_URL is required for integration test")
-	}
-
-	ctx := context.Background()
-
-	pool, err := databaseinfra.NewPostgresPool(
-		ctx,
-		databaseURL,
-	)
-	if err != nil {
-		t.Fatalf("connect to PostgreSQL: %v", err)
-	}
-	t.Cleanup(pool.Close)
-
-	repository := NewChallengeRepository(pool)
+	ctx, pool, repository := newChallengeRepositoryIntegrationTest(t)
 
 	const firstChallengeID = "otp_ch_concurrent_latest_first"
 	const secondChallengeID = "otp_ch_concurrent_latest_second"
-	const phoneNumber = "+9647500000099"
 
-	_, err = pool.Exec(
-		ctx,
-		`
-			DELETE FROM otp_challenges
-			WHERE phone_number = $1
-		`,
-		phoneNumber,
-	)
-	if err != nil {
-		t.Fatalf(
-			"clean existing concurrent test challenges: %v",
-			err,
-		)
+	identifier := auth.Identifier{
+		Type:  auth.IdentifierTypeEmail,
+		Value: "latest@example.com",
 	}
 
-	t.Cleanup(func() {
-		_, cleanupErr := pool.Exec(
-			context.Background(),
-			`
-				DELETE FROM otp_challenges
-				WHERE phone_number = $1
-			`,
-			phoneNumber,
-		)
-		if cleanupErr != nil {
-			t.Errorf(
-				"clean concurrent test challenges: %v",
-				cleanupErr,
-			)
-		}
-	})
+	cleanupChallengeIDs(
+		t,
+		pool,
+		firstChallengeID,
+		secondChallengeID,
+	)
 
 	now := time.Now().UTC()
 
 	firstChallenge := auth.OTPChallenge{
-		ID:          firstChallengeID,
-		PhoneNumber: phoneNumber,
-		CodeHash:    "first-concurrent-code-hash",
-		ExpiresAt:   now.Add(5 * time.Minute),
+		ID:         firstChallengeID,
+		Identifier: identifier,
+		Purpose:    auth.OTPPurposeLogin,
+		CodeHash:   "first-concurrent-code-hash",
+		ExpiresAt:  now.Add(5 * time.Minute),
 	}
 
 	secondChallenge := auth.OTPChallenge{
-		ID:          secondChallengeID,
-		PhoneNumber: phoneNumber,
-		CodeHash:    "second-concurrent-code-hash",
-		ExpiresAt:   now.Add(5 * time.Minute),
+		ID:         secondChallengeID,
+		Identifier: identifier,
+		Purpose:    auth.OTPPurposeLogin,
+		CodeHash:   "second-concurrent-code-hash",
+		ExpiresAt:  now.Add(5 * time.Minute),
 	}
 
 	start := make(chan struct{})
-	result := make(chan error, 2)
+	results := make(chan error, 2)
+
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(2)
 
 	go func() {
+		defer waitGroup.Done()
+
 		<-start
 
-		result <- repository.Create(
+		results <- repository.Create(
 			ctx,
 			firstChallenge,
 		)
 	}()
 
 	go func() {
+		defer waitGroup.Done()
+
 		<-start
 
-		result <- repository.Create(
+		results <- repository.Create(
 			ctx,
 			secondChallenge,
 		)
@@ -237,8 +376,11 @@ func TestChallengeRepositoryKeepsOnlyLatestChallengeActiveConcurrently(
 
 	close(start)
 
-	for i := 0; i < 2; i++ {
-		if createErr := <-result; createErr != nil {
+	waitGroup.Wait()
+	close(results)
+
+	for createErr := range results {
+		if createErr != nil {
 			t.Fatalf(
 				"concurrent Create() returned an error: %v",
 				createErr,
@@ -250,15 +392,15 @@ func TestChallengeRepositoryKeepsOnlyLatestChallengeActiveConcurrently(
 	var activeChallenges int
 	var cancelledChallenges int
 
-	err = pool.QueryRow(
+	err := pool.QueryRow(
 		ctx,
 		`
 			SELECT
 				COUNT(*),
 				COUNT(*) FILTER (
 					WHERE verified_at IS NULL
-					AND cancelled_at IS NULL
-					AND expires_at > CURRENT_TIMESTAMP
+					  AND cancelled_at IS NULL
+					  AND expires_at > CURRENT_TIMESTAMP
 				),
 				COUNT(*) FILTER (
 					WHERE cancelled_at IS NOT NULL
@@ -282,82 +424,179 @@ func TestChallengeRepositoryKeepsOnlyLatestChallengeActiveConcurrently(
 
 	if totalChallenges != 2 {
 		t.Fatalf(
-			"total challenges = %d, expected 2",
+			"total challenges = %d, want 2",
 			totalChallenges,
 		)
 	}
 
 	if activeChallenges != 1 {
 		t.Fatalf(
-			"active challenges = %d, expected 1",
+			"active challenges = %d, want 1",
 			activeChallenges,
 		)
 	}
 
 	if cancelledChallenges != 1 {
 		t.Fatalf(
-			"cancelled challenges = %d, expected 1",
+			"cancelled challenges = %d, want 1",
 			cancelledChallenges,
 		)
 	}
 }
 
-func TestChallengeRepositoryUsesCancellationTimeAfterWaitingForPhoneLock(
+func TestChallengeRepositoryScopesLinkIdentifierLatestChallengeByTargetIdentity(
 	t *testing.T,
 ) {
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		t.Fatal("DATABASE_URL is required for integration test")
-	}
+	ctx, pool, repository := newChallengeRepositoryIntegrationTest(t)
 
-	ctx := context.Background()
+	const firstTargetChallengeID = "otp_ch_link_target_a_first"
+	const secondTargetChallengeID = "otp_ch_link_target_a_second"
+	const otherTargetChallengeID = "otp_ch_link_target_b"
 
-	pool, err := databaseinfra.NewPostgresPool(
+	firstIdentityID := createIntegrationIdentity(
+		t,
 		ctx,
-		databaseURL,
+		pool,
 	)
-	if err != nil {
-		t.Fatalf("connect to PostgreSQL: %v", err)
-	}
-	t.Cleanup(pool.Close)
 
-	repository := NewChallengeRepository(pool)
-
-	const existingChallengeID = "otp_ch_lock_wait_existing"
-	const newChallengeID = "otp_ch_lock_wait_new"
-	const phoneNumber = "+9647500000098"
-
-	_, err = pool.Exec(
+	secondIdentityID := createIntegrationIdentity(
+		t,
 		ctx,
-		`
-			DELETE FROM otp_challenges
-			WHERE phone_number = $1
-		`,
-		phoneNumber,
+		pool,
+	)
+
+	cleanupChallengeIDs(
+		t,
+		pool,
+		firstTargetChallengeID,
+		secondTargetChallengeID,
+		otherTargetChallengeID,
+	)
+
+	identifier := auth.Identifier{
+		Type:  auth.IdentifierTypeEmail,
+		Value: "scope@example.com",
+	}
+
+	now := time.Now().UTC()
+
+	firstTargetChallenge := auth.OTPChallenge{
+		ID:               firstTargetChallengeID,
+		Identifier:       identifier,
+		Purpose:          auth.OTPPurposeLinkIdentifier,
+		TargetIdentityID: &firstIdentityID,
+		CodeHash:         "target-a-first-code-hash",
+		ExpiresAt:        now.Add(5 * time.Minute),
+	}
+
+	otherTargetChallenge := auth.OTPChallenge{
+		ID:               otherTargetChallengeID,
+		Identifier:       identifier,
+		Purpose:          auth.OTPPurposeLinkIdentifier,
+		TargetIdentityID: &secondIdentityID,
+		CodeHash:         "target-b-code-hash",
+		ExpiresAt:        now.Add(5 * time.Minute),
+	}
+
+	secondTargetChallenge := auth.OTPChallenge{
+		ID:               secondTargetChallengeID,
+		Identifier:       identifier,
+		Purpose:          auth.OTPPurposeLinkIdentifier,
+		TargetIdentityID: &firstIdentityID,
+		CodeHash:         "target-a-second-code-hash",
+		ExpiresAt:        now.Add(5 * time.Minute),
+	}
+
+	for _, challenge := range []auth.OTPChallenge{
+		firstTargetChallenge,
+		otherTargetChallenge,
+		secondTargetChallenge,
+	} {
+		if err := repository.Create(
+			ctx,
+			challenge,
+		); err != nil {
+			t.Fatalf(
+				"Create(%q) returned an error: %v",
+				challenge.ID,
+				err,
+			)
+		}
+	}
+
+	firstStored, err := repository.FindByID(
+		ctx,
+		firstTargetChallengeID,
 	)
 	if err != nil {
 		t.Fatalf(
-			"clean existing lock-wait test challenges: %v",
+			"find first target challenge: %v",
 			err,
 		)
 	}
 
-	t.Cleanup(func() {
-		_, cleanupErr := pool.Exec(
-			context.Background(),
-			`
-				DELETE FROM otp_challenges
-				WHERE phone_number = $1
-			`,
-			phoneNumber,
+	secondStored, err := repository.FindByID(
+		ctx,
+		secondTargetChallengeID,
+	)
+	if err != nil {
+		t.Fatalf(
+			"find second target challenge: %v",
+			err,
 		)
-		if cleanupErr != nil {
-			t.Errorf(
-				"clean lock-wait test challenges: %v",
-				cleanupErr,
-			)
-		}
-	})
+	}
+
+	otherStored, err := repository.FindByID(
+		ctx,
+		otherTargetChallengeID,
+	)
+	if err != nil {
+		t.Fatalf(
+			"find other target challenge: %v",
+			err,
+		)
+	}
+
+	if firstStored.CancelledAt == nil {
+		t.Fatal(
+			"older challenge for same target identity remained active",
+		)
+	}
+
+	if secondStored.CancelledAt != nil {
+		t.Fatal(
+			"latest challenge for first target identity was cancelled",
+		)
+	}
+
+	if otherStored.CancelledAt != nil {
+		t.Fatal(
+			"challenge for different target identity was incorrectly cancelled",
+		)
+	}
+}
+
+func TestChallengeRepositoryUsesCancellationTimeAfterWaitingForScopeLock(
+	t *testing.T,
+) {
+	ctx, pool, repository := newChallengeRepositoryIntegrationTest(t)
+
+	const existingChallengeID = "otp_ch_lock_wait_existing"
+	const newChallengeID = "otp_ch_lock_wait_new"
+
+	identifier := auth.Identifier{
+		Type:  auth.IdentifierTypePhone,
+		Value: "+9647500000098",
+	}
+
+	purpose := auth.OTPPurposeLogin
+
+	cleanupChallengeIDs(
+		t,
+		pool,
+		existingChallengeID,
+		newChallengeID,
+	)
 
 	lockTx, err := pool.Begin(ctx)
 	if err != nil {
@@ -377,6 +616,12 @@ func TestChallengeRepositoryUsesCancellationTimeAfterWaitingForPhoneLock(
 		}
 	})
 
+	lockKey := challengeScopeLockKey(
+		identifier,
+		purpose,
+		nil,
+	)
+
 	_, err = lockTx.Exec(
 		ctx,
 		`
@@ -384,11 +629,11 @@ func TestChallengeRepositoryUsesCancellationTimeAfterWaitingForPhoneLock(
 				hashtextextended($1, 0)
 			)
 		`,
-		phoneNumber,
+		lockKey,
 	)
 	if err != nil {
 		t.Fatalf(
-			"acquire advisory phone lock: %v",
+			"acquire advisory challenge scope lock: %v",
 			err,
 		)
 	}
@@ -396,10 +641,13 @@ func TestChallengeRepositoryUsesCancellationTimeAfterWaitingForPhoneLock(
 	createResult := make(chan error, 1)
 
 	newChallenge := auth.OTPChallenge{
-		ID:          newChallengeID,
-		PhoneNumber: phoneNumber,
-		CodeHash:    "new-lock-wait-code-hash",
-		ExpiresAt:   time.Now().UTC().Add(5 * time.Minute),
+		ID:         newChallengeID,
+		Identifier: identifier,
+		Purpose:    purpose,
+		CodeHash:   "new-lock-wait-code-hash",
+		ExpiresAt: time.Now().
+			UTC().
+			Add(5 * time.Minute),
 	}
 
 	go func() {
@@ -416,7 +664,10 @@ func TestChallengeRepositoryUsesCancellationTimeAfterWaitingForPhoneLock(
 		`
 			INSERT INTO otp_challenges (
 				id,
-				phone_number,
+				identifier_type,
+				normalized_value,
+				purpose,
+				target_identity_id,
 				code_hash,
 				expires_at
 			)
@@ -424,11 +675,16 @@ func TestChallengeRepositoryUsesCancellationTimeAfterWaitingForPhoneLock(
 				$1,
 				$2,
 				$3,
-				$4
+				$4,
+				NULL,
+				$5,
+				$6
 			)
 		`,
 		existingChallengeID,
-		phoneNumber,
+		string(identifier.Type),
+		identifier.Value,
+		string(purpose),
 		"existing-lock-wait-code-hash",
 		time.Now().UTC().Add(5*time.Minute),
 	)
@@ -441,7 +697,7 @@ func TestChallengeRepositoryUsesCancellationTimeAfterWaitingForPhoneLock(
 
 	if err := lockTx.Commit(ctx); err != nil {
 		t.Fatalf(
-			"release advisory phone lock: %v",
+			"release advisory challenge scope lock: %v",
 			err,
 		)
 	}
@@ -496,4 +752,114 @@ func TestChallengeRepositoryUsesCancellationTimeAfterWaitingForPhoneLock(
 			"new challenge was unexpectedly cancelled",
 		)
 	}
+}
+
+func newChallengeRepositoryIntegrationTest(
+	t *testing.T,
+) (
+	context.Context,
+	*pgxpool.Pool,
+	*ChallengeRepository,
+) {
+	t.Helper()
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		t.Fatal(
+			"DATABASE_URL is required for integration test",
+		)
+	}
+
+	ctx := context.Background()
+
+	pool, err := databaseinfra.NewPostgresPool(
+		ctx,
+		databaseURL,
+	)
+	if err != nil {
+		t.Fatalf(
+			"connect to PostgreSQL: %v",
+			err,
+		)
+	}
+
+	t.Cleanup(pool.Close)
+
+	return ctx, pool, NewChallengeRepository(pool)
+}
+
+func cleanupChallengeIDs(
+	t *testing.T,
+	pool *pgxpool.Pool,
+	challengeIDs ...string,
+) {
+	t.Helper()
+
+	cleanup := func() {
+		for _, challengeID := range challengeIDs {
+			if _, err := pool.Exec(
+				context.Background(),
+				`
+					DELETE FROM otp_challenges
+					WHERE id = $1
+				`,
+				challengeID,
+			); err != nil {
+				t.Errorf(
+					"clean test challenge %q: %v",
+					challengeID,
+					err,
+				)
+			}
+		}
+	}
+
+	cleanup()
+
+	t.Cleanup(cleanup)
+}
+
+func createIntegrationIdentity(
+	t *testing.T,
+	ctx context.Context,
+	pool *pgxpool.Pool,
+) string {
+	t.Helper()
+
+	var identityID string
+
+	if err := pool.QueryRow(
+		ctx,
+		`
+			INSERT INTO identities
+				DEFAULT VALUES
+			RETURNING id::text
+		`,
+	).Scan(
+		&identityID,
+	); err != nil {
+		t.Fatalf(
+			"create integration test identity: %v",
+			err,
+		)
+	}
+
+	t.Cleanup(func() {
+		if _, err := pool.Exec(
+			context.Background(),
+			`
+				DELETE FROM identities
+				WHERE id = $1
+			`,
+			identityID,
+		); err != nil {
+			t.Errorf(
+				"clean integration test identity %q: %v",
+				identityID,
+				err,
+			)
+		}
+	})
+
+	return identityID
 }

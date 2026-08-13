@@ -40,7 +40,10 @@ func TestOTPRequestRateLimiterAllowsOnlyOneConcurrentRequestDuringCooldown(
 		ctx,
 		`
 			DELETE FROM otp_request_events
-			WHERE phone_number = $1
+			WHERE identifier_type = 'phone'
+			AND normalized_value = $1
+			AND purpose = 'login'
+			AND target_identity_id IS NULL
 		`,
 		phoneNumber,
 	)
@@ -56,7 +59,10 @@ func TestOTPRequestRateLimiterAllowsOnlyOneConcurrentRequestDuringCooldown(
 			context.Background(),
 			`
 				DELETE FROM otp_request_events
-				WHERE phone_number = $1
+				WHERE identifier_type = 'phone'
+				AND normalized_value = $1
+				AND purpose = 'login'
+				AND target_identity_id IS NULL
 			`,
 			phoneNumber,
 		)
@@ -95,7 +101,13 @@ func TestOTPRequestRateLimiterAllowsOnlyOneConcurrentRequestDuringCooldown(
 
 			results <- rateLimiter.Allow(
 				ctx,
-				phoneNumber,
+				auth.OTPRequestScope{
+					Identifier: auth.Identifier{
+						Type:  auth.IdentifierTypePhone,
+						Value: phoneNumber,
+					},
+					Purpose: auth.OTPPurposeLogin,
+				},
 				now,
 				policy,
 			)
@@ -151,7 +163,10 @@ func TestOTPRequestRateLimiterAllowsOnlyOneConcurrentRequestDuringCooldown(
 		`
 			SELECT COUNT(*)
 			FROM otp_request_events
-			WHERE phone_number = $1
+			WHERE identifier_type = 'phone'
+			AND normalized_value = $1
+			AND purpose = 'login'
+			AND target_identity_id IS NULL
 		`,
 		phoneNumber,
 	).Scan(
@@ -198,7 +213,10 @@ func TestOTPRequestRateLimiterBlocksSixthRequestInsideWindow(
 		ctx,
 		`
 			DELETE FROM otp_request_events
-			WHERE phone_number = $1
+			WHERE identifier_type = 'phone'
+			AND normalized_value = $1
+			AND purpose = 'login'
+			AND target_identity_id IS NULL
 		`,
 		phoneNumber,
 	)
@@ -214,7 +232,10 @@ func TestOTPRequestRateLimiterBlocksSixthRequestInsideWindow(
 			context.Background(),
 			`
 				DELETE FROM otp_request_events
-				WHERE phone_number = $1
+				WHERE identifier_type = 'phone'
+				AND normalized_value = $1
+				AND purpose = 'login'
+				AND target_identity_id IS NULL
 			`,
 			phoneNumber,
 		)
@@ -252,7 +273,13 @@ func TestOTPRequestRateLimiterBlocksSixthRequestInsideWindow(
 
 		err := rateLimiter.Allow(
 			ctx,
-			phoneNumber,
+			auth.OTPRequestScope{
+				Identifier: auth.Identifier{
+					Type:  auth.IdentifierTypePhone,
+					Value: phoneNumber,
+				},
+				Purpose: auth.OTPPurposeLogin,
+			},
 			requestedAt,
 			policy,
 		)
@@ -271,7 +298,13 @@ func TestOTPRequestRateLimiterBlocksSixthRequestInsideWindow(
 
 	err = rateLimiter.Allow(
 		ctx,
-		phoneNumber,
+		auth.OTPRequestScope{
+			Identifier: auth.Identifier{
+				Type:  auth.IdentifierTypePhone,
+				Value: phoneNumber,
+			},
+			Purpose: auth.OTPPurposeLogin,
+		},
 		sixthRequestAt,
 		policy,
 	)
@@ -294,7 +327,10 @@ func TestOTPRequestRateLimiterBlocksSixthRequestInsideWindow(
 		`
 			SELECT COUNT(*)
 			FROM otp_request_events
-			WHERE phone_number = $1
+			WHERE identifier_type = 'phone'
+			AND normalized_value = $1
+			AND purpose = 'login'
+			AND target_identity_id IS NULL
 		`,
 		phoneNumber,
 	).Scan(

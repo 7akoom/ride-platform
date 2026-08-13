@@ -31,12 +31,20 @@ func NewOTPRequestRateLimiter(
 
 func (r *OTPRequestRateLimiter) Allow(
 	ctx context.Context,
-	phoneNumber string,
+	scope auth.OTPRequestScope,
 	now time.Time,
 	policy auth.OTPRequestRateLimitPolicy,
 ) error {
-	if phoneNumber == "" {
-		return errors.New("phone number cannot be empty")
+	if scope.Identifier.Type == "" {
+		return errors.New("identifier type cannot be empty")
+	}
+
+	if scope.Identifier.Value == "" {
+		return errors.New("identifier value cannot be empty")
+	}
+
+	if scope.Purpose == "" {
+		return errors.New("OTP purpose cannot be empty")
 	}
 
 	if now.IsZero() {
@@ -71,6 +79,20 @@ func (r *OTPRequestRateLimiter) Allow(
 
 	now = now.UTC()
 
+	var targetIdentityID any
+
+	if scope.TargetIdentityID != nil {
+		targetIdentityID = *scope.TargetIdentityID
+	}
+
+	lockKey := fmt.Sprintf(
+		"%s:%s:%s:%v",
+		scope.Identifier.Type,
+		scope.Identifier.Value,
+		scope.Purpose,
+		targetIdentityID,
+	)
+
 	tx, err := r.pool.BeginTx(
 		ctx,
 		pgx.TxOptions{},
@@ -95,7 +117,7 @@ func (r *OTPRequestRateLimiter) Allow(
 	if _, err := tx.Exec(
 		ctx,
 		lockQuery,
-		phoneNumber,
+		lockKey,
 	); err != nil {
 		return fmt.Errorf(
 			"lock OTP rate limit key: %w",
@@ -103,20 +125,47 @@ func (r *OTPRequestRateLimiter) Allow(
 		)
 	}
 
-	const latestRequestQuery = `
+	latestRequestQuery := `
 		SELECT requested_at
 		FROM otp_request_events
-		WHERE phone_number = $1
+		WHERE identifier_type = $1
+		AND normalized_value = $2
+		AND purpose = $3
+		AND target_identity_id IS NULL
 		ORDER BY requested_at DESC
 		LIMIT 1
 	`
+
+	latestRequestArgs := []any{
+		string(scope.Identifier.Type),
+		scope.Identifier.Value,
+		string(scope.Purpose),
+	}
+
+	if scope.TargetIdentityID != nil {
+		latestRequestQuery = `
+			SELECT requested_at
+			FROM otp_request_events
+			WHERE identifier_type = $1
+			AND normalized_value = $2
+			AND purpose = $3
+			AND target_identity_id = $4::uuid
+			ORDER BY requested_at DESC
+			LIMIT 1
+		`
+
+		latestRequestArgs = append(
+			latestRequestArgs,
+			*scope.TargetIdentityID,
+		)
+	}
 
 	var latestRequestedAt time.Time
 
 	err = tx.QueryRow(
 		ctx,
 		latestRequestQuery,
-		phoneNumber,
+		latestRequestArgs...,
 	).Scan(
 		&latestRequestedAt,
 	)
@@ -145,20 +194,49 @@ func (r *OTPRequestRateLimiter) Allow(
 		-policy.Window,
 	)
 
-	const countQuery = `
+	countQuery := `
 		SELECT COUNT(*)
 		FROM otp_request_events
-		WHERE phone_number = $1
-		  AND requested_at >= $2
+		WHERE identifier_type = $1
+		AND normalized_value = $2
+		AND purpose = $3
+		AND target_identity_id IS NULL
+		AND requested_at >= $4
 	`
+
+	countQueryArgs := []any{
+		string(scope.Identifier.Type),
+		scope.Identifier.Value,
+		string(scope.Purpose),
+		windowStartedAt,
+	}
+
+	if scope.TargetIdentityID != nil {
+		countQuery = `
+			SELECT COUNT(*)
+			FROM otp_request_events
+			WHERE identifier_type = $1
+			AND normalized_value = $2
+			AND purpose = $3
+			AND target_identity_id = $4::uuid
+			AND requested_at >= $5
+		`
+
+		countQueryArgs = []any{
+			string(scope.Identifier.Type),
+			scope.Identifier.Value,
+			string(scope.Purpose),
+			*scope.TargetIdentityID,
+			windowStartedAt,
+		}
+	}
 
 	var requestCount int
 
 	if err := tx.QueryRow(
 		ctx,
 		countQuery,
-		phoneNumber,
-		windowStartedAt,
+		countQueryArgs...,
 	).Scan(
 		&requestCount,
 	); err != nil {
@@ -174,16 +252,28 @@ func (r *OTPRequestRateLimiter) Allow(
 
 	const insertQuery = `
 		INSERT INTO otp_request_events (
-			phone_number,
+			identifier_type,
+			normalized_value,
+			purpose,
+			target_identity_id,
 			requested_at
 		)
-		VALUES ($1, $2)
+		VALUES (
+			$1,
+			$2,
+			$3,
+			$4,
+			$5
+		)
 	`
 
 	if _, err := tx.Exec(
 		ctx,
 		insertQuery,
-		phoneNumber,
+		string(scope.Identifier.Type),
+		scope.Identifier.Value,
+		string(scope.Purpose),
+		targetIdentityID,
 		now,
 	); err != nil {
 		return fmt.Errorf(

@@ -3,7 +3,9 @@ package auth
 import "context"
 
 type RequestOTPInput struct {
-	PhoneNumber string
+	Identifier       Identifier
+	Purpose          OTPPurpose
+	TargetIdentityID *string
 }
 
 type RequestOTPResult struct {
@@ -12,8 +14,10 @@ type RequestOTPResult struct {
 }
 
 type VerifyOTPInput struct {
-	ChallengeID string
-	Code        string
+	ChallengeID              string
+	Code                     string
+	ExpectedPurpose          OTPPurpose
+	ExpectedTargetIdentityID *string
 }
 
 type VerifyOTPResult struct {

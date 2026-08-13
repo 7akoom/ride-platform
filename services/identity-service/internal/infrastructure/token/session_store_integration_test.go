@@ -36,7 +36,13 @@ func TestSessionStoreCreateIsAtomic(t *testing.T) {
 
 	_, err = pool.Exec(
 		ctx,
-		"DELETE FROM identities WHERE phone_number = $1",
+		`
+			DELETE FROM identities AS i
+			USING identity_identifiers AS ii
+			WHERE ii.identity_id = i.id
+			AND ii.identifier_type = 'phone'
+			AND ii.normalized_value = $1
+		`,
 		phoneNumber,
 	)
 	if err != nil {
@@ -46,7 +52,13 @@ func TestSessionStoreCreateIsAtomic(t *testing.T) {
 	t.Cleanup(func() {
 		_, cleanupErr := pool.Exec(
 			context.Background(),
-			"DELETE FROM identities WHERE phone_number = $1",
+			`
+				DELETE FROM identities AS i
+				USING identity_identifiers AS ii
+				WHERE ii.identity_id = i.id
+				AND ii.identifier_type = 'phone'
+				AND ii.normalized_value = $1
+			`,
 			phoneNumber,
 		)
 		if cleanupErr != nil {
@@ -59,11 +71,23 @@ func TestSessionStoreCreateIsAtomic(t *testing.T) {
 	err = pool.QueryRow(
 		ctx,
 		`
-			INSERT INTO identities (
-				phone_number
+			WITH created_identity AS (
+				INSERT INTO identities DEFAULT VALUES
+				RETURNING id
 			)
-			VALUES ($1)
-			RETURNING id::text
+			INSERT INTO identity_identifiers (
+				identity_id,
+				identifier_type,
+				normalized_value,
+				verified_at
+			)
+			SELECT
+				id,
+				'phone',
+				$1,
+				CURRENT_TIMESTAMP
+			FROM created_identity
+			RETURNING identity_id::text
 		`,
 		phoneNumber,
 	).Scan(&identityID)
@@ -104,13 +128,32 @@ func TestSessionStoreCreateIsAtomic(t *testing.T) {
 		`
 			INSERT INTO otp_challenges (
 				id,
-				phone_number,
+				identifier_type,
+				normalized_value,
+				purpose,
+				target_identity_id,
 				code_hash,
 				expires_at
 			)
 			VALUES
-				($1, $2, $3, $4),
-				($5, $2, $6, $4)
+				(
+					$1,
+					'phone',
+					$2,
+					'login',
+					NULL,
+					$3,
+					$4
+				),
+				(
+					$5,
+					'phone',
+					$2,
+					'login',
+					NULL,
+					$6,
+					$4
+				)
 		`,
 		firstChallengeID,
 		phoneNumber,
@@ -331,7 +374,13 @@ func TestSessionStoreCreateRejectsInvalidRefreshTokenHash(
 
 	_, err = pool.Exec(
 		ctx,
-		"DELETE FROM identities WHERE phone_number = $1",
+		`
+			DELETE FROM identities AS i
+			USING identity_identifiers AS ii
+			WHERE ii.identity_id = i.id
+			AND ii.identifier_type = 'phone'
+			AND ii.normalized_value = $1
+		`,
 		phoneNumber,
 	)
 	if err != nil {
@@ -341,7 +390,13 @@ func TestSessionStoreCreateRejectsInvalidRefreshTokenHash(
 	t.Cleanup(func() {
 		_, cleanupErr := pool.Exec(
 			context.Background(),
-			"DELETE FROM identities WHERE phone_number = $1",
+			`
+				DELETE FROM identities AS i
+				USING identity_identifiers AS ii
+				WHERE ii.identity_id = i.id
+				AND ii.identifier_type = 'phone'
+				AND ii.normalized_value = $1
+			`,
 			phoneNumber,
 		)
 		if cleanupErr != nil {
@@ -354,11 +409,23 @@ func TestSessionStoreCreateRejectsInvalidRefreshTokenHash(
 	err = pool.QueryRow(
 		ctx,
 		`
-			INSERT INTO identities (
-				phone_number
+			WITH created_identity AS (
+				INSERT INTO identities DEFAULT VALUES
+				RETURNING id
 			)
-			VALUES ($1)
-			RETURNING id::text
+			INSERT INTO identity_identifiers (
+				identity_id,
+				identifier_type,
+				normalized_value,
+				verified_at
+			)
+			SELECT
+				id,
+				'phone',
+				$1,
+				CURRENT_TIMESTAMP
+			FROM created_identity
+			RETURNING identity_id::text
 		`,
 		phoneNumber,
 	).Scan(&identityID)
@@ -387,11 +454,22 @@ func TestSessionStoreCreateRejectsInvalidRefreshTokenHash(
 		`
 			INSERT INTO otp_challenges (
 				id,
-				phone_number,
+				identifier_type,
+				normalized_value,
+				purpose,
+				target_identity_id,
 				code_hash,
 				expires_at
 			)
-			VALUES ($1, $2, $3, $4)
+			VALUES (
+				$1,
+				'phone',
+				$2,
+				'login',
+				NULL,
+				$3,
+				$4
+			)
 		`,
 		challengeID,
 		phoneNumber,
@@ -513,7 +591,13 @@ func TestSessionStoreCreateAllowsOnlyOneConcurrentChallengeClaim(
 
 	_, err = pool.Exec(
 		ctx,
-		"DELETE FROM identities WHERE phone_number = $1",
+		`
+			DELETE FROM identities AS i
+			USING identity_identifiers AS ii
+			WHERE ii.identity_id = i.id
+			AND ii.identifier_type = 'phone'
+			AND ii.normalized_value = $1
+		`,
 		phoneNumber,
 	)
 	if err != nil {
@@ -523,7 +607,13 @@ func TestSessionStoreCreateAllowsOnlyOneConcurrentChallengeClaim(
 	t.Cleanup(func() {
 		_, cleanupErr := pool.Exec(
 			context.Background(),
-			"DELETE FROM identities WHERE phone_number = $1",
+			`
+				DELETE FROM identities AS i
+				USING identity_identifiers AS ii
+				WHERE ii.identity_id = i.id
+				AND ii.identifier_type = 'phone'
+				AND ii.normalized_value = $1
+			`,
 			phoneNumber,
 		)
 		if cleanupErr != nil {
@@ -539,11 +629,23 @@ func TestSessionStoreCreateAllowsOnlyOneConcurrentChallengeClaim(
 	err = pool.QueryRow(
 		ctx,
 		`
-			INSERT INTO identities (
-				phone_number
+			WITH created_identity AS (
+				INSERT INTO identities DEFAULT VALUES
+				RETURNING id
 			)
-			VALUES ($1)
-			RETURNING id::text
+			INSERT INTO identity_identifiers (
+				identity_id,
+				identifier_type,
+				normalized_value,
+				verified_at
+			)
+			SELECT
+				id,
+				'phone',
+				$1,
+				CURRENT_TIMESTAMP
+			FROM created_identity
+			RETURNING identity_id::text
 		`,
 		phoneNumber,
 	).Scan(&identityID)
@@ -580,11 +682,22 @@ func TestSessionStoreCreateAllowsOnlyOneConcurrentChallengeClaim(
 		`
 			INSERT INTO otp_challenges (
 				id,
-				phone_number,
+				identifier_type,
+				normalized_value,
+				purpose,
+				target_identity_id,
 				code_hash,
 				expires_at
 			)
-			VALUES ($1, $2, $3, $4)
+			VALUES (
+				$1,
+				'phone',
+				$2,
+				'login',
+				NULL,
+				$3,
+				$4
+			)
 		`,
 		challengeID,
 		phoneNumber,

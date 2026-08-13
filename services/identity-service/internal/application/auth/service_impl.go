@@ -9,35 +9,33 @@ import (
 )
 
 type service struct {
-	challengeRepository   ChallengeRepository
-	identityRepository    IdentityRepository
-	otpGenerator          OTPGenerator
-	otpHasher             OTPHasher
-	otpDelivery           OTPDelivery
-	otpRequestRateLimiter OTPRequestRateLimiter
-
-	challengeIDGenerator ChallengeIDGenerator
-	tokenIssuer          TokenIssuer
-
-	refreshTokenRotationStore  RefreshTokenRotationStore
-	sessionRevocationStore     SessionRevocationStore
-	allSessionsRevocationStore AllSessionsRevocationStore
-	refreshTokenGenerator      RefreshTokenGenerator
-	refreshTokenHasher         RefreshTokenHasher
-	accessTokenSigner          AccessTokenSigner
-
-	clock Clock
-
-	otpTTL                    time.Duration
-	otpRequestRateLimitPolicy OTPRequestRateLimitPolicy
-	refreshTokenTTL           time.Duration
+	challengeRepository           ChallengeRepository
+	identityIdentifierRepository  IdentityIdentifierRepository
+	identifierLinkCompletionStore IdentifierLinkCompletionStore
+	otpGenerator                  OTPGenerator
+	otpHasher                     OTPHasher
+	otpDelivery                   OTPDelivery
+	otpRequestRateLimiter         OTPRequestRateLimiter
+	challengeIDGenerator          ChallengeIDGenerator
+	tokenIssuer                   TokenIssuer
+	refreshTokenRotationStore     RefreshTokenRotationStore
+	sessionRevocationStore        SessionRevocationStore
+	allSessionsRevocationStore    AllSessionsRevocationStore
+	refreshTokenGenerator         RefreshTokenGenerator
+	refreshTokenHasher            RefreshTokenHasher
+	accessTokenSigner             AccessTokenSigner
+	clock                         Clock
+	otpTTL                        time.Duration
+	otpRequestRateLimitPolicy     OTPRequestRateLimitPolicy
+	refreshTokenTTL               time.Duration
 }
 
 var _ Service = (*service)(nil)
 
-func NewService(
+func NewServiceWithIdentityIdentifiers(
 	challengeRepository ChallengeRepository,
-	identityRepository IdentityRepository,
+	identityIdentifierRepository IdentityIdentifierRepository,
+	identifierLinkCompletionStore IdentifierLinkCompletionStore,
 	otpGenerator OTPGenerator,
 	otpHasher OTPHasher,
 	otpDelivery OTPDelivery,
@@ -55,15 +53,62 @@ func NewService(
 	otpRequestRateLimitPolicy OTPRequestRateLimitPolicy,
 	refreshTokenTTL time.Duration,
 ) Service {
-
 	if challengeRepository == nil {
 		panic("challenge repository is required")
 	}
 
-	if identityRepository == nil {
-		panic("identity repository is required")
+	if identityIdentifierRepository == nil {
+		panic("identity identifier repository is required")
 	}
 
+	if identifierLinkCompletionStore == nil {
+		panic("identifier link completion store is required")
+	}
+
+	return newServiceWithDependencies(
+		challengeRepository,
+		identityIdentifierRepository,
+		identifierLinkCompletionStore,
+		otpGenerator,
+		otpHasher,
+		otpDelivery,
+		otpRequestRateLimiter,
+		challengeIDGenerator,
+		tokenIssuer,
+		refreshTokenRotationStore,
+		sessionRevocationStore,
+		allSessionsRevocationStore,
+		refreshTokenGenerator,
+		refreshTokenHasher,
+		accessTokenSigner,
+		clock,
+		otpTTL,
+		otpRequestRateLimitPolicy,
+		refreshTokenTTL,
+	)
+}
+
+func newServiceWithDependencies(
+	challengeRepository ChallengeRepository,
+	identityIdentifierRepository IdentityIdentifierRepository,
+	identifierLinkCompletionStore IdentifierLinkCompletionStore,
+	otpGenerator OTPGenerator,
+	otpHasher OTPHasher,
+	otpDelivery OTPDelivery,
+	otpRequestRateLimiter OTPRequestRateLimiter,
+	challengeIDGenerator ChallengeIDGenerator,
+	tokenIssuer TokenIssuer,
+	refreshTokenRotationStore RefreshTokenRotationStore,
+	sessionRevocationStore SessionRevocationStore,
+	allSessionsRevocationStore AllSessionsRevocationStore,
+	refreshTokenGenerator RefreshTokenGenerator,
+	refreshTokenHasher RefreshTokenHasher,
+	accessTokenSigner AccessTokenSigner,
+	clock Clock,
+	otpTTL time.Duration,
+	otpRequestRateLimitPolicy OTPRequestRateLimitPolicy,
+	refreshTokenTTL time.Duration,
+) Service {
 	if otpGenerator == nil {
 		panic("OTP generator is required")
 	}
@@ -140,25 +185,27 @@ func NewService(
 	if refreshTokenTTL <= 0 {
 		panic("refresh token TTL must be positive")
 	}
+
 	return &service{
-		challengeRepository:        challengeRepository,
-		identityRepository:         identityRepository,
-		otpGenerator:               otpGenerator,
-		otpHasher:                  otpHasher,
-		otpDelivery:                otpDelivery,
-		otpRequestRateLimiter:      otpRequestRateLimiter,
-		challengeIDGenerator:       challengeIDGenerator,
-		tokenIssuer:                tokenIssuer,
-		refreshTokenRotationStore:  refreshTokenRotationStore,
-		sessionRevocationStore:     sessionRevocationStore,
-		allSessionsRevocationStore: allSessionsRevocationStore,
-		refreshTokenGenerator:      refreshTokenGenerator,
-		refreshTokenHasher:         refreshTokenHasher,
-		accessTokenSigner:          accessTokenSigner,
-		clock:                      clock,
-		otpTTL:                     otpTTL,
-		otpRequestRateLimitPolicy:  otpRequestRateLimitPolicy,
-		refreshTokenTTL:            refreshTokenTTL,
+		challengeRepository:           challengeRepository,
+		identityIdentifierRepository:  identityIdentifierRepository,
+		identifierLinkCompletionStore: identifierLinkCompletionStore,
+		otpGenerator:                  otpGenerator,
+		otpHasher:                     otpHasher,
+		otpDelivery:                   otpDelivery,
+		otpRequestRateLimiter:         otpRequestRateLimiter,
+		challengeIDGenerator:          challengeIDGenerator,
+		tokenIssuer:                   tokenIssuer,
+		refreshTokenRotationStore:     refreshTokenRotationStore,
+		sessionRevocationStore:        sessionRevocationStore,
+		allSessionsRevocationStore:    allSessionsRevocationStore,
+		refreshTokenGenerator:         refreshTokenGenerator,
+		refreshTokenHasher:            refreshTokenHasher,
+		accessTokenSigner:             accessTokenSigner,
+		clock:                         clock,
+		otpTTL:                        otpTTL,
+		otpRequestRateLimitPolicy:     otpRequestRateLimitPolicy,
+		refreshTokenTTL:               refreshTokenTTL,
 	}
 }
 
@@ -166,9 +213,8 @@ func (s *service) RequestOTP(
 	ctx context.Context,
 	input RequestOTPInput,
 ) (RequestOTPResult, error) {
-	phoneNumber, err := NormalizePhoneNumber(
-		input.PhoneNumber,
-	)
+	identifier, purpose, targetIdentityID, err :=
+		normalizeRequestOTPInput(input)
 	if err != nil {
 		return RequestOTPResult{}, err
 	}
@@ -177,7 +223,11 @@ func (s *service) RequestOTP(
 
 	if err := s.otpRequestRateLimiter.Allow(
 		ctx,
-		phoneNumber,
+		OTPRequestScope{
+			Identifier:       identifier,
+			Purpose:          purpose,
+			TargetIdentityID: targetIdentityID,
+		},
 		now,
 		s.otpRequestRateLimitPolicy,
 	); err != nil {
@@ -223,10 +273,12 @@ func (s *service) RequestOTP(
 	}
 
 	challenge := OTPChallenge{
-		ID:          challengeID,
-		PhoneNumber: phoneNumber,
-		CodeHash:    codeHash,
-		ExpiresAt:   now.Add(s.otpTTL),
+		ID:               challengeID,
+		Identifier:       identifier,
+		Purpose:          purpose,
+		TargetIdentityID: targetIdentityID,
+		CodeHash:         codeHash,
+		ExpiresAt:        now.Add(s.otpTTL),
 	}
 
 	if err := s.challengeRepository.Create(
@@ -241,7 +293,7 @@ func (s *service) RequestOTP(
 
 	if deliveryErr := s.otpDelivery.Send(
 		ctx,
-		phoneNumber,
+		identifier.Value,
 		code,
 	); deliveryErr != nil {
 		cancelledAt := s.clock.Now()
@@ -282,10 +334,92 @@ func (s *service) RequestOTP(
 	}, nil
 }
 
+func normalizeRequestOTPInput(
+	input RequestOTPInput,
+) (
+	Identifier,
+	OTPPurpose,
+	*string,
+	error,
+) {
+	identifier, err := NewIdentifier(
+		input.Identifier.Type,
+		input.Identifier.Value,
+	)
+	if err != nil {
+		return Identifier{}, "", nil, err
+	}
+
+	purpose := input.Purpose
+
+	parsedPurpose, err := ParseOTPPurpose(
+		string(purpose),
+	)
+	if err != nil {
+		return Identifier{}, "", nil, err
+	}
+
+	targetIdentityID := input.TargetIdentityID
+
+	switch parsedPurpose {
+	case OTPPurposeLogin:
+		if targetIdentityID != nil {
+			return Identifier{},
+				"",
+				nil,
+				errors.New(
+					"login OTP request cannot target an identity",
+				)
+		}
+
+	case OTPPurposeLinkIdentifier:
+		if targetIdentityID == nil {
+			return Identifier{},
+				"",
+				nil,
+				errors.New(
+					"link identifier OTP request requires target identity",
+				)
+		}
+
+		normalizedTargetIdentityID :=
+			strings.TrimSpace(*targetIdentityID)
+
+		if normalizedTargetIdentityID == "" {
+			return Identifier{},
+				"",
+				nil,
+				errors.New(
+					"OTP request target identity cannot be blank",
+				)
+		}
+
+		targetIdentityID =
+			&normalizedTargetIdentityID
+
+	default:
+		return Identifier{},
+			"",
+			nil,
+			ErrInvalidOTPPurpose
+	}
+
+	return identifier,
+		parsedPurpose,
+		targetIdentityID,
+		nil
+}
+
 func (s *service) VerifyOTP(
 	ctx context.Context,
 	input VerifyOTPInput,
 ) (VerifyOTPResult, error) {
+	expectedPurpose, err := ParseOTPPurpose(
+		string(input.ExpectedPurpose),
+	)
+	if err != nil {
+		return VerifyOTPResult{}, err
+	}
 	challenge, err := s.challengeRepository.FindByID(
 		ctx,
 		input.ChallengeID,
@@ -299,6 +433,33 @@ func (s *service) VerifyOTP(
 			"find OTP challenge: %w",
 			err,
 		)
+	}
+
+	if challenge.Purpose != expectedPurpose {
+		return VerifyOTPResult{}, ErrOTPPurposeMismatch
+	}
+
+	if expectedPurpose == OTPPurposeLinkIdentifier {
+		if input.ExpectedTargetIdentityID == nil ||
+			challenge.TargetIdentityID == nil {
+			return VerifyOTPResult{},
+				ErrOTPChallengeTargetMismatch
+		}
+
+		expectedTargetIdentityID := strings.TrimSpace(
+			*input.ExpectedTargetIdentityID,
+		)
+
+		challengeTargetIdentityID := strings.TrimSpace(
+			*challenge.TargetIdentityID,
+		)
+
+		if expectedTargetIdentityID == "" ||
+			challengeTargetIdentityID == "" ||
+			expectedTargetIdentityID != challengeTargetIdentityID {
+			return VerifyOTPResult{},
+				ErrOTPChallengeTargetMismatch
+		}
 	}
 
 	if challenge.VerifiedAt != nil {
@@ -316,7 +477,8 @@ func (s *service) VerifyOTP(
 	}
 
 	if challenge.FailedAttempts >= challenge.MaxAttempts {
-		return VerifyOTPResult{}, ErrChallengeAttemptsExceeded
+		return VerifyOTPResult{},
+			ErrChallengeAttemptsExceeded
 	}
 
 	otpMatches, err := s.otpHasher.Compare(
@@ -344,19 +506,22 @@ func (s *service) VerifyOTP(
 				recordErr,
 				ErrChallengeNotFound,
 			):
-				return VerifyOTPResult{}, ErrChallengeNotFound
+				return VerifyOTPResult{},
+					ErrChallengeNotFound
 
 			case errors.Is(
 				recordErr,
 				ErrChallengeExpired,
 			):
-				return VerifyOTPResult{}, ErrChallengeExpired
+				return VerifyOTPResult{},
+					ErrChallengeExpired
 
 			case errors.Is(
 				recordErr,
 				ErrChallengeUsed,
 			):
-				return VerifyOTPResult{}, ErrChallengeUsed
+				return VerifyOTPResult{},
+					ErrChallengeUsed
 
 			case errors.Is(
 				recordErr,
@@ -383,20 +548,203 @@ func (s *service) VerifyOTP(
 		return VerifyOTPResult{}, ErrInvalidOTP
 	}
 
-	identity, err :=
-		s.identityRepository.FindOrCreateByPhoneNumber(
+	switch challenge.Purpose {
+	case OTPPurposeLogin:
+		return s.completeIdentifierLogin(
 			ctx,
-			challenge.PhoneNumber,
+			challenge,
+			now,
 		)
+
+	case OTPPurposeLinkIdentifier:
+		return s.completeIdentifierLink(
+			ctx,
+			challenge,
+			now,
+		)
+
+	default:
+		return VerifyOTPResult{},
+			ErrInvalidOTPPurpose
+	}
+}
+
+func (s *service) completeIdentifierLogin(
+	ctx context.Context,
+	challenge OTPChallenge,
+	verifiedAt time.Time,
+) (VerifyOTPResult, error) {
+	if s.identityIdentifierRepository == nil {
+		return VerifyOTPResult{}, errors.New(
+			"identity identifier repository is not configured",
+		)
+	}
+
+	if challenge.TargetIdentityID != nil {
+		return VerifyOTPResult{}, errors.New(
+			"login OTP challenge cannot target an identity",
+		)
+	}
+
+	identifier, err := NewIdentifier(
+		challenge.Identifier.Type,
+		challenge.Identifier.Value,
+	)
 	if err != nil {
 		return VerifyOTPResult{}, fmt.Errorf(
-			"find or create identity: %w",
+			"validate login OTP identifier: %w",
 			err,
 		)
 	}
 
+	identity, found, err :=
+		s.identityIdentifierRepository.FindIdentityByIdentifier(
+			ctx,
+			identifier,
+		)
+	if err != nil {
+		return VerifyOTPResult{}, fmt.Errorf(
+			"find identity by identifier: %w",
+			err,
+		)
+	}
+
+	if !found {
+		identity, err =
+			s.identityIdentifierRepository.
+				CreateIdentityWithIdentifier(
+					ctx,
+					identifier,
+					verifiedAt,
+				)
+		if err != nil {
+			return VerifyOTPResult{}, fmt.Errorf(
+				"create identity with identifier: %w",
+				err,
+			)
+		}
+	}
+
+	return s.issueLoginTokens(
+		ctx,
+		challenge,
+		identity,
+		verifiedAt,
+	)
+}
+
+func (s *service) completeIdentifierLink(
+	ctx context.Context,
+	challenge OTPChallenge,
+	verifiedAt time.Time,
+) (VerifyOTPResult, error) {
+	if s.identifierLinkCompletionStore == nil {
+		return VerifyOTPResult{}, errors.New(
+			"identifier link completion store is not configured",
+		)
+	}
+
+	if challenge.TargetIdentityID == nil {
+		return VerifyOTPResult{}, errors.New(
+			"link identifier OTP challenge has no target identity",
+		)
+	}
+
+	identityID := strings.TrimSpace(
+		*challenge.TargetIdentityID,
+	)
+	if identityID == "" {
+		return VerifyOTPResult{}, errors.New(
+			"link identifier OTP challenge target identity is blank",
+		)
+	}
+
+	identifier, err := NewIdentifier(
+		challenge.Identifier.Type,
+		challenge.Identifier.Value,
+	)
+	if err != nil {
+		return VerifyOTPResult{}, fmt.Errorf(
+			"validate link identifier OTP identifier: %w",
+			err,
+		)
+	}
+
+	err = s.identifierLinkCompletionStore.Complete(
+		ctx,
+		IdentifierLinkCompletionInput{
+			ChallengeID: challenge.ID,
+			IdentityID:  identityID,
+			Identifier:  identifier,
+			VerifiedAt:  verifiedAt,
+		},
+	)
+	if err != nil {
+		switch {
+		case errors.Is(
+			err,
+			ErrChallengeNotFound,
+		):
+			return VerifyOTPResult{},
+				ErrChallengeNotFound
+
+		case errors.Is(
+			err,
+			ErrChallengeExpired,
+		):
+			return VerifyOTPResult{},
+				ErrChallengeExpired
+
+		case errors.Is(
+			err,
+			ErrChallengeUsed,
+		):
+			return VerifyOTPResult{},
+				ErrChallengeUsed
+
+		case errors.Is(
+			err,
+			ErrChallengeCancelled,
+		):
+			return VerifyOTPResult{},
+				ErrChallengeCancelled
+
+		case errors.Is(
+			err,
+			ErrChallengeAttemptsExceeded,
+		):
+			return VerifyOTPResult{},
+				ErrChallengeAttemptsExceeded
+
+		case errors.Is(
+			err,
+			ErrIdentifierAlreadyLinked,
+		):
+			return VerifyOTPResult{},
+				ErrIdentifierAlreadyLinked
+
+		default:
+			return VerifyOTPResult{}, fmt.Errorf(
+				"complete identifier link: %w",
+				err,
+			)
+		}
+	}
+
+	return VerifyOTPResult{
+		IdentityID: identityID,
+	}, nil
+}
+
+func (s *service) issueLoginTokens(
+	ctx context.Context,
+	challenge OTPChallenge,
+	identity Identity,
+	verifiedAt time.Time,
+) (VerifyOTPResult, error) {
 	if !identity.IsActive {
-		return VerifyOTPResult{}, ErrIdentityInactive
+		return VerifyOTPResult{},
+			ErrIdentityInactive
 	}
 
 	tokenPair, err := s.tokenIssuer.Issue(
@@ -404,19 +752,31 @@ func (s *service) VerifyOTP(
 		TokenIssueInput{
 			Identity:    identity,
 			ChallengeID: challenge.ID,
-			VerifiedAt:  now,
+			VerifiedAt:  verifiedAt,
 		},
 	)
 	if err != nil {
 		switch {
-		case errors.Is(err, ErrChallengeNotFound):
-			return VerifyOTPResult{}, ErrChallengeNotFound
+		case errors.Is(
+			err,
+			ErrChallengeNotFound,
+		):
+			return VerifyOTPResult{},
+				ErrChallengeNotFound
 
-		case errors.Is(err, ErrChallengeExpired):
-			return VerifyOTPResult{}, ErrChallengeExpired
+		case errors.Is(
+			err,
+			ErrChallengeExpired,
+		):
+			return VerifyOTPResult{},
+				ErrChallengeExpired
 
-		case errors.Is(err, ErrChallengeUsed):
-			return VerifyOTPResult{}, ErrChallengeUsed
+		case errors.Is(
+			err,
+			ErrChallengeUsed,
+		):
+			return VerifyOTPResult{},
+				ErrChallengeUsed
 
 		case errors.Is(
 			err,

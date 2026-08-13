@@ -6,8 +6,11 @@ import (
 )
 
 type OTPChallenge struct {
-	ID             string
-	PhoneNumber    string
+	ID               string
+	Identifier       Identifier
+	Purpose          OTPPurpose
+	TargetIdentityID *string
+
 	CodeHash       string
 	ExpiresAt      time.Time
 	VerifiedAt     *time.Time
@@ -17,9 +20,17 @@ type OTPChallenge struct {
 }
 
 type Identity struct {
-	ID          string
-	PhoneNumber string
-	IsActive    bool
+	ID       string
+	IsActive bool
+}
+
+type IdentityIdentifier struct {
+	ID         string
+	IdentityID string
+	Identifier Identifier
+	VerifiedAt *time.Time
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type ChallengeRepository interface {
@@ -52,11 +63,38 @@ type ChallengeRepository interface {
 	) error
 }
 
-type IdentityRepository interface {
-	FindOrCreateByPhoneNumber(
+type IdentityIdentifierRepository interface {
+	FindIdentityByIdentifier(
 		ctx context.Context,
-		phoneNumber string,
+		identifier Identifier,
+	) (Identity, bool, error)
+
+	CreateIdentityWithIdentifier(
+		ctx context.Context,
+		identifier Identifier,
+		verifiedAt time.Time,
 	) (Identity, error)
+
+	LinkIdentifier(
+		ctx context.Context,
+		identityID string,
+		identifier Identifier,
+		verifiedAt time.Time,
+	) error
+}
+
+type IdentifierLinkCompletionInput struct {
+	ChallengeID string
+	IdentityID  string
+	Identifier  Identifier
+	VerifiedAt  time.Time
+}
+
+type IdentifierLinkCompletionStore interface {
+	Complete(
+		ctx context.Context,
+		input IdentifierLinkCompletionInput,
+	) error
 }
 
 type OTPGenerator interface {
@@ -117,10 +155,16 @@ type OTPRequestRateLimitPolicy struct {
 	MaxRequests int
 }
 
+type OTPRequestScope struct {
+	Identifier       Identifier
+	Purpose          OTPPurpose
+	TargetIdentityID *string
+}
+
 type OTPRequestRateLimiter interface {
 	Allow(
 		ctx context.Context,
-		phoneNumber string,
+		scope OTPRequestScope,
 		now time.Time,
 		policy OTPRequestRateLimitPolicy,
 	) error

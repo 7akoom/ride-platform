@@ -43,7 +43,13 @@ func TestIssuerIssuePersistsSessionAndReturnsValidTokens(t *testing.T) {
 
 	_, err = pool.Exec(
 		ctx,
-		"DELETE FROM identities WHERE phone_number = $1",
+		`
+			DELETE FROM identities AS i
+			USING identity_identifiers AS ii
+			WHERE ii.identity_id = i.id
+			AND ii.identifier_type = 'phone'
+			AND ii.normalized_value = $1
+		`,
 		phoneNumber,
 	)
 	if err != nil {
@@ -53,7 +59,13 @@ func TestIssuerIssuePersistsSessionAndReturnsValidTokens(t *testing.T) {
 	t.Cleanup(func() {
 		_, cleanupErr := pool.Exec(
 			context.Background(),
-			"DELETE FROM identities WHERE phone_number = $1",
+			`
+				DELETE FROM identities AS i
+				USING identity_identifiers AS ii
+				WHERE ii.identity_id = i.id
+				AND ii.identifier_type = 'phone'
+				AND ii.normalized_value = $1
+			`,
 			phoneNumber,
 		)
 		if cleanupErr != nil {
@@ -66,11 +78,23 @@ func TestIssuerIssuePersistsSessionAndReturnsValidTokens(t *testing.T) {
 	err = pool.QueryRow(
 		ctx,
 		`
-			INSERT INTO identities (
-				phone_number
+			WITH created_identity AS (
+				INSERT INTO identities DEFAULT VALUES
+				RETURNING id
 			)
-			VALUES ($1)
-			RETURNING id::text
+			INSERT INTO identity_identifiers (
+				identity_id,
+				identifier_type,
+				normalized_value,
+				verified_at
+			)
+			SELECT
+				id,
+				'phone',
+				$1,
+				CURRENT_TIMESTAMP
+			FROM created_identity
+			RETURNING identity_id::text
 		`,
 		phoneNumber,
 	).Scan(&identityID)
@@ -87,13 +111,19 @@ func TestIssuerIssuePersistsSessionAndReturnsValidTokens(t *testing.T) {
 		`
 			INSERT INTO otp_challenges (
 				id,
-				phone_number,
+				identifier_type,
+				normalized_value,
+				purpose,
+				target_identity_id,
 				code_hash,
 				expires_at
 			)
 			VALUES (
 				$1,
+				'phone',
 				$2,
+				'login',
+				NULL,
 				$3,
 				statement_timestamp() + INTERVAL '5 minutes'
 			)
@@ -194,9 +224,8 @@ func TestIssuerIssuePersistsSessionAndReturnsValidTokens(t *testing.T) {
 		ctx,
 		auth.TokenIssueInput{
 			Identity: auth.Identity{
-				ID:          identityID,
-				PhoneNumber: phoneNumber,
-				IsActive:    true,
+				ID:       identityID,
+				IsActive: true,
 			},
 			ChallengeID: challengeID,
 			VerifiedAt:  verifiedAt,

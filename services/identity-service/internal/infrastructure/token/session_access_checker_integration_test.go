@@ -72,8 +72,11 @@ func TestSessionAccessCheckerRejectsPostgresRevokedSessionAndRebuildsMissingValk
 	_, err = pool.Exec(
 		ctx,
 		`
-			DELETE FROM identities
-			WHERE phone_number = $1
+			DELETE FROM identities AS i
+			USING identity_identifiers AS ii
+			WHERE ii.identity_id = i.id
+			AND ii.identifier_type = 'phone'
+			AND ii.normalized_value = $1
 		`,
 		phoneNumber,
 	)
@@ -88,8 +91,11 @@ func TestSessionAccessCheckerRejectsPostgresRevokedSessionAndRebuildsMissingValk
 		_, cleanupErr := pool.Exec(
 			context.Background(),
 			`
-				DELETE FROM identities
-				WHERE phone_number = $1
+				DELETE FROM identities AS i
+				USING identity_identifiers AS ii
+				WHERE ii.identity_id = i.id
+				AND ii.identifier_type = 'phone'
+				AND ii.normalized_value = $1
 			`,
 			phoneNumber,
 		)
@@ -110,16 +116,34 @@ func TestSessionAccessCheckerRejectsPostgresRevokedSessionAndRebuildsMissingValk
 	err = pool.QueryRow(
 		ctx,
 		`
-			INSERT INTO identities (
-				phone_number,
+			WITH created_identity AS (
+				INSERT INTO identities (
+					created_at,
+					updated_at
+				)
+				VALUES ($1, $1)
+				RETURNING id
+			)
+			INSERT INTO identity_identifiers (
+				identity_id,
+				identifier_type,
+				normalized_value,
+				verified_at,
 				created_at,
 				updated_at
 			)
-			VALUES ($1, $2, $2)
-			RETURNING id::text
+			SELECT
+				id,
+				'phone',
+				$2,
+				$1,
+				$1,
+				$1
+			FROM created_identity
+			RETURNING identity_id::text
 		`,
-		phoneNumber,
 		now,
+		phoneNumber,
 	).Scan(
 		&identityID,
 	)

@@ -16,6 +16,8 @@ type ChallengeRepository struct {
 	pool *pgxpool.Pool
 }
 
+var _ auth.ChallengeRepository = (*ChallengeRepository)(nil)
+
 func NewChallengeRepository(
 	pool *pgxpool.Pool,
 ) *ChallengeRepository {
@@ -38,10 +40,27 @@ func (r *ChallengeRepository) Create(
 		)
 	}
 
-	if strings.TrimSpace(challenge.PhoneNumber) == "" {
-		return errors.New(
-			"OTP challenge phone number cannot be blank",
-		)
+	identifier, err := auth.NewIdentifier(
+		challenge.Identifier.Type,
+		challenge.Identifier.Value,
+	)
+	if err != nil {
+		return err
+	}
+
+	purpose, err := auth.ParseOTPPurpose(
+		string(challenge.Purpose),
+	)
+	if err != nil {
+		return err
+	}
+
+	targetIdentityID, err := normalizeChallengeTargetIdentityID(
+		purpose,
+		challenge.TargetIdentityID,
+	)
+	if err != nil {
+		return err
 	}
 
 	if strings.TrimSpace(challenge.CodeHash) == "" {
@@ -57,6 +76,7 @@ func (r *ChallengeRepository) Create(
 	}
 
 	challenge.ExpiresAt = challenge.ExpiresAt.UTC()
+
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf(
@@ -65,6 +85,12 @@ func (r *ChallengeRepository) Create(
 		)
 	}
 	defer tx.Rollback(ctx)
+
+	lockKey := challengeScopeLockKey(
+		identifier,
+		purpose,
+		targetIdentityID,
+	)
 
 	const lockQuery = `
 		SELECT pg_advisory_xact_lock(
@@ -75,27 +101,55 @@ func (r *ChallengeRepository) Create(
 	if _, err := tx.Exec(
 		ctx,
 		lockQuery,
-		challenge.PhoneNumber,
+		lockKey,
 	); err != nil {
 		return fmt.Errorf(
-			"lock OTP challenges for phone number: %w",
+			"lock OTP challenge scope: %w",
 			err,
 		)
 	}
 
-	const cancelPreviousQuery = `
+	cancelPreviousQuery := `
 		UPDATE otp_challenges
 		SET cancelled_at = statement_timestamp()
-		WHERE phone_number = $1
+		WHERE identifier_type = $1
+		AND normalized_value = $2
+		AND purpose = $3
+		AND target_identity_id IS NULL
 		AND verified_at IS NULL
 		AND cancelled_at IS NULL
 		AND expires_at > statement_timestamp()
 	`
 
+	cancelPreviousArgs := []any{
+		string(identifier.Type),
+		identifier.Value,
+		string(purpose),
+	}
+
+	if targetIdentityID != nil {
+		cancelPreviousQuery = `
+			UPDATE otp_challenges
+			SET cancelled_at = statement_timestamp()
+			WHERE identifier_type = $1
+			AND normalized_value = $2
+			AND purpose = $3
+			AND target_identity_id = $4::uuid
+			AND verified_at IS NULL
+			AND cancelled_at IS NULL
+			AND expires_at > statement_timestamp()
+		`
+
+		cancelPreviousArgs = append(
+			cancelPreviousArgs,
+			targetIdentityID,
+		)
+	}
+
 	if _, err := tx.Exec(
 		ctx,
 		cancelPreviousQuery,
-		challenge.PhoneNumber,
+		cancelPreviousArgs...,
 	); err != nil {
 		return fmt.Errorf(
 			"cancel previous OTP challenges: %w",
@@ -106,18 +160,24 @@ func (r *ChallengeRepository) Create(
 	const insertQuery = `
 		INSERT INTO otp_challenges (
 			id,
-			phone_number,
+			identifier_type,
+			normalized_value,
+			purpose,
+			target_identity_id,
 			code_hash,
 			expires_at
 		)
-		VALUES ($1, $2, $3, $4)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 
 	if _, err := tx.Exec(
 		ctx,
 		insertQuery,
 		challenge.ID,
-		challenge.PhoneNumber,
+		string(identifier.Type),
+		identifier.Value,
+		string(purpose),
+		targetIdentityID,
 		challenge.CodeHash,
 		challenge.ExpiresAt,
 	); err != nil {
@@ -144,7 +204,10 @@ func (r *ChallengeRepository) FindByID(
 	const query = `
 		SELECT
 			id,
-			phone_number,
+			identifier_type,
+			normalized_value,
+			purpose,
+			target_identity_id::text,
 			code_hash,
 			expires_at,
 			verified_at,
@@ -156,6 +219,10 @@ func (r *ChallengeRepository) FindByID(
 	`
 
 	var challenge auth.OTPChallenge
+	var identifierType string
+	var normalizedValue string
+	var purpose string
+	var targetIdentityID *string
 
 	err := r.pool.QueryRow(
 		ctx,
@@ -163,7 +230,10 @@ func (r *ChallengeRepository) FindByID(
 		challengeID,
 	).Scan(
 		&challenge.ID,
-		&challenge.PhoneNumber,
+		&identifierType,
+		&normalizedValue,
+		&purpose,
+		&targetIdentityID,
 		&challenge.CodeHash,
 		&challenge.ExpiresAt,
 		&challenge.VerifiedAt,
@@ -173,7 +243,8 @@ func (r *ChallengeRepository) FindByID(
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return auth.OTPChallenge{}, auth.ErrChallengeNotFound
+		return auth.OTPChallenge{},
+			auth.ErrChallengeNotFound
 	}
 
 	if err != nil {
@@ -182,6 +253,41 @@ func (r *ChallengeRepository) FindByID(
 			err,
 		)
 	}
+
+	identifier, err := auth.NewIdentifier(
+		auth.IdentifierType(identifierType),
+		normalizedValue,
+	)
+	if err != nil {
+		return auth.OTPChallenge{}, fmt.Errorf(
+			"restore OTP challenge identifier: %w",
+			err,
+		)
+	}
+
+	parsedPurpose, err := auth.ParseOTPPurpose(
+		purpose,
+	)
+	if err != nil {
+		return auth.OTPChallenge{}, fmt.Errorf(
+			"restore OTP challenge purpose: %w",
+			err,
+		)
+	}
+
+	if _, err := normalizeChallengeTargetIdentityID(
+		parsedPurpose,
+		targetIdentityID,
+	); err != nil {
+		return auth.OTPChallenge{}, fmt.Errorf(
+			"restore OTP challenge target identity: %w",
+			err,
+		)
+	}
+
+	challenge.Identifier = identifier
+	challenge.Purpose = parsedPurpose
+	challenge.TargetIdentityID = targetIdentityID
 
 	return challenge, nil
 }
@@ -198,14 +304,15 @@ func (r *ChallengeRepository) RecordFailedAttempt(
 	}
 
 	attemptedAt = attemptedAt.UTC()
+
 	const updateQuery = `
 		UPDATE otp_challenges
 		SET failed_attempts = failed_attempts + 1
 		WHERE id = $1
-		AND verified_at IS NULL
-		AND cancelled_at IS NULL
-		AND expires_at > $2
-		AND failed_attempts < max_attempts
+		  AND verified_at IS NULL
+		  AND cancelled_at IS NULL
+		  AND expires_at > $2
+		  AND failed_attempts < max_attempts
 		RETURNING
 			failed_attempts,
 			max_attempts
@@ -293,7 +400,7 @@ func (r *ChallengeRepository) RecordFailedAttempt(
 		return auth.ErrChallengeAttemptsExceeded
 	}
 
-	return fmt.Errorf(
+	return errors.New(
 		"OTP challenge could not record failed attempt",
 	)
 }
@@ -310,14 +417,15 @@ func (r *ChallengeRepository) MarkVerified(
 	}
 
 	verifiedAt = verifiedAt.UTC()
+
 	const updateQuery = `
 		UPDATE otp_challenges
 		SET verified_at = $1
 		WHERE id = $2
-		AND verified_at IS NULL
-		AND cancelled_at IS NULL
-		AND expires_at > $1
-		AND failed_attempts < max_attempts
+		  AND verified_at IS NULL
+		  AND cancelled_at IS NULL
+		  AND expires_at > $1
+		  AND failed_attempts < max_attempts
 		RETURNING id
 	`
 
@@ -356,9 +464,9 @@ func (r *ChallengeRepository) MarkVerified(
 
 	var expiresAt time.Time
 	var existingVerifiedAt *time.Time
+	var cancelledAt *time.Time
 	var failedAttempts int16
 	var maxAttempts int16
-	var cancelledAt *time.Time
 
 	err = r.pool.QueryRow(
 		ctx,
@@ -399,7 +507,7 @@ func (r *ChallengeRepository) MarkVerified(
 		return auth.ErrChallengeAttemptsExceeded
 	}
 
-	return fmt.Errorf(
+	return errors.New(
 		"OTP challenge could not be marked verified",
 	)
 }
@@ -416,13 +524,14 @@ func (r *ChallengeRepository) Cancel(
 	}
 
 	cancelledAt = cancelledAt.UTC()
+
 	const updateQuery = `
 		UPDATE otp_challenges
 		SET cancelled_at = $1
 		WHERE id = $2
 		  AND verified_at IS NULL
 		  AND cancelled_at IS NULL
-		  AND expires_at > $1
+		  AND expires_at >= $1
 		RETURNING id
 	`
 
@@ -490,11 +599,68 @@ func (r *ChallengeRepository) Cancel(
 		return nil
 	}
 
-	if !cancelledAt.Before(expiresAt) {
+	if cancelledAt.After(expiresAt) {
 		return auth.ErrChallengeExpired
 	}
 
-	return fmt.Errorf(
+	return errors.New(
 		"OTP challenge could not be cancelled",
 	)
+}
+
+func normalizeChallengeTargetIdentityID(
+	purpose auth.OTPPurpose,
+	targetIdentityID *string,
+) (any, error) {
+	switch purpose {
+	case auth.OTPPurposeLogin:
+		if targetIdentityID != nil {
+			return nil, errors.New(
+				"login OTP challenge cannot target an identity",
+			)
+		}
+
+		return nil, nil
+
+	case auth.OTPPurposeLinkIdentifier:
+		if targetIdentityID == nil {
+			return nil, errors.New(
+				"link identifier OTP challenge requires target identity",
+			)
+		}
+
+		normalized := strings.TrimSpace(
+			*targetIdentityID,
+		)
+		if normalized == "" {
+			return nil, errors.New(
+				"OTP challenge target identity cannot be blank",
+			)
+		}
+
+		return normalized, nil
+
+	default:
+		return nil, auth.ErrInvalidOTPPurpose
+	}
+}
+
+func challengeScopeLockKey(
+	identifier auth.Identifier,
+	purpose auth.OTPPurpose,
+	targetIdentityID any,
+) string {
+	target := "-"
+
+	if targetIdentityID != nil {
+		target = fmt.Sprint(targetIdentityID)
+	}
+
+	return string(identifier.Type) +
+		":" +
+		identifier.Value +
+		":" +
+		string(purpose) +
+		":" +
+		target
 }

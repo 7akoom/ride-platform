@@ -98,7 +98,7 @@ func (f *fakeAuthService) LogoutAllSessions(
 	return f.logoutAllSessionsErr
 }
 
-func TestIdentityHandlerRequestOTPReturnsChallenge(t *testing.T) {
+func TestIdentityHandlerRequestLoginOTPReturnsChallenge(t *testing.T) {
 	authService := &fakeAuthService{
 		requestOTPResult: auth.RequestOTPResult{
 			ChallengeID:      "otp_ch_test",
@@ -108,25 +108,41 @@ func TestIdentityHandlerRequestOTPReturnsChallenge(t *testing.T) {
 
 	handler := NewIdentityHandler(authService)
 
-	response, err := handler.RequestOTP(
+	response, err := handler.RequestLoginOTP(
 		context.Background(),
-		&identityv1.RequestOTPRequest{
-			PhoneNumber: "  +9647500000000  ",
+		&identityv1.RequestLoginOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_PHONE,
+				Value: "  +9647500000000  ",
+			},
 		},
 	)
 	if err != nil {
-		t.Fatalf("RequestOTP() returned an error: %v", err)
+		t.Fatalf("RequestLoginOTP() returned an error: %v", err)
 	}
 
 	if !authService.requestOTPCalled {
 		t.Fatal("auth service RequestOTP() was not called")
 	}
 
-	if authService.requestOTPInput.PhoneNumber != "+9647500000000" {
+	expectedIdentifier := auth.Identifier{
+		Type:  auth.IdentifierTypePhone,
+		Value: "+9647500000000",
+	}
+
+	if authService.requestOTPInput.Identifier != expectedIdentifier {
 		t.Fatalf(
-			"auth service received phone number %q, expected %q",
-			authService.requestOTPInput.PhoneNumber,
-			"+9647500000000",
+			"auth service received identifier %+v, expected %+v",
+			authService.requestOTPInput.Identifier,
+			expectedIdentifier,
+		)
+	}
+
+	if authService.requestOTPInput.Purpose != auth.OTPPurposeLogin {
+		t.Fatalf(
+			"auth service received purpose %q, expected %q",
+			authService.requestOTPInput.Purpose,
+			auth.OTPPurposeLogin,
 		)
 	}
 
@@ -146,12 +162,12 @@ func TestIdentityHandlerRequestOTPReturnsChallenge(t *testing.T) {
 	}
 }
 
-func TestIdentityHandlerRequestOTPRejectsNilRequest(t *testing.T) {
+func TestIdentityHandlerRequestLoginOTPRejectsNilRequest(t *testing.T) {
 	authService := &fakeAuthService{}
 
 	handler := NewIdentityHandler(authService)
 
-	_, err := handler.RequestOTP(
+	_, err := handler.RequestLoginOTP(
 		context.Background(),
 		nil,
 	)
@@ -171,15 +187,20 @@ func TestIdentityHandlerRequestOTPRejectsNilRequest(t *testing.T) {
 	}
 }
 
-func TestIdentityHandlerRequestOTPRejectsEmptyPhoneNumber(t *testing.T) {
+func TestIdentityHandlerRequestLoginOTPRejectsEmptyIdentifierValue(
+	t *testing.T,
+) {
 	authService := &fakeAuthService{}
 
 	handler := NewIdentityHandler(authService)
 
-	_, err := handler.RequestOTP(
+	_, err := handler.RequestLoginOTP(
 		context.Background(),
-		&identityv1.RequestOTPRequest{
-			PhoneNumber: "   ",
+		&identityv1.RequestLoginOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_PHONE,
+				Value: "   ",
+			},
 		},
 	)
 
@@ -193,12 +214,295 @@ func TestIdentityHandlerRequestOTPRejectsEmptyPhoneNumber(t *testing.T) {
 
 	if authService.requestOTPCalled {
 		t.Fatal(
-			"auth service RequestOTP() was called for empty phone number",
+			"auth service RequestOTP() was called for empty identifier value",
 		)
 	}
 }
 
-func TestIdentityHandlerRequestOTPMapsInvalidPhoneNumberToInvalidArgument(
+func TestIdentityHandlerRequestIdentifierLinkOTPUsesAuthenticatedIdentity(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{
+		requestOTPResult: auth.RequestOTPResult{
+			ChallengeID:      "otp_ch_link_test",
+			ExpiresInSeconds: 300,
+		},
+	}
+
+	handler := NewIdentityHandler(authService)
+
+	ctx := contextWithAuthenticatedPrincipal(
+		context.Background(),
+		authenticatedPrincipal{
+			IdentityID: "identity-123",
+			SessionID:  "session-456",
+		},
+	)
+
+	response, err := handler.RequestIdentifierLinkOTP(
+		ctx,
+		&identityv1.RequestIdentifierLinkOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_EMAIL,
+				Value: "  user@example.com  ",
+			},
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"RequestIdentifierLinkOTP() returned an error: %v",
+			err,
+		)
+	}
+
+	if !authService.requestOTPCalled {
+		t.Fatal(
+			"auth service RequestOTP() was not called",
+		)
+	}
+
+	expectedIdentifier := auth.Identifier{
+		Type:  auth.IdentifierTypeEmail,
+		Value: "user@example.com",
+	}
+
+	if authService.requestOTPInput.Identifier != expectedIdentifier {
+		t.Fatalf(
+			"auth service received identifier %+v, expected %+v",
+			authService.requestOTPInput.Identifier,
+			expectedIdentifier,
+		)
+	}
+
+	if authService.requestOTPInput.Purpose !=
+		auth.OTPPurposeLinkIdentifier {
+		t.Fatalf(
+			"auth service received purpose %q, expected %q",
+			authService.requestOTPInput.Purpose,
+			auth.OTPPurposeLinkIdentifier,
+		)
+	}
+
+	if authService.requestOTPInput.TargetIdentityID == nil {
+		t.Fatal(
+			"auth service received nil target identity ID",
+		)
+	}
+
+	if *authService.requestOTPInput.TargetIdentityID !=
+		"identity-123" {
+		t.Fatalf(
+			"target identity ID = %q, expected %q",
+			*authService.requestOTPInput.TargetIdentityID,
+			"identity-123",
+		)
+	}
+
+	if response.GetChallengeId() != "otp_ch_link_test" {
+		t.Fatalf(
+			"ChallengeId is %q, expected %q",
+			response.GetChallengeId(),
+			"otp_ch_link_test",
+		)
+	}
+
+	if response.GetExpiresInSeconds() != 300 {
+		t.Fatalf(
+			"ExpiresInSeconds is %d, expected 300",
+			response.GetExpiresInSeconds(),
+		)
+	}
+}
+
+func TestIdentityHandlerRequestIdentifierLinkOTPRejectsMissingAuthenticatedIdentity(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{}
+
+	handler := NewIdentityHandler(authService)
+
+	_, err := handler.RequestIdentifierLinkOTP(
+		context.Background(),
+		&identityv1.RequestIdentifierLinkOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_EMAIL,
+				Value: "user@example.com",
+			},
+		},
+	)
+
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf(
+			"status code is %v, expected %v",
+			status.Code(err),
+			codes.Unauthenticated,
+		)
+	}
+
+	if authService.requestOTPCalled {
+		t.Fatal(
+			"auth service RequestOTP() was called without authenticated identity",
+		)
+	}
+}
+
+func TestIdentityHandlerVerifyIdentifierLinkOTPUsesAuthenticatedIdentity(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{}
+
+	handler := NewIdentityHandler(authService)
+
+	ctx := contextWithAuthenticatedPrincipal(
+		context.Background(),
+		authenticatedPrincipal{
+			IdentityID: "identity-123",
+			SessionID:  "session-456",
+		},
+	)
+
+	response, err := handler.VerifyIdentifierLinkOTP(
+		ctx,
+		&identityv1.VerifyIdentifierLinkOTPRequest{
+			ChallengeId: "  otp_ch_link_test  ",
+			Code:        "  123456  ",
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"VerifyIdentifierLinkOTP() returned an error: %v",
+			err,
+		)
+	}
+
+	if !authService.verifyOTPCalled {
+		t.Fatal(
+			"auth service VerifyOTP() was not called",
+		)
+	}
+
+	if authService.verifyOTPInput.ChallengeID !=
+		"otp_ch_link_test" {
+		t.Fatalf(
+			"challenge ID = %q, expected %q",
+			authService.verifyOTPInput.ChallengeID,
+			"otp_ch_link_test",
+		)
+	}
+
+	if authService.verifyOTPInput.Code != "123456" {
+		t.Fatalf(
+			"OTP code = %q, expected %q",
+			authService.verifyOTPInput.Code,
+			"123456",
+		)
+	}
+
+	if authService.verifyOTPInput.ExpectedPurpose !=
+		auth.OTPPurposeLinkIdentifier {
+		t.Fatalf(
+			"expected purpose = %q, expected %q",
+			authService.verifyOTPInput.ExpectedPurpose,
+			auth.OTPPurposeLinkIdentifier,
+		)
+	}
+
+	if authService.verifyOTPInput.ExpectedTargetIdentityID == nil {
+		t.Fatal(
+			"expected target identity ID is nil",
+		)
+	}
+
+	if *authService.verifyOTPInput.ExpectedTargetIdentityID !=
+		"identity-123" {
+		t.Fatalf(
+			"expected target identity ID = %q, expected %q",
+			*authService.verifyOTPInput.ExpectedTargetIdentityID,
+			"identity-123",
+		)
+	}
+
+	if response == nil {
+		t.Fatal(
+			"VerifyIdentifierLinkOTP() returned nil response",
+		)
+	}
+}
+
+func TestIdentityHandlerVerifyIdentifierLinkOTPRejectsMissingAuthenticatedIdentity(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{}
+
+	handler := NewIdentityHandler(authService)
+
+	_, err := handler.VerifyIdentifierLinkOTP(
+		context.Background(),
+		&identityv1.VerifyIdentifierLinkOTPRequest{
+			ChallengeId: "otp_ch_link_test",
+			Code:        "123456",
+		},
+	)
+
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf(
+			"status code is %v, expected %v",
+			status.Code(err),
+			codes.Unauthenticated,
+		)
+	}
+
+	if authService.verifyOTPCalled {
+		t.Fatal(
+			"auth service VerifyOTP() was called without authenticated identity",
+		)
+	}
+}
+
+func TestIdentityHandlerVerifyIdentifierLinkOTPMapsTargetMismatchToFailedPrecondition(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{
+		verifyOTPErr: auth.ErrOTPChallengeTargetMismatch,
+	}
+
+	handler := NewIdentityHandler(authService)
+
+	ctx := contextWithAuthenticatedPrincipal(
+		context.Background(),
+		authenticatedPrincipal{
+			IdentityID: "identity-123",
+			SessionID:  "session-456",
+		},
+	)
+
+	_, err := handler.VerifyIdentifierLinkOTP(
+		ctx,
+		&identityv1.VerifyIdentifierLinkOTPRequest{
+			ChallengeId: "otp_ch_link_test",
+			Code:        "123456",
+		},
+	)
+
+	if status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf(
+			"status code is %v, expected %v",
+			status.Code(err),
+			codes.FailedPrecondition,
+		)
+	}
+
+	if status.Convert(err).Message() !=
+		"OTP challenge is not valid for identifier linking" {
+		t.Fatalf(
+			"error message is %q, expected %q",
+			status.Convert(err).Message(),
+			"OTP challenge is not valid for identifier linking",
+		)
+	}
+}
+
+func TestIdentityHandlerRequestLoginOTPMapsInvalidPhoneNumberToInvalidArgument(
 	t *testing.T,
 ) {
 	authService := &fakeAuthService{
@@ -207,10 +511,13 @@ func TestIdentityHandlerRequestOTPMapsInvalidPhoneNumberToInvalidArgument(
 
 	handler := NewIdentityHandler(authService)
 
-	_, err := handler.RequestOTP(
+	_, err := handler.RequestLoginOTP(
 		context.Background(),
-		&identityv1.RequestOTPRequest{
-			PhoneNumber: "07501234567",
+		&identityv1.RequestLoginOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_PHONE,
+				Value: "07501234567",
+			},
 		},
 	)
 
@@ -231,7 +538,7 @@ func TestIdentityHandlerRequestOTPMapsInvalidPhoneNumberToInvalidArgument(
 	}
 }
 
-func TestIdentityHandlerRequestOTPMapsServiceFailureToInternal(
+func TestIdentityHandlerRequestLoginOTPMapsServiceFailureToInternal(
 	t *testing.T,
 ) {
 	authService := &fakeAuthService{
@@ -240,10 +547,13 @@ func TestIdentityHandlerRequestOTPMapsServiceFailureToInternal(
 
 	handler := NewIdentityHandler(authService)
 
-	_, err := handler.RequestOTP(
+	_, err := handler.RequestLoginOTP(
 		context.Background(),
-		&identityv1.RequestOTPRequest{
-			PhoneNumber: "+9647500000000",
+		&identityv1.RequestLoginOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_PHONE,
+				Value: "+9647500000000",
+			},
 		},
 	)
 
@@ -255,16 +565,16 @@ func TestIdentityHandlerRequestOTPMapsServiceFailureToInternal(
 		)
 	}
 
-	if status.Convert(err).Message() != "failed to request OTP" {
+	if status.Convert(err).Message() != "failed to request login OTP" {
 		t.Fatalf(
 			"error message is %q, expected %q",
 			status.Convert(err).Message(),
-			"failed to request OTP",
+			"failed to request login OTP",
 		)
 	}
 }
 
-func TestIdentityHandlerVerifyOTPReturnsTokens(t *testing.T) {
+func TestIdentityHandlerVerifyLoginOTPReturnsTokens(t *testing.T) {
 	authService := &fakeAuthService{
 		verifyOTPResult: auth.VerifyOTPResult{
 			IdentityID:                  "identity-test-id",
@@ -276,15 +586,15 @@ func TestIdentityHandlerVerifyOTPReturnsTokens(t *testing.T) {
 
 	handler := NewIdentityHandler(authService)
 
-	response, err := handler.VerifyOTP(
+	response, err := handler.VerifyLoginOTP(
 		context.Background(),
-		&identityv1.VerifyOTPRequest{
+		&identityv1.VerifyLoginOTPRequest{
 			ChallengeId: "  otp_ch_test  ",
 			Code:        "  123456  ",
 		},
 	)
 	if err != nil {
-		t.Fatalf("VerifyOTP() returned an error: %v", err)
+		t.Fatalf("VerifyLoginOTP() returned an error: %v", err)
 	}
 
 	if !authService.verifyOTPCalled {
@@ -304,6 +614,14 @@ func TestIdentityHandlerVerifyOTPReturnsTokens(t *testing.T) {
 			"auth service received OTP code %q, expected %q",
 			authService.verifyOTPInput.Code,
 			"123456",
+		)
+	}
+
+	if authService.verifyOTPInput.ExpectedPurpose != auth.OTPPurposeLogin {
+		t.Fatalf(
+			"auth service received purpose %q, expected %q",
+			authService.verifyOTPInput.ExpectedPurpose,
+			auth.OTPPurposeLogin,
 		)
 	}
 
@@ -331,10 +649,10 @@ func TestIdentityHandlerVerifyOTPReturnsTokens(t *testing.T) {
 	}
 }
 
-func TestIdentityHandlerVerifyOTPRejectsInvalidInput(t *testing.T) {
+func TestIdentityHandlerVerifyLoginOTPRejectsInvalidInput(t *testing.T) {
 	tests := []struct {
 		name    string
-		request *identityv1.VerifyOTPRequest
+		request *identityv1.VerifyLoginOTPRequest
 	}{
 		{
 			name:    "nil request",
@@ -342,14 +660,14 @@ func TestIdentityHandlerVerifyOTPRejectsInvalidInput(t *testing.T) {
 		},
 		{
 			name: "empty challenge ID",
-			request: &identityv1.VerifyOTPRequest{
+			request: &identityv1.VerifyLoginOTPRequest{
 				ChallengeId: "   ",
 				Code:        "123456",
 			},
 		},
 		{
 			name: "empty OTP code",
-			request: &identityv1.VerifyOTPRequest{
+			request: &identityv1.VerifyLoginOTPRequest{
 				ChallengeId: "otp_ch_test",
 				Code:        "   ",
 			},
@@ -361,7 +679,7 @@ func TestIdentityHandlerVerifyOTPRejectsInvalidInput(t *testing.T) {
 			authService := &fakeAuthService{}
 			handler := NewIdentityHandler(authService)
 
-			_, err := handler.VerifyOTP(
+			_, err := handler.VerifyLoginOTP(
 				context.Background(),
 				test.request,
 			)
@@ -383,7 +701,7 @@ func TestIdentityHandlerVerifyOTPRejectsInvalidInput(t *testing.T) {
 	}
 }
 
-func TestIdentityHandlerRequestOTPMapsRateLimitToResourceExhausted(
+func TestIdentityHandlerRequestLoginOTPMapsRateLimitToResourceExhausted(
 	t *testing.T,
 ) {
 	authService := &fakeAuthService{
@@ -392,10 +710,13 @@ func TestIdentityHandlerRequestOTPMapsRateLimitToResourceExhausted(
 
 	handler := NewIdentityHandler(authService)
 
-	_, err := handler.RequestOTP(
+	_, err := handler.RequestLoginOTP(
 		context.Background(),
-		&identityv1.RequestOTPRequest{
-			PhoneNumber: "+9647501234567",
+		&identityv1.RequestLoginOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_PHONE,
+				Value: "+9647501234567",
+			},
 		},
 	)
 
@@ -417,7 +738,7 @@ func TestIdentityHandlerRequestOTPMapsRateLimitToResourceExhausted(
 	}
 }
 
-func TestIdentityHandlerVerifyOTPMapsApplicationErrors(t *testing.T) {
+func TestIdentityHandlerVerifyLoginOTPMapsApplicationErrors(t *testing.T) {
 	tests := []struct {
 		name         string
 		serviceError error
@@ -449,6 +770,11 @@ func TestIdentityHandlerVerifyOTPMapsApplicationErrors(t *testing.T) {
 			expectedCode: codes.ResourceExhausted,
 		},
 		{
+			name:         "OTP purpose mismatch",
+			serviceError: auth.ErrOTPPurposeMismatch,
+			expectedCode: codes.FailedPrecondition,
+		},
+		{
 			name:         "invalid OTP",
 			serviceError: auth.ErrInvalidOTP,
 			expectedCode: codes.Unauthenticated,
@@ -473,9 +799,9 @@ func TestIdentityHandlerVerifyOTPMapsApplicationErrors(t *testing.T) {
 
 			handler := NewIdentityHandler(authService)
 
-			_, err := handler.VerifyOTP(
+			_, err := handler.VerifyLoginOTP(
 				context.Background(),
-				&identityv1.VerifyOTPRequest{
+				&identityv1.VerifyLoginOTPRequest{
 					ChallengeId: "otp_ch_test",
 					Code:        "123456",
 				},

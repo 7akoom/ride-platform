@@ -5,33 +5,64 @@ package ride.identity.v1;
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1";
 
 service IdentityService {
-  rpc RequestOTP(RequestOTPRequest) returns (RequestOTPResponse);
-  rpc VerifyOTP(VerifyOTPRequest) returns (VerifyOTPResponse);
+  rpc RequestLoginOTP(RequestLoginOTPRequest) returns (RequestLoginOTPResponse);
+  rpc VerifyLoginOTP(VerifyLoginOTPRequest) returns (VerifyLoginOTPResponse);
+
+  rpc RequestIdentifierLinkOTP(RequestIdentifierLinkOTPRequest) returns (RequestIdentifierLinkOTPResponse);
+  rpc VerifyIdentifierLinkOTP(VerifyIdentifierLinkOTPRequest) returns (VerifyIdentifierLinkOTPResponse);
+
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
   rpc Logout(LogoutRequest) returns (LogoutResponse);
   rpc LogoutAllSessions(LogoutAllSessionsRequest) returns (LogoutAllSessionsResponse);
 }
 
-message RequestOTPRequest {
-  string phone_number = 1;
+enum IdentifierType {
+  IDENTIFIER_TYPE_UNSPECIFIED = 0;
+  IDENTIFIER_TYPE_PHONE = 1;
+  IDENTIFIER_TYPE_EMAIL = 2;
 }
 
-message RequestOTPResponse {
+message Identifier {
+  IdentifierType type = 1;
+  string value = 2;
+}
+
+message RequestLoginOTPRequest {
+  Identifier identifier = 1;
+}
+
+message RequestLoginOTPResponse {
   string challenge_id = 1;
   int32 expires_in_seconds = 2;
 }
 
-message VerifyOTPRequest {
+message VerifyLoginOTPRequest {
   string challenge_id = 1;
   string code = 2;
 }
 
-message VerifyOTPResponse {
+message VerifyLoginOTPResponse {
   string identity_id = 1;
   string access_token = 2;
   string refresh_token = 3;
   int32 access_token_expires_in_seconds = 4;
 }
+
+message RequestIdentifierLinkOTPRequest {
+  Identifier identifier = 1;
+}
+
+message RequestIdentifierLinkOTPResponse {
+  string challenge_id = 1;
+  int32 expires_in_seconds = 2;
+}
+
+message VerifyIdentifierLinkOTPRequest {
+  string challenge_id = 1;
+  string code = 2;
+}
+
+message VerifyIdentifierLinkOTPResponse {}
 
 message RefreshTokenRequest {
   string refresh_token = 1;

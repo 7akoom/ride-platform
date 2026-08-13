@@ -29,7 +29,13 @@ func TestOTPRequestRateLimiterRejectsZeroRequestTime(
 
 	err := rateLimiter.Allow(
 		context.Background(),
-		"+9647500000000",
+		auth.OTPRequestScope{
+			Identifier: auth.Identifier{
+				Type:  auth.IdentifierTypePhone,
+				Value: "+9647500000000",
+			},
+			Purpose: auth.OTPPurposeLogin,
+		},
 		time.Time{},
 		auth.OTPRequestRateLimitPolicy{
 			Cooldown:    time.Minute,

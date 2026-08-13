@@ -81,12 +81,20 @@ func TestChallengeRepositoryCreateRejectsInvalidInput(
 ) {
 	validChallenge := func() auth.OTPChallenge {
 		return auth.OTPChallenge{
-			ID:          "otp_ch_test",
-			PhoneNumber: "+9647500000000",
-			CodeHash:    "valid-code-hash",
-			ExpiresAt:   time.Now().UTC().Add(5 * time.Minute),
+			ID: "otp_ch_test",
+			Identifier: auth.Identifier{
+				Type:  auth.IdentifierTypePhone,
+				Value: "+9647500000000",
+			},
+			Purpose:  auth.OTPPurposeLogin,
+			CodeHash: "valid-code-hash",
+			ExpiresAt: time.Now().
+				UTC().
+				Add(5 * time.Minute),
 		}
 	}
+
+	targetIdentityID := "11111111-1111-1111-1111-111111111111"
 
 	tests := []struct {
 		name      string
@@ -101,10 +109,61 @@ func TestChallengeRepositoryCreateRejectsInvalidInput(
 			}(),
 		},
 		{
-			name: "blank phone number",
+			name: "invalid identifier type",
 			challenge: func() auth.OTPChallenge {
 				challenge := validChallenge()
-				challenge.PhoneNumber = "\t\n "
+				challenge.Identifier.Type =
+					auth.IdentifierType("username")
+				return challenge
+			}(),
+		},
+		{
+			name: "invalid phone identifier",
+			challenge: func() auth.OTPChallenge {
+				challenge := validChallenge()
+				challenge.Identifier.Value =
+					"07500000000"
+				return challenge
+			}(),
+		},
+		{
+			name: "invalid purpose",
+			challenge: func() auth.OTPChallenge {
+				challenge := validChallenge()
+				challenge.Purpose =
+					auth.OTPPurpose("unknown")
+				return challenge
+			}(),
+		},
+		{
+			name: "login purpose cannot target identity",
+			challenge: func() auth.OTPChallenge {
+				challenge := validChallenge()
+				challenge.TargetIdentityID =
+					&targetIdentityID
+				return challenge
+			}(),
+		},
+		{
+			name: "link identifier requires target identity",
+			challenge: func() auth.OTPChallenge {
+				challenge := validChallenge()
+				challenge.Purpose =
+					auth.OTPPurposeLinkIdentifier
+				return challenge
+			}(),
+		},
+		{
+			name: "link identifier rejects blank target identity",
+			challenge: func() auth.OTPChallenge {
+				challenge := validChallenge()
+				challenge.Purpose =
+					auth.OTPPurposeLinkIdentifier
+
+				blankTarget := "   "
+				challenge.TargetIdentityID =
+					&blankTarget
+
 				return challenge
 			}(),
 		},

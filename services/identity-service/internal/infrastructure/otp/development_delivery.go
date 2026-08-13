@@ -33,13 +33,13 @@ func NewDevelopmentDelivery(
 
 func (d *DevelopmentDelivery) Send(
 	ctx context.Context,
-	phoneNumber string,
+	identifier string,
 	code string,
 ) error {
 	d.logger.WarnContext(
 		ctx,
 		"OTP delivered through development adapter",
-		"phone_number", phoneNumber,
+		"otp_identifier", identifier,
 		"otp_code", code,
 	)
 

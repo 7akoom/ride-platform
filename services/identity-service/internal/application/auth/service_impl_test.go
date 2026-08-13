@@ -13,6 +13,8 @@ type testChallengeRepository struct {
 	recordFailedAttemptCalled bool
 	markVerifiedCalled        bool
 
+	createdChallenge OTPChallenge
+
 	findResult             OTPChallenge
 	findErr                error
 	recordFailedAttemptErr error
@@ -31,6 +33,8 @@ func (r *testChallengeRepository) Create(
 	challenge OTPChallenge,
 ) error {
 	r.createCalled = true
+	r.createdChallenge = challenge
+
 	return nil
 }
 
@@ -76,20 +80,84 @@ func (r *testChallengeRepository) Cancel(
 	return r.cancelErr
 }
 
-type testIdentityRepository struct {
-	result Identity
-	err    error
+type testIdentityIdentifierRepository struct {
+	findResult     Identity
+	findFound      bool
+	findErr        error
+	findCalls      int
+	findIdentifier Identifier
+
+	createResult     Identity
+	createErr        error
+	createCalls      int
+	createIdentifier Identifier
+	createVerifiedAt time.Time
+
+	linkCalls      int
+	linkIdentityID string
+	linkIdentifier Identifier
+	linkVerifiedAt time.Time
+	linkErr        error
 }
 
-func (r *testIdentityRepository) FindOrCreateByPhoneNumber(
+func (r *testIdentityIdentifierRepository) FindIdentityByIdentifier(
 	ctx context.Context,
-	phoneNumber string,
-) (Identity, error) {
-	if r.err != nil {
-		return Identity{}, r.err
+	identifier Identifier,
+) (Identity, bool, error) {
+	r.findCalls++
+	r.findIdentifier = identifier
+
+	if r.findErr != nil {
+		return Identity{}, false, r.findErr
 	}
 
-	return r.result, nil
+	return r.findResult, r.findFound, nil
+}
+
+func (r *testIdentityIdentifierRepository) CreateIdentityWithIdentifier(
+	ctx context.Context,
+	identifier Identifier,
+	verifiedAt time.Time,
+) (Identity, error) {
+	r.createCalls++
+	r.createIdentifier = identifier
+	r.createVerifiedAt = verifiedAt
+
+	if r.createErr != nil {
+		return Identity{}, r.createErr
+	}
+
+	return r.createResult, nil
+}
+
+func (r *testIdentityIdentifierRepository) LinkIdentifier(
+	ctx context.Context,
+	identityID string,
+	identifier Identifier,
+	verifiedAt time.Time,
+) error {
+	r.linkCalls++
+	r.linkIdentityID = identityID
+	r.linkIdentifier = identifier
+	r.linkVerifiedAt = verifiedAt
+
+	return r.linkErr
+}
+
+type testIdentifierLinkCompletionStore struct {
+	calls int
+	input IdentifierLinkCompletionInput
+	err   error
+}
+
+func (s *testIdentifierLinkCompletionStore) Complete(
+	ctx context.Context,
+	input IdentifierLinkCompletionInput,
+) error {
+	s.calls++
+	s.input = input
+
+	return s.err
 }
 
 type testOTPGenerator struct {
@@ -150,14 +218,19 @@ type testOTPDelivery struct {
 	called bool
 	err    error
 	onSend func()
+
+	recipient string
+	code      string
 }
 
 func (d *testOTPDelivery) Send(
 	ctx context.Context,
-	phoneNumber string,
+	recipient string,
 	code string,
 ) error {
 	d.called = true
+	d.recipient = recipient
+	d.code = code
 
 	if d.onSend != nil {
 		d.onSend()
@@ -169,15 +242,19 @@ func (d *testOTPDelivery) Send(
 type testOTPRequestRateLimiter struct {
 	called bool
 	err    error
+
+	identifierValue string
 }
 
 func (r *testOTPRequestRateLimiter) Allow(
 	ctx context.Context,
-	phoneNumber string,
+	scope OTPRequestScope,
 	now time.Time,
 	policy OTPRequestRateLimitPolicy,
 ) error {
 	r.called = true
+	r.identifierValue = scope.Identifier.Value
+
 	return r.err
 }
 
@@ -397,21 +474,22 @@ func (c *testClock) Now() time.Time {
 }
 
 type serviceConstructorTestDependencies struct {
-	challengeRepository        ChallengeRepository
-	identityRepository         IdentityRepository
-	otpGenerator               OTPGenerator
-	otpHasher                  OTPHasher
-	otpDelivery                OTPDelivery
-	otpRequestRateLimiter      OTPRequestRateLimiter
-	challengeIDGenerator       ChallengeIDGenerator
-	tokenIssuer                TokenIssuer
-	refreshTokenRotationStore  RefreshTokenRotationStore
-	sessionRevocationStore     SessionRevocationStore
-	allSessionsRevocationStore AllSessionsRevocationStore
-	refreshTokenGenerator      RefreshTokenGenerator
-	refreshTokenHasher         RefreshTokenHasher
-	accessTokenSigner          AccessTokenSigner
-	clock                      Clock
+	challengeRepository           ChallengeRepository
+	identityIdentifierRepository  IdentityIdentifierRepository
+	identifierLinkCompletionStore IdentifierLinkCompletionStore
+	otpGenerator                  OTPGenerator
+	otpHasher                     OTPHasher
+	otpDelivery                   OTPDelivery
+	otpRequestRateLimiter         OTPRequestRateLimiter
+	challengeIDGenerator          ChallengeIDGenerator
+	tokenIssuer                   TokenIssuer
+	refreshTokenRotationStore     RefreshTokenRotationStore
+	sessionRevocationStore        SessionRevocationStore
+	allSessionsRevocationStore    AllSessionsRevocationStore
+	refreshTokenGenerator         RefreshTokenGenerator
+	refreshTokenHasher            RefreshTokenHasher
+	accessTokenSigner             AccessTokenSigner
+	clock                         Clock
 
 	otpTTL                    time.Duration
 	otpRequestRateLimitPolicy OTPRequestRateLimitPolicy
@@ -420,21 +498,22 @@ type serviceConstructorTestDependencies struct {
 
 func newValidServiceConstructorTestDependencies() serviceConstructorTestDependencies {
 	return serviceConstructorTestDependencies{
-		challengeRepository:        &testChallengeRepository{},
-		identityRepository:         &testIdentityRepository{},
-		otpGenerator:               &testOTPGenerator{},
-		otpHasher:                  &testOTPHasher{},
-		otpDelivery:                &testOTPDelivery{},
-		otpRequestRateLimiter:      &testOTPRequestRateLimiter{},
-		challengeIDGenerator:       &testChallengeIDGenerator{},
-		tokenIssuer:                &testTokenIssuer{},
-		refreshTokenRotationStore:  &testRefreshTokenRotationStore{},
-		sessionRevocationStore:     &testSessionRevocationStore{},
-		allSessionsRevocationStore: &testAllSessionsRevocationStore{},
-		refreshTokenGenerator:      &testRefreshTokenGenerator{},
-		refreshTokenHasher:         &testRefreshTokenHasher{},
-		accessTokenSigner:          &testAccessTokenSigner{},
-		clock:                      &testClock{},
+		challengeRepository:           &testChallengeRepository{},
+		identityIdentifierRepository:  &testIdentityIdentifierRepository{},
+		identifierLinkCompletionStore: &testIdentifierLinkCompletionStore{},
+		otpGenerator:                  &testOTPGenerator{},
+		otpHasher:                     &testOTPHasher{},
+		otpDelivery:                   &testOTPDelivery{},
+		otpRequestRateLimiter:         &testOTPRequestRateLimiter{},
+		challengeIDGenerator:          &testChallengeIDGenerator{},
+		tokenIssuer:                   &testTokenIssuer{},
+		refreshTokenRotationStore:     &testRefreshTokenRotationStore{},
+		sessionRevocationStore:        &testSessionRevocationStore{},
+		allSessionsRevocationStore:    &testAllSessionsRevocationStore{},
+		refreshTokenGenerator:         &testRefreshTokenGenerator{},
+		refreshTokenHasher:            &testRefreshTokenHasher{},
+		accessTokenSigner:             &testAccessTokenSigner{},
+		clock:                         &testClock{},
 
 		otpTTL: 5 * time.Minute,
 		otpRequestRateLimitPolicy: OTPRequestRateLimitPolicy{
@@ -449,9 +528,10 @@ func newValidServiceConstructorTestDependencies() serviceConstructorTestDependen
 func newServiceFromConstructorTestDependencies(
 	dependencies serviceConstructorTestDependencies,
 ) Service {
-	return NewService(
+	return NewServiceWithIdentityIdentifiers(
 		dependencies.challengeRepository,
-		dependencies.identityRepository,
+		dependencies.identityIdentifierRepository,
+		dependencies.identifierLinkCompletionStore,
 		dependencies.otpGenerator,
 		dependencies.otpHasher,
 		dependencies.otpDelivery,
@@ -471,6 +551,41 @@ func newServiceFromConstructorTestDependencies(
 	)
 }
 
+func newIdentifierAwareServiceForTest(
+	challengeRepository ChallengeRepository,
+	identityIdentifierRepository IdentityIdentifierRepository,
+	identifierLinkCompletionStore IdentifierLinkCompletionStore,
+	otpHasher OTPHasher,
+	tokenIssuer TokenIssuer,
+	clock Clock,
+) Service {
+	return NewServiceWithIdentityIdentifiers(
+		challengeRepository,
+		identityIdentifierRepository,
+		identifierLinkCompletionStore,
+		&testOTPGenerator{},
+		otpHasher,
+		&testOTPDelivery{},
+		&testOTPRequestRateLimiter{},
+		&testChallengeIDGenerator{},
+		tokenIssuer,
+		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
+		&testRefreshTokenGenerator{},
+		&testRefreshTokenHasher{},
+		&testAccessTokenSigner{},
+		clock,
+		5*time.Minute,
+		OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		29*24*time.Hour,
+	)
+}
+
 func TestNewServicePanicsForInvalidConfiguration(
 	t *testing.T,
 ) {
@@ -485,9 +600,15 @@ func TestNewServicePanicsForInvalidConfiguration(
 			},
 		},
 		{
-			name: "nil identity repository",
+			name: "nil identity identifier repository",
 			mutate: func(d *serviceConstructorTestDependencies) {
-				d.identityRepository = nil
+				d.identityIdentifierRepository = nil
+			},
+		},
+		{
+			name: "nil identifier link completion store",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.identifierLinkCompletionStore = nil
 			},
 		},
 		{
@@ -617,7 +738,7 @@ func TestNewServicePanicsForInvalidConfiguration(
 			defer func() {
 				if recovered := recover(); recovered == nil {
 					t.Fatal(
-						"NewService() did not panic for invalid configuration",
+						"NewServiceWithIdentityIdentifiers() did not panic for invalid configuration",
 					)
 				}
 			}()
@@ -641,9 +762,10 @@ func TestRequestOTPStopsBeforeGeneratingOTPWhenRateLimited(
 	}
 	challengeIDGenerator := &testChallengeIDGenerator{}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		otpGenerator,
 		otpHasher,
 		otpDelivery,
@@ -680,7 +802,11 @@ func TestRequestOTPStopsBeforeGeneratingOTPWhenRateLimited(
 	_, err := service.RequestOTP(
 		context.Background(),
 		RequestOTPInput{
-			PhoneNumber: "+9647501234567",
+			Identifier: Identifier{
+				Type:  IdentifierTypePhone,
+				Value: "+9647501234567",
+			},
+			Purpose: OTPPurposeLogin,
 		},
 	)
 
@@ -751,9 +877,10 @@ func TestRequestOTPContinuesWhenRateLimiterAllows(
 		time.UTC,
 	)
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		otpGenerator,
 		otpHasher,
 		otpDelivery,
@@ -781,7 +908,11 @@ func TestRequestOTPContinuesWhenRateLimiterAllows(
 	result, err := service.RequestOTP(
 		context.Background(),
 		RequestOTPInput{
-			PhoneNumber: "  +9647501234567  ",
+			Identifier: Identifier{
+				Type:  IdentifierTypePhone,
+				Value: "  +9647501234567  ",
+			},
+			Purpose: OTPPurposeLogin,
 		},
 	)
 	if err != nil {
@@ -869,9 +1000,10 @@ func TestRequestOTPCancelsChallengeWhenDeliveryFails(
 		err: deliveryError,
 	}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
 		otpDelivery,
@@ -908,7 +1040,11 @@ func TestRequestOTPCancelsChallengeWhenDeliveryFails(
 	_, err := service.RequestOTP(
 		context.Background(),
 		RequestOTPInput{
-			PhoneNumber: "+9647501234567",
+			Identifier: Identifier{
+				Type:  IdentifierTypePhone,
+				Value: "+9647501234567",
+			},
+			Purpose: OTPPurposeLogin,
 		},
 	)
 
@@ -972,9 +1108,10 @@ func TestRequestOTPCancelsChallengeWithIndependentBoundedContextWhenRequestIsCan
 		},
 	}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
 		otpDelivery,
@@ -1011,7 +1148,11 @@ func TestRequestOTPCancelsChallengeWithIndependentBoundedContextWhenRequestIsCan
 	_, err := service.RequestOTP(
 		requestCtx,
 		RequestOTPInput{
-			PhoneNumber: "+9647501234567",
+			Identifier: Identifier{
+				Type:  IdentifierTypePhone,
+				Value: "+9647501234567",
+			},
+			Purpose: OTPPurposeLogin,
 		},
 	)
 
@@ -1068,9 +1209,10 @@ func TestRequestOTPReturnsDeliveryAndCancellationErrors(
 		err: deliveryError,
 	}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
 		otpDelivery,
@@ -1107,7 +1249,11 @@ func TestRequestOTPReturnsDeliveryAndCancellationErrors(
 	_, err := service.RequestOTP(
 		context.Background(),
 		RequestOTPInput{
-			PhoneNumber: "+9647501234567",
+			Identifier: Identifier{
+				Type:  IdentifierTypePhone,
+				Value: "+9647501234567",
+			},
+			Purpose: OTPPurposeLogin,
 		},
 	)
 
@@ -1138,6 +1284,1075 @@ func TestRequestOTPReturnsDeliveryAndCancellationErrors(
 	}
 }
 
+func TestRequestOTPUsesGenericPhoneLoginIdentifier(
+	t *testing.T,
+) {
+	dependencies := newValidServiceConstructorTestDependencies()
+
+	challengeRepository := &testChallengeRepository{}
+	otpDelivery := &testOTPDelivery{}
+	rateLimiter := &testOTPRequestRateLimiter{}
+
+	dependencies.challengeRepository = challengeRepository
+	dependencies.otpDelivery = otpDelivery
+	dependencies.otpRequestRateLimiter = rateLimiter
+	dependencies.clock = &testClock{
+		now: time.Date(
+			2026,
+			time.August,
+			13,
+			8,
+			0,
+			0,
+			0,
+			time.UTC,
+		),
+	}
+
+	service := newServiceFromConstructorTestDependencies(
+		dependencies,
+	)
+
+	_, err := service.RequestOTP(
+		context.Background(),
+		RequestOTPInput{
+			Identifier: Identifier{
+				Type:  IdentifierTypePhone,
+				Value: "  +9647501234567  ",
+			},
+			Purpose: OTPPurposeLogin,
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"RequestOTP() returned an error: %v",
+			err,
+		)
+	}
+
+	expectedIdentifier := Identifier{
+		Type:  IdentifierTypePhone,
+		Value: "+9647501234567",
+	}
+
+	if challengeRepository.createdChallenge.Identifier !=
+		expectedIdentifier {
+		t.Fatalf(
+			"challenge identifier = %+v, expected %+v",
+			challengeRepository.createdChallenge.Identifier,
+			expectedIdentifier,
+		)
+	}
+
+	if challengeRepository.createdChallenge.Purpose !=
+		OTPPurposeLogin {
+		t.Fatalf(
+			"challenge purpose = %q, expected %q",
+			challengeRepository.createdChallenge.Purpose,
+			OTPPurposeLogin,
+		)
+	}
+
+	if challengeRepository.createdChallenge.TargetIdentityID != nil {
+		t.Fatal(
+			"login challenge unexpectedly has target identity",
+		)
+	}
+
+	if rateLimiter.identifierValue !=
+		expectedIdentifier.Value {
+		t.Fatalf(
+			"rate limiter identifier = %q, expected %q",
+			rateLimiter.identifierValue,
+			expectedIdentifier.Value,
+		)
+	}
+
+	if otpDelivery.recipient != expectedIdentifier.Value {
+		t.Fatalf(
+			"OTP delivery recipient = %q, expected %q",
+			otpDelivery.recipient,
+			expectedIdentifier.Value,
+		)
+	}
+
+	if otpDelivery.code != "123456" {
+		t.Fatalf(
+			"OTP delivery code = %q, expected %q",
+			otpDelivery.code,
+			"123456",
+		)
+	}
+}
+
+func TestRequestOTPUsesNormalizedEmailLoginIdentifier(
+	t *testing.T,
+) {
+	dependencies := newValidServiceConstructorTestDependencies()
+
+	challengeRepository := &testChallengeRepository{}
+	otpDelivery := &testOTPDelivery{}
+	rateLimiter := &testOTPRequestRateLimiter{}
+
+	dependencies.challengeRepository = challengeRepository
+	dependencies.otpDelivery = otpDelivery
+	dependencies.otpRequestRateLimiter = rateLimiter
+
+	service := newServiceFromConstructorTestDependencies(
+		dependencies,
+	)
+
+	_, err := service.RequestOTP(
+		context.Background(),
+		RequestOTPInput{
+			Identifier: Identifier{
+				Type:  IdentifierTypeEmail,
+				Value: "  User.Name@EXAMPLE.COM  ",
+			},
+			Purpose: OTPPurposeLogin,
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"RequestOTP() returned an error: %v",
+			err,
+		)
+	}
+
+	expectedIdentifier := Identifier{
+		Type:  IdentifierTypeEmail,
+		Value: "user.name@example.com",
+	}
+
+	if challengeRepository.createdChallenge.Identifier !=
+		expectedIdentifier {
+		t.Fatalf(
+			"challenge identifier = %+v, expected %+v",
+			challengeRepository.createdChallenge.Identifier,
+			expectedIdentifier,
+		)
+	}
+
+	if challengeRepository.createdChallenge.Purpose !=
+		OTPPurposeLogin {
+		t.Fatalf(
+			"challenge purpose = %q, expected %q",
+			challengeRepository.createdChallenge.Purpose,
+			OTPPurposeLogin,
+		)
+	}
+
+	if challengeRepository.createdChallenge.TargetIdentityID != nil {
+		t.Fatal(
+			"email login challenge unexpectedly has target identity",
+		)
+	}
+
+	if rateLimiter.identifierValue !=
+		expectedIdentifier.Value {
+		t.Fatalf(
+			"rate limiter identifier = %q, expected %q",
+			rateLimiter.identifierValue,
+			expectedIdentifier.Value,
+		)
+	}
+
+	if otpDelivery.recipient != expectedIdentifier.Value {
+		t.Fatalf(
+			"OTP delivery recipient = %q, expected %q",
+			otpDelivery.recipient,
+			expectedIdentifier.Value,
+		)
+	}
+}
+
+func TestRequestOTPUsesLinkIdentifierScope(
+	t *testing.T,
+) {
+	dependencies := newValidServiceConstructorTestDependencies()
+
+	challengeRepository := &testChallengeRepository{}
+
+	dependencies.challengeRepository =
+		challengeRepository
+
+	service := newServiceFromConstructorTestDependencies(
+		dependencies,
+	)
+
+	targetIdentityID :=
+		"  11111111-1111-1111-1111-111111111111  "
+
+	_, err := service.RequestOTP(
+		context.Background(),
+		RequestOTPInput{
+			Identifier: Identifier{
+				Type:  IdentifierTypeEmail,
+				Value: "Link.Me@EXAMPLE.COM",
+			},
+			Purpose:          OTPPurposeLinkIdentifier,
+			TargetIdentityID: &targetIdentityID,
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"RequestOTP() returned an error: %v",
+			err,
+		)
+	}
+
+	challenge :=
+		challengeRepository.createdChallenge
+
+	expectedIdentifier := Identifier{
+		Type:  IdentifierTypeEmail,
+		Value: "link.me@example.com",
+	}
+
+	if challenge.Identifier != expectedIdentifier {
+		t.Fatalf(
+			"challenge identifier = %+v, expected %+v",
+			challenge.Identifier,
+			expectedIdentifier,
+		)
+	}
+
+	if challenge.Purpose !=
+		OTPPurposeLinkIdentifier {
+		t.Fatalf(
+			"challenge purpose = %q, expected %q",
+			challenge.Purpose,
+			OTPPurposeLinkIdentifier,
+		)
+	}
+
+	if challenge.TargetIdentityID == nil {
+		t.Fatal(
+			"link identifier challenge has nil target identity",
+		)
+	}
+
+	expectedIdentityID :=
+		"11111111-1111-1111-1111-111111111111"
+
+	if *challenge.TargetIdentityID !=
+		expectedIdentityID {
+		t.Fatalf(
+			"target identity ID = %q, expected %q",
+			*challenge.TargetIdentityID,
+			expectedIdentityID,
+		)
+	}
+}
+
+func TestRequestOTPRejectsInvalidGenericScopeBeforeSideEffects(
+	t *testing.T,
+) {
+	targetIdentityID :=
+		"11111111-1111-1111-1111-111111111111"
+
+	tests := []struct {
+		name  string
+		input RequestOTPInput
+	}{
+		{
+			name: "blank generic identifier value",
+			input: RequestOTPInput{
+				Identifier: Identifier{
+					Type:  IdentifierTypeEmail,
+					Value: "   ",
+				},
+				Purpose: OTPPurposeLogin,
+			},
+		},
+		{
+			name: "login cannot target identity",
+			input: RequestOTPInput{
+				Identifier: Identifier{
+					Type:  IdentifierTypeEmail,
+					Value: "user@example.com",
+				},
+				Purpose:          OTPPurposeLogin,
+				TargetIdentityID: &targetIdentityID,
+			},
+		},
+		{
+			name: "link identifier requires target identity",
+			input: RequestOTPInput{
+				Identifier: Identifier{
+					Type:  IdentifierTypeEmail,
+					Value: "user@example.com",
+				},
+				Purpose: OTPPurposeLinkIdentifier,
+			},
+		},
+		{
+			name: "generic request requires valid purpose",
+			input: RequestOTPInput{
+				Identifier: Identifier{
+					Type:  IdentifierTypeEmail,
+					Value: "user@example.com",
+				},
+			},
+		},
+		{
+			name: "invalid purpose",
+			input: RequestOTPInput{
+				Identifier: Identifier{
+					Type:  IdentifierTypeEmail,
+					Value: "user@example.com",
+				},
+				Purpose: OTPPurpose("password_reset"),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dependencies :=
+				newValidServiceConstructorTestDependencies()
+
+			challengeRepository :=
+				&testChallengeRepository{}
+
+			otpGenerator := &testOTPGenerator{}
+			otpDelivery := &testOTPDelivery{}
+			rateLimiter :=
+				&testOTPRequestRateLimiter{}
+
+			dependencies.challengeRepository =
+				challengeRepository
+			dependencies.otpGenerator =
+				otpGenerator
+			dependencies.otpDelivery =
+				otpDelivery
+			dependencies.otpRequestRateLimiter =
+				rateLimiter
+
+			service :=
+				newServiceFromConstructorTestDependencies(
+					dependencies,
+				)
+
+			_, err := service.RequestOTP(
+				context.Background(),
+				tt.input,
+			)
+
+			if err == nil {
+				t.Fatal(
+					"RequestOTP() accepted invalid generic OTP scope",
+				)
+			}
+
+			if rateLimiter.called {
+				t.Fatal(
+					"rate limiter was called for invalid OTP request",
+				)
+			}
+
+			if otpGenerator.called {
+				t.Fatal(
+					"OTP generator was called for invalid OTP request",
+				)
+			}
+
+			if challengeRepository.createCalled {
+				t.Fatal(
+					"challenge was created for invalid OTP request",
+				)
+			}
+
+			if otpDelivery.called {
+				t.Fatal(
+					"OTP delivery was called for invalid OTP request",
+				)
+			}
+		})
+	}
+}
+
+func TestVerifyOTPLogsInExistingIdentityByEmail(
+	t *testing.T,
+) {
+	now := time.Date(
+		2026,
+		time.August,
+		13,
+		9,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	identifier := Identifier{
+		Type:  IdentifierTypeEmail,
+		Value: "existing@example.com",
+	}
+
+	challengeRepository := &testChallengeRepository{
+		findResult: OTPChallenge{
+			ID:         "otp_ch_email_existing",
+			Identifier: identifier,
+			Purpose:    OTPPurposeLogin,
+			CodeHash:   "hashed-code",
+			ExpiresAt:  now.Add(5 * time.Minute),
+
+			FailedAttempts: 0,
+			MaxAttempts:    5,
+		},
+	}
+
+	identityRepository := &testIdentityIdentifierRepository{
+		findResult: Identity{
+			ID:       "identity_existing",
+			IsActive: true,
+		},
+		findFound: true,
+	}
+
+	linkStore := &testIdentifierLinkCompletionStore{}
+
+	tokenIssuer := &testTokenIssuer{
+		result: TokenPair{
+			AccessToken:                 "access-existing",
+			RefreshToken:                "refresh-existing",
+			AccessTokenExpiresInSeconds: 900,
+		},
+	}
+
+	service := newIdentifierAwareServiceForTest(
+		challengeRepository,
+		identityRepository,
+		linkStore,
+		&testOTPHasher{},
+		tokenIssuer,
+		&testClock{now: now},
+	)
+
+	result, err := service.VerifyOTP(
+		context.Background(),
+		VerifyOTPInput{
+			ExpectedPurpose: OTPPurposeLogin,
+			ChallengeID:     "otp_ch_email_existing",
+			Code:            "123456",
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"VerifyOTP() returned an error: %v",
+			err,
+		)
+	}
+
+	if identityRepository.findCalls != 1 {
+		t.Fatalf(
+			"FindIdentityByIdentifier() calls = %d, expected 1",
+			identityRepository.findCalls,
+		)
+	}
+
+	if identityRepository.findIdentifier != identifier {
+		t.Fatalf(
+			"searched identifier = %+v, expected %+v",
+			identityRepository.findIdentifier,
+			identifier,
+		)
+	}
+
+	if identityRepository.createCalls != 0 {
+		t.Fatal(
+			"existing identity caused CreateIdentityWithIdentifier()",
+		)
+	}
+
+	if tokenIssuer.calls != 1 {
+		t.Fatalf(
+			"TokenIssuer calls = %d, expected 1",
+			tokenIssuer.calls,
+		)
+	}
+
+	if tokenIssuer.input.Identity.ID != "identity_existing" {
+		t.Fatalf(
+			"issued identity ID = %q, expected %q",
+			tokenIssuer.input.Identity.ID,
+			"identity_existing",
+		)
+	}
+
+	if tokenIssuer.input.ChallengeID !=
+		"otp_ch_email_existing" {
+		t.Fatalf(
+			"issued challenge ID = %q, expected %q",
+			tokenIssuer.input.ChallengeID,
+			"otp_ch_email_existing",
+		)
+	}
+
+	if linkStore.calls != 0 {
+		t.Fatal(
+			"login invoked identifier link completion store",
+		)
+	}
+
+	if result.IdentityID != "identity_existing" {
+		t.Fatalf(
+			"result identity ID = %q, expected %q",
+			result.IdentityID,
+			"identity_existing",
+		)
+	}
+
+	if result.AccessToken != "access-existing" {
+		t.Fatalf(
+			"access token = %q, expected %q",
+			result.AccessToken,
+			"access-existing",
+		)
+	}
+
+	if result.RefreshToken != "refresh-existing" {
+		t.Fatalf(
+			"refresh token = %q, expected %q",
+			result.RefreshToken,
+			"refresh-existing",
+		)
+	}
+}
+
+func TestVerifyOTPCreatesIdentityForUnknownEmail(
+	t *testing.T,
+) {
+	now := time.Date(
+		2026,
+		time.August,
+		13,
+		9,
+		30,
+		0,
+		0,
+		time.UTC,
+	)
+
+	identifier := Identifier{
+		Type:  IdentifierTypeEmail,
+		Value: "new@example.com",
+	}
+
+	challengeRepository := &testChallengeRepository{
+		findResult: OTPChallenge{
+			ID:         "otp_ch_email_new",
+			Identifier: identifier,
+			Purpose:    OTPPurposeLogin,
+			CodeHash:   "hashed-code",
+			ExpiresAt:  now.Add(5 * time.Minute),
+
+			FailedAttempts: 0,
+			MaxAttempts:    5,
+		},
+	}
+
+	identityRepository := &testIdentityIdentifierRepository{
+		findFound: false,
+		createResult: Identity{
+			ID:       "identity_new",
+			IsActive: true,
+		},
+	}
+
+	tokenIssuer := &testTokenIssuer{
+		result: TokenPair{
+			AccessToken:                 "access-new",
+			RefreshToken:                "refresh-new",
+			AccessTokenExpiresInSeconds: 900,
+		},
+	}
+
+	service := newIdentifierAwareServiceForTest(
+		challengeRepository,
+		identityRepository,
+		&testIdentifierLinkCompletionStore{},
+		&testOTPHasher{},
+		tokenIssuer,
+		&testClock{now: now},
+	)
+
+	result, err := service.VerifyOTP(
+		context.Background(),
+		VerifyOTPInput{
+			ExpectedPurpose: OTPPurposeLogin,
+			ChallengeID:     "otp_ch_email_new",
+			Code:            "123456",
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"VerifyOTP() returned an error: %v",
+			err,
+		)
+	}
+
+	if identityRepository.findCalls != 1 {
+		t.Fatalf(
+			"FindIdentityByIdentifier() calls = %d, expected 1",
+			identityRepository.findCalls,
+		)
+	}
+
+	if identityRepository.createCalls != 1 {
+		t.Fatalf(
+			"CreateIdentityWithIdentifier() calls = %d, expected 1",
+			identityRepository.createCalls,
+		)
+	}
+
+	if identityRepository.createIdentifier != identifier {
+		t.Fatalf(
+			"created identifier = %+v, expected %+v",
+			identityRepository.createIdentifier,
+			identifier,
+		)
+	}
+
+	if !identityRepository.createVerifiedAt.Equal(now) {
+		t.Fatalf(
+			"identifier verified at %v, expected %v",
+			identityRepository.createVerifiedAt,
+			now,
+		)
+	}
+
+	if tokenIssuer.calls != 1 {
+		t.Fatalf(
+			"TokenIssuer calls = %d, expected 1",
+			tokenIssuer.calls,
+		)
+	}
+
+	if tokenIssuer.input.Identity.ID != "identity_new" {
+		t.Fatalf(
+			"issued identity ID = %q, expected %q",
+			tokenIssuer.input.Identity.ID,
+			"identity_new",
+		)
+	}
+
+	if result.IdentityID != "identity_new" {
+		t.Fatalf(
+			"result identity ID = %q, expected %q",
+			result.IdentityID,
+			"identity_new",
+		)
+	}
+}
+
+func TestVerifyOTPRejectsInactiveIdentifierIdentityBeforeIssuingTokens(
+	t *testing.T,
+) {
+	now := time.Date(
+		2026,
+		time.August,
+		13,
+		10,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	identifier := Identifier{
+		Type:  IdentifierTypeEmail,
+		Value: "inactive@example.com",
+	}
+
+	challengeRepository := &testChallengeRepository{
+		findResult: OTPChallenge{
+			ID:         "otp_ch_email_inactive",
+			Identifier: identifier,
+			Purpose:    OTPPurposeLogin,
+			CodeHash:   "hashed-code",
+			ExpiresAt:  now.Add(5 * time.Minute),
+
+			FailedAttempts: 0,
+			MaxAttempts:    5,
+		},
+	}
+
+	identityRepository := &testIdentityIdentifierRepository{
+		findResult: Identity{
+			ID:       "identity_inactive",
+			IsActive: false,
+		},
+		findFound: true,
+	}
+
+	tokenIssuer := &testTokenIssuer{}
+
+	service := newIdentifierAwareServiceForTest(
+		challengeRepository,
+		identityRepository,
+		&testIdentifierLinkCompletionStore{},
+		&testOTPHasher{},
+		tokenIssuer,
+		&testClock{now: now},
+	)
+
+	_, err := service.VerifyOTP(
+		context.Background(),
+		VerifyOTPInput{
+			ExpectedPurpose: OTPPurposeLogin,
+			ChallengeID:     "otp_ch_email_inactive",
+			Code:            "123456",
+		},
+	)
+
+	if !errors.Is(err, ErrIdentityInactive) {
+		t.Fatalf(
+			"VerifyOTP() error = %v, expected %v",
+			err,
+			ErrIdentityInactive,
+		)
+	}
+
+	if tokenIssuer.calls != 0 {
+		t.Fatal(
+			"inactive identity caused token issuance",
+		)
+	}
+}
+
+func TestVerifyOTPCompletesIdentifierLinkWithoutIssuingTokens(
+	t *testing.T,
+) {
+	now := time.Date(
+		2026,
+		time.August,
+		13,
+		10,
+		30,
+		0,
+		0,
+		time.UTC,
+	)
+
+	identityID :=
+		"11111111-1111-1111-1111-111111111111"
+
+	identifier := Identifier{
+		Type:  IdentifierTypeEmail,
+		Value: "linked@example.com",
+	}
+
+	challengeRepository := &testChallengeRepository{
+		findResult: OTPChallenge{
+			ID:               "otp_ch_link_email",
+			Identifier:       identifier,
+			Purpose:          OTPPurposeLinkIdentifier,
+			TargetIdentityID: &identityID,
+			CodeHash:         "hashed-code",
+			ExpiresAt:        now.Add(5 * time.Minute),
+
+			FailedAttempts: 0,
+			MaxAttempts:    5,
+		},
+	}
+
+	identityRepository :=
+		&testIdentityIdentifierRepository{}
+
+	linkStore :=
+		&testIdentifierLinkCompletionStore{}
+
+	tokenIssuer := &testTokenIssuer{}
+
+	service := newIdentifierAwareServiceForTest(
+		challengeRepository,
+		identityRepository,
+		linkStore,
+		&testOTPHasher{},
+		tokenIssuer,
+		&testClock{now: now},
+	)
+
+	result, err := service.VerifyOTP(
+		context.Background(),
+		VerifyOTPInput{
+			ExpectedPurpose:          OTPPurposeLinkIdentifier,
+			ExpectedTargetIdentityID: &identityID,
+			ChallengeID:              "otp_ch_link_email",
+			Code:                     "123456",
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"VerifyOTP() returned an error: %v",
+			err,
+		)
+	}
+
+	if linkStore.calls != 1 {
+		t.Fatalf(
+			"IdentifierLinkCompletionStore calls = %d, expected 1",
+			linkStore.calls,
+		)
+	}
+
+	expectedInput := IdentifierLinkCompletionInput{
+		ChallengeID: "otp_ch_link_email",
+		IdentityID:  identityID,
+		Identifier:  identifier,
+		VerifiedAt:  now,
+	}
+
+	if linkStore.input.ChallengeID !=
+		expectedInput.ChallengeID {
+		t.Fatalf(
+			"link challenge ID = %q, expected %q",
+			linkStore.input.ChallengeID,
+			expectedInput.ChallengeID,
+		)
+	}
+
+	if linkStore.input.IdentityID !=
+		expectedInput.IdentityID {
+		t.Fatalf(
+			"link identity ID = %q, expected %q",
+			linkStore.input.IdentityID,
+			expectedInput.IdentityID,
+		)
+	}
+
+	if linkStore.input.Identifier !=
+		expectedInput.Identifier {
+		t.Fatalf(
+			"link identifier = %+v, expected %+v",
+			linkStore.input.Identifier,
+			expectedInput.Identifier,
+		)
+	}
+
+	if !linkStore.input.VerifiedAt.Equal(
+		expectedInput.VerifiedAt,
+	) {
+		t.Fatalf(
+			"link verification time = %v, expected %v",
+			linkStore.input.VerifiedAt,
+			expectedInput.VerifiedAt,
+		)
+	}
+
+	if identityRepository.findCalls != 0 ||
+		identityRepository.createCalls != 0 ||
+		identityRepository.linkCalls != 0 {
+		t.Fatal(
+			"link_identifier used IdentityIdentifierRepository directly",
+		)
+	}
+
+	if tokenIssuer.calls != 0 {
+		t.Fatal(
+			"link_identifier issued authentication tokens",
+		)
+	}
+
+	if result.IdentityID != identityID {
+		t.Fatalf(
+			"result identity ID = %q, expected %q",
+			result.IdentityID,
+			identityID,
+		)
+	}
+
+	if result.AccessToken != "" ||
+		result.RefreshToken != "" ||
+		result.AccessTokenExpiresInSeconds != 0 {
+		t.Fatal(
+			"link_identifier returned authentication tokens",
+		)
+	}
+}
+
+func TestVerifyOTPRejectsIdentifierLinkForDifferentAuthenticatedIdentity(
+	t *testing.T,
+) {
+	now := time.Date(
+		2026,
+		time.August,
+		13,
+		11,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	challengeTargetIdentityID :=
+		"11111111-1111-1111-1111-111111111111"
+
+	authenticatedIdentityID :=
+		"22222222-2222-2222-2222-222222222222"
+
+	challengeRepository := &testChallengeRepository{
+		findResult: OTPChallenge{
+			ID: "otp_ch_wrong_identity",
+			Identifier: Identifier{
+				Type:  IdentifierTypeEmail,
+				Value: "linked@example.com",
+			},
+			Purpose:          OTPPurposeLinkIdentifier,
+			TargetIdentityID: &challengeTargetIdentityID,
+			CodeHash:         "hashed-code",
+			ExpiresAt:        now.Add(5 * time.Minute),
+			FailedAttempts:   0,
+			MaxAttempts:      5,
+		},
+	}
+
+	otpHasher := &testOTPHasher{}
+
+	linkStore :=
+		&testIdentifierLinkCompletionStore{}
+
+	tokenIssuer := &testTokenIssuer{}
+
+	service := newIdentifierAwareServiceForTest(
+		challengeRepository,
+		&testIdentityIdentifierRepository{},
+		linkStore,
+		otpHasher,
+		tokenIssuer,
+		&testClock{now: now},
+	)
+
+	_, err := service.VerifyOTP(
+		context.Background(),
+		VerifyOTPInput{
+			ExpectedPurpose:          OTPPurposeLinkIdentifier,
+			ExpectedTargetIdentityID: &authenticatedIdentityID,
+			ChallengeID:              "otp_ch_wrong_identity",
+			Code:                     "123456",
+		},
+	)
+
+	if !errors.Is(
+		err,
+		ErrOTPChallengeTargetMismatch,
+	) {
+		t.Fatalf(
+			"VerifyOTP() error = %v, expected %v",
+			err,
+			ErrOTPChallengeTargetMismatch,
+		)
+	}
+
+	if otpHasher.compareCalled {
+		t.Fatal(
+			"OTP code was compared before target identity validation",
+		)
+	}
+
+	if linkStore.calls != 0 {
+		t.Fatalf(
+			"IdentifierLinkCompletionStore calls = %d, expected 0",
+			linkStore.calls,
+		)
+	}
+
+	if tokenIssuer.calls != 0 {
+		t.Fatal(
+			"authentication tokens were issued for mismatched target identity",
+		)
+	}
+}
+
+func TestVerifyOTPMapsIdentifierAlreadyLinkedWithoutIssuingTokens(
+	t *testing.T,
+) {
+	now := time.Date(
+		2026,
+		time.August,
+		13,
+		11,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	identityID :=
+		"22222222-2222-2222-2222-222222222222"
+
+	identifier := Identifier{
+		Type:  IdentifierTypePhone,
+		Value: "+9647500000077",
+	}
+
+	challengeRepository := &testChallengeRepository{
+		findResult: OTPChallenge{
+			ID:               "otp_ch_link_conflict",
+			Identifier:       identifier,
+			Purpose:          OTPPurposeLinkIdentifier,
+			TargetIdentityID: &identityID,
+			CodeHash:         "hashed-code",
+			ExpiresAt:        now.Add(5 * time.Minute),
+
+			FailedAttempts: 0,
+			MaxAttempts:    5,
+		},
+	}
+
+	linkStore := &testIdentifierLinkCompletionStore{
+		err: ErrIdentifierAlreadyLinked,
+	}
+
+	tokenIssuer := &testTokenIssuer{}
+
+	service := newIdentifierAwareServiceForTest(
+		challengeRepository,
+		&testIdentityIdentifierRepository{},
+		linkStore,
+		&testOTPHasher{},
+		tokenIssuer,
+		&testClock{now: now},
+	)
+
+	_, err := service.VerifyOTP(
+		context.Background(),
+		VerifyOTPInput{
+			ExpectedPurpose:          OTPPurposeLinkIdentifier,
+			ExpectedTargetIdentityID: &identityID,
+			ChallengeID:              "otp_ch_link_conflict",
+			Code:                     "123456",
+		},
+	)
+
+	if !errors.Is(
+		err,
+		ErrIdentifierAlreadyLinked,
+	) {
+		t.Fatalf(
+			"VerifyOTP() error = %v, expected %v",
+			err,
+			ErrIdentifierAlreadyLinked,
+		)
+	}
+
+	if linkStore.calls != 1 {
+		t.Fatalf(
+			"IdentifierLinkCompletionStore calls = %d, expected 1",
+			linkStore.calls,
+		)
+	}
+
+	if tokenIssuer.calls != 0 {
+		t.Fatal(
+			"identifier ownership conflict issued tokens",
+		)
+	}
+}
+
 func TestVerifyOTPMapsConcurrentCancellationFromRecordFailedAttempt(
 	t *testing.T,
 ) {
@@ -1154,8 +2369,12 @@ func TestVerifyOTPMapsConcurrentCancellationFromRecordFailedAttempt(
 
 	challengeRepository := &testChallengeRepository{
 		findResult: OTPChallenge{
-			ID:             "otp_ch_test",
-			PhoneNumber:    "+9647501234567",
+			ID: "otp_ch_test",
+			Identifier: Identifier{
+				Type:  IdentifierTypePhone,
+				Value: "+9647501234567",
+			},
+			Purpose:        OTPPurposeLogin,
 			CodeHash:       "hashed-code",
 			ExpiresAt:      now.Add(5 * time.Minute),
 			FailedAttempts: 0,
@@ -1169,9 +2388,10 @@ func TestVerifyOTPMapsConcurrentCancellationFromRecordFailedAttempt(
 		compareMatches:    false,
 	}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		otpHasher,
 		&testOTPDelivery{},
@@ -1199,8 +2419,9 @@ func TestVerifyOTPMapsConcurrentCancellationFromRecordFailedAttempt(
 	_, err := service.VerifyOTP(
 		context.Background(),
 		VerifyOTPInput{
-			ChallengeID: "otp_ch_test",
-			Code:        "000000",
+			ExpectedPurpose: OTPPurposeLogin,
+			ChallengeID:     "otp_ch_test",
+			Code:            "000000",
 		},
 	)
 
@@ -1278,8 +2499,12 @@ func TestVerifyOTPDoesNotRecordFailedAttemptWhenHasherFails(
 
 	challengeRepository := &testChallengeRepository{
 		findResult: OTPChallenge{
-			ID:             "otp_ch_test",
-			PhoneNumber:    "+9647501234567",
+			ID: "otp_ch_test",
+			Identifier: Identifier{
+				Type:  IdentifierTypePhone,
+				Value: "+9647501234567",
+			},
+			Purpose:        OTPPurposeLogin,
 			CodeHash:       "corrupted-hash",
 			ExpiresAt:      now.Add(5 * time.Minute),
 			FailedAttempts: 0,
@@ -1291,9 +2516,10 @@ func TestVerifyOTPDoesNotRecordFailedAttemptWhenHasherFails(
 		compareErr: compareError,
 	}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		otpHasher,
 		&testOTPDelivery{},
@@ -1321,8 +2547,9 @@ func TestVerifyOTPDoesNotRecordFailedAttemptWhenHasherFails(
 	_, err := service.VerifyOTP(
 		context.Background(),
 		VerifyOTPInput{
-			ChallengeID: "otp_ch_test",
-			Code:        "123456",
+			ExpectedPurpose: OTPPurposeLogin,
+			ChallengeID:     "otp_ch_test",
+			Code:            "123456",
 		},
 	)
 
@@ -1362,8 +2589,12 @@ func TestVerifyOTPMapsConcurrentCancellationFromTokenIssuer(
 
 	challengeRepository := &testChallengeRepository{
 		findResult: OTPChallenge{
-			ID:             "otp_ch_test",
-			PhoneNumber:    "+9647501234567",
+			ID: "otp_ch_test",
+			Identifier: Identifier{
+				Type:  IdentifierTypePhone,
+				Value: "+9647501234567",
+			},
+			Purpose:        OTPPurposeLogin,
 			CodeHash:       "hashed-code",
 			ExpiresAt:      now.Add(5 * time.Minute),
 			FailedAttempts: 0,
@@ -1372,22 +2603,23 @@ func TestVerifyOTPMapsConcurrentCancellationFromTokenIssuer(
 	}
 
 	identity := Identity{
-		ID:          "identity-123",
-		PhoneNumber: "+9647501234567",
-		IsActive:    true,
+		ID:       "identity-123",
+		IsActive: true,
 	}
 
-	identityRepository := &testIdentityRepository{
-		result: identity,
+	identityRepository := &testIdentityIdentifierRepository{
+		findResult: identity,
+		findFound:  true,
 	}
 
 	tokenIssuer := &testTokenIssuer{
 		err: ErrChallengeCancelled,
 	}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		identityRepository,
+		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
 		&testOTPDelivery{},
@@ -1415,8 +2647,9 @@ func TestVerifyOTPMapsConcurrentCancellationFromTokenIssuer(
 	_, err := service.VerifyOTP(
 		context.Background(),
 		VerifyOTPInput{
-			ChallengeID: "otp_ch_test",
-			Code:        "123456",
+			ExpectedPurpose: OTPPurposeLogin,
+			ChallengeID:     "otp_ch_test",
+			Code:            "123456",
 		},
 	)
 
@@ -1503,9 +2736,10 @@ func TestRefreshTokenRejectsBlankRefreshToken(
 			refreshGenerator := &testRefreshTokenGenerator{}
 			accessSigner := &testAccessTokenSigner{}
 
-			service := NewService(
+			service := NewServiceWithIdentityIdentifiers(
 				&testChallengeRepository{},
-				&testIdentityRepository{},
+				&testIdentityIdentifierRepository{},
+				&testIdentifierLinkCompletionStore{},
 				&testOTPGenerator{},
 				&testOTPHasher{},
 				&testOTPDelivery{},
@@ -1614,9 +2848,10 @@ func TestRefreshTokenRotatesTokenAndClampsExpirationToSession(
 		expiresInSeconds: 900,
 	}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
 		&testOTPDelivery{},
@@ -1808,9 +3043,10 @@ func TestRefreshTokenDoesNotRotateWhenAccessTokenSigningFails(
 		err: errors.New("signing failed"),
 	}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
 		&testOTPDelivery{},
@@ -1903,9 +3139,10 @@ func TestRefreshTokenReturnsReuseErrorWhenRotationDetectsReuse(
 		expiresInSeconds: 900,
 	}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
 		&testOTPDelivery{},
@@ -1997,9 +3234,10 @@ func TestLogoutHashesRefreshTokenAndRevokesSession(
 	refreshHasher :=
 		&testRefreshTokenHasher{}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
 		&testOTPDelivery{},
@@ -2113,9 +3351,10 @@ func TestLogoutRejectsBlankRefreshToken(
 			refreshHasher :=
 				&testRefreshTokenHasher{}
 
-			service := NewService(
+			service := NewServiceWithIdentityIdentifiers(
 				&testChallengeRepository{},
-				&testIdentityRepository{},
+				&testIdentityIdentifierRepository{},
+				&testIdentifierLinkCompletionStore{},
 				&testOTPGenerator{},
 				&testOTPHasher{},
 				&testOTPDelivery{},
@@ -2193,9 +3432,10 @@ func TestLogoutAllSessionsHashesRefreshTokenAndRevokesAllSessions(
 	refreshHasher :=
 		&testRefreshTokenHasher{}
 
-	service := NewService(
+	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
-		&testIdentityRepository{},
+		&testIdentityIdentifierRepository{},
+		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
 		&testOTPDelivery{},
@@ -2309,9 +3549,10 @@ func TestLogoutAllSessionsRejectsBlankRefreshToken(
 			refreshHasher :=
 				&testRefreshTokenHasher{}
 
-			service := NewService(
+			service := NewServiceWithIdentityIdentifiers(
 				&testChallengeRepository{},
-				&testIdentityRepository{},
+				&testIdentityIdentifierRepository{},
+				&testIdentifierLinkCompletionStore{},
 				&testOTPGenerator{},
 				&testOTPHasher{},
 				&testOTPDelivery{},

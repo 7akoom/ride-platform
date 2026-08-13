@@ -39,17 +39,26 @@ func TestCleanupStoreDeletesOnlyRecordsPastRetention(
 
 	for _, query := range []string{
 		`
-			DELETE FROM otp_request_events
-			WHERE phone_number = $1
-		`,
+				DELETE FROM otp_request_events
+				WHERE identifier_type = 'phone'
+				AND normalized_value = $1
+				AND purpose = 'login'
+				AND target_identity_id IS NULL
+			`,
 		`
-			DELETE FROM otp_challenges
-			WHERE phone_number = $1
-		`,
+				DELETE FROM otp_challenges
+				WHERE identifier_type = 'phone'
+				AND normalized_value = $1
+				AND purpose = 'login'
+				AND target_identity_id IS NULL
+			`,
 		`
-			DELETE FROM identities
-			WHERE phone_number = $1
-		`,
+				DELETE FROM identities AS i
+				USING identity_identifiers AS ii
+				WHERE ii.identity_id = i.id
+				AND ii.identifier_type = 'phone'
+				AND ii.normalized_value = $1
+			`,
 	} {
 		_, err = pool.Exec(
 			ctx,
@@ -73,17 +82,26 @@ func TestCleanupStoreDeletesOnlyRecordsPastRetention(
 	t.Cleanup(func() {
 		for _, query := range []string{
 			`
-				DELETE FROM otp_request_events
-				WHERE phone_number = $1
-			`,
+			DELETE FROM otp_request_events
+			WHERE identifier_type = 'phone'
+			AND normalized_value = $1
+			AND purpose = 'login'
+			AND target_identity_id IS NULL
+		`,
 			`
-				DELETE FROM otp_challenges
-				WHERE phone_number = $1
-			`,
+			DELETE FROM otp_challenges
+			WHERE identifier_type = 'phone'
+			AND normalized_value = $1
+			AND purpose = 'login'
+			AND target_identity_id IS NULL
+		`,
 			`
-				DELETE FROM identities
-				WHERE phone_number = $1
-			`,
+			DELETE FROM identities AS i
+			USING identity_identifiers AS ii
+			WHERE ii.identity_id = i.id
+			AND ii.identifier_type = 'phone'
+			AND ii.normalized_value = $1
+		`,
 		} {
 			_, cleanupErr := pool.Exec(
 				context.Background(),
@@ -118,13 +136,23 @@ func TestCleanupStoreDeletesOnlyRecordsPastRetention(
 		_, err = pool.Exec(
 			ctx,
 			`
-				INSERT INTO otp_request_events (
-					phone_number,
-					requested_at,
-					created_at
-				)
-				VALUES ($1, $2, $2)
-			`,
+			INSERT INTO otp_request_events (
+				identifier_type,
+				normalized_value,
+				purpose,
+				target_identity_id,
+				requested_at,
+				created_at
+			)
+			VALUES (
+				'phone',
+				$1,
+				'login',
+				NULL,
+				$2,
+				$2
+			)
+		`,
 			phoneNumber,
 			requestedAt,
 		)
@@ -149,7 +177,10 @@ func TestCleanupStoreDeletesOnlyRecordsPastRetention(
 		`
 			INSERT INTO otp_challenges (
 				id,
-				phone_number,
+				identifier_type,
+				normalized_value,
+				purpose,
+				target_identity_id,
 				code_hash,
 				expires_at,
 				created_at
@@ -157,14 +188,20 @@ func TestCleanupStoreDeletesOnlyRecordsPastRetention(
 			VALUES
 			(
 				'cleanup-old-challenge',
+				'phone',
 				$1,
+				'login',
+				NULL,
 				$2,
 				$3,
 				$4
 			),
 			(
 				'cleanup-recent-challenge',
+				'phone',
 				$1,
+				'login',
+				NULL,
 				$2,
 				$5,
 				$6
@@ -186,19 +223,39 @@ func TestCleanupStoreDeletesOnlyRecordsPastRetention(
 
 	var identityID string
 
+	identityCreatedAt := now.Add(-90 * 24 * time.Hour)
+
 	err = pool.QueryRow(
 		ctx,
 		`
-			INSERT INTO identities (
-				phone_number,
+			WITH created_identity AS (
+				INSERT INTO identities (
+					created_at,
+					updated_at
+				)
+				VALUES ($1, $1)
+				RETURNING id
+			)
+			INSERT INTO identity_identifiers (
+				identity_id,
+				identifier_type,
+				normalized_value,
+				verified_at,
 				created_at,
 				updated_at
 			)
-			VALUES ($1, $2, $2)
-			RETURNING id::text
+			SELECT
+				id,
+				'phone',
+				$2,
+				$1,
+				$1,
+				$1
+			FROM created_identity
+			RETURNING identity_id::text
 		`,
+		identityCreatedAt,
 		phoneNumber,
-		now.Add(-90*24*time.Hour),
 	).Scan(
 		&identityID,
 	)
@@ -362,7 +419,10 @@ func TestCleanupStoreDeletesOnlyRecordsPastRetention(
 		`
 			SELECT COUNT(*)
 			FROM otp_request_events
-			WHERE phone_number = $1
+			WHERE identifier_type = 'phone'
+			AND normalized_value = $1
+			AND purpose = 'login'
+			AND target_identity_id IS NULL
 		`,
 		phoneNumber,
 	).Scan(
@@ -389,7 +449,10 @@ func TestCleanupStoreDeletesOnlyRecordsPastRetention(
 		`
 			SELECT COUNT(*)
 			FROM otp_challenges
-			WHERE phone_number = $1
+			WHERE identifier_type = 'phone'
+			AND normalized_value = $1
+			AND purpose = 'login'
+			AND target_identity_id IS NULL
 		`,
 		phoneNumber,
 	).Scan(
