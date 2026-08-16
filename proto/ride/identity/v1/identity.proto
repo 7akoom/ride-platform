@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package ride.identity.v1;
 
+import "google/protobuf/timestamp.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1";
 
 service IdentityService {
@@ -10,6 +11,7 @@ service IdentityService {
 
   rpc RequestIdentifierLinkOTP(RequestIdentifierLinkOTPRequest) returns (RequestIdentifierLinkOTPResponse);
   rpc VerifyIdentifierLinkOTP(VerifyIdentifierLinkOTPRequest) returns (VerifyIdentifierLinkOTPResponse);
+  rpc GetMyIdentity(GetMyIdentityRequest) returns (GetMyIdentityResponse);
 
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
   rpc Logout(LogoutRequest) returns (LogoutResponse);
@@ -20,6 +22,13 @@ enum IdentifierType {
   IDENTIFIER_TYPE_UNSPECIFIED = 0;
   IDENTIFIER_TYPE_PHONE = 1;
   IDENTIFIER_TYPE_EMAIL = 2;
+}
+
+enum IdentityStatus {
+  IDENTITY_STATUS_UNSPECIFIED = 0;
+  IDENTITY_STATUS_ACTIVE = 1;
+  IDENTITY_STATUS_SUSPENDED = 2;
+  IDENTITY_STATUS_DISABLED = 3;
 }
 
 message Identifier {
@@ -63,6 +72,20 @@ message VerifyIdentifierLinkOTPRequest {
 }
 
 message VerifyIdentifierLinkOTPResponse {}
+
+message GetMyIdentityRequest {}
+
+message VerifiedIdentifier {
+  IdentifierType type = 1;
+  string value = 2;
+  google.protobuf.Timestamp verified_at = 3;
+}
+
+message GetMyIdentityResponse {
+  string identity_id = 1;
+  IdentityStatus status = 2;
+  repeated VerifiedIdentifier identifiers = 3;
+}
 
 message RefreshTokenRequest {
   string refresh_token = 1;

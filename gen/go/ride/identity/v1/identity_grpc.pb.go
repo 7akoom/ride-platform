@@ -23,6 +23,7 @@ const (
 	IdentityService_VerifyLoginOTP_FullMethodName           = "/ride.identity.v1.IdentityService/VerifyLoginOTP"
 	IdentityService_RequestIdentifierLinkOTP_FullMethodName = "/ride.identity.v1.IdentityService/RequestIdentifierLinkOTP"
 	IdentityService_VerifyIdentifierLinkOTP_FullMethodName  = "/ride.identity.v1.IdentityService/VerifyIdentifierLinkOTP"
+	IdentityService_GetMyIdentity_FullMethodName            = "/ride.identity.v1.IdentityService/GetMyIdentity"
 	IdentityService_RefreshToken_FullMethodName             = "/ride.identity.v1.IdentityService/RefreshToken"
 	IdentityService_Logout_FullMethodName                   = "/ride.identity.v1.IdentityService/Logout"
 	IdentityService_LogoutAllSessions_FullMethodName        = "/ride.identity.v1.IdentityService/LogoutAllSessions"
@@ -36,6 +37,7 @@ type IdentityServiceClient interface {
 	VerifyLoginOTP(ctx context.Context, in *VerifyLoginOTPRequest, opts ...grpc.CallOption) (*VerifyLoginOTPResponse, error)
 	RequestIdentifierLinkOTP(ctx context.Context, in *RequestIdentifierLinkOTPRequest, opts ...grpc.CallOption) (*RequestIdentifierLinkOTPResponse, error)
 	VerifyIdentifierLinkOTP(ctx context.Context, in *VerifyIdentifierLinkOTPRequest, opts ...grpc.CallOption) (*VerifyIdentifierLinkOTPResponse, error)
+	GetMyIdentity(ctx context.Context, in *GetMyIdentityRequest, opts ...grpc.CallOption) (*GetMyIdentityResponse, error)
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
 	LogoutAllSessions(ctx context.Context, in *LogoutAllSessionsRequest, opts ...grpc.CallOption) (*LogoutAllSessionsResponse, error)
@@ -89,6 +91,16 @@ func (c *identityServiceClient) VerifyIdentifierLinkOTP(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *identityServiceClient) GetMyIdentity(ctx context.Context, in *GetMyIdentityRequest, opts ...grpc.CallOption) (*GetMyIdentityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMyIdentityResponse)
+	err := c.cc.Invoke(ctx, IdentityService_GetMyIdentity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *identityServiceClient) RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RefreshTokenResponse)
@@ -127,6 +139,7 @@ type IdentityServiceServer interface {
 	VerifyLoginOTP(context.Context, *VerifyLoginOTPRequest) (*VerifyLoginOTPResponse, error)
 	RequestIdentifierLinkOTP(context.Context, *RequestIdentifierLinkOTPRequest) (*RequestIdentifierLinkOTPResponse, error)
 	VerifyIdentifierLinkOTP(context.Context, *VerifyIdentifierLinkOTPRequest) (*VerifyIdentifierLinkOTPResponse, error)
+	GetMyIdentity(context.Context, *GetMyIdentityRequest) (*GetMyIdentityResponse, error)
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
 	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
 	LogoutAllSessions(context.Context, *LogoutAllSessionsRequest) (*LogoutAllSessionsResponse, error)
@@ -151,6 +164,9 @@ func (UnimplementedIdentityServiceServer) RequestIdentifierLinkOTP(context.Conte
 }
 func (UnimplementedIdentityServiceServer) VerifyIdentifierLinkOTP(context.Context, *VerifyIdentifierLinkOTPRequest) (*VerifyIdentifierLinkOTPResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VerifyIdentifierLinkOTP not implemented")
+}
+func (UnimplementedIdentityServiceServer) GetMyIdentity(context.Context, *GetMyIdentityRequest) (*GetMyIdentityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMyIdentity not implemented")
 }
 func (UnimplementedIdentityServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefreshToken not implemented")
@@ -254,6 +270,24 @@ func _IdentityService_VerifyIdentifierLinkOTP_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IdentityService_GetMyIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMyIdentityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).GetMyIdentity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_GetMyIdentity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).GetMyIdentity(ctx, req.(*GetMyIdentityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _IdentityService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RefreshTokenRequest)
 	if err := dec(in); err != nil {
@@ -330,6 +364,10 @@ var IdentityService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyIdentifierLinkOTP",
 			Handler:    _IdentityService_VerifyIdentifierLinkOTP_Handler,
+		},
+		{
+			MethodName: "GetMyIdentity",
+			Handler:    _IdentityService_GetMyIdentity_Handler,
 		},
 		{
 			MethodName: "RefreshToken",

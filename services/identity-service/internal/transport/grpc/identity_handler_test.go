@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	identityv1 "github.com/7akoom/ride-platform/gen/go/ride/identity/v1"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
@@ -21,6 +22,11 @@ type fakeAuthService struct {
 	verifyOTPErr    error
 	verifyOTPInput  auth.VerifyOTPInput
 	verifyOTPCalled bool
+
+	getMyIdentityResult auth.IdentityDetails
+	getMyIdentityErr    error
+	getMyIdentityInput  auth.GetMyIdentityInput
+	getMyIdentityCalled bool
 
 	refreshTokenResult auth.RefreshTokenResult
 	refreshTokenErr    error
@@ -62,6 +68,20 @@ func (f *fakeAuthService) VerifyOTP(
 	}
 
 	return f.verifyOTPResult, nil
+}
+
+func (f *fakeAuthService) GetMyIdentity(
+	ctx context.Context,
+	input auth.GetMyIdentityInput,
+) (auth.IdentityDetails, error) {
+	f.getMyIdentityCalled = true
+	f.getMyIdentityInput = input
+
+	if f.getMyIdentityErr != nil {
+		return auth.IdentityDetails{}, f.getMyIdentityErr
+	}
+
+	return f.getMyIdentityResult, nil
 }
 
 func (f *fakeAuthService) RefreshToken(
@@ -815,6 +835,234 @@ func TestIdentityHandlerVerifyLoginOTPMapsApplicationErrors(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+func TestIdentityHandlerGetMyIdentityReturnsAuthenticatedIdentity(
+	t *testing.T,
+) {
+	verifiedAt := time.Date(
+		2026,
+		time.August,
+		16,
+		12,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	authService := &fakeAuthService{
+		getMyIdentityResult: auth.IdentityDetails{
+			ID:     "11111111-1111-1111-1111-111111111111",
+			Status: auth.IdentityStatusActive,
+			Identifiers: []auth.IdentityDetailsIdentifier{
+				{
+					Identifier: auth.Identifier{
+						Type:  auth.IdentifierTypePhone,
+						Value: "+9647501234567",
+					},
+					VerifiedAt: verifiedAt,
+				},
+				{
+					Identifier: auth.Identifier{
+						Type:  auth.IdentifierTypeEmail,
+						Value: "user@example.com",
+					},
+					VerifiedAt: verifiedAt.Add(time.Minute),
+				},
+			},
+		},
+	}
+
+	handler := NewIdentityHandler(authService)
+
+	ctx := contextWithAuthenticatedPrincipal(
+		context.Background(),
+		authenticatedPrincipal{
+			IdentityID: "11111111-1111-1111-1111-111111111111",
+			SessionID:  "22222222-2222-2222-2222-222222222222",
+		},
+	)
+
+	response, err := handler.GetMyIdentity(
+		ctx,
+		&identityv1.GetMyIdentityRequest{},
+	)
+	if err != nil {
+		t.Fatalf(
+			"GetMyIdentity() returned an error: %v",
+			err,
+		)
+	}
+
+	if !authService.getMyIdentityCalled {
+		t.Fatal("GetMyIdentity() did not call auth service")
+	}
+
+	if authService.getMyIdentityInput.IdentityID !=
+		"11111111-1111-1111-1111-111111111111" {
+		t.Fatalf(
+			"auth service identity ID = %q",
+			authService.getMyIdentityInput.IdentityID,
+		)
+	}
+
+	if response.GetIdentityId() !=
+		"11111111-1111-1111-1111-111111111111" {
+		t.Fatalf(
+			"response identity ID = %q",
+			response.GetIdentityId(),
+		)
+	}
+
+	if response.GetStatus() !=
+		identityv1.IdentityStatus_IDENTITY_STATUS_ACTIVE {
+		t.Fatalf(
+			"response status = %v",
+			response.GetStatus(),
+		)
+	}
+
+	if len(response.GetIdentifiers()) != 2 {
+		t.Fatalf(
+			"identifiers count = %d, want 2",
+			len(response.GetIdentifiers()),
+		)
+	}
+
+	if response.GetIdentifiers()[0].GetType() !=
+		identityv1.IdentifierType_IDENTIFIER_TYPE_PHONE {
+		t.Fatalf(
+			"first identifier type = %v",
+			response.GetIdentifiers()[0].GetType(),
+		)
+	}
+
+	if response.GetIdentifiers()[0].GetValue() !=
+		"+9647501234567" {
+		t.Fatalf(
+			"first identifier value = %q",
+			response.GetIdentifiers()[0].GetValue(),
+		)
+	}
+
+	if !response.GetIdentifiers()[0].
+		GetVerifiedAt().
+		AsTime().
+		Equal(verifiedAt) {
+		t.Fatalf(
+			"first identifier verified_at = %v, want %v",
+			response.GetIdentifiers()[0].GetVerifiedAt().AsTime(),
+			verifiedAt,
+		)
+	}
+
+	if response.GetIdentifiers()[1].GetType() !=
+		identityv1.IdentifierType_IDENTIFIER_TYPE_EMAIL {
+		t.Fatalf(
+			"second identifier type = %v",
+			response.GetIdentifiers()[1].GetType(),
+		)
+	}
+
+	if response.GetIdentifiers()[1].GetValue() !=
+		"user@example.com" {
+		t.Fatalf(
+			"second identifier value = %q",
+			response.GetIdentifiers()[1].GetValue(),
+		)
+	}
+}
+
+func TestIdentityHandlerGetMyIdentityRejectsMissingAuthenticatedIdentity(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{}
+
+	handler := NewIdentityHandler(authService)
+
+	_, err := handler.GetMyIdentity(
+		context.Background(),
+		&identityv1.GetMyIdentityRequest{},
+	)
+
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf(
+			"GetMyIdentity() code = %v, want %v",
+			status.Code(err),
+			codes.Unauthenticated,
+		)
+	}
+
+	if authService.getMyIdentityCalled {
+		t.Fatal(
+			"GetMyIdentity() called auth service without authenticated identity",
+		)
+	}
+}
+
+func TestIdentityHandlerGetMyIdentityMapsIdentityNotFound(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{
+		getMyIdentityErr: auth.ErrIdentityNotFound,
+	}
+
+	handler := NewIdentityHandler(authService)
+
+	ctx := contextWithAuthenticatedPrincipal(
+		context.Background(),
+		authenticatedPrincipal{
+			IdentityID: "11111111-1111-1111-1111-111111111111",
+			SessionID:  "22222222-2222-2222-2222-222222222222",
+		},
+	)
+
+	_, err := handler.GetMyIdentity(
+		ctx,
+		&identityv1.GetMyIdentityRequest{},
+	)
+
+	if status.Code(err) != codes.NotFound {
+		t.Fatalf(
+			"GetMyIdentity() code = %v, want %v",
+			status.Code(err),
+			codes.NotFound,
+		)
+	}
+}
+
+func TestIdentityHandlerGetMyIdentityMapsUnexpectedErrorToInternal(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{
+		getMyIdentityErr: errors.New(
+			"identity store unavailable",
+		),
+	}
+
+	handler := NewIdentityHandler(authService)
+
+	ctx := contextWithAuthenticatedPrincipal(
+		context.Background(),
+		authenticatedPrincipal{
+			IdentityID: "11111111-1111-1111-1111-111111111111",
+			SessionID:  "22222222-2222-2222-2222-222222222222",
+		},
+	)
+
+	_, err := handler.GetMyIdentity(
+		ctx,
+		&identityv1.GetMyIdentityRequest{},
+	)
+
+	if status.Code(err) != codes.Internal {
+		t.Fatalf(
+			"GetMyIdentity() code = %v, want %v",
+			status.Code(err),
+			codes.Internal,
+		)
 	}
 }
 

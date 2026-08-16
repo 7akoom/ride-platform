@@ -11,6 +11,7 @@ import (
 type service struct {
 	challengeRepository           ChallengeRepository
 	identityIdentifierRepository  IdentityIdentifierRepository
+	identityReader                IdentityReader
 	identifierLinkCompletionStore IdentifierLinkCompletionStore
 	otpGenerator                  OTPGenerator
 	otpHasher                     OTPHasher
@@ -35,6 +36,7 @@ var _ Service = (*service)(nil)
 func NewServiceWithIdentityIdentifiers(
 	challengeRepository ChallengeRepository,
 	identityIdentifierRepository IdentityIdentifierRepository,
+	identityReader IdentityReader,
 	identifierLinkCompletionStore IdentifierLinkCompletionStore,
 	otpGenerator OTPGenerator,
 	otpHasher OTPHasher,
@@ -61,6 +63,10 @@ func NewServiceWithIdentityIdentifiers(
 		panic("identity identifier repository is required")
 	}
 
+	if identityReader == nil {
+		panic("identity reader is required")
+	}
+
 	if identifierLinkCompletionStore == nil {
 		panic("identifier link completion store is required")
 	}
@@ -68,6 +74,7 @@ func NewServiceWithIdentityIdentifiers(
 	return newServiceWithDependencies(
 		challengeRepository,
 		identityIdentifierRepository,
+		identityReader,
 		identifierLinkCompletionStore,
 		otpGenerator,
 		otpHasher,
@@ -91,6 +98,7 @@ func NewServiceWithIdentityIdentifiers(
 func newServiceWithDependencies(
 	challengeRepository ChallengeRepository,
 	identityIdentifierRepository IdentityIdentifierRepository,
+	identityReader IdentityReader,
 	identifierLinkCompletionStore IdentifierLinkCompletionStore,
 	otpGenerator OTPGenerator,
 	otpHasher OTPHasher,
@@ -189,6 +197,7 @@ func newServiceWithDependencies(
 	return &service{
 		challengeRepository:           challengeRepository,
 		identityIdentifierRepository:  identityIdentifierRepository,
+		identityReader:                identityReader,
 		identifierLinkCompletionStore: identifierLinkCompletionStore,
 		otpGenerator:                  otpGenerator,
 		otpHasher:                     otpHasher,
@@ -806,6 +815,33 @@ func (s *service) issueLoginTokens(
 		RefreshToken:                tokenPair.RefreshToken,
 		AccessTokenExpiresInSeconds: tokenPair.AccessTokenExpiresInSeconds,
 	}, nil
+}
+
+func (s *service) GetMyIdentity(
+	ctx context.Context,
+	input GetMyIdentityInput,
+) (IdentityDetails, error) {
+	identityID := strings.TrimSpace(input.IdentityID)
+	if identityID == "" {
+		return IdentityDetails{}, ErrIdentityNotFound
+	}
+
+	details, found, err := s.identityReader.FindByID(
+		ctx,
+		identityID,
+	)
+	if err != nil {
+		return IdentityDetails{}, fmt.Errorf(
+			"get identity details: %w",
+			err,
+		)
+	}
+
+	if !found {
+		return IdentityDetails{}, ErrIdentityNotFound
+	}
+
+	return details, nil
 }
 
 func (s *service) RefreshToken(

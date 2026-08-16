@@ -80,6 +80,28 @@ func (r *testChallengeRepository) Cancel(
 	return r.cancelErr
 }
 
+type testIdentityReader struct {
+	findResult     IdentityDetails
+	findFound      bool
+	findErr        error
+	findCalls      int
+	findIdentityID string
+}
+
+func (r *testIdentityReader) FindByID(
+	ctx context.Context,
+	identityID string,
+) (IdentityDetails, bool, error) {
+	r.findCalls++
+	r.findIdentityID = identityID
+
+	if r.findErr != nil {
+		return IdentityDetails{}, false, r.findErr
+	}
+
+	return r.findResult, r.findFound, nil
+}
+
 type testIdentityIdentifierRepository struct {
 	findResult     Identity
 	findFound      bool
@@ -476,6 +498,7 @@ func (c *testClock) Now() time.Time {
 type serviceConstructorTestDependencies struct {
 	challengeRepository           ChallengeRepository
 	identityIdentifierRepository  IdentityIdentifierRepository
+	identityReader                IdentityReader
 	identifierLinkCompletionStore IdentifierLinkCompletionStore
 	otpGenerator                  OTPGenerator
 	otpHasher                     OTPHasher
@@ -500,6 +523,7 @@ func newValidServiceConstructorTestDependencies() serviceConstructorTestDependen
 	return serviceConstructorTestDependencies{
 		challengeRepository:           &testChallengeRepository{},
 		identityIdentifierRepository:  &testIdentityIdentifierRepository{},
+		identityReader:                &testIdentityReader{},
 		identifierLinkCompletionStore: &testIdentifierLinkCompletionStore{},
 		otpGenerator:                  &testOTPGenerator{},
 		otpHasher:                     &testOTPHasher{},
@@ -531,6 +555,7 @@ func newServiceFromConstructorTestDependencies(
 	return NewServiceWithIdentityIdentifiers(
 		dependencies.challengeRepository,
 		dependencies.identityIdentifierRepository,
+		dependencies.identityReader,
 		dependencies.identifierLinkCompletionStore,
 		dependencies.otpGenerator,
 		dependencies.otpHasher,
@@ -554,6 +579,7 @@ func newServiceFromConstructorTestDependencies(
 func newIdentifierAwareServiceForTest(
 	challengeRepository ChallengeRepository,
 	identityIdentifierRepository IdentityIdentifierRepository,
+	identityReader IdentityReader,
 	identifierLinkCompletionStore IdentifierLinkCompletionStore,
 	otpHasher OTPHasher,
 	tokenIssuer TokenIssuer,
@@ -562,6 +588,7 @@ func newIdentifierAwareServiceForTest(
 	return NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		identityIdentifierRepository,
+		identityReader,
 		identifierLinkCompletionStore,
 		&testOTPGenerator{},
 		otpHasher,
@@ -765,6 +792,7 @@ func TestRequestOTPStopsBeforeGeneratingOTPWhenRateLimited(
 	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		otpGenerator,
 		otpHasher,
@@ -880,6 +908,7 @@ func TestRequestOTPContinuesWhenRateLimiterAllows(
 	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		otpGenerator,
 		otpHasher,
@@ -1003,6 +1032,7 @@ func TestRequestOTPCancelsChallengeWhenDeliveryFails(
 	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
@@ -1111,6 +1141,7 @@ func TestRequestOTPCancelsChallengeWithIndependentBoundedContextWhenRequestIsCan
 	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
@@ -1212,6 +1243,7 @@ func TestRequestOTPReturnsDeliveryAndCancellationErrors(
 	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
@@ -1725,6 +1757,7 @@ func TestVerifyOTPLogsInExistingIdentityByEmail(
 	service := newIdentifierAwareServiceForTest(
 		challengeRepository,
 		identityRepository,
+		&testIdentityReader{},
 		linkStore,
 		&testOTPHasher{},
 		tokenIssuer,
@@ -1873,6 +1906,7 @@ func TestVerifyOTPCreatesIdentityForUnknownEmail(
 	service := newIdentifierAwareServiceForTest(
 		challengeRepository,
 		identityRepository,
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPHasher{},
 		tokenIssuer,
@@ -1993,6 +2027,7 @@ func TestVerifyOTPRejectsInactiveIdentifierIdentityBeforeIssuingTokens(
 	service := newIdentifierAwareServiceForTest(
 		challengeRepository,
 		identityRepository,
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPHasher{},
 		tokenIssuer,
@@ -2070,6 +2105,7 @@ func TestVerifyOTPCompletesIdentifierLinkWithoutIssuingTokens(
 	service := newIdentifierAwareServiceForTest(
 		challengeRepository,
 		identityRepository,
+		&testIdentityReader{},
 		linkStore,
 		&testOTPHasher{},
 		tokenIssuer,
@@ -2220,6 +2256,7 @@ func TestVerifyOTPRejectsIdentifierLinkForDifferentAuthenticatedIdentity(
 	service := newIdentifierAwareServiceForTest(
 		challengeRepository,
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		linkStore,
 		otpHasher,
 		tokenIssuer,
@@ -2312,6 +2349,7 @@ func TestVerifyOTPMapsIdentifierAlreadyLinkedWithoutIssuingTokens(
 	service := newIdentifierAwareServiceForTest(
 		challengeRepository,
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		linkStore,
 		&testOTPHasher{},
 		tokenIssuer,
@@ -2391,6 +2429,7 @@ func TestVerifyOTPMapsConcurrentCancellationFromRecordFailedAttempt(
 	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		otpHasher,
@@ -2519,6 +2558,7 @@ func TestVerifyOTPDoesNotRecordFailedAttemptWhenHasherFails(
 	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		otpHasher,
@@ -2619,6 +2659,7 @@ func TestVerifyOTPMapsConcurrentCancellationFromTokenIssuer(
 	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		identityRepository,
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
@@ -2708,6 +2749,234 @@ func TestVerifyOTPMapsConcurrentCancellationFromTokenIssuer(
 	}
 }
 
+func TestGetMyIdentityReturnsIdentityDetails(
+	t *testing.T,
+) {
+	verifiedAt := time.Date(
+		2026,
+		time.August,
+		16,
+		12,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	identityReader := &testIdentityReader{
+		findResult: IdentityDetails{
+			ID:     "11111111-1111-1111-1111-111111111111",
+			Status: IdentityStatusActive,
+			Identifiers: []IdentityDetailsIdentifier{
+				{
+					Identifier: Identifier{
+						Type:  IdentifierTypePhone,
+						Value: "+9647501234567",
+					},
+					VerifiedAt: verifiedAt,
+				},
+				{
+					Identifier: Identifier{
+						Type:  IdentifierTypeEmail,
+						Value: "user@example.com",
+					},
+					VerifiedAt: verifiedAt.Add(time.Minute),
+				},
+			},
+		},
+		findFound: true,
+	}
+
+	dependencies := newValidServiceConstructorTestDependencies()
+	dependencies.identityReader = identityReader
+
+	service := newServiceFromConstructorTestDependencies(
+		dependencies,
+	)
+
+	result, err := service.GetMyIdentity(
+		context.Background(),
+		GetMyIdentityInput{
+			IdentityID: "  11111111-1111-1111-1111-111111111111  ",
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"GetMyIdentity() returned an error: %v",
+			err,
+		)
+	}
+
+	if identityReader.findCalls != 1 {
+		t.Fatalf(
+			"identity reader calls = %d, want 1",
+			identityReader.findCalls,
+		)
+	}
+
+	if identityReader.findIdentityID !=
+		"11111111-1111-1111-1111-111111111111" {
+		t.Fatalf(
+			"identity reader identity ID = %q",
+			identityReader.findIdentityID,
+		)
+	}
+
+	if result.ID !=
+		"11111111-1111-1111-1111-111111111111" {
+		t.Fatalf(
+			"identity ID = %q",
+			result.ID,
+		)
+	}
+
+	if result.Status != IdentityStatusActive {
+		t.Fatalf(
+			"identity status = %q, want %q",
+			result.Status,
+			IdentityStatusActive,
+		)
+	}
+
+	if len(result.Identifiers) != 2 {
+		t.Fatalf(
+			"identifiers count = %d, want 2",
+			len(result.Identifiers),
+		)
+	}
+
+	if result.Identifiers[0].Identifier.Type !=
+		IdentifierTypePhone {
+		t.Fatalf(
+			"first identifier type = %q, want %q",
+			result.Identifiers[0].Identifier.Type,
+			IdentifierTypePhone,
+		)
+	}
+
+	if result.Identifiers[1].Identifier.Type !=
+		IdentifierTypeEmail {
+		t.Fatalf(
+			"second identifier type = %q, want %q",
+			result.Identifiers[1].Identifier.Type,
+			IdentifierTypeEmail,
+		)
+	}
+}
+
+func TestGetMyIdentityRejectsBlankIdentityID(
+	t *testing.T,
+) {
+	identityReader := &testIdentityReader{}
+
+	dependencies := newValidServiceConstructorTestDependencies()
+	dependencies.identityReader = identityReader
+
+	service := newServiceFromConstructorTestDependencies(
+		dependencies,
+	)
+
+	_, err := service.GetMyIdentity(
+		context.Background(),
+		GetMyIdentityInput{
+			IdentityID: "   ",
+		},
+	)
+
+	if !errors.Is(err, ErrIdentityNotFound) {
+		t.Fatalf(
+			"GetMyIdentity() error = %v, want %v",
+			err,
+			ErrIdentityNotFound,
+		)
+	}
+
+	if identityReader.findCalls != 0 {
+		t.Fatalf(
+			"identity reader calls = %d, want 0",
+			identityReader.findCalls,
+		)
+	}
+}
+
+func TestGetMyIdentityReturnsNotFoundForUnknownIdentity(
+	t *testing.T,
+) {
+	identityReader := &testIdentityReader{
+		findFound: false,
+	}
+
+	dependencies := newValidServiceConstructorTestDependencies()
+	dependencies.identityReader = identityReader
+
+	service := newServiceFromConstructorTestDependencies(
+		dependencies,
+	)
+
+	_, err := service.GetMyIdentity(
+		context.Background(),
+		GetMyIdentityInput{
+			IdentityID: "22222222-2222-2222-2222-222222222222",
+		},
+	)
+
+	if !errors.Is(err, ErrIdentityNotFound) {
+		t.Fatalf(
+			"GetMyIdentity() error = %v, want %v",
+			err,
+			ErrIdentityNotFound,
+		)
+	}
+
+	if identityReader.findCalls != 1 {
+		t.Fatalf(
+			"identity reader calls = %d, want 1",
+			identityReader.findCalls,
+		)
+	}
+}
+
+func TestGetMyIdentityPropagatesIdentityReaderError(
+	t *testing.T,
+) {
+	readerError := errors.New(
+		"identity reader unavailable",
+	)
+
+	identityReader := &testIdentityReader{
+		findErr: readerError,
+	}
+
+	dependencies := newValidServiceConstructorTestDependencies()
+	dependencies.identityReader = identityReader
+
+	service := newServiceFromConstructorTestDependencies(
+		dependencies,
+	)
+
+	_, err := service.GetMyIdentity(
+		context.Background(),
+		GetMyIdentityInput{
+			IdentityID: "33333333-3333-3333-3333-333333333333",
+		},
+	)
+
+	if !errors.Is(err, readerError) {
+		t.Fatalf(
+			"GetMyIdentity() error = %v, want wrapped %v",
+			err,
+			readerError,
+		)
+	}
+
+	if identityReader.findCalls != 1 {
+		t.Fatalf(
+			"identity reader calls = %d, want 1",
+			identityReader.findCalls,
+		)
+	}
+}
+
 func TestRefreshTokenRejectsBlankRefreshToken(
 	t *testing.T,
 ) {
@@ -2739,6 +3008,7 @@ func TestRefreshTokenRejectsBlankRefreshToken(
 			service := NewServiceWithIdentityIdentifiers(
 				&testChallengeRepository{},
 				&testIdentityIdentifierRepository{},
+				&testIdentityReader{},
 				&testIdentifierLinkCompletionStore{},
 				&testOTPGenerator{},
 				&testOTPHasher{},
@@ -2851,6 +3121,7 @@ func TestRefreshTokenRotatesTokenAndClampsExpirationToSession(
 	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
@@ -3046,6 +3317,7 @@ func TestRefreshTokenDoesNotRotateWhenAccessTokenSigningFails(
 	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
@@ -3142,6 +3414,7 @@ func TestRefreshTokenReturnsReuseErrorWhenRotationDetectsReuse(
 	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
@@ -3237,6 +3510,7 @@ func TestLogoutHashesRefreshTokenAndRevokesSession(
 	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
@@ -3354,6 +3628,7 @@ func TestLogoutRejectsBlankRefreshToken(
 			service := NewServiceWithIdentityIdentifiers(
 				&testChallengeRepository{},
 				&testIdentityIdentifierRepository{},
+				&testIdentityReader{},
 				&testIdentifierLinkCompletionStore{},
 				&testOTPGenerator{},
 				&testOTPHasher{},
@@ -3435,6 +3710,7 @@ func TestLogoutAllSessionsHashesRefreshTokenAndRevokesAllSessions(
 	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
 		&testIdentityIdentifierRepository{},
+		&testIdentityReader{},
 		&testIdentifierLinkCompletionStore{},
 		&testOTPGenerator{},
 		&testOTPHasher{},
@@ -3552,6 +3828,7 @@ func TestLogoutAllSessionsRejectsBlankRefreshToken(
 			service := NewServiceWithIdentityIdentifiers(
 				&testChallengeRepository{},
 				&testIdentityIdentifierRepository{},
+				&testIdentityReader{},
 				&testIdentifierLinkCompletionStore{},
 				&testOTPGenerator{},
 				&testOTPHasher{},

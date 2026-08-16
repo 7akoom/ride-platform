@@ -237,6 +237,11 @@ func run() int {
 			databasePool,
 		)
 
+	identityReader :=
+		postgresrepo.NewIdentityReader(
+			databasePool,
+		)
+
 	identifierLinkCompletionStore :=
 		postgresrepo.NewIdentifierLinkCompletionStore(
 			databasePool,
@@ -250,6 +255,7 @@ func run() int {
 	authService := auth.NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		identityIdentifierRepository,
+		identityReader,
 		identifierLinkCompletionStore,
 		otp.NewGenerator(),
 		otpHasher,

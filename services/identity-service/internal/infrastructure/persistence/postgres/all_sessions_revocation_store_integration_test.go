@@ -551,7 +551,7 @@ func TestAllSessionsRevocationStoreRevokesOnlySnapshotSessions(
 
 	t.Cleanup(pool.Close)
 
-	const phoneNumber = "+9647500000053"
+	const phoneNumber = "+9647500000153"
 
 	_, err = pool.Exec(
 		ctx,

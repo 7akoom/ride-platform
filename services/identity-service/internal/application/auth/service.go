@@ -27,6 +27,10 @@ type VerifyOTPResult struct {
 	AccessTokenExpiresInSeconds int32
 }
 
+type GetMyIdentityInput struct {
+	IdentityID string
+}
+
 type RefreshTokenInput struct {
 	RefreshToken string
 }
@@ -56,6 +60,11 @@ type Service interface {
 		ctx context.Context,
 		input VerifyOTPInput,
 	) (VerifyOTPResult, error)
+
+	GetMyIdentity(
+		ctx context.Context,
+		input GetMyIdentityInput,
+	) (IdentityDetails, error)
 
 	RefreshToken(
 		ctx context.Context,

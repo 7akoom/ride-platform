@@ -33,6 +33,24 @@ type IdentityIdentifier struct {
 	UpdatedAt  time.Time
 }
 
+type IdentityDetailsIdentifier struct {
+	Identifier Identifier
+	VerifiedAt time.Time
+}
+
+type IdentityDetails struct {
+	ID          string
+	Status      IdentityStatus
+	Identifiers []IdentityDetailsIdentifier
+}
+
+type IdentityReader interface {
+	FindByID(
+		ctx context.Context,
+		identityID string,
+	) (IdentityDetails, bool, error)
+}
+
 type ChallengeRepository interface {
 	Create(
 		ctx context.Context,
