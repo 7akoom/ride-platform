@@ -47,6 +47,4 @@ func NormalizeEmailAddress(
 	return strings.ToLower(
 		localPart + "@" + domain,
 	), nil
-
-	return localPart + "@" + domain, nil
 }
