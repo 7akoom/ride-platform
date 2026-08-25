@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+
+	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 )
 
 type DevelopmentDelivery struct {
@@ -33,13 +35,14 @@ func NewDevelopmentDelivery(
 
 func (d *DevelopmentDelivery) Send(
 	ctx context.Context,
-	identifier string,
+	identifier auth.Identifier,
 	code string,
 ) error {
 	d.logger.WarnContext(
 		ctx,
 		"OTP delivered through development adapter",
-		"otp_identifier", identifier,
+		"otp_identifier_type", identifier.Type,
+		"otp_identifier", identifier.Value,
 		"otp_code", code,
 	)
 

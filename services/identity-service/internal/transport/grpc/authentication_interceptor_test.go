@@ -104,6 +104,92 @@ func TestAuthenticationUnaryInterceptorRejectsProtectedMethodWithoutToken(
 	}
 }
 
+func TestAuthenticationUnaryInterceptorRejectsIdentifierUnlinkRequestWithoutToken(
+	t *testing.T,
+) {
+	interceptor := NewAuthenticationUnaryInterceptor(
+		func(
+			ctx context.Context,
+			rawToken string,
+		) (string, string, error) {
+			t.Fatal(
+				"access token verifier was called without a token",
+			)
+
+			return "", "", nil
+		},
+	)
+
+	_, err := interceptor(
+		context.Background(),
+		nil,
+		&googlegrpc.UnaryServerInfo{
+			FullMethod: identityv1.IdentityService_RequestIdentifierUnlinkOTP_FullMethodName,
+		},
+		func(
+			ctx context.Context,
+			request any,
+		) (any, error) {
+			t.Fatal(
+				"RequestIdentifierUnlinkOTP handler was called without authentication",
+			)
+
+			return nil, nil
+		},
+	)
+
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf(
+			"error code = %s, expected %s",
+			status.Code(err),
+			codes.Unauthenticated,
+		)
+	}
+}
+
+func TestAuthenticationUnaryInterceptorRejectsIdentifierUnlinkVerificationWithoutToken(
+	t *testing.T,
+) {
+	interceptor := NewAuthenticationUnaryInterceptor(
+		func(
+			ctx context.Context,
+			rawToken string,
+		) (string, string, error) {
+			t.Fatal(
+				"access token verifier was called without a token",
+			)
+
+			return "", "", nil
+		},
+	)
+
+	_, err := interceptor(
+		context.Background(),
+		nil,
+		&googlegrpc.UnaryServerInfo{
+			FullMethod: identityv1.IdentityService_VerifyIdentifierUnlinkOTP_FullMethodName,
+		},
+		func(
+			ctx context.Context,
+			request any,
+		) (any, error) {
+			t.Fatal(
+				"VerifyIdentifierUnlinkOTP handler was called without authentication",
+			)
+
+			return nil, nil
+		},
+	)
+
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf(
+			"error code = %s, expected %s",
+			status.Code(err),
+			codes.Unauthenticated,
+		)
+	}
+}
+
 func TestAuthenticationUnaryInterceptorRejectsGetMyIdentityWithoutToken(
 	t *testing.T,
 ) {

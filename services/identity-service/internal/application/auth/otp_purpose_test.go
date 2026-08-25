@@ -22,6 +22,11 @@ func TestParseOTPPurposeAcceptsSupportedPurposes(t *testing.T) {
 			expected: OTPPurposeLinkIdentifier,
 		},
 		{
+			name:     "unlink identifier",
+			input:    "unlink_identifier",
+			expected: OTPPurposeUnlinkIdentifier,
+		},
+		{
 			name:     "trims surrounding spaces",
 			input:    "  login  ",
 			expected: OTPPurposeLogin,

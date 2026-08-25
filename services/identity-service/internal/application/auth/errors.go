@@ -14,6 +14,12 @@ var (
 	ErrIdentityInactive           = errors.New("identity is inactive")
 	ErrOTPRequestRateLimited      = errors.New("OTP request rate limit exceeded")
 	ErrIdentifierAlreadyLinked    = errors.New("identity identifier is already linked")
+	ErrIdentifierNotLinked = errors.New(
+		"identity identifier is not linked",
+	)
+	ErrLastIdentifierRemoval = errors.New(
+		"cannot remove the last identity identifier",
+	)
 	ErrIdentityNotFound           = errors.New("identity not found")
 
 	ErrInvalidRefreshToken = errors.New(

@@ -31,6 +31,16 @@ type GetMyIdentityInput struct {
 	IdentityID string
 }
 
+type RequestIdentifierUnlinkOTPInput struct {
+	IdentityID       string
+	TargetIdentifier Identifier
+}
+
+type RequestIdentifierUnlinkOTPResult struct {
+	ChallengeID      string
+	ExpiresInSeconds int32
+}
+
 type RefreshTokenInput struct {
 	RefreshToken string
 }
@@ -60,6 +70,11 @@ type Service interface {
 		ctx context.Context,
 		input VerifyOTPInput,
 	) (VerifyOTPResult, error)
+
+	RequestIdentifierUnlinkOTP(
+		ctx context.Context,
+		input RequestIdentifierUnlinkOTPInput,
+	) (RequestIdentifierUnlinkOTPResult, error)
 
 	GetMyIdentity(
 		ctx context.Context,

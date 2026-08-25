@@ -99,6 +99,8 @@ func requiresAuthentication(
 	switch fullMethod {
 	case identityv1.IdentityService_RequestIdentifierLinkOTP_FullMethodName,
 		identityv1.IdentityService_VerifyIdentifierLinkOTP_FullMethodName,
+		identityv1.IdentityService_RequestIdentifierUnlinkOTP_FullMethodName,
+		identityv1.IdentityService_VerifyIdentifierUnlinkOTP_FullMethodName,
 		identityv1.IdentityService_GetMyIdentity_FullMethodName:
 		return true
 

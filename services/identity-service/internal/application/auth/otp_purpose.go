@@ -8,8 +8,9 @@ import (
 type OTPPurpose string
 
 const (
-	OTPPurposeLogin          OTPPurpose = "login"
-	OTPPurposeLinkIdentifier OTPPurpose = "link_identifier"
+	OTPPurposeLogin            OTPPurpose = "login"
+	OTPPurposeLinkIdentifier   OTPPurpose = "link_identifier"
+	OTPPurposeUnlinkIdentifier OTPPurpose = "unlink_identifier"
 )
 
 var ErrInvalidOTPPurpose = errors.New(
@@ -29,6 +30,9 @@ func ParseOTPPurpose(
 
 	case OTPPurposeLinkIdentifier:
 		return OTPPurposeLinkIdentifier, nil
+
+	case OTPPurposeUnlinkIdentifier:
+		return OTPPurposeUnlinkIdentifier, nil
 
 	default:
 		return "", ErrInvalidOTPPurpose

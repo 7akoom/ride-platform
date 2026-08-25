@@ -247,6 +247,16 @@ func run() int {
 			databasePool,
 		)
 
+	identifierUnlinkRequestStore :=
+		postgresrepo.NewIdentifierUnlinkRequestStore(
+			databasePool,
+		)
+
+	identifierUnlinkCompletionStore :=
+		postgresrepo.NewIdentifierUnlinkCompletionStore(
+			databasePool,
+		)
+
 	otpRateLimiter :=
 		postgresrepo.NewOTPRequestRateLimiter(
 			databasePool,
@@ -257,6 +267,8 @@ func run() int {
 		identityIdentifierRepository,
 		identityReader,
 		identifierLinkCompletionStore,
+		identifierUnlinkRequestStore,
+		identifierUnlinkCompletionStore,
 		otp.NewGenerator(),
 		otpHasher,
 		otpDelivery,

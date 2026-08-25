@@ -115,6 +115,31 @@ type IdentifierLinkCompletionStore interface {
 	) error
 }
 
+type IdentifierUnlinkRequestInput struct {
+	Challenge        OTPChallenge
+	TargetIdentifier Identifier
+}
+
+type IdentifierUnlinkRequestStore interface {
+	Create(
+		ctx context.Context,
+		input IdentifierUnlinkRequestInput,
+	) error
+}
+
+type IdentifierUnlinkCompletionInput struct {
+	ChallengeID string
+	IdentityID  string
+	VerifiedAt  time.Time
+}
+
+type IdentifierUnlinkCompletionStore interface {
+	Complete(
+		ctx context.Context,
+		input IdentifierUnlinkCompletionInput,
+	) error
+}
+
 type OTPGenerator interface {
 	Generate() (string, error)
 }
@@ -135,7 +160,7 @@ type OTPHasher interface {
 type OTPDelivery interface {
 	Send(
 		ctx context.Context,
-		phoneNumber string,
+		identifier Identifier,
 		code string,
 	) error
 }
