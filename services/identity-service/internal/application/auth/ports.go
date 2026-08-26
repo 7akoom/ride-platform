@@ -256,6 +256,29 @@ type AccessTokenSigner interface {
 	) (string, int32, error)
 }
 
+type SessionDetails struct {
+	ID         string
+	ClientID   *string
+	DeviceID   *string
+	DeviceName *string
+	Platform   *string
+	AppVersion *string
+	IPAddress  *string
+	UserAgent  *string
+
+	ExpiresAt  time.Time
+	LastSeenAt *time.Time
+	CreatedAt  time.Time
+}
+
+type SessionReader interface {
+	ListActiveByIdentity(
+		ctx context.Context,
+		identityID string,
+		now time.Time,
+	) ([]SessionDetails, error)
+}
+
 type SessionRevocationTarget struct {
 	SessionID        string
 	SessionExpiresAt time.Time
@@ -266,6 +289,23 @@ type SessionRevocationTargetStore interface {
 		ctx context.Context,
 		refreshTokenHash string,
 	) (SessionRevocationTarget, bool, error)
+}
+
+type SessionManagementRevocationTargetStore interface {
+	FindRevocationTargetByIdentityAndSessionID(
+		ctx context.Context,
+		identityID string,
+		sessionID string,
+	) (SessionRevocationTarget, bool, error)
+}
+
+type SessionManagementRevocationStore interface {
+	RevokeSession(
+		ctx context.Context,
+		identityID string,
+		sessionID string,
+		revokedAt time.Time,
+	) error
 }
 
 type SessionAccessRevocationStore interface {

@@ -1,6 +1,9 @@
 package auth
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type RequestOTPInput struct {
 	Identifier       Identifier
@@ -60,6 +63,37 @@ type LogoutAllSessionsInput struct {
 	RefreshToken string
 }
 
+type ListMySessionsInput struct {
+	IdentityID       string
+	CurrentSessionID string
+}
+
+type SessionInfo struct {
+	SessionID  string
+	ClientID   *string
+	DeviceID   *string
+	DeviceName *string
+	Platform   *string
+	AppVersion *string
+	IPAddress  *string
+	UserAgent  *string
+
+	ExpiresAt  time.Time
+	LastSeenAt *time.Time
+	CreatedAt  time.Time
+
+	IsCurrent bool
+}
+
+type ListMySessionsResult struct {
+	Sessions []SessionInfo
+}
+
+type RevokeSessionInput struct {
+	IdentityID string
+	SessionID  string
+}
+
 type Service interface {
 	RequestOTP(
 		ctx context.Context,
@@ -80,6 +114,16 @@ type Service interface {
 		ctx context.Context,
 		input GetMyIdentityInput,
 	) (IdentityDetails, error)
+
+	ListMySessions(
+		ctx context.Context,
+		input ListMySessionsInput,
+	) (ListMySessionsResult, error)
+
+	RevokeSession(
+		ctx context.Context,
+		input RevokeSessionInput,
+	) error
 
 	RefreshToken(
 		ctx context.Context,

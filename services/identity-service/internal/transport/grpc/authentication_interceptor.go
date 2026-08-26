@@ -101,7 +101,9 @@ func requiresAuthentication(
 		identityv1.IdentityService_VerifyIdentifierLinkOTP_FullMethodName,
 		identityv1.IdentityService_RequestIdentifierUnlinkOTP_FullMethodName,
 		identityv1.IdentityService_VerifyIdentifierUnlinkOTP_FullMethodName,
-		identityv1.IdentityService_GetMyIdentity_FullMethodName:
+		identityv1.IdentityService_GetMyIdentity_FullMethodName,
+		identityv1.IdentityService_ListMySessions_FullMethodName,
+		identityv1.IdentityService_RevokeSession_FullMethodName:
 		return true
 
 	default:

@@ -5,28 +5,30 @@ import (
 )
 
 type service struct {
-	challengeRepository             ChallengeRepository
-	identityIdentifierRepository    IdentityIdentifierRepository
-	identityReader                  IdentityReader
-	identifierLinkCompletionStore   IdentifierLinkCompletionStore
-	identifierUnlinkRequestStore    IdentifierUnlinkRequestStore
-	identifierUnlinkCompletionStore IdentifierUnlinkCompletionStore
-	otpGenerator                    OTPGenerator
-	otpHasher                       OTPHasher
-	otpDelivery                     OTPDelivery
-	otpRequestRateLimiter           OTPRequestRateLimiter
-	challengeIDGenerator            ChallengeIDGenerator
-	tokenIssuer                     TokenIssuer
-	refreshTokenRotationStore       RefreshTokenRotationStore
-	sessionRevocationStore          SessionRevocationStore
-	allSessionsRevocationStore      AllSessionsRevocationStore
-	refreshTokenGenerator           RefreshTokenGenerator
-	refreshTokenHasher              RefreshTokenHasher
-	accessTokenSigner               AccessTokenSigner
-	clock                           Clock
-	otpTTL                          time.Duration
-	otpRequestRateLimitPolicy       OTPRequestRateLimitPolicy
-	refreshTokenTTL                 time.Duration
+	challengeRepository              ChallengeRepository
+	identityIdentifierRepository     IdentityIdentifierRepository
+	identityReader                   IdentityReader
+	identifierLinkCompletionStore    IdentifierLinkCompletionStore
+	identifierUnlinkRequestStore     IdentifierUnlinkRequestStore
+	identifierUnlinkCompletionStore  IdentifierUnlinkCompletionStore
+	otpGenerator                     OTPGenerator
+	otpHasher                        OTPHasher
+	otpDelivery                      OTPDelivery
+	otpRequestRateLimiter            OTPRequestRateLimiter
+	challengeIDGenerator             ChallengeIDGenerator
+	tokenIssuer                      TokenIssuer
+	refreshTokenRotationStore        RefreshTokenRotationStore
+	sessionRevocationStore           SessionRevocationStore
+	allSessionsRevocationStore       AllSessionsRevocationStore
+	sessionReader                    SessionReader
+	sessionManagementRevocationStore SessionManagementRevocationStore
+	refreshTokenGenerator            RefreshTokenGenerator
+	refreshTokenHasher               RefreshTokenHasher
+	accessTokenSigner                AccessTokenSigner
+	clock                            Clock
+	otpTTL                           time.Duration
+	otpRequestRateLimitPolicy        OTPRequestRateLimitPolicy
+	refreshTokenTTL                  time.Duration
 }
 
 var _ Service = (*service)(nil)
@@ -47,6 +49,8 @@ func NewServiceWithIdentityIdentifiers(
 	refreshTokenRotationStore RefreshTokenRotationStore,
 	sessionRevocationStore SessionRevocationStore,
 	allSessionsRevocationStore AllSessionsRevocationStore,
+	sessionReader SessionReader,
+	sessionManagementRevocationStore SessionManagementRevocationStore,
 	refreshTokenGenerator RefreshTokenGenerator,
 	refreshTokenHasher RefreshTokenHasher,
 	accessTokenSigner AccessTokenSigner,
@@ -95,6 +99,8 @@ func NewServiceWithIdentityIdentifiers(
 		refreshTokenRotationStore,
 		sessionRevocationStore,
 		allSessionsRevocationStore,
+		sessionReader,
+		sessionManagementRevocationStore,
 		refreshTokenGenerator,
 		refreshTokenHasher,
 		accessTokenSigner,
@@ -121,6 +127,8 @@ func newServiceWithDependencies(
 	refreshTokenRotationStore RefreshTokenRotationStore,
 	sessionRevocationStore SessionRevocationStore,
 	allSessionsRevocationStore AllSessionsRevocationStore,
+	sessionReader SessionReader,
+	sessionManagementRevocationStore SessionManagementRevocationStore,
 	refreshTokenGenerator RefreshTokenGenerator,
 	refreshTokenHasher RefreshTokenHasher,
 	accessTokenSigner AccessTokenSigner,
@@ -165,6 +173,14 @@ func newServiceWithDependencies(
 		panic("all sessions revocation store is required")
 	}
 
+	if sessionReader == nil {
+		panic("session reader is required")
+	}
+
+	if sessionManagementRevocationStore == nil {
+		panic("session management revocation store is required")
+	}
+
 	if refreshTokenGenerator == nil {
 		panic("refresh token generator is required")
 	}
@@ -207,27 +223,29 @@ func newServiceWithDependencies(
 	}
 
 	return &service{
-		challengeRepository:             challengeRepository,
-		identityIdentifierRepository:    identityIdentifierRepository,
-		identityReader:                  identityReader,
-		identifierLinkCompletionStore:   identifierLinkCompletionStore,
-		identifierUnlinkRequestStore:    identifierUnlinkRequestStore,
-		identifierUnlinkCompletionStore: identifierUnlinkCompletionStore,
-		otpGenerator:                    otpGenerator,
-		otpHasher:                       otpHasher,
-		otpDelivery:                     otpDelivery,
-		otpRequestRateLimiter:           otpRequestRateLimiter,
-		challengeIDGenerator:            challengeIDGenerator,
-		tokenIssuer:                     tokenIssuer,
-		refreshTokenRotationStore:       refreshTokenRotationStore,
-		sessionRevocationStore:          sessionRevocationStore,
-		allSessionsRevocationStore:      allSessionsRevocationStore,
-		refreshTokenGenerator:           refreshTokenGenerator,
-		refreshTokenHasher:              refreshTokenHasher,
-		accessTokenSigner:               accessTokenSigner,
-		clock:                           clock,
-		otpTTL:                          otpTTL,
-		otpRequestRateLimitPolicy:       otpRequestRateLimitPolicy,
-		refreshTokenTTL:                 refreshTokenTTL,
+		challengeRepository:              challengeRepository,
+		identityIdentifierRepository:     identityIdentifierRepository,
+		identityReader:                   identityReader,
+		identifierLinkCompletionStore:    identifierLinkCompletionStore,
+		identifierUnlinkRequestStore:     identifierUnlinkRequestStore,
+		identifierUnlinkCompletionStore:  identifierUnlinkCompletionStore,
+		otpGenerator:                     otpGenerator,
+		otpHasher:                        otpHasher,
+		otpDelivery:                      otpDelivery,
+		otpRequestRateLimiter:            otpRequestRateLimiter,
+		challengeIDGenerator:             challengeIDGenerator,
+		tokenIssuer:                      tokenIssuer,
+		refreshTokenRotationStore:        refreshTokenRotationStore,
+		sessionRevocationStore:           sessionRevocationStore,
+		allSessionsRevocationStore:       allSessionsRevocationStore,
+		sessionReader:                    sessionReader,
+		sessionManagementRevocationStore: sessionManagementRevocationStore,
+		refreshTokenGenerator:            refreshTokenGenerator,
+		refreshTokenHasher:               refreshTokenHasher,
+		accessTokenSigner:                accessTokenSigner,
+		clock:                            clock,
+		otpTTL:                           otpTTL,
+		otpRequestRateLimitPolicy:        otpRequestRateLimitPolicy,
+		refreshTokenTTL:                  refreshTokenTTL,
 	}
 }

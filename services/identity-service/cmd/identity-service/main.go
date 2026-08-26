@@ -143,6 +143,11 @@ func run() int {
 			databasePool,
 		)
 
+	sessionReader :=
+		postgresrepo.NewSessionReader(
+			databasePool,
+		)
+
 	sessionAccessRevocationStore :=
 		valkeyrepo.NewSessionAccessRevocationStore(
 			valkeyClient,
@@ -191,6 +196,20 @@ func run() int {
 	if err != nil {
 		logger.Error(
 			"failed to configure coordinated all sessions revocation",
+			"error", err,
+		)
+		return 1
+	}
+
+	coordinatedSessionManagementRevocationStore, err :=
+		auth.NewCoordinatedSessionManagementRevocationStore(
+			sessionRevocationStore,
+			sessionAccessRevocationStore,
+			allSessionsRevocationStore,
+		)
+	if err != nil {
+		logger.Error(
+			"failed to configure coordinated session management revocation",
 			"error", err,
 		)
 		return 1
@@ -278,6 +297,8 @@ func run() int {
 		refreshTokenRotationStore,
 		coordinatedSessionRevocationStore,
 		coordinatedAllSessionsRevocationStore,
+		sessionReader,
+		coordinatedSessionManagementRevocationStore,
 		refreshTokenGenerator,
 		refreshTokenHasher,
 		accessTokenSigner,

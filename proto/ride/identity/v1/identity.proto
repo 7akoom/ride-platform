@@ -14,7 +14,8 @@ service IdentityService {
   rpc RequestIdentifierUnlinkOTP(RequestIdentifierUnlinkOTPRequest) returns (RequestIdentifierUnlinkOTPResponse);
   rpc VerifyIdentifierUnlinkOTP(VerifyIdentifierUnlinkOTPRequest) returns (VerifyIdentifierUnlinkOTPResponse);
   rpc GetMyIdentity(GetMyIdentityRequest) returns (GetMyIdentityResponse);
-
+  rpc ListMySessions(ListMySessionsRequest) returns (ListMySessionsResponse);
+  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
   rpc Logout(LogoutRequest) returns (LogoutResponse);
   rpc LogoutAllSessions(LogoutAllSessionsRequest) returns (LogoutAllSessionsResponse);
@@ -104,6 +105,33 @@ message GetMyIdentityResponse {
   IdentityStatus status = 2;
   repeated VerifiedIdentifier identifiers = 3;
 }
+
+message ListMySessionsRequest {}
+
+message Session {
+  string session_id = 1;
+  optional string client_id = 2;
+  optional string device_id = 3;
+  optional string device_name = 4;
+  optional string platform = 5;
+  optional string app_version = 6;
+  optional string ip_address = 7;
+  optional string user_agent = 8;
+  google.protobuf.Timestamp expires_at = 9;
+  google.protobuf.Timestamp last_seen_at = 10;
+  google.protobuf.Timestamp created_at = 11;
+  bool is_current = 12;
+}
+
+message ListMySessionsResponse {
+  repeated Session sessions = 1;
+}
+
+message RevokeSessionRequest {
+  string session_id = 1;
+}
+
+message RevokeSessionResponse {}
 
 message RefreshTokenRequest {
   string refresh_token = 1;

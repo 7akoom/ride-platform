@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
@@ -18,6 +19,8 @@ type SessionRevocationStore struct {
 var _ auth.SessionRevocationStore = (*SessionRevocationStore)(nil)
 
 var _ auth.SessionRevocationTargetStore = (*SessionRevocationStore)(nil)
+
+var _ auth.SessionManagementRevocationTargetStore = (*SessionRevocationStore)(nil)
 
 var _ auth.SessionAccessStateStore = (*SessionRevocationStore)(nil)
 
@@ -120,6 +123,61 @@ func (s *SessionRevocationStore) FindRevocationTargetByRefreshTokenHash(
 	}
 
 	target.SessionExpiresAt = target.SessionExpiresAt.UTC()
+
+	return target, true, nil
+}
+
+func (s *SessionRevocationStore) FindRevocationTargetByIdentityAndSessionID(
+	ctx context.Context,
+	identityID string,
+	sessionID string,
+) (auth.SessionRevocationTarget, bool, error) {
+	if strings.TrimSpace(identityID) == "" {
+		return auth.SessionRevocationTarget{}, false, errors.New(
+			"identity ID cannot be blank",
+		)
+	}
+
+	if strings.TrimSpace(sessionID) == "" {
+		return auth.SessionRevocationTarget{}, false, errors.New(
+			"session ID cannot be blank",
+		)
+	}
+
+	const query = `
+		SELECT
+			id::text,
+			expires_at
+		FROM auth_sessions
+		WHERE identity_id = $1::uuid
+		  AND id::text = $2
+	`
+
+	var target auth.SessionRevocationTarget
+
+	err := s.pool.QueryRow(
+		ctx,
+		query,
+		identityID,
+		sessionID,
+	).Scan(
+		&target.SessionID,
+		&target.SessionExpiresAt,
+	)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return auth.SessionRevocationTarget{}, false, nil
+	}
+
+	if err != nil {
+		return auth.SessionRevocationTarget{}, false, fmt.Errorf(
+			"find session revocation target by identity and session ID: %w",
+			err,
+		)
+	}
+
+	target.SessionExpiresAt =
+		target.SessionExpiresAt.UTC()
 
 	return target, true, nil
 }

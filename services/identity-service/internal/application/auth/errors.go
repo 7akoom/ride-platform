@@ -14,13 +14,13 @@ var (
 	ErrIdentityInactive           = errors.New("identity is inactive")
 	ErrOTPRequestRateLimited      = errors.New("OTP request rate limit exceeded")
 	ErrIdentifierAlreadyLinked    = errors.New("identity identifier is already linked")
-	ErrIdentifierNotLinked = errors.New(
+	ErrIdentifierNotLinked        = errors.New(
 		"identity identifier is not linked",
 	)
 	ErrLastIdentifierRemoval = errors.New(
 		"cannot remove the last identity identifier",
 	)
-	ErrIdentityNotFound           = errors.New("identity not found")
+	ErrIdentityNotFound = errors.New("identity not found")
 
 	ErrInvalidRefreshToken = errors.New(
 		"invalid refresh token",
@@ -33,6 +33,9 @@ var (
 	)
 	ErrRefreshTokenReused = errors.New(
 		"refresh token reuse detected",
+	)
+	ErrSessionNotFound = errors.New(
+		"authentication session not found",
 	)
 	ErrSessionExpired = errors.New(
 		"authentication session expired",
