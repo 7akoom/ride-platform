@@ -3,11 +3,14 @@ package grpc
 import (
 	"context"
 	"errors"
+	"net"
 	"testing"
 
 	identityv1 "github.com/7akoom/ride-platform/gen/go/ride/identity/v1"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
@@ -216,11 +219,34 @@ func TestIdentityHandlerVerifyLoginOTPReturnsTokens(t *testing.T) {
 
 	handler := NewIdentityHandler(authService)
 
-	response, err := handler.VerifyLoginOTP(
+	ctx := metadata.NewIncomingContext(
 		context.Background(),
+		metadata.Pairs(
+			"user-agent",
+			" ride-app/1.0.0 ",
+		),
+	)
+
+	ctx = peer.NewContext(
+		ctx,
+		&peer.Peer{
+			Addr: &net.TCPAddr{
+				IP:   net.ParseIP("192.0.2.10"),
+				Port: 443,
+			},
+		},
+	)
+
+	response, err := handler.VerifyLoginOTP(
+		ctx,
 		&identityv1.VerifyLoginOTPRequest{
 			ChallengeId: "  otp_ch_test  ",
 			Code:        "  123456  ",
+			ClientId:    " mobile-app ",
+			DeviceId:    " device-123 ",
+			DeviceName:  " iPhone 15 Pro ",
+			Platform:    " ios ",
+			AppVersion:  " 1.0.0 ",
 		},
 	)
 	if err != nil {
@@ -252,6 +278,25 @@ func TestIdentityHandlerVerifyLoginOTPReturnsTokens(t *testing.T) {
 			"auth service received purpose %q, expected %q",
 			authService.verifyOTPInput.ExpectedPurpose,
 			auth.OTPPurposeLogin,
+		)
+	}
+
+	expectedSessionMetadata := auth.SessionMetadata{
+		ClientID:   "mobile-app",
+		DeviceID:   "device-123",
+		DeviceName: "iPhone 15 Pro",
+		Platform:   "ios",
+		AppVersion: "1.0.0",
+		IPAddress:  "192.0.2.10",
+		UserAgent:  "ride-app/1.0.0",
+	}
+
+	if authService.verifyOTPInput.SessionMetadata !=
+		expectedSessionMetadata {
+		t.Fatalf(
+			"auth service received session metadata %+v, expected %+v",
+			authService.verifyOTPInput.SessionMetadata,
+			expectedSessionMetadata,
 		)
 	}
 

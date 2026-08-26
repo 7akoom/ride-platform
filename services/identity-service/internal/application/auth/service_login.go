@@ -11,6 +11,7 @@ func (s *service) completeIdentifierLogin(
 	ctx context.Context,
 	challenge OTPChallenge,
 	verifiedAt time.Time,
+	metadata SessionMetadata,
 ) (VerifyOTPResult, error) {
 	if s.identityIdentifierRepository == nil {
 		return VerifyOTPResult{}, errors.New(
@@ -63,19 +64,21 @@ func (s *service) completeIdentifierLogin(
 		}
 	}
 
-	return s.issueLoginTokens(
+	return s.issueLoginTokensWithSessionMetadata(
 		ctx,
 		challenge,
 		identity,
 		verifiedAt,
+		metadata,
 	)
 }
 
-func (s *service) issueLoginTokens(
+func (s *service) issueLoginTokensWithSessionMetadata(
 	ctx context.Context,
 	challenge OTPChallenge,
 	identity Identity,
 	verifiedAt time.Time,
+	metadata SessionMetadata,
 ) (VerifyOTPResult, error) {
 	if !identity.IsActive {
 		return VerifyOTPResult{},
@@ -85,9 +88,10 @@ func (s *service) issueLoginTokens(
 	tokenPair, err := s.tokenIssuer.Issue(
 		ctx,
 		TokenIssueInput{
-			Identity:    identity,
-			ChallengeID: challenge.ID,
-			VerifiedAt:  verifiedAt,
+			Identity:        identity,
+			ChallengeID:     challenge.ID,
+			VerifiedAt:      verifiedAt,
+			SessionMetadata: metadata,
 		},
 	)
 	if err != nil {

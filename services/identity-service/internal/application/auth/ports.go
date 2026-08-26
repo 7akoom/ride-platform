@@ -172,9 +172,10 @@ type TokenPair struct {
 }
 
 type TokenIssueInput struct {
-	Identity    Identity
-	ChallengeID string
-	VerifiedAt  time.Time
+	Identity        Identity
+	ChallengeID     string
+	VerifiedAt      time.Time
+	SessionMetadata SessionMetadata
 }
 
 type TokenIssuer interface {

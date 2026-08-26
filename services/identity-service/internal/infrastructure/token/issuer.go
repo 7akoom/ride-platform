@@ -35,6 +35,7 @@ type SessionCreationInput struct {
 	SessionExpiresAt      time.Time
 	RefreshTokenHash      string
 	RefreshTokenExpiresAt time.Time
+	SessionMetadata       auth.SessionMetadata
 }
 
 type sessionStore interface {
@@ -181,6 +182,7 @@ func (i *Issuer) Issue(
 			SessionExpiresAt:      sessionExpiresAt,
 			RefreshTokenHash:      refreshTokenHash,
 			RefreshTokenExpiresAt: refreshTokenExpiresAt,
+			SessionMetadata:       input.SessionMetadata,
 		},
 	); err != nil {
 		return auth.TokenPair{}, fmt.Errorf(

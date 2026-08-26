@@ -275,6 +275,11 @@ type VerifyLoginOTPRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChallengeId   string                 `protobuf:"bytes,1,opt,name=challenge_id,json=challengeId,proto3" json:"challenge_id,omitempty"`
 	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	ClientId      string                 `protobuf:"bytes,3,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	DeviceId      string                 `protobuf:"bytes,4,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	DeviceName    string                 `protobuf:"bytes,5,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
+	Platform      string                 `protobuf:"bytes,6,opt,name=platform,proto3" json:"platform,omitempty"`
+	AppVersion    string                 `protobuf:"bytes,7,opt,name=app_version,json=appVersion,proto3" json:"app_version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -319,6 +324,41 @@ func (x *VerifyLoginOTPRequest) GetChallengeId() string {
 func (x *VerifyLoginOTPRequest) GetCode() string {
 	if x != nil {
 		return x.Code
+	}
+	return ""
+}
+
+func (x *VerifyLoginOTPRequest) GetClientId() string {
+	if x != nil {
+		return x.ClientId
+	}
+	return ""
+}
+
+func (x *VerifyLoginOTPRequest) GetDeviceId() string {
+	if x != nil {
+		return x.DeviceId
+	}
+	return ""
+}
+
+func (x *VerifyLoginOTPRequest) GetDeviceName() string {
+	if x != nil {
+		return x.DeviceName
+	}
+	return ""
+}
+
+func (x *VerifyLoginOTPRequest) GetPlatform() string {
+	if x != nil {
+		return x.Platform
+	}
+	return ""
+}
+
+func (x *VerifyLoginOTPRequest) GetAppVersion() string {
+	if x != nil {
+		return x.AppVersion
 	}
 	return ""
 }
@@ -1494,10 +1534,17 @@ const file_ride_identity_v1_identity_proto_rawDesc = "" +
 	"identifier\"j\n" +
 	"\x17RequestLoginOTPResponse\x12!\n" +
 	"\fchallenge_id\x18\x01 \x01(\tR\vchallengeId\x12,\n" +
-	"\x12expires_in_seconds\x18\x02 \x01(\x05R\x10expiresInSeconds\"N\n" +
+	"\x12expires_in_seconds\x18\x02 \x01(\x05R\x10expiresInSeconds\"\xe6\x01\n" +
 	"\x15VerifyLoginOTPRequest\x12!\n" +
 	"\fchallenge_id\x18\x01 \x01(\tR\vchallengeId\x12\x12\n" +
-	"\x04code\x18\x02 \x01(\tR\x04code\"\xc7\x01\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\x12\x1b\n" +
+	"\tclient_id\x18\x03 \x01(\tR\bclientId\x12\x1b\n" +
+	"\tdevice_id\x18\x04 \x01(\tR\bdeviceId\x12\x1f\n" +
+	"\vdevice_name\x18\x05 \x01(\tR\n" +
+	"deviceName\x12\x1a\n" +
+	"\bplatform\x18\x06 \x01(\tR\bplatform\x12\x1f\n" +
+	"\vapp_version\x18\a \x01(\tR\n" +
+	"appVersion\"\xc7\x01\n" +
 	"\x16VerifyLoginOTPResponse\x12\x1f\n" +
 	"\videntity_id\x18\x01 \x01(\tR\n" +
 	"identityId\x12!\n" +

@@ -204,9 +204,27 @@ func (s *SessionStore) Create(
 		INSERT INTO auth_sessions (
 			id,
 			identity_id,
-			expires_at
+			expires_at,
+			client_id,
+			device_id,
+			device_name,
+			platform,
+			app_version,
+			ip_address,
+			user_agent
 		)
-		VALUES ($1::uuid, $2::uuid, $3)
+		VALUES (
+			$1::uuid,
+			$2::uuid,
+			$3,
+			$4,
+			$5,
+			$6,
+			$7,
+			$8,
+			$9,
+			$10
+		)
 	`
 
 	if _, err := tx.Exec(
@@ -215,6 +233,27 @@ func (s *SessionStore) Create(
 		input.SessionID,
 		input.IdentityID,
 		input.SessionExpiresAt,
+		nullableSessionMetadataValue(
+			input.SessionMetadata.ClientID,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.DeviceID,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.DeviceName,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.Platform,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.AppVersion,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.IPAddress,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.UserAgent,
+		),
 	); err != nil {
 		return IssuedSession{}, fmt.Errorf(
 			"insert auth session: %w",
@@ -258,4 +297,16 @@ func (s *SessionStore) Create(
 		SessionID:      input.SessionID,
 		RefreshTokenID: refreshTokenID,
 	}, nil
+}
+
+func nullableSessionMetadataValue(
+	value string,
+) any {
+	normalized := strings.TrimSpace(value)
+
+	if normalized == "" {
+		return nil
+	}
+
+	return normalized
 }

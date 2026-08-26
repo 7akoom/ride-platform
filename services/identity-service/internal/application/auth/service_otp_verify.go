@@ -152,6 +152,7 @@ func (s *service) VerifyOTP(
 			ctx,
 			challenge,
 			now,
+			input.SessionMetadata,
 		)
 
 	case OTPPurposeLinkIdentifier:

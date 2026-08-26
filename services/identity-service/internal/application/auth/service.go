@@ -16,11 +16,22 @@ type RequestOTPResult struct {
 	ExpiresInSeconds int32
 }
 
+type SessionMetadata struct {
+	ClientID   string
+	DeviceID   string
+	DeviceName string
+	Platform   string
+	AppVersion string
+	IPAddress  string
+	UserAgent  string
+}
+
 type VerifyOTPInput struct {
 	ChallengeID              string
 	Code                     string
 	ExpectedPurpose          OTPPurpose
 	ExpectedTargetIdentityID *string
+	SessionMetadata          SessionMetadata
 }
 
 type VerifyOTPResult struct {

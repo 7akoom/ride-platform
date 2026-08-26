@@ -67,12 +67,23 @@ func TestVerifyOTPLogsInExistingIdentityByEmail(
 		&testClock{now: now},
 	)
 
+	sessionMetadata := SessionMetadata{
+		ClientID:   "mobile-app",
+		DeviceID:   "device-123",
+		DeviceName: "iPhone 15 Pro",
+		Platform:   "ios",
+		AppVersion: "1.0.0",
+		IPAddress:  "192.0.2.10",
+		UserAgent:  "ride-app/1.0.0",
+	}
+
 	result, err := service.VerifyOTP(
 		context.Background(),
 		VerifyOTPInput{
 			ExpectedPurpose: OTPPurposeLogin,
 			ChallengeID:     "otp_ch_email_existing",
 			Code:            "123456",
+			SessionMetadata: sessionMetadata,
 		},
 	)
 	if err != nil {
@@ -124,6 +135,14 @@ func TestVerifyOTPLogsInExistingIdentityByEmail(
 			"issued challenge ID = %q, expected %q",
 			tokenIssuer.input.ChallengeID,
 			"otp_ch_email_existing",
+		)
+	}
+
+	if tokenIssuer.input.SessionMetadata != sessionMetadata {
+		t.Fatalf(
+			"issued session metadata = %+v, expected %+v",
+			tokenIssuer.input.SessionMetadata,
+			sessionMetadata,
 		)
 	}
 

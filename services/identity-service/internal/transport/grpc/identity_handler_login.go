@@ -3,11 +3,14 @@ package grpc
 import (
 	"context"
 	"errors"
+	"net"
 	"strings"
 
 	identityv1 "github.com/7akoom/ride-platform/gen/go/ride/identity/v1"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
@@ -148,6 +151,25 @@ func (h *IdentityHandler) VerifyLoginOTP(
 			ChallengeID:     challengeID,
 			Code:            code,
 			ExpectedPurpose: auth.OTPPurposeLogin,
+			SessionMetadata: auth.SessionMetadata{
+				ClientID: strings.TrimSpace(
+					request.GetClientId(),
+				),
+				DeviceID: strings.TrimSpace(
+					request.GetDeviceId(),
+				),
+				DeviceName: strings.TrimSpace(
+					request.GetDeviceName(),
+				),
+				Platform: strings.TrimSpace(
+					request.GetPlatform(),
+				),
+				AppVersion: strings.TrimSpace(
+					request.GetAppVersion(),
+				),
+				IPAddress: sessionIPAddressFromContext(ctx),
+				UserAgent: sessionUserAgentFromContext(ctx),
+			},
 		},
 	)
 	if err != nil {
@@ -220,4 +242,58 @@ func (h *IdentityHandler) VerifyLoginOTP(
 		RefreshToken:                result.RefreshToken,
 		AccessTokenExpiresInSeconds: result.AccessTokenExpiresInSeconds,
 	}, nil
+}
+
+func sessionIPAddressFromContext(
+	ctx context.Context,
+) string {
+	peerInfo, ok := peer.FromContext(ctx)
+	if !ok || peerInfo.Addr == nil {
+		return ""
+	}
+
+	address := strings.TrimSpace(
+		peerInfo.Addr.String(),
+	)
+	if address == "" {
+		return ""
+	}
+
+	host := address
+
+	if splitHost, _, err := net.SplitHostPort(address); err == nil {
+		host = splitHost
+	}
+
+	host = strings.Trim(
+		strings.TrimSpace(host),
+		"[]",
+	)
+
+	if net.ParseIP(host) == nil {
+		return ""
+	}
+
+	return host
+}
+
+func sessionUserAgentFromContext(
+	ctx context.Context,
+) string {
+	incomingMetadata, ok :=
+		metadata.FromIncomingContext(ctx)
+	if !ok {
+		return ""
+	}
+
+	values := incomingMetadata.Get(
+		"user-agent",
+	)
+	if len(values) == 0 {
+		return ""
+	}
+
+	return strings.TrimSpace(
+		values[0],
+	)
 }

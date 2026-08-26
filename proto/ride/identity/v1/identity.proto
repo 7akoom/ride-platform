@@ -51,6 +51,12 @@ message RequestLoginOTPResponse {
 message VerifyLoginOTPRequest {
   string challenge_id = 1;
   string code = 2;
+
+  string client_id = 3;
+  string device_id = 4;
+  string device_name = 5;
+  string platform = 6;
+  string app_version = 7;
 }
 
 message VerifyLoginOTPResponse {
