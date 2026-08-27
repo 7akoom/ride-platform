@@ -66,16 +66,17 @@ type testOTPDelivery struct {
 
 	recipient Identifier
 	code      string
+	purpose   OTPPurpose
 }
 
 func (d *testOTPDelivery) Send(
 	ctx context.Context,
-	recipient Identifier,
-	code string,
+	input OTPDeliveryInput,
 ) error {
 	d.called = true
-	d.recipient = recipient
-	d.code = code
+	d.recipient = input.Identifier
+	d.code = input.Code
+	d.purpose = input.Purpose
 
 	if d.onSend != nil {
 		d.onSend()

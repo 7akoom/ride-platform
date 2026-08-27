@@ -92,8 +92,11 @@ func (s *service) RequestOTP(
 
 	if deliveryErr := s.otpDelivery.Send(
 		ctx,
-		identifier,
-		code,
+		OTPDeliveryInput{
+			Identifier: identifier,
+			Code:       code,
+			Purpose:    purpose,
+		},
 	); deliveryErr != nil {
 		cancelledAt := s.clock.Now()
 

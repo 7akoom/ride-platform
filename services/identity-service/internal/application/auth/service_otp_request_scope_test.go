@@ -105,6 +105,13 @@ func TestRequestOTPUsesGenericPhoneLoginIdentifier(
 			"123456",
 		)
 	}
+	if otpDelivery.purpose != OTPPurposeLogin {
+		t.Fatalf(
+			"OTP delivery purpose = %q, expected %q",
+			otpDelivery.purpose,
+			OTPPurposeLogin,
+		)
+	}
 }
 
 func TestRequestOTPUsesNormalizedEmailLoginIdentifier(
@@ -194,9 +201,12 @@ func TestRequestOTPUsesLinkIdentifierScope(
 	dependencies := newValidServiceConstructorTestDependencies()
 
 	challengeRepository := &testChallengeRepository{}
+	otpDelivery := &testOTPDelivery{}
 
 	dependencies.challengeRepository =
 		challengeRepository
+	dependencies.otpDelivery =
+		otpDelivery
 
 	service := newServiceFromConstructorTestDependencies(
 		dependencies,
@@ -263,6 +273,28 @@ func TestRequestOTPUsesLinkIdentifierScope(
 			"target identity ID = %q, expected %q",
 			*challenge.TargetIdentityID,
 			expectedIdentityID,
+		)
+	}
+	if !otpDelivery.called {
+		t.Fatal(
+			"OTP delivery was not called",
+		)
+	}
+
+	if otpDelivery.purpose !=
+		OTPPurposeLinkIdentifier {
+		t.Fatalf(
+			"OTP delivery purpose = %q, expected %q",
+			otpDelivery.purpose,
+			OTPPurposeLinkIdentifier,
+		)
+	}
+
+	if otpDelivery.recipient != expectedIdentifier {
+		t.Fatalf(
+			"OTP delivery recipient = %+v, expected %+v",
+			otpDelivery.recipient,
+			expectedIdentifier,
 		)
 	}
 }

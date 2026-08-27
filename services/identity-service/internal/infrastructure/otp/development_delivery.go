@@ -35,15 +35,15 @@ func NewDevelopmentDelivery(
 
 func (d *DevelopmentDelivery) Send(
 	ctx context.Context,
-	identifier auth.Identifier,
-	code string,
+	input auth.OTPDeliveryInput,
 ) error {
 	d.logger.WarnContext(
 		ctx,
 		"OTP delivered through development adapter",
-		"otp_identifier_type", identifier.Type,
-		"otp_identifier", identifier.Value,
-		"otp_code", code,
+		"otp_identifier_type", input.Identifier.Type,
+		"otp_identifier", input.Identifier.Value,
+		"otp_purpose", input.Purpose,
+		"otp_code", input.Code,
 	)
 
 	return nil

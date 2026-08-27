@@ -157,11 +157,16 @@ type OTPHasher interface {
 	) (bool, error)
 }
 
+type OTPDeliveryInput struct {
+	Identifier Identifier
+	Code       string
+	Purpose    OTPPurpose
+}
+
 type OTPDelivery interface {
 	Send(
 		ctx context.Context,
-		identifier Identifier,
-		code string,
+		input OTPDeliveryInput,
 	) error
 }
 

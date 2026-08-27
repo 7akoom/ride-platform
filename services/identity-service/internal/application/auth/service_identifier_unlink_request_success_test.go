@@ -214,6 +214,15 @@ func TestRequestIdentifierUnlinkOTPCreatesRequestAndDeliversToAnotherIdentifier(
 		)
 	}
 
+	if otpDelivery.purpose !=
+		OTPPurposeUnlinkIdentifier {
+		t.Fatalf(
+			"OTP delivery purpose = %q, expected %q",
+			otpDelivery.purpose,
+			OTPPurposeUnlinkIdentifier,
+		)
+	}
+
 	if result.ChallengeID != "otp_ch_test" {
 		t.Fatalf(
 			"ChallengeID = %q, expected %q",

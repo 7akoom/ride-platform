@@ -297,8 +297,11 @@ func (s *service) RequestIdentifierUnlinkOTP(
 
 	if deliveryErr := s.otpDelivery.Send(
 		ctx,
-		verificationIdentifier,
-		code,
+		OTPDeliveryInput{
+			Identifier: verificationIdentifier,
+			Code:       code,
+			Purpose:    OTPPurposeUnlinkIdentifier,
+		},
 	); deliveryErr != nil {
 		cancelledAt := s.clock.Now()
 
