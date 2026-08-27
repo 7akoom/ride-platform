@@ -24,8 +24,16 @@ func TestIdentityHandlerRequestLoginOTPReturnsChallenge(t *testing.T) {
 
 	handler := NewIdentityHandler(authService)
 
-	response, err := handler.RequestLoginOTP(
+	ctx := metadata.NewIncomingContext(
 		context.Background(),
+		metadata.Pairs(
+			"accept-language",
+			"ar-IQ",
+		),
+	)
+
+	response, err := handler.RequestLoginOTP(
+		ctx,
 		&identityv1.RequestLoginOTPRequest{
 			Identifier: &identityv1.Identifier{
 				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_PHONE,
@@ -59,6 +67,14 @@ func TestIdentityHandlerRequestLoginOTPReturnsChallenge(t *testing.T) {
 			"auth service received purpose %q, expected %q",
 			authService.requestOTPInput.Purpose,
 			auth.OTPPurposeLogin,
+		)
+	}
+
+	if authService.requestOTPInput.Locale != "ar" {
+		t.Fatalf(
+			"auth service received locale %q, expected %q",
+			authService.requestOTPInput.Locale,
+			"ar",
 		)
 	}
 

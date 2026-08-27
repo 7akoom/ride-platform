@@ -67,6 +67,7 @@ type testOTPDelivery struct {
 	recipient Identifier
 	code      string
 	purpose   OTPPurpose
+	locale    string
 }
 
 func (d *testOTPDelivery) Send(
@@ -77,6 +78,7 @@ func (d *testOTPDelivery) Send(
 	d.recipient = input.Identifier
 	d.code = input.Code
 	d.purpose = input.Purpose
+	d.locale = input.Locale
 
 	if d.onSend != nil {
 		d.onSend()

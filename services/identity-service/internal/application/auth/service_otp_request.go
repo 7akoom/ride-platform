@@ -96,6 +96,7 @@ func (s *service) RequestOTP(
 			Identifier: identifier,
 			Code:       code,
 			Purpose:    purpose,
+			Locale:     input.Locale,
 		},
 	); deliveryErr != nil {
 		cancelledAt := s.clock.Now()

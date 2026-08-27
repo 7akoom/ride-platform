@@ -43,6 +43,7 @@ func TestRequestOTPUsesGenericPhoneLoginIdentifier(
 				Value: "  +9647501234567  ",
 			},
 			Purpose: OTPPurposeLogin,
+			Locale:  "ar",
 		},
 	)
 	if err != nil {
@@ -110,6 +111,13 @@ func TestRequestOTPUsesGenericPhoneLoginIdentifier(
 			"OTP delivery purpose = %q, expected %q",
 			otpDelivery.purpose,
 			OTPPurposeLogin,
+		)
+	}
+	if otpDelivery.locale != "ar" {
+		t.Fatalf(
+			"OTP delivery locale = %q, expected %q",
+			otpDelivery.locale,
+			"ar",
 		)
 	}
 }
@@ -224,6 +232,7 @@ func TestRequestOTPUsesLinkIdentifierScope(
 			},
 			Purpose:          OTPPurposeLinkIdentifier,
 			TargetIdentityID: &targetIdentityID,
+			Locale:           "ku",
 		},
 	)
 	if err != nil {
@@ -295,6 +304,13 @@ func TestRequestOTPUsesLinkIdentifierScope(
 			"OTP delivery recipient = %+v, expected %+v",
 			otpDelivery.recipient,
 			expectedIdentifier,
+		)
+	}
+	if otpDelivery.locale != "ku" {
+		t.Fatalf(
+			"OTP delivery locale = %q, expected %q",
+			otpDelivery.locale,
+			"ku",
 		)
 	}
 }

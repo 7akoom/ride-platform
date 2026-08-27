@@ -8,6 +8,7 @@ import (
 	identityv1 "github.com/7akoom/ride-platform/gen/go/ride/identity/v1"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -23,8 +24,16 @@ func TestIdentityHandlerRequestIdentifierUnlinkOTPUsesAuthenticatedIdentity(
 
 	handler := NewIdentityHandler(authService)
 
-	ctx := contextWithAuthenticatedPrincipal(
+	ctx := metadata.NewIncomingContext(
 		context.Background(),
+		metadata.Pairs(
+			"accept-language",
+			"en-US",
+		),
+	)
+
+	ctx = contextWithAuthenticatedPrincipal(
+		ctx,
 		authenticatedPrincipal{
 			IdentityID: "identity-123",
 			SessionID:  "session-456",
@@ -73,6 +82,14 @@ func TestIdentityHandlerRequestIdentifierUnlinkOTPUsesAuthenticatedIdentity(
 			"target identifier = %+v, expected %+v",
 			authService.requestIdentifierUnlinkOTPInput.TargetIdentifier,
 			expectedIdentifier,
+		)
+	}
+
+	if authService.requestIdentifierUnlinkOTPInput.Locale != "en" {
+		t.Fatalf(
+			"auth service received locale %q, expected %q",
+			authService.requestIdentifierUnlinkOTPInput.Locale,
+			"en",
 		)
 	}
 

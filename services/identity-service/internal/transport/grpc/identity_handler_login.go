@@ -67,6 +67,7 @@ func (h *IdentityHandler) RequestLoginOTP(
 				Value: identifierValue,
 			},
 			Purpose: auth.OTPPurposeLogin,
+			Locale:  requestLocaleFromIncomingContext(ctx),
 		},
 	)
 	if err != nil {

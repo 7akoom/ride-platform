@@ -64,6 +64,7 @@ func TestRequestIdentifierUnlinkOTPCreatesRequestAndDeliversToAnotherIdentifier(
 				Type:  IdentifierTypeEmail,
 				Value: "TARGET.UNLINK@EXAMPLE.COM",
 			},
+			Locale: "en",
 		},
 	)
 	if err != nil {
@@ -220,6 +221,14 @@ func TestRequestIdentifierUnlinkOTPCreatesRequestAndDeliversToAnotherIdentifier(
 			"OTP delivery purpose = %q, expected %q",
 			otpDelivery.purpose,
 			OTPPurposeUnlinkIdentifier,
+		)
+	}
+
+	if otpDelivery.locale != "en" {
+		t.Fatalf(
+			"OTP delivery locale = %q, expected %q",
+			otpDelivery.locale,
+			"en",
 		)
 	}
 

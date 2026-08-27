@@ -24,6 +24,7 @@ type SMSProvider interface {
 type OTPMessageRenderInput struct {
 	Code    string
 	Purpose auth.OTPPurpose
+	Locale  string
 }
 
 type SMSMessageRenderer interface {
@@ -64,6 +65,7 @@ func (s *ProviderSMSSender) Send(
 	phoneNumber string,
 	code string,
 	purpose auth.OTPPurpose,
+	locale string,
 ) error {
 	phoneNumber = strings.TrimSpace(phoneNumber)
 	if phoneNumber == "" {
@@ -83,6 +85,7 @@ func (s *ProviderSMSSender) Send(
 		OTPMessageRenderInput{
 			Code:    code,
 			Purpose: purpose,
+			Locale:  locale,
 		},
 	)
 	if err != nil {

@@ -161,6 +161,7 @@ type OTPDeliveryInput struct {
 	Identifier Identifier
 	Code       string
 	Purpose    OTPPurpose
+	Locale     string
 }
 
 type OTPDelivery interface {

@@ -9,6 +9,7 @@ type RequestOTPInput struct {
 	Identifier       Identifier
 	Purpose          OTPPurpose
 	TargetIdentityID *string
+	Locale           string
 }
 
 type RequestOTPResult struct {
@@ -48,6 +49,7 @@ type GetMyIdentityInput struct {
 type RequestIdentifierUnlinkOTPInput struct {
 	IdentityID       string
 	TargetIdentifier Identifier
+	Locale           string
 }
 
 type RequestIdentifierUnlinkOTPResult struct {

@@ -301,6 +301,7 @@ func (s *service) RequestIdentifierUnlinkOTP(
 			Identifier: verificationIdentifier,
 			Code:       code,
 			Purpose:    OTPPurposeUnlinkIdentifier,
+			Locale:     input.Locale,
 		},
 	); deliveryErr != nil {
 		cancelledAt := s.clock.Now()

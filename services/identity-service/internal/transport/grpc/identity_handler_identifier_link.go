@@ -75,6 +75,7 @@ func (h *IdentityHandler) RequestIdentifierLinkOTP(
 			},
 			Purpose:          auth.OTPPurposeLinkIdentifier,
 			TargetIdentityID: &targetIdentityID,
+			Locale:           requestLocaleFromIncomingContext(ctx),
 		},
 	)
 	if err != nil {

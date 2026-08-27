@@ -72,6 +72,7 @@ func (h *IdentityHandler) RequestIdentifierUnlinkOTP(
 				Type:  identifierType,
 				Value: identifierValue,
 			},
+			Locale: requestLocaleFromIncomingContext(ctx),
 		},
 	)
 	if err != nil {

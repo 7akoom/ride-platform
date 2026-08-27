@@ -15,6 +15,7 @@ type testSMSSender struct {
 	phoneNumber string
 	code        string
 	purpose     auth.OTPPurpose
+	locale      string
 }
 
 func (s *testSMSSender) Send(
@@ -22,11 +23,13 @@ func (s *testSMSSender) Send(
 	phoneNumber string,
 	code string,
 	purpose auth.OTPPurpose,
+	locale string,
 ) error {
 	s.calls++
 	s.phoneNumber = phoneNumber
 	s.code = code
 	s.purpose = purpose
+	s.locale = locale
 
 	return s.err
 }
@@ -38,6 +41,7 @@ type testEmailSender struct {
 	emailAddress string
 	code         string
 	purpose      auth.OTPPurpose
+	locale       string
 }
 
 func (s *testEmailSender) Send(
@@ -45,11 +49,13 @@ func (s *testEmailSender) Send(
 	emailAddress string,
 	code string,
 	purpose auth.OTPPurpose,
+	locale string,
 ) error {
 	s.calls++
 	s.emailAddress = emailAddress
 	s.code = code
 	s.purpose = purpose
+	s.locale = locale
 
 	return s.err
 }
@@ -80,6 +86,7 @@ func TestProductionDeliveryRoutesPhoneToSMSSender(
 			},
 			Code:    " 123456 ",
 			Purpose: auth.OTPPurposeLogin,
+			Locale:  "ar",
 		},
 	)
 	if err != nil {
@@ -126,6 +133,13 @@ func TestProductionDeliveryRoutesPhoneToSMSSender(
 			auth.OTPPurposeLogin,
 		)
 	}
+	if smsSender.locale != "ar" {
+		t.Fatalf(
+			"SMS locale = %q, expected %q",
+			smsSender.locale,
+			"ar",
+		)
+	}
 }
 
 func TestProductionDeliveryRoutesEmailToEmailSender(
@@ -154,6 +168,7 @@ func TestProductionDeliveryRoutesEmailToEmailSender(
 			},
 			Code:    " 654321 ",
 			Purpose: auth.OTPPurposeLinkIdentifier,
+			Locale:  "ku",
 		},
 	)
 	if err != nil {
@@ -199,6 +214,13 @@ func TestProductionDeliveryRoutesEmailToEmailSender(
 			"email purpose = %q, expected %q",
 			emailSender.purpose,
 			auth.OTPPurposeLinkIdentifier,
+		)
+	}
+	if emailSender.locale != "ku" {
+		t.Fatalf(
+			"email locale = %q, expected %q",
+			emailSender.locale,
+			"ku",
 		)
 	}
 }

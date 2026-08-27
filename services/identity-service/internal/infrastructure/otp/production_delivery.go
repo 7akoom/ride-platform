@@ -15,6 +15,7 @@ type SMSSender interface {
 		phoneNumber string,
 		code string,
 		purpose auth.OTPPurpose,
+		locale string,
 	) error
 }
 
@@ -24,6 +25,7 @@ type EmailSender interface {
 		emailAddress string,
 		code string,
 		purpose auth.OTPPurpose,
+		locale string,
 	) error
 }
 
@@ -95,6 +97,7 @@ func (d *ProductionDelivery) Send(
 			identifier.Value,
 			code,
 			purpose,
+			input.Locale,
 		); err != nil {
 			return fmt.Errorf(
 				"send OTP by SMS: %w",
@@ -108,6 +111,7 @@ func (d *ProductionDelivery) Send(
 			identifier.Value,
 			code,
 			purpose,
+			input.Locale,
 		); err != nil {
 			return fmt.Errorf(
 				"send OTP by email: %w",

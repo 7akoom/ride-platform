@@ -65,6 +65,7 @@ func TestProviderSMSSenderRendersAndSendsMessage(
 		" +9647501234567 ",
 		" 123456 ",
 		auth.OTPPurposeLogin,
+		"ar",
 	)
 	if err != nil {
 		t.Fatalf(
@@ -83,6 +84,7 @@ func TestProviderSMSSenderRendersAndSendsMessage(
 	expectedRenderInput := OTPMessageRenderInput{
 		Code:    "123456",
 		Purpose: auth.OTPPurposeLogin,
+		Locale:  "ar",
 	}
 
 	if renderer.input != expectedRenderInput {
@@ -145,6 +147,7 @@ func TestProviderSMSSenderPropagatesProviderError(
 		"+9647501234567",
 		"123456",
 		auth.OTPPurposeLogin,
+		"en",
 	)
 
 	if !errors.Is(err, expectedErr) {
