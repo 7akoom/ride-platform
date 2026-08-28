@@ -12,8 +12,15 @@ func (s *service) RequestOTP(
 	ctx context.Context,
 	input RequestOTPInput,
 ) (RequestOTPResult, error) {
-	identifier, purpose, targetIdentityID, err :=
+	identifier, purpose, targetIdentityID, channel, err :=
 		normalizeRequestOTPInput(input)
+	if err != nil {
+		return RequestOTPResult{}, err
+	}
+
+	tenantHint, err := NormalizeTenantHint(
+		input.TenantHint,
+	)
 	if err != nil {
 		return RequestOTPResult{}, err
 	}
@@ -76,6 +83,7 @@ func (s *service) RequestOTP(
 		Identifier:       identifier,
 		Purpose:          purpose,
 		TargetIdentityID: targetIdentityID,
+		TenantHint:       tenantHint,
 		CodeHash:         codeHash,
 		ExpiresAt:        now.Add(s.otpTTL),
 	}
@@ -96,6 +104,7 @@ func (s *service) RequestOTP(
 			Identifier: identifier,
 			Code:       code,
 			Purpose:    purpose,
+			Channel:    channel,
 			Locale:     input.Locale,
 		},
 	); deliveryErr != nil {
@@ -143,6 +152,7 @@ func normalizeRequestOTPInput(
 	Identifier,
 	OTPPurpose,
 	*string,
+	OTPDeliveryChannel,
 	error,
 ) {
 	identifier, err := NewIdentifier(
@@ -150,7 +160,7 @@ func normalizeRequestOTPInput(
 		input.Identifier.Value,
 	)
 	if err != nil {
-		return Identifier{}, "", nil, err
+		return Identifier{}, "", nil, "", err
 	}
 
 	purpose := input.Purpose
@@ -159,7 +169,53 @@ func normalizeRequestOTPInput(
 		string(purpose),
 	)
 	if err != nil {
-		return Identifier{}, "", nil, err
+		return Identifier{}, "", nil, "", err
+	}
+
+	channel, err := ParseOTPDeliveryChannel(
+		string(input.Channel),
+	)
+	if err != nil {
+		return Identifier{}, "", nil, "", err
+	}
+
+	switch channel {
+	case OTPDeliveryChannelAuto:
+		// AUTO preserves the existing behavior:
+		// phone identifiers use SMS and email identifiers use email.
+
+	case OTPDeliveryChannelSMS,
+		OTPDeliveryChannelWhatsApp:
+		if identifier.Type != IdentifierTypePhone {
+			return Identifier{},
+				"",
+				nil,
+				"",
+				fmt.Errorf(
+					"%w: %s requires a phone identifier",
+					ErrInvalidOTPDeliveryChannel,
+					channel,
+				)
+		}
+
+	case OTPDeliveryChannelEmail:
+		if identifier.Type != IdentifierTypeEmail {
+			return Identifier{},
+				"",
+				nil,
+				"",
+				fmt.Errorf(
+					"%w: email requires an email identifier",
+					ErrInvalidOTPDeliveryChannel,
+				)
+		}
+
+	default:
+		return Identifier{},
+			"",
+			nil,
+			"",
+			ErrInvalidOTPDeliveryChannel
 	}
 
 	targetIdentityID := input.TargetIdentityID
@@ -170,6 +226,7 @@ func normalizeRequestOTPInput(
 			return Identifier{},
 				"",
 				nil,
+				"",
 				errors.New(
 					"login OTP request cannot target an identity",
 				)
@@ -180,6 +237,7 @@ func normalizeRequestOTPInput(
 			return Identifier{},
 				"",
 				nil,
+				"",
 				errors.New(
 					"link identifier OTP request requires target identity",
 				)
@@ -192,6 +250,7 @@ func normalizeRequestOTPInput(
 			return Identifier{},
 				"",
 				nil,
+				"",
 				errors.New(
 					"OTP request target identity cannot be blank",
 				)
@@ -204,11 +263,13 @@ func normalizeRequestOTPInput(
 		return Identifier{},
 			"",
 			nil,
+			"",
 			ErrInvalidOTPPurpose
 	}
 
 	return identifier,
 		parsedPurpose,
 		targetIdentityID,
+		channel,
 		nil
 }

@@ -79,6 +79,22 @@ func (s *SessionStore) Create(
 		)
 	}
 
+	tenantHint, err := auth.NormalizeTenantHint(
+		input.TenantHint,
+	)
+	if err != nil {
+		return IssuedSession{}, fmt.Errorf(
+			"validate session tenant hint: %w",
+			err,
+		)
+	}
+
+	var nullableTenantHint any
+
+	if tenantHint != "" {
+		nullableTenantHint = tenantHint
+	}
+
 	input.VerifiedAt = input.VerifiedAt.UTC()
 	input.SessionExpiresAt = input.SessionExpiresAt.UTC()
 	input.RefreshTokenExpiresAt =
@@ -108,10 +124,11 @@ func (s *SessionStore) Create(
 		UPDATE otp_challenges
 		SET verified_at = $1
 		WHERE id = $2
-		  AND verified_at IS NULL
-		  AND cancelled_at IS NULL
-		  AND expires_at > $1
-		  AND failed_attempts < max_attempts
+		AND tenant_hint IS NOT DISTINCT FROM $3
+		AND verified_at IS NULL
+		AND cancelled_at IS NULL
+		AND expires_at > $1
+		AND failed_attempts < max_attempts
 		RETURNING id::text
 	`
 
@@ -122,6 +139,7 @@ func (s *SessionStore) Create(
 		verifyChallengeQuery,
 		input.VerifiedAt,
 		input.ChallengeID,
+		nullableTenantHint,
 	).Scan(
 		&verifiedChallengeID,
 	)
@@ -143,6 +161,7 @@ func (s *SessionStore) Create(
 				max_attempts
 			FROM otp_challenges
 			WHERE id = $1
+			AND tenant_hint IS NOT DISTINCT FROM $2
 		`
 
 		var expiresAt time.Time
@@ -155,6 +174,7 @@ func (s *SessionStore) Create(
 			ctx,
 			challengeStateQuery,
 			input.ChallengeID,
+			nullableTenantHint,
 		).Scan(
 			&expiresAt,
 			&existingVerifiedAt,
@@ -204,6 +224,7 @@ func (s *SessionStore) Create(
 		INSERT INTO auth_sessions (
 			id,
 			identity_id,
+			tenant_hint,
 			expires_at,
 			client_id,
 			device_id,
@@ -223,7 +244,8 @@ func (s *SessionStore) Create(
 			$7,
 			$8,
 			$9,
-			$10
+			$10,
+			$11
 		)
 	`
 
@@ -232,6 +254,7 @@ func (s *SessionStore) Create(
 		sessionQuery,
 		input.SessionID,
 		input.IdentityID,
+		nullableTenantHint,
 		input.SessionExpiresAt,
 		nullableSessionMetadataValue(
 			input.SessionMetadata.ClientID,

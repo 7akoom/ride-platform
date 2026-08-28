@@ -19,10 +19,10 @@ func TestAuthenticationUnaryInterceptorAllowsPublicMethodWithoutToken(
 		func(
 			ctx context.Context,
 			rawToken string,
-		) (string, string, error) {
+		) (string, string, string, error) {
 			verifierCalled = true
 
-			return "", "", nil
+			return "", "", "", nil
 		},
 	)
 
@@ -70,8 +70,8 @@ func TestAuthenticationUnaryInterceptorRejectsProtectedMethodWithoutToken(
 		func(
 			ctx context.Context,
 			rawToken string,
-		) (string, string, error) {
-			return "", "", nil
+		) (string, string, string, error) {
+			return "", "", "", nil
 		},
 	)
 
@@ -109,12 +109,12 @@ func TestAuthenticationUnaryInterceptorRejectsIdentifierUnlinkRequestWithoutToke
 		func(
 			ctx context.Context,
 			rawToken string,
-		) (string, string, error) {
+		) (string, string, string, error) {
 			t.Fatal(
 				"access token verifier was called without a token",
 			)
 
-			return "", "", nil
+			return "", "", "", nil
 		},
 	)
 
@@ -152,12 +152,12 @@ func TestAuthenticationUnaryInterceptorRejectsIdentifierUnlinkVerificationWithou
 		func(
 			ctx context.Context,
 			rawToken string,
-		) (string, string, error) {
+		) (string, string, string, error) {
 			t.Fatal(
 				"access token verifier was called without a token",
 			)
 
-			return "", "", nil
+			return "", "", "", nil
 		},
 	)
 
@@ -195,12 +195,12 @@ func TestAuthenticationUnaryInterceptorRejectsGetMyIdentityWithoutToken(
 		func(
 			ctx context.Context,
 			rawToken string,
-		) (string, string, error) {
+		) (string, string, string, error) {
 			t.Fatal(
 				"access token verifier was called without a token",
 			)
 
-			return "", "", nil
+			return "", "", "", nil
 		},
 	)
 
@@ -238,12 +238,12 @@ func TestAuthenticationUnaryInterceptorRejectsListMySessionsWithoutToken(
 		func(
 			ctx context.Context,
 			rawToken string,
-		) (string, string, error) {
+		) (string, string, string, error) {
 			t.Fatal(
 				"access token verifier was called without a token",
 			)
 
-			return "", "", nil
+			return "", "", "", nil
 		},
 	)
 
@@ -281,12 +281,12 @@ func TestAuthenticationUnaryInterceptorRejectsRevokeSessionWithoutToken(
 		func(
 			ctx context.Context,
 			rawToken string,
-		) (string, string, error) {
+		) (string, string, string, error) {
 			t.Fatal(
 				"access token verifier was called without a token",
 			)
 
-			return "", "", nil
+			return "", "", "", nil
 		},
 	)
 

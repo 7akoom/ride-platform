@@ -19,6 +19,16 @@ type SMSSender interface {
 	) error
 }
 
+type WhatsAppSender interface {
+	Send(
+		ctx context.Context,
+		phoneNumber string,
+		code string,
+		purpose auth.OTPPurpose,
+		locale string,
+	) error
+}
+
 type EmailSender interface {
 	Send(
 		ctx context.Context,
@@ -30,12 +40,14 @@ type EmailSender interface {
 }
 
 type ProductionDelivery struct {
-	smsSender   SMSSender
-	emailSender EmailSender
+	smsSender      SMSSender
+	whatsAppSender WhatsAppSender
+	emailSender    EmailSender
 }
 
 func NewProductionDelivery(
 	smsSender SMSSender,
+	whatsAppSender WhatsAppSender,
 	emailSender EmailSender,
 ) (*ProductionDelivery, error) {
 	if smsSender == nil {
@@ -51,8 +63,9 @@ func NewProductionDelivery(
 	}
 
 	return &ProductionDelivery{
-		smsSender:   smsSender,
-		emailSender: emailSender,
+		smsSender:      smsSender,
+		whatsAppSender: whatsAppSender,
+		emailSender:    emailSender,
 	}, nil
 }
 
@@ -90,37 +103,165 @@ func (d *ProductionDelivery) Send(
 		)
 	}
 
-	switch identifier.Type {
-	case auth.IdentifierTypePhone:
-		if err := d.smsSender.Send(
-			ctx,
-			identifier.Value,
-			code,
-			purpose,
-			input.Locale,
-		); err != nil {
+	channel, err := auth.ParseOTPDeliveryChannel(
+		string(input.Channel),
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"validate OTP delivery channel: %w",
+			err,
+		)
+	}
+
+	switch channel {
+	case auth.OTPDeliveryChannelAuto:
+		switch identifier.Type {
+		case auth.IdentifierTypePhone:
+			return d.sendSMS(
+				ctx,
+				identifier.Value,
+				code,
+				purpose,
+				input.Locale,
+			)
+
+		case auth.IdentifierTypeEmail:
+			return d.sendEmail(
+				ctx,
+				identifier.Value,
+				code,
+				purpose,
+				input.Locale,
+			)
+
+		default:
+			return auth.ErrInvalidIdentifierType
+		}
+
+	case auth.OTPDeliveryChannelSMS:
+		if identifier.Type != auth.IdentifierTypePhone {
 			return fmt.Errorf(
-				"send OTP by SMS: %w",
-				err,
+				"%w: SMS requires a phone identifier",
+				auth.ErrInvalidOTPDeliveryChannel,
 			)
 		}
 
-	case auth.IdentifierTypeEmail:
-		if err := d.emailSender.Send(
+		return d.sendSMS(
 			ctx,
 			identifier.Value,
 			code,
 			purpose,
 			input.Locale,
-		); err != nil {
+		)
+
+	case auth.OTPDeliveryChannelWhatsApp:
+		if identifier.Type != auth.IdentifierTypePhone {
 			return fmt.Errorf(
-				"send OTP by email: %w",
-				err,
+				"%w: WhatsApp requires a phone identifier",
+				auth.ErrInvalidOTPDeliveryChannel,
 			)
 		}
+
+		return d.sendWhatsApp(
+			ctx,
+			identifier.Value,
+			code,
+			purpose,
+			input.Locale,
+		)
+
+	case auth.OTPDeliveryChannelEmail:
+		if identifier.Type != auth.IdentifierTypeEmail {
+			return fmt.Errorf(
+				"%w: email requires an email identifier",
+				auth.ErrInvalidOTPDeliveryChannel,
+			)
+		}
+
+		return d.sendEmail(
+			ctx,
+			identifier.Value,
+			code,
+			purpose,
+			input.Locale,
+		)
 
 	default:
-		return auth.ErrInvalidIdentifierType
+		return auth.ErrInvalidOTPDeliveryChannel
+	}
+}
+
+func (d *ProductionDelivery) sendSMS(
+	ctx context.Context,
+	phoneNumber string,
+	code string,
+	purpose auth.OTPPurpose,
+	locale string,
+) error {
+	if err := d.smsSender.Send(
+		ctx,
+		phoneNumber,
+		code,
+		purpose,
+		locale,
+	); err != nil {
+		return fmt.Errorf(
+			"send OTP by SMS: %w",
+			err,
+		)
+	}
+
+	return nil
+}
+
+func (d *ProductionDelivery) sendWhatsApp(
+	ctx context.Context,
+	phoneNumber string,
+	code string,
+	purpose auth.OTPPurpose,
+	locale string,
+) error {
+	if d.whatsAppSender == nil {
+		return fmt.Errorf(
+			"%w: WhatsApp sender is not configured",
+			auth.ErrOTPDeliveryChannelUnavailable,
+		)
+	}
+
+	if err := d.whatsAppSender.Send(
+		ctx,
+		phoneNumber,
+		code,
+		purpose,
+		locale,
+	); err != nil {
+		return fmt.Errorf(
+			"send OTP by WhatsApp: %w",
+			err,
+		)
+	}
+
+	return nil
+}
+
+func (d *ProductionDelivery) sendEmail(
+	ctx context.Context,
+	emailAddress string,
+	code string,
+	purpose auth.OTPPurpose,
+	locale string,
+) error {
+	if err := d.emailSender.Send(
+		ctx,
+		emailAddress,
+		code,
+		purpose,
+		locale,
+	); err != nil {
+		return fmt.Errorf(
+			"send OTP by email: %w",
+			err,
+		)
 	}
 
 	return nil

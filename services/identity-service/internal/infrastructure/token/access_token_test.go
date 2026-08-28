@@ -89,6 +89,7 @@ func TestAccessTokenSignerIssueAndVerify(t *testing.T) {
 		signer.IssueForSession(
 			identityID,
 			sessionID,
+			"",
 			issuedAt,
 			sessionExpiresAt,
 		)
@@ -245,6 +246,7 @@ func TestAccessTokenSignerIssueForSessionClampsExpirationToSession(
 		signer.IssueForSession(
 			"identity-test-123",
 			"session-test-456",
+			"",
 			issuedAt,
 			sessionExpiresAt,
 		)
@@ -308,6 +310,7 @@ func TestAccessTokenSignerIssueForSessionUsesConfiguredTTLWhenSessionLivesLonger
 		signer.IssueForSession(
 			"identity-test-123",
 			"session-test-456",
+			"",
 			issuedAt,
 			sessionExpiresAt,
 		)

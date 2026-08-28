@@ -70,6 +70,15 @@ func TestIdentityHandlerRequestLoginOTPReturnsChallenge(t *testing.T) {
 		)
 	}
 
+	if authService.requestOTPInput.Channel !=
+		auth.OTPDeliveryChannelAuto {
+		t.Fatalf(
+			"auth service received delivery channel %q, expected %q",
+			authService.requestOTPInput.Channel,
+			auth.OTPDeliveryChannelAuto,
+		)
+	}
+
 	if authService.requestOTPInput.Locale != "ar" {
 		t.Fatalf(
 			"auth service received locale %q, expected %q",
@@ -147,6 +156,109 @@ func TestIdentityHandlerRequestLoginOTPRejectsEmptyIdentifierValue(
 	if authService.requestOTPCalled {
 		t.Fatal(
 			"auth service RequestOTP() was called for empty identifier value",
+		)
+	}
+}
+
+func TestIdentityHandlerRequestLoginOTPRejectsInvalidDeliveryChannel(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{}
+
+	handler := NewIdentityHandler(
+		authService,
+	)
+
+	_, err := handler.RequestLoginOTP(
+		context.Background(),
+		&identityv1.RequestLoginOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_PHONE,
+				Value: "+9647501234567",
+			},
+			DeliveryChannel: identityv1.OTPDeliveryChannel(
+				999,
+			),
+		},
+	)
+
+	if status.Code(err) !=
+		codes.InvalidArgument {
+		t.Fatalf(
+			"status code is %v, expected %v",
+			status.Code(err),
+			codes.InvalidArgument,
+		)
+	}
+
+	if status.Convert(err).Message() !=
+		"invalid OTP delivery channel" {
+		t.Fatalf(
+			"error message is %q, expected %q",
+			status.Convert(err).Message(),
+			"invalid OTP delivery channel",
+		)
+	}
+
+	if authService.requestOTPCalled {
+		t.Fatal(
+			"auth service RequestOTP() was called for invalid delivery channel",
+		)
+	}
+}
+
+func TestIdentityHandlerRequestLoginOTPMapsUnavailableDeliveryChannelToFailedPrecondition(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{
+		requestOTPErr: auth.ErrOTPDeliveryChannelUnavailable,
+	}
+
+	handler := NewIdentityHandler(
+		authService,
+	)
+
+	_, err := handler.RequestLoginOTP(
+		context.Background(),
+		&identityv1.RequestLoginOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_PHONE,
+				Value: "+9647501234567",
+			},
+			DeliveryChannel: identityv1.OTPDeliveryChannel_OTP_DELIVERY_CHANNEL_WHATSAPP,
+		},
+	)
+
+	if status.Code(err) !=
+		codes.FailedPrecondition {
+		t.Fatalf(
+			"status code is %v, expected %v",
+			status.Code(err),
+			codes.FailedPrecondition,
+		)
+	}
+
+	if status.Convert(err).Message() !=
+		"OTP delivery channel is unavailable" {
+		t.Fatalf(
+			"error message is %q, expected %q",
+			status.Convert(err).Message(),
+			"OTP delivery channel is unavailable",
+		)
+	}
+
+	if !authService.requestOTPCalled {
+		t.Fatal(
+			"auth service RequestOTP() was not called",
+		)
+	}
+
+	if authService.requestOTPInput.Channel !=
+		auth.OTPDeliveryChannelWhatsApp {
+		t.Fatalf(
+			"auth service received delivery channel %q, expected %q",
+			authService.requestOTPInput.Channel,
+			auth.OTPDeliveryChannelWhatsApp,
 		)
 	}
 }

@@ -54,6 +54,7 @@ func TestChallengeRepositoryUsesCancellationTimeAfterWaitingForScopeLock(
 		identifier,
 		purpose,
 		nil,
+		nil,
 	)
 
 	_, err = lockTx.Exec(

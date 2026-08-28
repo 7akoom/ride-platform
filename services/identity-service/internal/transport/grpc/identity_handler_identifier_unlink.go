@@ -64,15 +64,30 @@ func (h *IdentityHandler) RequestIdentifierUnlinkOTP(
 		)
 	}
 
+	identifier := auth.Identifier{
+		Type:  identifierType,
+		Value: identifierValue,
+	}
+
+	deliveryChannel, valid :=
+		otpDeliveryChannelFromProto(
+			request.GetDeliveryChannel(),
+		)
+	if !valid {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"invalid OTP delivery channel",
+		)
+	}
+
 	result, err := h.authService.RequestIdentifierUnlinkOTP(
 		ctx,
 		auth.RequestIdentifierUnlinkOTPInput{
-			IdentityID: principal.IdentityID,
-			TargetIdentifier: auth.Identifier{
-				Type:  identifierType,
-				Value: identifierValue,
-			},
-			Locale: requestLocaleFromIncomingContext(ctx),
+			IdentityID:       principal.IdentityID,
+			TargetIdentifier: identifier,
+			TenantHint:       principal.TenantHint,
+			Channel:          deliveryChannel,
+			Locale:           requestLocaleFromIncomingContext(ctx),
 		},
 	)
 	if err != nil {
@@ -93,6 +108,24 @@ func (h *IdentityHandler) RequestIdentifierUnlinkOTP(
 			return nil, status.Error(
 				codes.InvalidArgument,
 				"invalid email address",
+			)
+
+		case errors.Is(
+			err,
+			auth.ErrInvalidOTPDeliveryChannel,
+		):
+			return nil, status.Error(
+				codes.InvalidArgument,
+				"invalid OTP delivery channel",
+			)
+
+		case errors.Is(
+			err,
+			auth.ErrOTPDeliveryChannelUnavailable,
+		):
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				"OTP delivery channel is unavailable",
 			)
 
 		case errors.Is(

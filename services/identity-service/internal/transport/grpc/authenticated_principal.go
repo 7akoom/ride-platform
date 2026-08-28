@@ -5,6 +5,7 @@ import "context"
 type authenticatedPrincipal struct {
 	IdentityID string
 	SessionID  string
+	TenantHint string
 }
 
 type authenticatedPrincipalContextKey struct{}

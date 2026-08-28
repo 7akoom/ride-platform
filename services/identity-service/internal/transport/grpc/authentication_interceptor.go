@@ -18,6 +18,7 @@ type AccessTokenVerifyFunc func(
 ) (
 	identityID string,
 	sessionID string,
+	tenantHint string,
 	err error,
 )
 
@@ -56,10 +57,11 @@ func NewAuthenticationUnaryInterceptor(
 			)
 		}
 
-		identityID, sessionID, err := verifyAccessToken(
-			ctx,
-			rawToken,
-		)
+		identityID, sessionID, tenantHint, err :=
+			verifyAccessToken(
+				ctx,
+				rawToken,
+			)
 		if err != nil {
 			return nil, status.Error(
 				codes.Unauthenticated,
@@ -69,6 +71,7 @@ func NewAuthenticationUnaryInterceptor(
 
 		identityID = strings.TrimSpace(identityID)
 		sessionID = strings.TrimSpace(sessionID)
+		tenantHint = strings.TrimSpace(tenantHint)
 
 		if identityID == "" || sessionID == "" {
 			return nil, status.Error(
@@ -83,6 +86,7 @@ func NewAuthenticationUnaryInterceptor(
 				authenticatedPrincipal{
 					IdentityID: identityID,
 					SessionID:  sessionID,
+					TenantHint: tenantHint,
 				},
 			)
 

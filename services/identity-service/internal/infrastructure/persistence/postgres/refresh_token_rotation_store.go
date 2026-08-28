@@ -53,6 +53,7 @@ func (s *RefreshTokenRotationStore) Inspect(
 			i.id::text,
 			i.status,
 			s.id::text,
+			s.tenant_hint,
 			s.expires_at,
 			s.revoked_at,
 			rt.expires_at,
@@ -68,6 +69,7 @@ func (s *RefreshTokenRotationStore) Inspect(
 
 	var refreshContext auth.RefreshTokenContext
 	var identityStatus string
+	var tenantHint *string
 	var sessionRevokedAt *time.Time
 	var refreshTokenExpiresAt time.Time
 	var refreshTokenUsedAt *time.Time
@@ -81,6 +83,7 @@ func (s *RefreshTokenRotationStore) Inspect(
 		&refreshContext.IdentityID,
 		&identityStatus,
 		&refreshContext.SessionID,
+		&tenantHint,
 		&refreshContext.SessionExpiresAt,
 		&sessionRevokedAt,
 		&refreshTokenExpiresAt,
@@ -98,6 +101,19 @@ func (s *RefreshTokenRotationStore) Inspect(
 			"query refresh token context: %w",
 			err,
 		)
+	}
+
+	if tenantHint != nil {
+		normalizedTenantHint, err :=
+			auth.NormalizeTenantHint(*tenantHint)
+		if err != nil {
+			return auth.RefreshTokenContext{}, fmt.Errorf(
+				"restore refresh token tenant hint: %w",
+				err,
+			)
+		}
+
+		refreshContext.TenantHint = normalizedTenantHint
 	}
 
 	if sessionRevokedAt != nil {

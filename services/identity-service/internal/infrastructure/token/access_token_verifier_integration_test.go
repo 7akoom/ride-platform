@@ -127,6 +127,7 @@ func TestAccessTokenVerifierRejectsTokenAfterRealValkeyRevocation(
 	signedToken, _, err := signer.IssueForSession(
 		"integration-identity",
 		sessionID,
+		"",
 		issuedAt,
 		sessionExpiresAt,
 	)

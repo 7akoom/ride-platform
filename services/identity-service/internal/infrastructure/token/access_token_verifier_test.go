@@ -58,6 +58,7 @@ func TestAccessTokenVerifierAcceptsValidNonRevokedToken(
 	signedToken, _, err := signer.IssueForSession(
 		identityID,
 		sessionID,
+		"",
 		issuedAt,
 		sessionExpiresAt,
 	)
@@ -133,6 +134,7 @@ func TestAccessTokenVerifierRejectsRevokedSession(
 	signedToken, _, err := signer.IssueForSession(
 		identityID,
 		sessionID,
+		"",
 		issuedAt,
 		sessionExpiresAt,
 	)
@@ -207,6 +209,7 @@ func TestAccessTokenVerifierFailsClosedWhenRevocationCheckFails(
 	signedToken, _, err := signer.IssueForSession(
 		identityID,
 		sessionID,
+		"",
 		issuedAt,
 		sessionExpiresAt,
 	)
@@ -256,6 +259,7 @@ func TestAccessTokenVerifierRejectsNonCanonicalBase64URLSignature(
 	signedToken, _, err := signer.IssueForSession(
 		"identity-test-123",
 		"session-test-456",
+		"",
 		issuedAt,
 		issuedAt.Add(24*time.Hour),
 	)

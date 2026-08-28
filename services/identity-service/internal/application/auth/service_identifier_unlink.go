@@ -131,6 +131,13 @@ func (s *service) RequestIdentifierUnlinkOTP(
 		return RequestIdentifierUnlinkOTPResult{}, err
 	}
 
+	channel, err := ParseOTPDeliveryChannel(
+		string(input.Channel),
+	)
+	if err != nil {
+		return RequestIdentifierUnlinkOTPResult{}, err
+	}
+
 	details, found, err := s.identityReader.FindByID(
 		ctx,
 		identityID,
@@ -173,8 +180,24 @@ func (s *service) RequestIdentifierUnlinkOTP(
 		}
 
 		if !verificationIdentifierFound {
-			verificationIdentifier = identifier
-			verificationIdentifierFound = true
+			switch channel {
+			case OTPDeliveryChannelAuto:
+				verificationIdentifier = identifier
+				verificationIdentifierFound = true
+
+			case OTPDeliveryChannelSMS,
+				OTPDeliveryChannelWhatsApp:
+				if identifier.Type == IdentifierTypePhone {
+					verificationIdentifier = identifier
+					verificationIdentifierFound = true
+				}
+
+			case OTPDeliveryChannelEmail:
+				if identifier.Type == IdentifierTypeEmail {
+					verificationIdentifier = identifier
+					verificationIdentifierFound = true
+				}
+			}
 		}
 	}
 
@@ -183,10 +206,21 @@ func (s *service) RequestIdentifierUnlinkOTP(
 			ErrIdentifierNotLinked
 	}
 
-	if len(details.Identifiers) <= 1 ||
-		!verificationIdentifierFound {
+	if len(details.Identifiers) <= 1 {
 		return RequestIdentifierUnlinkOTPResult{},
 			ErrLastIdentifierRemoval
+	}
+
+	if !verificationIdentifierFound {
+		return RequestIdentifierUnlinkOTPResult{},
+			ErrOTPDeliveryChannelUnavailable
+	}
+
+	tenantHint, err := NormalizeTenantHint(
+		input.TenantHint,
+	)
+	if err != nil {
+		return RequestIdentifierUnlinkOTPResult{}, err
 	}
 
 	now := s.clock.Now()
@@ -253,6 +287,7 @@ func (s *service) RequestIdentifierUnlinkOTP(
 		Identifier:       verificationIdentifier,
 		Purpose:          OTPPurposeUnlinkIdentifier,
 		TargetIdentityID: &targetIdentityID,
+		TenantHint:       tenantHint,
 		CodeHash:         codeHash,
 		ExpiresAt:        now.Add(s.otpTTL),
 	}
@@ -301,6 +336,7 @@ func (s *service) RequestIdentifierUnlinkOTP(
 			Identifier: verificationIdentifier,
 			Code:       code,
 			Purpose:    OTPPurposeUnlinkIdentifier,
+			Channel:    channel,
 			Locale:     input.Locale,
 		},
 	); deliveryErr != nil {

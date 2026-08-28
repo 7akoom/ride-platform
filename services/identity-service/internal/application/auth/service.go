@@ -9,6 +9,8 @@ type RequestOTPInput struct {
 	Identifier       Identifier
 	Purpose          OTPPurpose
 	TargetIdentityID *string
+	TenantHint       string
+	Channel          OTPDeliveryChannel
 	Locale           string
 }
 
@@ -49,6 +51,8 @@ type GetMyIdentityInput struct {
 type RequestIdentifierUnlinkOTPInput struct {
 	IdentityID       string
 	TargetIdentifier Identifier
+	TenantHint       string
+	Channel          OTPDeliveryChannel
 	Locale           string
 }
 

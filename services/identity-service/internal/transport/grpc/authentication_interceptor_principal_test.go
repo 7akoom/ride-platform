@@ -24,7 +24,7 @@ func TestAuthenticationUnaryInterceptorAddsPrincipalForGetMyIdentity(
 		func(
 			ctx context.Context,
 			rawToken string,
-		) (string, string, error) {
+		) (string, string, string, error) {
 			if rawToken != "valid-token" {
 				t.Fatalf(
 					"raw token = %q, expected %q",
@@ -33,7 +33,7 @@ func TestAuthenticationUnaryInterceptorAddsPrincipalForGetMyIdentity(
 				)
 			}
 
-			return "identity-123", "session-456", nil
+			return "identity-123", "session-456", "tenant-test", nil
 		},
 	)
 
@@ -75,6 +75,14 @@ func TestAuthenticationUnaryInterceptorAddsPrincipalForGetMyIdentity(
 				)
 			}
 
+			if principal.TenantHint != "tenant-test" {
+				t.Fatalf(
+					"tenant hint = %q, expected %q",
+					principal.TenantHint,
+					"tenant-test",
+				)
+			}
+
 			return nil, nil
 		},
 	)
@@ -92,6 +100,7 @@ func TestAuthenticationUnaryInterceptorAddsPrincipalForGetMyIdentity(
 		)
 	}
 }
+
 func TestAuthenticationUnaryInterceptorAddsPrincipalToContext(
 	t *testing.T,
 ) {
@@ -107,7 +116,7 @@ func TestAuthenticationUnaryInterceptorAddsPrincipalToContext(
 		func(
 			ctx context.Context,
 			rawToken string,
-		) (string, string, error) {
+		) (string, string, string, error) {
 			if rawToken != "valid-token" {
 				t.Fatalf(
 					"raw token = %q, expected %q",
@@ -116,7 +125,7 @@ func TestAuthenticationUnaryInterceptorAddsPrincipalToContext(
 				)
 			}
 
-			return "identity-123", "session-456", nil
+			return "identity-123", "session-456", "tenant-test", nil
 		},
 	)
 
@@ -158,9 +167,18 @@ func TestAuthenticationUnaryInterceptorAddsPrincipalToContext(
 				)
 			}
 
+			if principal.TenantHint != "tenant-test" {
+				t.Fatalf(
+					"tenant hint = %q, expected %q",
+					principal.TenantHint,
+					"tenant-test",
+				)
+			}
+
 			return nil, nil
 		},
 	)
+
 	if err != nil {
 		t.Fatalf(
 			"interceptor returned error: %v",

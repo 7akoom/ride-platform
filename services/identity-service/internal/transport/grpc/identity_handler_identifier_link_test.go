@@ -83,6 +83,15 @@ func TestIdentityHandlerRequestIdentifierLinkOTPUsesAuthenticatedIdentity(
 		)
 	}
 
+	if authService.requestOTPInput.Channel !=
+		auth.OTPDeliveryChannelAuto {
+		t.Fatalf(
+			"auth service received delivery channel %q, expected %q",
+			authService.requestOTPInput.Channel,
+			auth.OTPDeliveryChannelAuto,
+		)
+	}
+
 	if authService.requestOTPInput.TargetIdentityID == nil {
 		t.Fatal(
 			"auth service received nil target identity ID",
@@ -150,6 +159,140 @@ func TestIdentityHandlerRequestIdentifierLinkOTPRejectsMissingAuthenticatedIdent
 	if authService.requestOTPCalled {
 		t.Fatal(
 			"auth service RequestOTP() was called without authenticated identity",
+		)
+	}
+}
+
+func TestIdentityHandlerRequestIdentifierLinkOTPRejectsInvalidDeliveryChannel(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{}
+
+	handler := NewIdentityHandler(
+		authService,
+	)
+
+	ctx := contextWithAuthenticatedPrincipal(
+		context.Background(),
+		authenticatedPrincipal{
+			IdentityID: "identity-123",
+			SessionID:  "session-456",
+		},
+	)
+
+	_, err := handler.RequestIdentifierLinkOTP(
+		ctx,
+		&identityv1.RequestIdentifierLinkOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_PHONE,
+				Value: "+9647501234567",
+			},
+			DeliveryChannel: identityv1.OTPDeliveryChannel(
+				999,
+			),
+		},
+	)
+
+	if status.Code(err) !=
+		codes.InvalidArgument {
+		t.Fatalf(
+			"status code is %v, expected %v",
+			status.Code(err),
+			codes.InvalidArgument,
+		)
+	}
+
+	if status.Convert(err).Message() !=
+		"invalid OTP delivery channel" {
+		t.Fatalf(
+			"error message is %q, expected %q",
+			status.Convert(err).Message(),
+			"invalid OTP delivery channel",
+		)
+	}
+
+	if authService.requestOTPCalled {
+		t.Fatal(
+			"auth service RequestOTP() was called for invalid delivery channel",
+		)
+	}
+}
+
+func TestIdentityHandlerRequestIdentifierLinkOTPMapsUnavailableDeliveryChannelToFailedPrecondition(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{
+		requestOTPErr: auth.ErrOTPDeliveryChannelUnavailable,
+	}
+
+	handler := NewIdentityHandler(
+		authService,
+	)
+
+	ctx := contextWithAuthenticatedPrincipal(
+		context.Background(),
+		authenticatedPrincipal{
+			IdentityID: "identity-123",
+			SessionID:  "session-456",
+		},
+	)
+
+	_, err := handler.RequestIdentifierLinkOTP(
+		ctx,
+		&identityv1.RequestIdentifierLinkOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_PHONE,
+				Value: "+9647501234567",
+			},
+			DeliveryChannel: identityv1.OTPDeliveryChannel_OTP_DELIVERY_CHANNEL_WHATSAPP,
+		},
+	)
+
+	if status.Code(err) !=
+		codes.FailedPrecondition {
+		t.Fatalf(
+			"status code is %v, expected %v",
+			status.Code(err),
+			codes.FailedPrecondition,
+		)
+	}
+
+	if status.Convert(err).Message() !=
+		"OTP delivery channel is unavailable" {
+		t.Fatalf(
+			"error message is %q, expected %q",
+			status.Convert(err).Message(),
+			"OTP delivery channel is unavailable",
+		)
+	}
+
+	if !authService.requestOTPCalled {
+		t.Fatal(
+			"auth service RequestOTP() was not called",
+		)
+	}
+
+	if authService.requestOTPInput.Channel !=
+		auth.OTPDeliveryChannelWhatsApp {
+		t.Fatalf(
+			"auth service received delivery channel %q, expected %q",
+			authService.requestOTPInput.Channel,
+			auth.OTPDeliveryChannelWhatsApp,
+		)
+	}
+
+	if authService.requestOTPInput.TargetIdentityID == nil {
+		t.Fatal(
+			"auth service received nil target identity ID",
+		)
+	}
+
+	if *authService.requestOTPInput.TargetIdentityID !=
+		"identity-123" {
+		t.Fatalf(
+			"target identity ID = %q, expected %q",
+			*authService.requestOTPInput.TargetIdentityID,
+			"identity-123",
 		)
 	}
 }

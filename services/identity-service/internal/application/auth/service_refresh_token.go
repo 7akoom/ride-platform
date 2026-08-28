@@ -98,6 +98,7 @@ func (s *service) RefreshToken(
 		s.accessTokenSigner.IssueForSession(
 			refreshContext.IdentityID,
 			refreshContext.SessionID,
+			refreshContext.TenantHint,
 			now,
 			refreshContext.SessionExpiresAt,
 		)

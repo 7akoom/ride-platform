@@ -22,6 +22,7 @@ type accessTokenSigner interface {
 	IssueForSession(
 		identityID string,
 		sessionID string,
+		tenantHint string,
 		issuedAt time.Time,
 		sessionExpiresAt time.Time,
 	) (string, int32, error)
@@ -32,6 +33,7 @@ type SessionCreationInput struct {
 	VerifiedAt            time.Time
 	SessionID             string
 	IdentityID            string
+	TenantHint            string
 	SessionExpiresAt      time.Time
 	RefreshTokenHash      string
 	RefreshTokenExpiresAt time.Time
@@ -135,6 +137,16 @@ func (i *Issuer) Issue(
 		)
 	}
 
+	tenantHint, err := auth.NormalizeTenantHint(
+		input.TenantHint,
+	)
+	if err != nil {
+		return auth.TokenPair{}, fmt.Errorf(
+			"validate token tenant hint: %w",
+			err,
+		)
+	}
+
 	sessionID, err := i.sessionIDGenerator.Generate()
 	if err != nil {
 		return auth.TokenPair{}, fmt.Errorf(
@@ -162,6 +174,7 @@ func (i *Issuer) Issue(
 		i.accessTokenSigner.IssueForSession(
 			input.Identity.ID,
 			sessionID,
+			tenantHint,
 			now,
 			sessionExpiresAt,
 		)
@@ -179,6 +192,7 @@ func (i *Issuer) Issue(
 			VerifiedAt:            input.VerifiedAt.UTC(),
 			SessionID:             sessionID,
 			IdentityID:            input.Identity.ID,
+			TenantHint:            tenantHint,
 			SessionExpiresAt:      sessionExpiresAt,
 			RefreshTokenHash:      refreshTokenHash,
 			RefreshTokenExpiresAt: refreshTokenExpiresAt,

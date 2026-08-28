@@ -189,6 +189,7 @@ type testAccessTokenSigner struct {
 
 	identityID       string
 	sessionID        string
+	tenantHint       string
 	issuedAt         time.Time
 	sessionExpiresAt time.Time
 }
@@ -223,12 +224,14 @@ func (s *testAccessTokenSigner) Issue(
 func (s *testAccessTokenSigner) IssueForSession(
 	identityID string,
 	sessionID string,
+	tenantHint string,
 	issuedAt time.Time,
 	sessionExpiresAt time.Time,
 ) (string, int32, error) {
 	s.calls++
 	s.identityID = identityID
 	s.sessionID = sessionID
+	s.tenantHint = tenantHint
 	s.issuedAt = issuedAt
 	s.sessionExpiresAt = sessionExpiresAt
 

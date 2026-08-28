@@ -9,13 +9,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 const accessTokenIDRandomBytes = 16
 
 type AccessTokenClaims struct {
-	SessionID string `json:"sid"`
+	SessionID  string `json:"sid"`
+	TenantHint string `json:"tenant_hint,omitempty"`
 
 	jwt.RegisteredClaims
 }
@@ -92,6 +94,7 @@ func NewAccessTokenSigner(
 func (s *AccessTokenSigner) IssueForSession(
 	identityID string,
 	sessionID string,
+	tenantHint string,
 	issuedAt time.Time,
 	sessionExpiresAt time.Time,
 ) (string, int32, error) {
@@ -103,6 +106,16 @@ func (s *AccessTokenSigner) IssueForSession(
 
 	issuedAt = issuedAt.UTC()
 	sessionExpiresAt = sessionExpiresAt.UTC()
+
+	normalizedTenantHint, err := auth.NormalizeTenantHint(
+		tenantHint,
+	)
+	if err != nil {
+		return "", 0, fmt.Errorf(
+			"validate access token tenant hint: %w",
+			err,
+		)
+	}
 
 	if !sessionExpiresAt.After(issuedAt) {
 		return "", 0, errors.New(
@@ -121,6 +134,7 @@ func (s *AccessTokenSigner) IssueForSession(
 	return s.issueWithExpiration(
 		identityID,
 		sessionID,
+		normalizedTenantHint,
 		issuedAt,
 		expiresAt,
 	)
@@ -129,6 +143,7 @@ func (s *AccessTokenSigner) IssueForSession(
 func (s *AccessTokenSigner) issueWithExpiration(
 	identityID string,
 	sessionID string,
+	tenantHint string,
 	issuedAt time.Time,
 	expiresAt time.Time,
 ) (string, int32, error) {
@@ -156,7 +171,8 @@ func (s *AccessTokenSigner) issueWithExpiration(
 	}
 
 	claims := AccessTokenClaims{
-		SessionID: sessionID,
+		SessionID:  sessionID,
+		TenantHint: tenantHint,
 
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    s.issuer,

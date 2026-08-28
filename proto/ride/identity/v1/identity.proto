@@ -27,6 +27,14 @@ enum IdentifierType {
   IDENTIFIER_TYPE_EMAIL = 2;
 }
 
+enum OTPDeliveryChannel {
+  OTP_DELIVERY_CHANNEL_UNSPECIFIED = 0;
+  OTP_DELIVERY_CHANNEL_AUTO = 1;
+  OTP_DELIVERY_CHANNEL_SMS = 2;
+  OTP_DELIVERY_CHANNEL_WHATSAPP = 3;
+  OTP_DELIVERY_CHANNEL_EMAIL = 4;
+}
+
 enum IdentityStatus {
   IDENTITY_STATUS_UNSPECIFIED = 0;
   IDENTITY_STATUS_ACTIVE = 1;
@@ -41,6 +49,8 @@ message Identifier {
 
 message RequestLoginOTPRequest {
   Identifier identifier = 1;
+  string tenant_hint = 2;
+  OTPDeliveryChannel delivery_channel = 3;
 }
 
 message RequestLoginOTPResponse {
@@ -68,6 +78,7 @@ message VerifyLoginOTPResponse {
 
 message RequestIdentifierLinkOTPRequest {
   Identifier identifier = 1;
+  OTPDeliveryChannel delivery_channel = 2;
 }
 
 message RequestIdentifierLinkOTPResponse {
@@ -84,6 +95,7 @@ message VerifyIdentifierLinkOTPResponse {}
 
 message RequestIdentifierUnlinkOTPRequest {
   Identifier identifier = 1;
+  OTPDeliveryChannel delivery_channel = 2;
 }
 
 message RequestIdentifierUnlinkOTPResponse {

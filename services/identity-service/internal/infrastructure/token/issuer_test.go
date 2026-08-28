@@ -34,6 +34,7 @@ type fakeAccessTokenSigner struct {
 
 	identityID       string
 	sessionID        string
+	tenantHint       string
 	issuedAt         time.Time
 	sessionExpiresAt time.Time
 }
@@ -57,11 +58,13 @@ func (f *fakeAccessTokenSigner) Issue(
 func (f *fakeAccessTokenSigner) IssueForSession(
 	identityID string,
 	sessionID string,
+	tenantHint string,
 	issuedAt time.Time,
 	sessionExpiresAt time.Time,
 ) (string, int32, error) {
 	f.identityID = identityID
 	f.sessionID = sessionID
+	f.tenantHint = tenantHint
 	f.issuedAt = issuedAt
 	f.sessionExpiresAt = sessionExpiresAt
 

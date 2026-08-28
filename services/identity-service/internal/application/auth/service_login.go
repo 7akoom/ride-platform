@@ -91,6 +91,7 @@ func (s *service) issueLoginTokensWithSessionMetadata(
 			Identity:        identity,
 			ChallengeID:     challenge.ID,
 			VerifiedAt:      verifiedAt,
+			TenantHint:      challenge.TenantHint,
 			SessionMetadata: metadata,
 		},
 	)

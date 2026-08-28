@@ -64,17 +64,32 @@ func (h *IdentityHandler) RequestIdentifierLinkOTP(
 		)
 	}
 
+	identifier := auth.Identifier{
+		Type:  identifierType,
+		Value: identifierValue,
+	}
+
+	deliveryChannel, valid :=
+		otpDeliveryChannelFromProto(
+			request.GetDeliveryChannel(),
+		)
+	if !valid {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"invalid OTP delivery channel",
+		)
+	}
+
 	targetIdentityID := principal.IdentityID
 
 	result, err := h.authService.RequestOTP(
 		ctx,
 		auth.RequestOTPInput{
-			Identifier: auth.Identifier{
-				Type:  identifierType,
-				Value: identifierValue,
-			},
+			Identifier:       identifier,
 			Purpose:          auth.OTPPurposeLinkIdentifier,
 			TargetIdentityID: &targetIdentityID,
+			TenantHint:       principal.TenantHint,
+			Channel:          deliveryChannel,
 			Locale:           requestLocaleFromIncomingContext(ctx),
 		},
 	)
@@ -96,6 +111,26 @@ func (h *IdentityHandler) RequestIdentifierLinkOTP(
 			return nil, status.Error(
 				codes.InvalidArgument,
 				"invalid email address",
+			)
+		}
+
+		if errors.Is(
+			err,
+			auth.ErrInvalidOTPDeliveryChannel,
+		) {
+			return nil, status.Error(
+				codes.InvalidArgument,
+				"invalid OTP delivery channel",
+			)
+		}
+
+		if errors.Is(
+			err,
+			auth.ErrOTPDeliveryChannelUnavailable,
+		) {
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				"OTP delivery channel is unavailable",
 			)
 		}
 

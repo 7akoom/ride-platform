@@ -10,6 +10,7 @@ type OTPChallenge struct {
 	Identifier       Identifier
 	Purpose          OTPPurpose
 	TargetIdentityID *string
+	TenantHint       string
 
 	CodeHash       string
 	ExpiresAt      time.Time
@@ -161,6 +162,7 @@ type OTPDeliveryInput struct {
 	Identifier Identifier
 	Code       string
 	Purpose    OTPPurpose
+	Channel    OTPDeliveryChannel
 	Locale     string
 }
 
@@ -181,6 +183,7 @@ type TokenIssueInput struct {
 	Identity        Identity
 	ChallengeID     string
 	VerifiedAt      time.Time
+	TenantHint      string
 	SessionMetadata SessionMetadata
 }
 
@@ -223,6 +226,7 @@ type OTPRequestRateLimiter interface {
 type RefreshTokenContext struct {
 	IdentityID       string
 	SessionID        string
+	TenantHint       string
 	SessionExpiresAt time.Time
 }
 
@@ -258,6 +262,7 @@ type AccessTokenSigner interface {
 	IssueForSession(
 		identityID string,
 		sessionID string,
+		tenantHint string,
 		issuedAt time.Time,
 		sessionExpiresAt time.Time,
 	) (string, int32, error)

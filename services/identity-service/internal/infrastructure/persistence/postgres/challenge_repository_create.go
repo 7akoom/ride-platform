@@ -41,6 +41,12 @@ func (r *ChallengeRepository) Create(
 	if err != nil {
 		return err
 	}
+	tenantHint, err := normalizeChallengeTenantHint(
+		challenge.TenantHint,
+	)
+	if err != nil {
+		return err
+	}
 
 	if strings.TrimSpace(challenge.CodeHash) == "" {
 		return errors.New(
@@ -69,6 +75,7 @@ func (r *ChallengeRepository) Create(
 		identifier,
 		purpose,
 		targetIdentityID,
+		tenantHint,
 	)
 
 	const lockQuery = `
@@ -94,6 +101,7 @@ func (r *ChallengeRepository) Create(
 		WHERE identifier_type = $1
 		AND normalized_value = $2
 		AND purpose = $3
+		AND tenant_hint IS NOT DISTINCT FROM $4
 		AND target_identity_id IS NULL
 		AND verified_at IS NULL
 		AND cancelled_at IS NULL
@@ -104,6 +112,7 @@ func (r *ChallengeRepository) Create(
 		string(identifier.Type),
 		identifier.Value,
 		string(purpose),
+		tenantHint,
 	}
 
 	if targetIdentityID != nil {
@@ -113,7 +122,8 @@ func (r *ChallengeRepository) Create(
 			WHERE identifier_type = $1
 			AND normalized_value = $2
 			AND purpose = $3
-			AND target_identity_id = $4::uuid
+			AND tenant_hint IS NOT DISTINCT FROM $4
+			AND target_identity_id = $5::uuid
 			AND verified_at IS NULL
 			AND cancelled_at IS NULL
 			AND expires_at > statement_timestamp()
@@ -143,10 +153,11 @@ func (r *ChallengeRepository) Create(
 			normalized_value,
 			purpose,
 			target_identity_id,
+			tenant_hint,
 			code_hash,
 			expires_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
 	if _, err := tx.Exec(
@@ -157,6 +168,7 @@ func (r *ChallengeRepository) Create(
 		identifier.Value,
 		string(purpose),
 		targetIdentityID,
+		tenantHint,
 		challenge.CodeHash,
 		challenge.ExpiresAt,
 	); err != nil {

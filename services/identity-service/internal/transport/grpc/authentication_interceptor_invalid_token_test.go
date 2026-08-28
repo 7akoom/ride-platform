@@ -27,7 +27,7 @@ func TestAuthenticationUnaryInterceptorRejectsInvalidToken(
 		func(
 			ctx context.Context,
 			rawToken string,
-		) (string, string, error) {
+		) (string, string, string, error) {
 			if rawToken != "invalid-token" {
 				t.Fatalf(
 					"raw token = %q, expected %q",
@@ -36,7 +36,7 @@ func TestAuthenticationUnaryInterceptorRejectsInvalidToken(
 				)
 			}
 
-			return "", "", errors.New(
+			return "", "", "", errors.New(
 				"token verification failed",
 			)
 		},

@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -61,15 +63,41 @@ func run() int {
 		return 1
 	}
 
-	otpDelivery, err := otp.NewDevelopmentDelivery(
-		cfg.Environment,
-		logger,
+	var otpDelivery auth.OTPDelivery
+
+	environment := strings.ToLower(
+		strings.TrimSpace(
+			cfg.Environment,
+		),
 	)
+
+	switch environment {
+	case "development", "test":
+		otpDelivery, err =
+			otp.NewDevelopmentDelivery(
+				environment,
+				logger,
+			)
+
+	case "production":
+		otpDelivery, err =
+			buildProductionOTPDelivery(
+				cfg,
+			)
+
+	default:
+		err = fmt.Errorf(
+			"unsupported APP_ENV %q",
+			cfg.Environment,
+		)
+	}
+
 	if err != nil {
 		logger.Error(
 			"failed to configure OTP delivery",
 			"error", err,
 		)
+
 		return 1
 	}
 
@@ -319,16 +347,19 @@ func run() int {
 			func(
 				ctx context.Context,
 				rawToken string,
-			) (string, string, error) {
+			) (string, string, string, error) {
 				claims, err := accessTokenVerifier.Verify(
 					ctx,
 					rawToken,
 				)
 				if err != nil {
-					return "", "", err
+					return "", "", "", err
 				}
 
-				return claims.Subject, claims.SessionID, nil
+				return claims.Subject,
+					claims.SessionID,
+					claims.TenantHint,
+					nil
 			},
 		),
 	)

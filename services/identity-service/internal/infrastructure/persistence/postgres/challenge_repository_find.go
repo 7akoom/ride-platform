@@ -20,6 +20,7 @@ func (r *ChallengeRepository) FindByID(
 			normalized_value,
 			purpose,
 			target_identity_id::text,
+			tenant_hint,
 			code_hash,
 			expires_at,
 			verified_at,
@@ -35,6 +36,7 @@ func (r *ChallengeRepository) FindByID(
 	var normalizedValue string
 	var purpose string
 	var targetIdentityID *string
+	var tenantHint *string
 
 	err := r.pool.QueryRow(
 		ctx,
@@ -46,6 +48,7 @@ func (r *ChallengeRepository) FindByID(
 		&normalizedValue,
 		&purpose,
 		&targetIdentityID,
+		&tenantHint,
 		&challenge.CodeHash,
 		&challenge.ExpiresAt,
 		&challenge.VerifiedAt,
@@ -95,6 +98,19 @@ func (r *ChallengeRepository) FindByID(
 			"restore OTP challenge target identity: %w",
 			err,
 		)
+	}
+
+	if tenantHint != nil {
+		normalizedTenantHint, err :=
+			auth.NormalizeTenantHint(*tenantHint)
+		if err != nil {
+			return auth.OTPChallenge{}, fmt.Errorf(
+				"restore OTP challenge tenant hint: %w",
+				err,
+			)
+		}
+
+		challenge.TenantHint = normalizedTenantHint
 	}
 
 	challenge.Identifier = identifier

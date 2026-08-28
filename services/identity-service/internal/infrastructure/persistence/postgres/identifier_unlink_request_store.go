@@ -219,16 +219,24 @@ func (s *IdentifierUnlinkRequestStore) Create(
 		return auth.ErrIdentifierNotLinked
 	}
 
+	tenantHint, err := normalizeChallengeTenantHint(
+		challenge.TenantHint,
+	)
+	if err != nil {
+		return err
+	}
+
 	const cancelPreviousQuery = `
 		UPDATE otp_challenges
 		SET cancelled_at = statement_timestamp()
 		WHERE identifier_type = $1
-		  AND normalized_value = $2
-		  AND purpose = $3
-		  AND target_identity_id = $4::uuid
-		  AND verified_at IS NULL
-		  AND cancelled_at IS NULL
-		  AND expires_at > statement_timestamp()
+		AND normalized_value = $2
+		AND purpose = $3
+		AND target_identity_id = $4::uuid
+		AND tenant_hint IS NOT DISTINCT FROM $5
+		AND verified_at IS NULL
+		AND cancelled_at IS NULL
+		AND expires_at > statement_timestamp()
 	`
 
 	if _, err := tx.Exec(
@@ -238,6 +246,7 @@ func (s *IdentifierUnlinkRequestStore) Create(
 		verificationIdentifier.Value,
 		string(purpose),
 		identityID,
+		tenantHint,
 	); err != nil {
 		return fmt.Errorf(
 			"cancel previous identifier unlink OTP challenges: %w",
@@ -252,10 +261,11 @@ func (s *IdentifierUnlinkRequestStore) Create(
 			normalized_value,
 			purpose,
 			target_identity_id,
+			tenant_hint,
 			code_hash,
 			expires_at
 		)
-		VALUES ($1, $2, $3, $4, $5::uuid, $6, $7)
+		VALUES ($1, $2, $3, $4, $5::uuid, $6, $7, $8)
 	`
 
 	if _, err := tx.Exec(
@@ -266,6 +276,7 @@ func (s *IdentifierUnlinkRequestStore) Create(
 		verificationIdentifier.Value,
 		string(purpose),
 		identityID,
+		tenantHint,
 		challenge.CodeHash,
 		expiresAt,
 	); err != nil {

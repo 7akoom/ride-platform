@@ -49,6 +49,7 @@ func challengeScopeLockKey(
 	identifier auth.Identifier,
 	purpose auth.OTPPurpose,
 	targetIdentityID any,
+	tenantHint any,
 ) string {
 	target := "-"
 
@@ -56,11 +57,33 @@ func challengeScopeLockKey(
 		target = fmt.Sprint(targetIdentityID)
 	}
 
-	return string(identifier.Type) +
+	tenant := "-"
+
+	if tenantHint != nil {
+		tenant = fmt.Sprint(tenantHint)
+	}
+
+	return tenant +
+		":" +
+		string(identifier.Type) +
 		":" +
 		identifier.Value +
 		":" +
 		string(purpose) +
 		":" +
 		target
+}
+func normalizeChallengeTenantHint(
+	value string,
+) (any, error) {
+	tenantHint, err := auth.NormalizeTenantHint(value)
+	if err != nil {
+		return nil, err
+	}
+
+	if tenantHint == "" {
+		return nil, nil
+	}
+
+	return tenantHint, nil
 }

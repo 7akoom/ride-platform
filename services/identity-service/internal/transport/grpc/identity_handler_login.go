@@ -59,15 +59,30 @@ func (h *IdentityHandler) RequestLoginOTP(
 		)
 	}
 
+	identifier := auth.Identifier{
+		Type:  identifierType,
+		Value: identifierValue,
+	}
+
+	deliveryChannel, valid :=
+		otpDeliveryChannelFromProto(
+			request.GetDeliveryChannel(),
+		)
+	if !valid {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"invalid OTP delivery channel",
+		)
+	}
+
 	result, err := h.authService.RequestOTP(
 		ctx,
 		auth.RequestOTPInput{
-			Identifier: auth.Identifier{
-				Type:  identifierType,
-				Value: identifierValue,
-			},
-			Purpose: auth.OTPPurposeLogin,
-			Locale:  requestLocaleFromIncomingContext(ctx),
+			Identifier: identifier,
+			Purpose:    auth.OTPPurposeLogin,
+			TenantHint: request.GetTenantHint(),
+			Channel:    deliveryChannel,
+			Locale:     requestLocaleFromIncomingContext(ctx),
 		},
 	)
 	if err != nil {
@@ -88,6 +103,26 @@ func (h *IdentityHandler) RequestLoginOTP(
 			return nil, status.Error(
 				codes.InvalidArgument,
 				"invalid email address",
+			)
+		}
+
+		if errors.Is(
+			err,
+			auth.ErrInvalidOTPDeliveryChannel,
+		) {
+			return nil, status.Error(
+				codes.InvalidArgument,
+				"invalid OTP delivery channel",
+			)
+		}
+
+		if errors.Is(
+			err,
+			auth.ErrOTPDeliveryChannelUnavailable,
+		) {
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				"OTP delivery channel is unavailable",
 			)
 		}
 
@@ -297,4 +332,25 @@ func sessionUserAgentFromContext(
 	return strings.TrimSpace(
 		values[0],
 	)
+}
+func otpDeliveryChannelFromProto(
+	value identityv1.OTPDeliveryChannel,
+) (auth.OTPDeliveryChannel, bool) {
+	switch value {
+	case identityv1.OTPDeliveryChannel_OTP_DELIVERY_CHANNEL_UNSPECIFIED,
+		identityv1.OTPDeliveryChannel_OTP_DELIVERY_CHANNEL_AUTO:
+		return auth.OTPDeliveryChannelAuto, true
+
+	case identityv1.OTPDeliveryChannel_OTP_DELIVERY_CHANNEL_SMS:
+		return auth.OTPDeliveryChannelSMS, true
+
+	case identityv1.OTPDeliveryChannel_OTP_DELIVERY_CHANNEL_WHATSAPP:
+		return auth.OTPDeliveryChannelWhatsApp, true
+
+	case identityv1.OTPDeliveryChannel_OTP_DELIVERY_CHANNEL_EMAIL:
+		return auth.OTPDeliveryChannelEmail, true
+
+	default:
+		return "", false
+	}
 }

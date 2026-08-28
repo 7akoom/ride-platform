@@ -85,6 +85,15 @@ func TestIdentityHandlerRequestIdentifierUnlinkOTPUsesAuthenticatedIdentity(
 		)
 	}
 
+	if authService.requestIdentifierUnlinkOTPInput.Channel !=
+		auth.OTPDeliveryChannelAuto {
+		t.Fatalf(
+			"auth service received delivery channel %q, expected %q",
+			authService.requestIdentifierUnlinkOTPInput.Channel,
+			auth.OTPDeliveryChannelAuto,
+		)
+	}
+
 	if authService.requestIdentifierUnlinkOTPInput.Locale != "en" {
 		t.Fatalf(
 			"auth service received locale %q, expected %q",
@@ -137,6 +146,148 @@ func TestIdentityHandlerRequestIdentifierUnlinkOTPRejectsMissingAuthenticatedIde
 	if authService.requestIdentifierUnlinkOTPCalled {
 		t.Fatal(
 			"auth service RequestIdentifierUnlinkOTP() was called without authenticated identity",
+		)
+	}
+}
+
+func TestIdentityHandlerRequestIdentifierUnlinkOTPRejectsInvalidDeliveryChannel(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{}
+
+	handler := NewIdentityHandler(
+		authService,
+	)
+
+	ctx := contextWithAuthenticatedPrincipal(
+		context.Background(),
+		authenticatedPrincipal{
+			IdentityID: "identity-123",
+			SessionID:  "session-456",
+		},
+	)
+
+	_, err := handler.RequestIdentifierUnlinkOTP(
+		ctx,
+		&identityv1.RequestIdentifierUnlinkOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_EMAIL,
+				Value: "user@example.com",
+			},
+			DeliveryChannel: identityv1.OTPDeliveryChannel(
+				999,
+			),
+		},
+	)
+
+	if status.Code(err) !=
+		codes.InvalidArgument {
+		t.Fatalf(
+			"status code = %v, expected %v",
+			status.Code(err),
+			codes.InvalidArgument,
+		)
+	}
+
+	if status.Convert(err).Message() !=
+		"invalid OTP delivery channel" {
+		t.Fatalf(
+			"error message = %q, expected %q",
+			status.Convert(err).Message(),
+			"invalid OTP delivery channel",
+		)
+	}
+
+	if authService.requestIdentifierUnlinkOTPCalled {
+		t.Fatal(
+			"auth service RequestIdentifierUnlinkOTP() was called for invalid delivery channel",
+		)
+	}
+}
+
+func TestIdentityHandlerRequestIdentifierUnlinkOTPMapsUnavailableDeliveryChannelToFailedPrecondition(
+	t *testing.T,
+) {
+	authService := &fakeAuthService{
+		requestIdentifierUnlinkOTPErr: auth.ErrOTPDeliveryChannelUnavailable,
+	}
+
+	handler := NewIdentityHandler(
+		authService,
+	)
+
+	ctx := contextWithAuthenticatedPrincipal(
+		context.Background(),
+		authenticatedPrincipal{
+			IdentityID: "identity-123",
+			SessionID:  "session-456",
+		},
+	)
+
+	_, err := handler.RequestIdentifierUnlinkOTP(
+		ctx,
+		&identityv1.RequestIdentifierUnlinkOTPRequest{
+			Identifier: &identityv1.Identifier{
+				Type:  identityv1.IdentifierType_IDENTIFIER_TYPE_EMAIL,
+				Value: "user@example.com",
+			},
+			DeliveryChannel: identityv1.OTPDeliveryChannel_OTP_DELIVERY_CHANNEL_WHATSAPP,
+		},
+	)
+
+	if status.Code(err) !=
+		codes.FailedPrecondition {
+		t.Fatalf(
+			"status code = %v, expected %v",
+			status.Code(err),
+			codes.FailedPrecondition,
+		)
+	}
+
+	if status.Convert(err).Message() !=
+		"OTP delivery channel is unavailable" {
+		t.Fatalf(
+			"error message = %q, expected %q",
+			status.Convert(err).Message(),
+			"OTP delivery channel is unavailable",
+		)
+	}
+
+	if !authService.requestIdentifierUnlinkOTPCalled {
+		t.Fatal(
+			"auth service RequestIdentifierUnlinkOTP() was not called",
+		)
+	}
+
+	if authService.requestIdentifierUnlinkOTPInput.Channel !=
+		auth.OTPDeliveryChannelWhatsApp {
+		t.Fatalf(
+			"auth service received delivery channel %q, expected %q",
+			authService.requestIdentifierUnlinkOTPInput.Channel,
+			auth.OTPDeliveryChannelWhatsApp,
+		)
+	}
+
+	if authService.requestIdentifierUnlinkOTPInput.IdentityID !=
+		"identity-123" {
+		t.Fatalf(
+			"identity ID = %q, expected %q",
+			authService.requestIdentifierUnlinkOTPInput.IdentityID,
+			"identity-123",
+		)
+	}
+
+	expectedIdentifier := auth.Identifier{
+		Type:  auth.IdentifierTypeEmail,
+		Value: "user@example.com",
+	}
+
+	if authService.requestIdentifierUnlinkOTPInput.TargetIdentifier !=
+		expectedIdentifier {
+		t.Fatalf(
+			"target identifier = %+v, expected %+v",
+			authService.requestIdentifierUnlinkOTPInput.TargetIdentifier,
+			expectedIdentifier,
 		)
 	}
 }
@@ -270,6 +421,16 @@ func TestIdentityHandlerRequestIdentifierUnlinkOTPMapsErrors(
 			name:         "invalid email address",
 			serviceErr:   auth.ErrInvalidEmailAddress,
 			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name:         "invalid OTP delivery channel",
+			serviceErr:   auth.ErrInvalidOTPDeliveryChannel,
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name:         "OTP delivery channel unavailable",
+			serviceErr:   auth.ErrOTPDeliveryChannelUnavailable,
+			expectedCode: codes.FailedPrecondition,
 		},
 		{
 			name:         "identity not found",
