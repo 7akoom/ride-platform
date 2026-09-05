@@ -25,6 +25,18 @@ func TestNewServicePanicsForInvalidConfiguration(
 			},
 		},
 		{
+			name: "nil identity reader",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.identityReader = nil
+			},
+		},
+		{
+			name: "nil identity lifecycle store",
+			mutate: func(d *serviceConstructorTestDependencies) {
+				d.identityLifecycleStore = nil
+			},
+		},
+		{
 			name: "nil identifier link completion store",
 			mutate: func(d *serviceConstructorTestDependencies) {
 				d.identifierLinkCompletionStore = nil

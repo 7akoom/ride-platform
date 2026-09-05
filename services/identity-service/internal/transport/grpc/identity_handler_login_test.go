@@ -32,6 +32,13 @@ func TestIdentityHandlerRequestLoginOTPReturnsChallenge(t *testing.T) {
 		),
 	)
 
+	ctx = contextWithRequestSource(
+		ctx,
+		requestSource{
+			IPAddress: "203.0.113.45",
+		},
+	)
+
 	response, err := handler.RequestLoginOTP(
 		ctx,
 		&identityv1.RequestLoginOTPRequest{
@@ -84,6 +91,15 @@ func TestIdentityHandlerRequestLoginOTPReturnsChallenge(t *testing.T) {
 			"auth service received locale %q, expected %q",
 			authService.requestOTPInput.Locale,
 			"ar",
+		)
+	}
+
+	if authService.requestOTPInput.SourceIPAddress !=
+		"203.0.113.45" {
+		t.Fatalf(
+			"auth service received source IP address %q, expected %q",
+			authService.requestOTPInput.SourceIPAddress,
+			"203.0.113.45",
 		)
 	}
 

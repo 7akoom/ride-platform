@@ -8,6 +8,7 @@ type service struct {
 	challengeRepository              ChallengeRepository
 	identityIdentifierRepository     IdentityIdentifierRepository
 	identityReader                   IdentityReader
+	identityLifecycleStore           IdentityLifecycleStore
 	identifierLinkCompletionStore    IdentifierLinkCompletionStore
 	identifierUnlinkRequestStore     IdentifierUnlinkRequestStore
 	identifierUnlinkCompletionStore  IdentifierUnlinkCompletionStore
@@ -15,6 +16,7 @@ type service struct {
 	otpHasher                        OTPHasher
 	otpDelivery                      OTPDelivery
 	otpRequestRateLimiter            OTPRequestRateLimiter
+	metricsRecorder                  MetricsRecorder
 	challengeIDGenerator             ChallengeIDGenerator
 	tokenIssuer                      TokenIssuer
 	refreshTokenRotationStore        RefreshTokenRotationStore
@@ -32,6 +34,23 @@ type service struct {
 }
 
 var _ Service = (*service)(nil)
+
+var _ IdentityLifecycleService = (*service)(nil)
+var _ ServiceWithIdentityLifecycle = (*service)(nil)
+
+type ServiceOption func(*service)
+
+func WithMetricsRecorder(
+	recorder MetricsRecorder,
+) ServiceOption {
+	if recorder == nil {
+		panic("metrics recorder is required")
+	}
+
+	return func(s *service) {
+		s.metricsRecorder = recorder
+	}
+}
 
 func NewServiceWithIdentityIdentifiers(
 	challengeRepository ChallengeRepository,
@@ -58,6 +77,7 @@ func NewServiceWithIdentityIdentifiers(
 	otpTTL time.Duration,
 	otpRequestRateLimitPolicy OTPRequestRateLimitPolicy,
 	refreshTokenTTL time.Duration,
+	options ...ServiceOption,
 ) Service {
 	if challengeRepository == nil {
 		panic("challenge repository is required")
@@ -87,6 +107,7 @@ func NewServiceWithIdentityIdentifiers(
 		challengeRepository,
 		identityIdentifierRepository,
 		identityReader,
+		nil,
 		identifierLinkCompletionStore,
 		identifierUnlinkRequestStore,
 		identifierUnlinkCompletionStore,
@@ -108,13 +129,15 @@ func NewServiceWithIdentityIdentifiers(
 		otpTTL,
 		otpRequestRateLimitPolicy,
 		refreshTokenTTL,
+		options...,
 	)
 }
 
-func newServiceWithDependencies(
+func NewServiceWithIdentityLifecycle(
 	challengeRepository ChallengeRepository,
 	identityIdentifierRepository IdentityIdentifierRepository,
 	identityReader IdentityReader,
+	identityLifecycleStore IdentityLifecycleStore,
 	identifierLinkCompletionStore IdentifierLinkCompletionStore,
 	identifierUnlinkRequestStore IdentifierUnlinkRequestStore,
 	identifierUnlinkCompletionStore IdentifierUnlinkCompletionStore,
@@ -136,7 +159,94 @@ func newServiceWithDependencies(
 	otpTTL time.Duration,
 	otpRequestRateLimitPolicy OTPRequestRateLimitPolicy,
 	refreshTokenTTL time.Duration,
-) Service {
+	options ...ServiceOption,
+) ServiceWithIdentityLifecycle {
+	if challengeRepository == nil {
+		panic("challenge repository is required")
+	}
+
+	if identityIdentifierRepository == nil {
+		panic("identity identifier repository is required")
+	}
+
+	if identityReader == nil {
+		panic("identity reader is required")
+	}
+
+	if identityLifecycleStore == nil {
+		panic("identity lifecycle store is required")
+	}
+
+	if identifierLinkCompletionStore == nil {
+		panic("identifier link completion store is required")
+	}
+
+	if identifierUnlinkRequestStore == nil {
+		panic("identifier unlink request store is required")
+	}
+
+	if identifierUnlinkCompletionStore == nil {
+		panic("identifier unlink completion store is required")
+	}
+
+	return newServiceWithDependencies(
+		challengeRepository,
+		identityIdentifierRepository,
+		identityReader,
+		identityLifecycleStore,
+		identifierLinkCompletionStore,
+		identifierUnlinkRequestStore,
+		identifierUnlinkCompletionStore,
+		otpGenerator,
+		otpHasher,
+		otpDelivery,
+		otpRequestRateLimiter,
+		challengeIDGenerator,
+		tokenIssuer,
+		refreshTokenRotationStore,
+		sessionRevocationStore,
+		allSessionsRevocationStore,
+		sessionReader,
+		sessionManagementRevocationStore,
+		refreshTokenGenerator,
+		refreshTokenHasher,
+		accessTokenSigner,
+		clock,
+		otpTTL,
+		otpRequestRateLimitPolicy,
+		refreshTokenTTL,
+		options...,
+	)
+}
+
+func newServiceWithDependencies(
+	challengeRepository ChallengeRepository,
+	identityIdentifierRepository IdentityIdentifierRepository,
+	identityReader IdentityReader,
+	identityLifecycleStore IdentityLifecycleStore,
+	identifierLinkCompletionStore IdentifierLinkCompletionStore,
+	identifierUnlinkRequestStore IdentifierUnlinkRequestStore,
+	identifierUnlinkCompletionStore IdentifierUnlinkCompletionStore,
+	otpGenerator OTPGenerator,
+	otpHasher OTPHasher,
+	otpDelivery OTPDelivery,
+	otpRequestRateLimiter OTPRequestRateLimiter,
+	challengeIDGenerator ChallengeIDGenerator,
+	tokenIssuer TokenIssuer,
+	refreshTokenRotationStore RefreshTokenRotationStore,
+	sessionRevocationStore SessionRevocationStore,
+	allSessionsRevocationStore AllSessionsRevocationStore,
+	sessionReader SessionReader,
+	sessionManagementRevocationStore SessionManagementRevocationStore,
+	refreshTokenGenerator RefreshTokenGenerator,
+	refreshTokenHasher RefreshTokenHasher,
+	accessTokenSigner AccessTokenSigner,
+	clock Clock,
+	otpTTL time.Duration,
+	otpRequestRateLimitPolicy OTPRequestRateLimitPolicy,
+	refreshTokenTTL time.Duration,
+	options ...ServiceOption,
+) *service {
 	if otpGenerator == nil {
 		panic("OTP generator is required")
 	}
@@ -222,10 +332,11 @@ func newServiceWithDependencies(
 		panic("refresh token TTL must be positive")
 	}
 
-	return &service{
+	result := &service{
 		challengeRepository:              challengeRepository,
 		identityIdentifierRepository:     identityIdentifierRepository,
 		identityReader:                   identityReader,
+		identityLifecycleStore:           identityLifecycleStore,
 		identifierLinkCompletionStore:    identifierLinkCompletionStore,
 		identifierUnlinkRequestStore:     identifierUnlinkRequestStore,
 		identifierUnlinkCompletionStore:  identifierUnlinkCompletionStore,
@@ -233,6 +344,7 @@ func newServiceWithDependencies(
 		otpHasher:                        otpHasher,
 		otpDelivery:                      otpDelivery,
 		otpRequestRateLimiter:            otpRequestRateLimiter,
+		metricsRecorder:                  newNoopMetricsRecorder(),
 		challengeIDGenerator:             challengeIDGenerator,
 		tokenIssuer:                      tokenIssuer,
 		refreshTokenRotationStore:        refreshTokenRotationStore,
@@ -248,4 +360,14 @@ func newServiceWithDependencies(
 		otpRequestRateLimitPolicy:        otpRequestRateLimitPolicy,
 		refreshTokenTTL:                  refreshTokenTTL,
 	}
+
+	for _, option := range options {
+		if option == nil {
+			panic("service option is required")
+		}
+
+		option(result)
+	}
+
+	return result
 }

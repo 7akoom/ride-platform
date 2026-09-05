@@ -50,3 +50,65 @@ func TestOTPRequestRateLimiterRejectsZeroRequestTime(
 		)
 	}
 }
+func TestOTPRequestRateLimiterRejectsMissingSourceWhenAbuseLimitEnabled(
+	t *testing.T,
+) {
+	rateLimiter := &OTPRequestRateLimiter{}
+
+	err := rateLimiter.Allow(
+		context.Background(),
+		auth.OTPRequestScope{
+			Identifier: auth.Identifier{
+				Type:  auth.IdentifierTypePhone,
+				Value: "+9647500000050",
+			},
+			Purpose: auth.OTPPurposeLogin,
+		},
+		time.Now().UTC(),
+		auth.OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+			Abuse: auth.OTPRequestAbuseLimitPolicy{
+				Window:      10 * time.Minute,
+				MaxRequests: 30,
+			},
+		},
+	)
+
+	if err == nil {
+		t.Fatal(
+			"Allow() accepted a missing source IP address while abuse limit is enabled",
+		)
+	}
+}
+
+func TestOTPRequestRateLimiterRejectsInvalidSourceIPAddress(
+	t *testing.T,
+) {
+	rateLimiter := &OTPRequestRateLimiter{}
+
+	err := rateLimiter.Allow(
+		context.Background(),
+		auth.OTPRequestScope{
+			Identifier: auth.Identifier{
+				Type:  auth.IdentifierTypePhone,
+				Value: "+9647500000051",
+			},
+			Purpose:         auth.OTPPurposeLogin,
+			SourceIPAddress: "not-an-ip-address",
+		},
+		time.Now().UTC(),
+		auth.OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+	)
+
+	if err == nil {
+		t.Fatal(
+			"Allow() accepted an invalid source IP address",
+		)
+	}
+}

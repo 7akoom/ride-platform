@@ -6,11 +6,7 @@ import (
 )
 
 func TestParseOTPRequestRateLimitReturnsParsedValues(t *testing.T) {
-	cfg := Config{
-		OTPRequestCooldown:    "60s",
-		OTPRequestWindow:      "15m",
-		OTPRequestMaxRequests: "5",
-	}
+	cfg := validOTPRequestRateLimitConfig()
 
 	rateLimit, err := ParseOTPRequestRateLimit(cfg)
 	if err != nil {
@@ -42,16 +38,28 @@ func TestParseOTPRequestRateLimitReturnsParsedValues(t *testing.T) {
 			rateLimit.MaxRequests,
 		)
 	}
+
+	if rateLimit.SourceWindow != 10*time.Minute {
+		t.Fatalf(
+			"SourceWindow is %v, expected %v",
+			rateLimit.SourceWindow,
+			10*time.Minute,
+		)
+	}
+
+	if rateLimit.SourceMaxRequests != 30 {
+		t.Fatalf(
+			"SourceMaxRequests is %d, expected 30",
+			rateLimit.SourceMaxRequests,
+		)
+	}
 }
 
 func TestParseOTPRequestRateLimitRejectsInvalidCooldown(
 	t *testing.T,
 ) {
-	cfg := Config{
-		OTPRequestCooldown:    "invalid",
-		OTPRequestWindow:      "15m",
-		OTPRequestMaxRequests: "5",
-	}
+	cfg := validOTPRequestRateLimitConfig()
+	cfg.OTPRequestCooldown = "invalid"
 
 	_, err := ParseOTPRequestRateLimit(cfg)
 	if err == nil {
@@ -64,11 +72,8 @@ func TestParseOTPRequestRateLimitRejectsInvalidCooldown(
 func TestParseOTPRequestRateLimitRejectsInvalidWindow(
 	t *testing.T,
 ) {
-	cfg := Config{
-		OTPRequestCooldown:    "60s",
-		OTPRequestWindow:      "invalid",
-		OTPRequestMaxRequests: "5",
-	}
+	cfg := validOTPRequestRateLimitConfig()
+	cfg.OTPRequestWindow = "invalid"
 
 	_, err := ParseOTPRequestRateLimit(cfg)
 	if err == nil {
@@ -81,11 +86,8 @@ func TestParseOTPRequestRateLimitRejectsInvalidWindow(
 func TestParseOTPRequestRateLimitRejectsInvalidMaxRequests(
 	t *testing.T,
 ) {
-	cfg := Config{
-		OTPRequestCooldown:    "60s",
-		OTPRequestWindow:      "15m",
-		OTPRequestMaxRequests: "abc",
-	}
+	cfg := validOTPRequestRateLimitConfig()
+	cfg.OTPRequestMaxRequests = "abc"
 
 	_, err := ParseOTPRequestRateLimit(cfg)
 	if err == nil {
@@ -98,11 +100,8 @@ func TestParseOTPRequestRateLimitRejectsInvalidMaxRequests(
 func TestParseOTPRequestRateLimitRejectsNonPositiveMaxRequests(
 	t *testing.T,
 ) {
-	cfg := Config{
-		OTPRequestCooldown:    "60s",
-		OTPRequestWindow:      "15m",
-		OTPRequestMaxRequests: "0",
-	}
+	cfg := validOTPRequestRateLimitConfig()
+	cfg.OTPRequestMaxRequests = "0"
 
 	_, err := ParseOTPRequestRateLimit(cfg)
 	if err == nil {
@@ -115,16 +114,79 @@ func TestParseOTPRequestRateLimitRejectsNonPositiveMaxRequests(
 func TestParseOTPRequestRateLimitRejectsCooldownGreaterThanWindow(
 	t *testing.T,
 ) {
-	cfg := Config{
-		OTPRequestCooldown:    "30m",
-		OTPRequestWindow:      "15m",
-		OTPRequestMaxRequests: "5",
-	}
+	cfg := validOTPRequestRateLimitConfig()
+	cfg.OTPRequestCooldown = "30m"
 
 	_, err := ParseOTPRequestRateLimit(cfg)
 	if err == nil {
 		t.Fatal(
 			"ParseOTPRequestRateLimit() allowed cooldown greater than window",
 		)
+	}
+}
+
+func TestParseOTPRequestRateLimitRejectsInvalidSourceWindow(
+	t *testing.T,
+) {
+	cfg := validOTPRequestRateLimitConfig()
+	cfg.OTPRequestSourceWindow = "invalid"
+
+	_, err := ParseOTPRequestRateLimit(cfg)
+	if err == nil {
+		t.Fatal(
+			"ParseOTPRequestRateLimit() returned nil error for invalid source window",
+		)
+	}
+}
+
+func TestParseOTPRequestRateLimitRejectsNonPositiveSourceWindow(
+	t *testing.T,
+) {
+	cfg := validOTPRequestRateLimitConfig()
+	cfg.OTPRequestSourceWindow = "0s"
+
+	_, err := ParseOTPRequestRateLimit(cfg)
+	if err == nil {
+		t.Fatal(
+			"ParseOTPRequestRateLimit() allowed zero source window",
+		)
+	}
+}
+
+func TestParseOTPRequestRateLimitRejectsInvalidSourceMaxRequests(
+	t *testing.T,
+) {
+	cfg := validOTPRequestRateLimitConfig()
+	cfg.OTPRequestSourceMaxRequests = "abc"
+
+	_, err := ParseOTPRequestRateLimit(cfg)
+	if err == nil {
+		t.Fatal(
+			"ParseOTPRequestRateLimit() returned nil error for invalid source max requests",
+		)
+	}
+}
+
+func TestParseOTPRequestRateLimitRejectsNonPositiveSourceMaxRequests(
+	t *testing.T,
+) {
+	cfg := validOTPRequestRateLimitConfig()
+	cfg.OTPRequestSourceMaxRequests = "0"
+
+	_, err := ParseOTPRequestRateLimit(cfg)
+	if err == nil {
+		t.Fatal(
+			"ParseOTPRequestRateLimit() allowed zero source max requests",
+		)
+	}
+}
+
+func validOTPRequestRateLimitConfig() Config {
+	return Config{
+		OTPRequestCooldown:          "60s",
+		OTPRequestWindow:            "15m",
+		OTPRequestMaxRequests:       "5",
+		OTPRequestSourceWindow:      "10m",
+		OTPRequestSourceMaxRequests: "30",
 	}
 }

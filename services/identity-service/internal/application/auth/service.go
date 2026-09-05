@@ -12,6 +12,7 @@ type RequestOTPInput struct {
 	TenantHint       string
 	Channel          OTPDeliveryChannel
 	Locale           string
+	SourceIPAddress  string
 }
 
 type RequestOTPResult struct {
@@ -54,6 +55,7 @@ type RequestIdentifierUnlinkOTPInput struct {
 	TenantHint       string
 	Channel          OTPDeliveryChannel
 	Locale           string
+	SourceIPAddress  string
 }
 
 type RequestIdentifierUnlinkOTPResult struct {
@@ -109,6 +111,38 @@ type ListMySessionsResult struct {
 type RevokeSessionInput struct {
 	IdentityID string
 	SessionID  string
+}
+
+type IdentityLifecycleInput struct {
+	IdentityID string
+}
+
+type IdentityLifecycleResult struct {
+	PreviousStatus IdentityStatus
+	CurrentStatus  IdentityStatus
+	Changed        bool
+}
+
+type IdentityLifecycleService interface {
+	SuspendIdentity(
+		ctx context.Context,
+		input IdentityLifecycleInput,
+	) (IdentityLifecycleResult, error)
+
+	DisableIdentity(
+		ctx context.Context,
+		input IdentityLifecycleInput,
+	) (IdentityLifecycleResult, error)
+
+	ReactivateIdentity(
+		ctx context.Context,
+		input IdentityLifecycleInput,
+	) (IdentityLifecycleResult, error)
+}
+
+type ServiceWithIdentityLifecycle interface {
+	Service
+	IdentityLifecycleService
 }
 
 type Service interface {

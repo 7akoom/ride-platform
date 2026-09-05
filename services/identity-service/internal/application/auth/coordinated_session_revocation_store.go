@@ -10,7 +10,7 @@ import (
 type CoordinatedSessionRevocationStore struct {
 	targetStore           SessionRevocationTargetStore
 	accessRevocationStore SessionAccessRevocationStore
-	persistentStore       SessionRevocationStore
+	persistentStore       PersistentSessionRevocationStore
 }
 
 var _ SessionRevocationStore = (*CoordinatedSessionRevocationStore)(nil)
@@ -18,7 +18,7 @@ var _ SessionRevocationStore = (*CoordinatedSessionRevocationStore)(nil)
 func NewCoordinatedSessionRevocationStore(
 	targetStore SessionRevocationTargetStore,
 	accessRevocationStore SessionAccessRevocationStore,
-	persistentStore SessionRevocationStore,
+	persistentStore PersistentSessionRevocationStore,
 ) (*CoordinatedSessionRevocationStore, error) {
 	if targetStore == nil {
 		return nil, errors.New(
@@ -109,7 +109,7 @@ func (s *CoordinatedSessionRevocationStore) RevokeByRefreshTokenHash(
 		}
 	}
 
-	if err := s.persistentStore.RevokeByRefreshTokenHash(
+	if err := s.persistentStore.RevokeSessionByRefreshTokenHash(
 		ctx,
 		refreshTokenHash,
 		revokedAt,

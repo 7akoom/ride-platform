@@ -129,4 +129,46 @@ func TestIdentityIdentifierRepositoryConcurrentCreateReturnsOneIdentity(
 			identityCount,
 		)
 	}
+
+	cleanupIdentityCreatedOutboxEvents(
+		t,
+		fixture,
+		identityID,
+	)
+
+	var createdEventCount int
+
+	if err := fixture.pool.QueryRow(
+		fixture.ctx,
+		`
+		SELECT COUNT(*)
+		FROM outbox_events
+		WHERE aggregate_type = $1
+		  AND aggregate_id = $2::uuid
+		  AND event_type = $3
+	`,
+		identityOutboxAggregateType,
+		identityID,
+		string(auth.IdentityDomainEventCreated),
+	).Scan(
+		&createdEventCount,
+	); err != nil {
+		t.Fatalf(
+			"count concurrent identity created outbox events: %v",
+			err,
+		)
+	}
+
+	if createdEventCount != 1 {
+		t.Fatalf(
+			"concurrent identity created outbox event count = %d, want 1",
+			createdEventCount,
+		)
+	}
+
+	assertIdentityCreatedOutboxEvent(
+		t,
+		fixture,
+		identityID,
+	)
 }

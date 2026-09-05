@@ -5,26 +5,80 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 func (s *service) VerifyOTP(
 	ctx context.Context,
 	input VerifyOTPInput,
 ) (VerifyOTPResult, error) {
+	verificationStartedAt := time.Now()
 	expectedPurpose, err := ParseOTPPurpose(
 		string(input.ExpectedPurpose),
 	)
 	if err != nil {
 		return VerifyOTPResult{}, err
 	}
+
+	recordVerificationOutcome := func(
+		outcome MetricOutcome,
+	) {
+		if s.metricsRecorder == nil {
+			return
+		}
+
+		s.metricsRecorder.RecordOTPVerification(
+			ctx,
+			expectedPurpose,
+			outcome,
+		)
+
+		if expectedPurpose ==
+			OTPPurposeLogin {
+			s.metricsRecorder.RecordAuthOperation(
+				ctx,
+				AuthMetricOperationLogin,
+				outcome,
+				time.Since(
+					verificationStartedAt,
+				),
+			)
+		}
+	}
+
+	recordSecurityEvent := func(
+		event SecurityMetricEvent,
+	) {
+		if s.metricsRecorder == nil {
+			return
+		}
+
+		s.metricsRecorder.RecordSecurityEvent(
+			ctx,
+			event,
+		)
+	}
+
 	challenge, err := s.challengeRepository.FindByID(
 		ctx,
 		input.ChallengeID,
 	)
 	if err != nil {
-		if errors.Is(err, ErrChallengeNotFound) {
-			return VerifyOTPResult{}, ErrChallengeNotFound
+		if errors.Is(
+			err,
+			ErrChallengeNotFound,
+		) {
+			recordVerificationOutcome(
+				MetricOutcomeRejected,
+			)
+
+			return VerifyOTPResult{},
+				ErrChallengeNotFound
 		}
+
+		recordVerificationOutcome(
+			MetricOutcomeFailed,
+		)
 
 		return VerifyOTPResult{}, fmt.Errorf(
 			"find OTP challenge: %w",
@@ -33,13 +87,22 @@ func (s *service) VerifyOTP(
 	}
 
 	if challenge.Purpose != expectedPurpose {
-		return VerifyOTPResult{}, ErrOTPPurposeMismatch
+		recordVerificationOutcome(
+			MetricOutcomeRejected,
+		)
+
+		return VerifyOTPResult{},
+			ErrOTPPurposeMismatch
 	}
 
 	if expectedPurpose == OTPPurposeLinkIdentifier ||
 		expectedPurpose == OTPPurposeUnlinkIdentifier {
 		if input.ExpectedTargetIdentityID == nil ||
 			challenge.TargetIdentityID == nil {
+			recordVerificationOutcome(
+				MetricOutcomeRejected,
+			)
+
 			return VerifyOTPResult{},
 				ErrOTPChallengeTargetMismatch
 		}
@@ -55,26 +118,58 @@ func (s *service) VerifyOTP(
 		if expectedTargetIdentityID == "" ||
 			challengeTargetIdentityID == "" ||
 			expectedTargetIdentityID != challengeTargetIdentityID {
+			recordVerificationOutcome(
+				MetricOutcomeRejected,
+			)
+
 			return VerifyOTPResult{},
 				ErrOTPChallengeTargetMismatch
 		}
 	}
 
 	if challenge.VerifiedAt != nil {
-		return VerifyOTPResult{}, ErrChallengeUsed
+		recordVerificationOutcome(
+			MetricOutcomeRejected,
+		)
+
+		recordSecurityEvent(
+			SecurityMetricEventChallengeReplay,
+		)
+
+		return VerifyOTPResult{},
+			ErrChallengeUsed
 	}
 
 	if challenge.CancelledAt != nil {
-		return VerifyOTPResult{}, ErrChallengeCancelled
+		recordVerificationOutcome(
+			MetricOutcomeRejected,
+		)
+
+		return VerifyOTPResult{},
+			ErrChallengeCancelled
 	}
 
 	now := s.clock.Now()
 
 	if !now.Before(challenge.ExpiresAt) {
-		return VerifyOTPResult{}, ErrChallengeExpired
+		recordVerificationOutcome(
+			MetricOutcomeRejected,
+		)
+
+		return VerifyOTPResult{},
+			ErrChallengeExpired
 	}
 
-	if challenge.FailedAttempts >= challenge.MaxAttempts {
+	if challenge.FailedAttempts >=
+		challenge.MaxAttempts {
+		recordVerificationOutcome(
+			MetricOutcomeRejected,
+		)
+
+		recordSecurityEvent(
+			SecurityMetricEventOTPAttemptsExceeded,
+		)
+
 		return VerifyOTPResult{},
 			ErrChallengeAttemptsExceeded
 	}
@@ -85,6 +180,10 @@ func (s *service) VerifyOTP(
 		input.Code,
 	)
 	if err != nil {
+		recordVerificationOutcome(
+			MetricOutcomeFailed,
+		)
+
 		return VerifyOTPResult{}, fmt.Errorf(
 			"compare OTP: %w",
 			err,
@@ -92,11 +191,12 @@ func (s *service) VerifyOTP(
 	}
 
 	if !otpMatches {
-		recordErr := s.challengeRepository.RecordFailedAttempt(
-			ctx,
-			challenge.ID,
-			now,
-		)
+		recordErr :=
+			s.challengeRepository.RecordFailedAttempt(
+				ctx,
+				challenge.ID,
+				now,
+			)
 
 		if recordErr != nil {
 			switch {
@@ -104,6 +204,10 @@ func (s *service) VerifyOTP(
 				recordErr,
 				ErrChallengeNotFound,
 			):
+				recordVerificationOutcome(
+					MetricOutcomeRejected,
+				)
+
 				return VerifyOTPResult{},
 					ErrChallengeNotFound
 
@@ -111,6 +215,10 @@ func (s *service) VerifyOTP(
 				recordErr,
 				ErrChallengeExpired,
 			):
+				recordVerificationOutcome(
+					MetricOutcomeRejected,
+				)
+
 				return VerifyOTPResult{},
 					ErrChallengeExpired
 
@@ -118,6 +226,14 @@ func (s *service) VerifyOTP(
 				recordErr,
 				ErrChallengeUsed,
 			):
+				recordVerificationOutcome(
+					MetricOutcomeRejected,
+				)
+
+				recordSecurityEvent(
+					SecurityMetricEventChallengeReplay,
+				)
+
 				return VerifyOTPResult{},
 					ErrChallengeUsed
 
@@ -125,6 +241,10 @@ func (s *service) VerifyOTP(
 				recordErr,
 				ErrChallengeCancelled,
 			):
+				recordVerificationOutcome(
+					MetricOutcomeRejected,
+				)
+
 				return VerifyOTPResult{},
 					ErrChallengeCancelled
 
@@ -132,10 +252,22 @@ func (s *service) VerifyOTP(
 				recordErr,
 				ErrChallengeAttemptsExceeded,
 			):
+				recordVerificationOutcome(
+					MetricOutcomeRejected,
+				)
+
+				recordSecurityEvent(
+					SecurityMetricEventOTPAttemptsExceeded,
+				)
+
 				return VerifyOTPResult{},
 					ErrChallengeAttemptsExceeded
 
 			default:
+				recordVerificationOutcome(
+					MetricOutcomeFailed,
+				)
+
 				return VerifyOTPResult{}, fmt.Errorf(
 					"record failed OTP attempt: %w",
 					recordErr,
@@ -143,12 +275,19 @@ func (s *service) VerifyOTP(
 			}
 		}
 
-		return VerifyOTPResult{}, ErrInvalidOTP
+		recordVerificationOutcome(
+			MetricOutcomeRejected,
+		)
+
+		return VerifyOTPResult{},
+			ErrInvalidOTP
 	}
+
+	var result VerifyOTPResult
 
 	switch challenge.Purpose {
 	case OTPPurposeLogin:
-		return s.completeIdentifierLogin(
+		result, err = s.completeIdentifierLogin(
 			ctx,
 			challenge,
 			now,
@@ -156,21 +295,102 @@ func (s *service) VerifyOTP(
 		)
 
 	case OTPPurposeLinkIdentifier:
-		return s.completeIdentifierLink(
+		result, err = s.completeIdentifierLink(
 			ctx,
 			challenge,
 			now,
 		)
 
 	case OTPPurposeUnlinkIdentifier:
-		return s.completeIdentifierUnlink(
+		result, err = s.completeIdentifierUnlink(
 			ctx,
 			challenge,
 			now,
 		)
 
 	default:
+		recordVerificationOutcome(
+			MetricOutcomeFailed,
+		)
+
 		return VerifyOTPResult{},
 			ErrInvalidOTPPurpose
 	}
+
+	if err != nil {
+		switch {
+		case errors.Is(
+			err,
+			ErrChallengeUsed,
+		):
+			recordVerificationOutcome(
+				MetricOutcomeRejected,
+			)
+
+			recordSecurityEvent(
+				SecurityMetricEventChallengeReplay,
+			)
+
+		case errors.Is(
+			err,
+			ErrChallengeAttemptsExceeded,
+		):
+			recordVerificationOutcome(
+				MetricOutcomeRejected,
+			)
+
+			recordSecurityEvent(
+				SecurityMetricEventOTPAttemptsExceeded,
+			)
+
+		case errors.Is(
+			err,
+			ErrChallengeNotFound,
+		),
+			errors.Is(
+				err,
+				ErrChallengeExpired,
+			),
+			errors.Is(
+				err,
+				ErrChallengeCancelled,
+			),
+			errors.Is(
+				err,
+				ErrIdentityInactive,
+			),
+			errors.Is(
+				err,
+				ErrIdentifierAlreadyLinked,
+			),
+			errors.Is(
+				err,
+				ErrIdentityNotFound,
+			),
+			errors.Is(
+				err,
+				ErrIdentifierNotLinked,
+			),
+			errors.Is(
+				err,
+				ErrLastIdentifierRemoval,
+			):
+			recordVerificationOutcome(
+				MetricOutcomeRejected,
+			)
+
+		default:
+			recordVerificationOutcome(
+				MetricOutcomeFailed,
+			)
+		}
+
+		return VerifyOTPResult{}, err
+	}
+
+	recordVerificationOutcome(
+		MetricOutcomeSuccess,
+	)
+
+	return result, nil
 }

@@ -8,6 +8,7 @@ import (
 	identityv1 "github.com/7akoom/ride-platform/gen/go/ride/identity/v1"
 	googlegrpc "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	healthv1 "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
@@ -101,17 +102,16 @@ func requiresAuthentication(
 	fullMethod string,
 ) bool {
 	switch fullMethod {
-	case identityv1.IdentityService_RequestIdentifierLinkOTP_FullMethodName,
-		identityv1.IdentityService_VerifyIdentifierLinkOTP_FullMethodName,
-		identityv1.IdentityService_RequestIdentifierUnlinkOTP_FullMethodName,
-		identityv1.IdentityService_VerifyIdentifierUnlinkOTP_FullMethodName,
-		identityv1.IdentityService_GetMyIdentity_FullMethodName,
-		identityv1.IdentityService_ListMySessions_FullMethodName,
-		identityv1.IdentityService_RevokeSession_FullMethodName:
-		return true
+	case identityv1.IdentityService_RequestLoginOTP_FullMethodName,
+		identityv1.IdentityService_VerifyLoginOTP_FullMethodName,
+		identityv1.IdentityService_RefreshToken_FullMethodName,
+		identityv1.IdentityService_Logout_FullMethodName,
+		identityv1.IdentityService_LogoutAllSessions_FullMethodName,
+		healthv1.Health_Check_FullMethodName:
+		return false
 
 	default:
-		return false
+		return true
 	}
 }
 

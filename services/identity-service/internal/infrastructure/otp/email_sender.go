@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 )
@@ -41,14 +42,61 @@ type EmailMessageRenderer interface {
 	) (RenderedEmailMessage, error)
 }
 
+type ProviderEmailSenderOption func(
+	sender *ProviderEmailSender,
+) error
+
 type ProviderEmailSender struct {
-	provider EmailProvider
-	renderer EmailMessageRenderer
+	provider        EmailProvider
+	renderer        EmailMessageRenderer
+	providerName    DeliveryMetricProvider
+	metricsRecorder DeliveryMetricsRecorder
+}
+
+func WithEmailProviderName(
+	providerName DeliveryMetricProvider,
+) ProviderEmailSenderOption {
+	return func(
+		sender *ProviderEmailSender,
+	) error {
+		providerName = normalizeDeliveryMetricProvider(
+			providerName,
+		)
+
+		if providerName == "" {
+			return errors.New(
+				"email provider name is required",
+			)
+		}
+
+		sender.providerName = providerName
+
+		return nil
+	}
+}
+
+func WithEmailDeliveryMetricsRecorder(
+	recorder DeliveryMetricsRecorder,
+) ProviderEmailSenderOption {
+	return func(
+		sender *ProviderEmailSender,
+	) error {
+		if recorder == nil {
+			return errors.New(
+				"email delivery metrics recorder is required",
+			)
+		}
+
+		sender.metricsRecorder = recorder
+
+		return nil
+	}
 }
 
 func NewProviderEmailSender(
 	provider EmailProvider,
 	renderer EmailMessageRenderer,
+	options ...ProviderEmailSenderOption,
 ) (*ProviderEmailSender, error) {
 	if provider == nil {
 		return nil, errors.New(
@@ -62,10 +110,34 @@ func NewProviderEmailSender(
 		)
 	}
 
-	return &ProviderEmailSender{
+	sender := &ProviderEmailSender{
 		provider: provider,
 		renderer: renderer,
-	}, nil
+	}
+
+	for _, option := range options {
+		if option == nil {
+			return nil, errors.New(
+				"email sender option cannot be nil",
+			)
+		}
+
+		if err := option(sender); err != nil {
+			return nil, fmt.Errorf(
+				"configure email sender option: %w",
+				err,
+			)
+		}
+	}
+
+	if sender.metricsRecorder != nil &&
+		sender.providerName == "" {
+		return nil, errors.New(
+			"email provider name is required when delivery metrics are configured",
+		)
+	}
+
+	return sender, nil
 }
 
 func (s *ProviderEmailSender) Send(
@@ -135,7 +207,9 @@ func (s *ProviderEmailSender) Send(
 		)
 	}
 
-	if err := s.provider.Send(
+	startedAt := time.Now()
+
+	err = s.provider.Send(
 		ctx,
 		EmailMessage{
 			To:       identifier.Value,
@@ -145,7 +219,24 @@ func (s *ProviderEmailSender) Send(
 				renderedMessage.HTMLBody,
 			),
 		},
-	); err != nil {
+	)
+
+	if s.metricsRecorder != nil {
+		outcome := DeliveryMetricOutcomeSuccess
+		if err != nil {
+			outcome = DeliveryMetricOutcomeFailed
+		}
+
+		s.metricsRecorder.RecordOTPDelivery(
+			ctx,
+			DeliveryMetricChannelEmail,
+			s.providerName,
+			outcome,
+			time.Since(startedAt),
+		)
+	}
+
+	if err != nil {
 		return fmt.Errorf(
 			"send OTP email through provider: %w",
 			err,

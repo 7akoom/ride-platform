@@ -20,6 +20,11 @@ func TestRefreshTokenRotationStoreAllowsOnlyOneConcurrentRotation(
 		"+9647500000054",
 	)
 
+	cleanupIdentityRefreshTokenReuseDetectedOutboxEvents(
+		t,
+		fixture,
+	)
+
 	currentTokenHash := strings.Repeat(
 		"1",
 		64,
@@ -29,7 +34,7 @@ func TestRefreshTokenRotationStoreAllowsOnlyOneConcurrentRotation(
 		29 * 24 * time.Hour,
 	)
 
-	fixture.createRefreshToken(
+	currentTokenID := fixture.createRefreshToken(
 		currentTokenHash,
 		currentTokenExpiresAt,
 	)
@@ -156,6 +161,61 @@ func TestRefreshTokenRotationStoreAllowsOnlyOneConcurrentRotation(
 		t.Fatalf(
 			"active refresh tokens after concurrent reuse = %d, expected 0",
 			activeRefreshTokenCount,
+		)
+	}
+
+	var storedReuseDetectedAt *time.Time
+
+	err := fixture.pool.QueryRow(
+		fixture.ctx,
+		`
+			SELECT reuse_detected_at
+			FROM refresh_tokens
+			WHERE id = $1::uuid
+		`,
+		currentTokenID,
+	).Scan(
+		&storedReuseDetectedAt,
+	)
+	if err != nil {
+		t.Fatalf(
+			"query concurrent refresh token reuse detection marker: %v",
+			err,
+		)
+	}
+
+	if storedReuseDetectedAt == nil {
+		t.Fatal(
+			"concurrent refresh token reuse detection marker was not stored",
+		)
+	}
+
+	if !storedReuseDetectedAt.Equal(
+		rotatedAt,
+	) {
+		t.Fatalf(
+			"reuse detected at = %v, want %v",
+			storedReuseDetectedAt,
+			rotatedAt,
+		)
+	}
+
+	assertIdentityRefreshTokenReuseDetectedOutboxEvent(
+		t,
+		fixture,
+		rotatedAt,
+	)
+
+	eventCount :=
+		countIdentityRefreshTokenReuseDetectedOutboxEvents(
+			t,
+			fixture,
+		)
+
+	if eventCount != 1 {
+		t.Fatalf(
+			"concurrent refresh token reuse detected outbox event count = %d, want 1",
+			eventCount,
 		)
 	}
 }

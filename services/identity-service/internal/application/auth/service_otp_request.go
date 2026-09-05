@@ -18,10 +18,42 @@ func (s *service) RequestOTP(
 		return RequestOTPResult{}, err
 	}
 
+	recordRequestOutcome := func(
+		outcome MetricOutcome,
+	) {
+		if s.metricsRecorder == nil {
+			return
+		}
+
+		s.metricsRecorder.RecordOTPRequest(
+			ctx,
+			purpose,
+			channel,
+			outcome,
+		)
+	}
+
+	recordSecurityEvent := func(
+		event SecurityMetricEvent,
+	) {
+		if s.metricsRecorder == nil {
+			return
+		}
+
+		s.metricsRecorder.RecordSecurityEvent(
+			ctx,
+			event,
+		)
+	}
+
 	tenantHint, err := NormalizeTenantHint(
 		input.TenantHint,
 	)
 	if err != nil {
+		recordRequestOutcome(
+			MetricOutcomeRejected,
+		)
+
 		return RequestOTPResult{}, err
 	}
 
@@ -33,6 +65,9 @@ func (s *service) RequestOTP(
 			Identifier:       identifier,
 			Purpose:          purpose,
 			TargetIdentityID: targetIdentityID,
+			SourceIPAddress: strings.TrimSpace(
+				input.SourceIPAddress,
+			),
 		},
 		now,
 		s.otpRequestRateLimitPolicy,
@@ -41,9 +76,21 @@ func (s *service) RequestOTP(
 			err,
 			ErrOTPRequestRateLimited,
 		) {
+			recordRequestOutcome(
+				MetricOutcomeRejected,
+			)
+
+			recordSecurityEvent(
+				SecurityMetricEventOTPRateLimited,
+			)
+
 			return RequestOTPResult{},
 				ErrOTPRequestRateLimited
 		}
+
+		recordRequestOutcome(
+			MetricOutcomeFailed,
+		)
 
 		return RequestOTPResult{}, fmt.Errorf(
 			"apply OTP request rate limit: %w",
@@ -53,6 +100,10 @@ func (s *service) RequestOTP(
 
 	code, err := s.otpGenerator.Generate()
 	if err != nil {
+		recordRequestOutcome(
+			MetricOutcomeFailed,
+		)
+
 		return RequestOTPResult{}, fmt.Errorf(
 			"generate OTP: %w",
 			err,
@@ -61,6 +112,10 @@ func (s *service) RequestOTP(
 
 	challengeID, err := s.challengeIDGenerator.Generate()
 	if err != nil {
+		recordRequestOutcome(
+			MetricOutcomeFailed,
+		)
+
 		return RequestOTPResult{}, fmt.Errorf(
 			"generate challenge ID: %w",
 			err,
@@ -72,6 +127,10 @@ func (s *service) RequestOTP(
 		code,
 	)
 	if err != nil {
+		recordRequestOutcome(
+			MetricOutcomeFailed,
+		)
+
 		return RequestOTPResult{}, fmt.Errorf(
 			"hash OTP: %w",
 			err,
@@ -92,6 +151,10 @@ func (s *service) RequestOTP(
 		ctx,
 		challenge,
 	); err != nil {
+		recordRequestOutcome(
+			MetricOutcomeFailed,
+		)
+
 		return RequestOTPResult{}, fmt.Errorf(
 			"create OTP challenge: %w",
 			err,
@@ -101,11 +164,12 @@ func (s *service) RequestOTP(
 	if deliveryErr := s.otpDelivery.Send(
 		ctx,
 		OTPDeliveryInput{
-			Identifier: identifier,
-			Code:       code,
-			Purpose:    purpose,
-			Channel:    channel,
-			Locale:     input.Locale,
+			ChallengeID: challengeID,
+			Identifier:  identifier,
+			Code:        code,
+			Purpose:     purpose,
+			Channel:     channel,
+			Locale:      input.Locale,
 		},
 	); deliveryErr != nil {
 		cancelledAt := s.clock.Now()
@@ -122,6 +186,10 @@ func (s *service) RequestOTP(
 			challenge.ID,
 			cancelledAt,
 		); cancelErr != nil {
+			recordRequestOutcome(
+				MetricOutcomeFailed,
+			)
+
 			return RequestOTPResult{}, errors.Join(
 				fmt.Errorf(
 					"deliver OTP: %w",
@@ -134,11 +202,19 @@ func (s *service) RequestOTP(
 			)
 		}
 
+		recordRequestOutcome(
+			MetricOutcomeFailed,
+		)
+
 		return RequestOTPResult{}, fmt.Errorf(
 			"deliver OTP: %w",
 			deliveryErr,
 		)
 	}
+
+	recordRequestOutcome(
+		MetricOutcomeSuccess,
+	)
 
 	return RequestOTPResult{
 		ChallengeID:      challengeID,
@@ -181,8 +257,6 @@ func normalizeRequestOTPInput(
 
 	switch channel {
 	case OTPDeliveryChannelAuto:
-		// AUTO preserves the existing behavior:
-		// phone identifiers use SMS and email identifiers use email.
 
 	case OTPDeliveryChannelSMS,
 		OTPDeliveryChannelWhatsApp:

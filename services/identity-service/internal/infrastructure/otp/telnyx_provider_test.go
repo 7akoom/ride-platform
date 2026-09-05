@@ -719,3 +719,143 @@ func TestTelnyxProviderRejectsNilHTTPResponse(
 		)
 	}
 }
+func TestTelnyxProviderSendTrackedReturnsDeliveryResult(
+	t *testing.T,
+) {
+	httpClient := &testHTTPDoer{
+		response: &http.Response{
+			StatusCode: http.StatusOK,
+			Body: io.NopCloser(
+				strings.NewReader(
+					`{
+						"data": {
+							"id": "message-123",
+							"to": [
+								{
+									"status": "queued"
+								}
+							]
+						}
+					}`,
+				),
+			),
+		},
+	}
+
+	provider, err := NewTelnyxProvider(
+		httpClient,
+		validTelnyxProviderConfig(),
+	)
+	if err != nil {
+		t.Fatalf(
+			"NewTelnyxProvider() returned an error: %v",
+			err,
+		)
+	}
+
+	result, err := provider.SendTracked(
+		context.Background(),
+		SMSMessage{
+			To:   "+9647501234567",
+			Body: "Your verification code is 123456",
+		},
+	)
+	if err != nil {
+		t.Fatalf(
+			"SendTracked() returned an error: %v",
+			err,
+		)
+	}
+
+	if result.ProviderMessageID != "message-123" {
+		t.Fatalf(
+			"provider message ID = %q, want %q",
+			result.ProviderMessageID,
+			"message-123",
+		)
+	}
+
+	if result.ProviderStatus != "queued" {
+		t.Fatalf(
+			"provider status = %q, want %q",
+			result.ProviderStatus,
+			"queued",
+		)
+	}
+}
+
+func TestTelnyxProviderSendTrackedRejectsMissingMessageID(
+	t *testing.T,
+) {
+	httpClient := &testHTTPDoer{
+		response: &http.Response{
+			StatusCode: http.StatusOK,
+			Body: io.NopCloser(
+				strings.NewReader(
+					`{
+						"data": {
+							"to": [
+								{
+									"status": "queued"
+								}
+							]
+						}
+					}`,
+				),
+			),
+		},
+	}
+
+	provider, err := NewTelnyxProvider(
+		httpClient,
+		validTelnyxProviderConfig(),
+	)
+	if err != nil {
+		t.Fatalf(
+			"NewTelnyxProvider() returned an error: %v",
+			err,
+		)
+	}
+
+	_, err = provider.SendTracked(
+		context.Background(),
+		SMSMessage{
+			To:   "+9647501234567",
+			Body: "Your verification code is 123456",
+		},
+	)
+	if err == nil {
+		t.Fatal(
+			"SendTracked() returned nil error for missing message ID",
+		)
+	}
+
+	var providerError *SMSProviderError
+
+	if !errors.As(
+		err,
+		&providerError,
+	) {
+		t.Fatalf(
+			"SendTracked() error = %T, want *SMSProviderError",
+			err,
+		)
+	}
+
+	if providerError.Provider != "telnyx" {
+		t.Fatalf(
+			"provider = %q, want %q",
+			providerError.Provider,
+			"telnyx",
+		)
+	}
+
+	if providerError.Kind !=
+		SMSProviderErrorUnknownDeliveryState {
+		t.Fatalf(
+			"error kind = %q, want %q",
+			providerError.Kind,
+			SMSProviderErrorUnknownDeliveryState,
+		)
+	}
+}

@@ -435,6 +435,29 @@ func (s *IdentifierUnlinkCompletionStore) Complete(
 		)
 	}
 
+	event, err := auth.NewIdentityIdentifierUnlinkedDomainEvent(
+		identityID,
+		targetIdentifier.Type,
+		verifiedAt,
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"build identity identifier unlinked domain event: %w",
+			err,
+		)
+	}
+
+	if err := insertIdentityIdentifierOutboxEventInTransaction(
+		ctx,
+		tx,
+		event,
+	); err != nil {
+		return fmt.Errorf(
+			"persist identity identifier unlinked domain event: %w",
+			err,
+		)
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf(
 			"commit identifier unlink completion transaction: %w",

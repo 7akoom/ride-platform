@@ -10,14 +10,40 @@ import (
 )
 
 type SMSMessage struct {
-	To   string
-	Body string
+	ChallengeID string
+	To          string
+	Body        string
+	Code        string
+	Locale      string
 }
 
 type SMSProvider interface {
 	Send(
 		ctx context.Context,
 		message SMSMessage,
+	) error
+}
+
+type SMSProviderDeliveryResult struct {
+	ProviderMessageID string
+	ProviderStatus    string
+}
+
+type TrackedSMSProvider interface {
+	SendTracked(
+		ctx context.Context,
+		message SMSMessage,
+	) (SMSProviderDeliveryResult, error)
+}
+
+type ChallengeAwareSMSSender interface {
+	SendForChallenge(
+		ctx context.Context,
+		challengeID string,
+		phoneNumber string,
+		code string,
+		purpose auth.OTPPurpose,
+		locale string,
 	) error
 }
 
@@ -67,6 +93,49 @@ func (s *ProviderSMSSender) Send(
 	purpose auth.OTPPurpose,
 	locale string,
 ) error {
+	return s.send(
+		ctx,
+		"",
+		phoneNumber,
+		code,
+		purpose,
+		locale,
+	)
+}
+
+func (s *ProviderSMSSender) SendForChallenge(
+	ctx context.Context,
+	challengeID string,
+	phoneNumber string,
+	code string,
+	purpose auth.OTPPurpose,
+	locale string,
+) error {
+	challengeID = strings.TrimSpace(challengeID)
+	if challengeID == "" {
+		return errors.New(
+			"SMS challenge ID is required",
+		)
+	}
+
+	return s.send(
+		ctx,
+		challengeID,
+		phoneNumber,
+		code,
+		purpose,
+		locale,
+	)
+}
+
+func (s *ProviderSMSSender) send(
+	ctx context.Context,
+	challengeID string,
+	phoneNumber string,
+	code string,
+	purpose auth.OTPPurpose,
+	locale string,
+) error {
 	phoneNumber = strings.TrimSpace(phoneNumber)
 	if phoneNumber == "" {
 		return errors.New(
@@ -105,8 +174,11 @@ func (s *ProviderSMSSender) Send(
 	if err := s.provider.Send(
 		ctx,
 		SMSMessage{
-			To:   phoneNumber,
-			Body: body,
+			ChallengeID: challengeID,
+			To:          phoneNumber,
+			Body:        body,
+			Code:        code,
+			Locale:      locale,
 		},
 	); err != nil {
 		return fmt.Errorf(

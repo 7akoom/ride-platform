@@ -39,6 +39,8 @@ func TestRefreshTokenDoesNotRotateWhenAccessTokenSigningFails(
 		err: errors.New("signing failed"),
 	}
 
+	metricsRecorder := &testMetricsRecorder{}
+
 	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
 		&testIdentityIdentifierRepository{},
@@ -70,6 +72,7 @@ func TestRefreshTokenDoesNotRotateWhenAccessTokenSigningFails(
 			MaxRequests: 5,
 		},
 		29*24*time.Hour,
+		WithMetricsRecorder(metricsRecorder),
 	)
 
 	_, err := service.RefreshToken(
@@ -102,6 +105,27 @@ func TestRefreshTokenDoesNotRotateWhenAccessTokenSigningFails(
 		t.Fatalf(
 			"RefreshTokenGenerator calls = %d, expected 1",
 			refreshGenerator.calls,
+		)
+	}
+
+	requireSingleAuthOperationMetric(
+		t,
+		metricsRecorder,
+		AuthMetricOperationRefresh,
+		MetricOutcomeFailed,
+	)
+
+	if len(metricsRecorder.sessionOperations) != 0 {
+		t.Fatalf(
+			"session operation metric count = %d, expected 0",
+			len(metricsRecorder.sessionOperations),
+		)
+	}
+
+	if len(metricsRecorder.securityEvents) != 0 {
+		t.Fatalf(
+			"security event metric count = %d, expected 0",
+			len(metricsRecorder.securityEvents),
 		)
 	}
 }
@@ -140,6 +164,8 @@ func TestRefreshTokenReturnsReuseErrorWhenRotationDetectsReuse(
 		expiresInSeconds: 900,
 	}
 
+	metricsRecorder := &testMetricsRecorder{}
+
 	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
 		&testIdentityIdentifierRepository{},
@@ -171,6 +197,7 @@ func TestRefreshTokenReturnsReuseErrorWhenRotationDetectsReuse(
 			MaxRequests: 5,
 		},
 		29*24*time.Hour,
+		WithMetricsRecorder(metricsRecorder),
 	)
 
 	result, err := service.RefreshToken(
@@ -218,4 +245,24 @@ func TestRefreshTokenReturnsReuseErrorWhenRotationDetectsReuse(
 			accessSigner.calls,
 		)
 	}
+
+	requireSingleAuthOperationMetric(
+		t,
+		metricsRecorder,
+		AuthMetricOperationRefresh,
+		MetricOutcomeRejected,
+	)
+
+	if len(metricsRecorder.sessionOperations) != 0 {
+		t.Fatalf(
+			"session operation metric count = %d, expected 0",
+			len(metricsRecorder.sessionOperations),
+		)
+	}
+
+	requireSingleSecurityMetric(
+		t,
+		metricsRecorder,
+		SecurityMetricEventRefreshTokenReuse,
+	)
 }

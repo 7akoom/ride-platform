@@ -206,3 +206,211 @@ func TestIdentifierUnlinkCompletionStoreSerializesCompetingLastIdentifiers(
 		)
 	}
 }
+func TestIdentifierUnlinkCompletionStoreAllowsOnlyOneConcurrentChallengeReplay(
+	t *testing.T,
+) {
+	ctx, pool, requestStore :=
+		newIdentifierUnlinkRequestIntegrationTest(t)
+
+	completionStore :=
+		NewIdentifierUnlinkCompletionStore(pool)
+
+	identityID := createIdentifierUnlinkTestIdentity(
+		t,
+		ctx,
+		pool,
+	)
+
+	targetIdentifier := auth.Identifier{
+		Type:  auth.IdentifierTypePhone,
+		Value: "+9647500000518",
+	}
+
+	verificationIdentifier := auth.Identifier{
+		Type:  auth.IdentifierTypeEmail,
+		Value: "unlink-same-challenge-race@example.com",
+	}
+
+	insertIdentifierUnlinkTestIdentifier(
+		t,
+		ctx,
+		pool,
+		identityID,
+		targetIdentifier,
+	)
+
+	insertIdentifierUnlinkTestIdentifier(
+		t,
+		ctx,
+		pool,
+		identityID,
+		verificationIdentifier,
+	)
+
+	const challengeID = "otp_ch_unlink_completion_same_challenge_race"
+
+	createIdentifierUnlinkCompletionRequest(
+		t,
+		ctx,
+		requestStore,
+		identityID,
+		challengeID,
+		targetIdentifier,
+		verificationIdentifier,
+	)
+
+	start := make(chan struct{})
+	results := make(chan error, 2)
+
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(2)
+
+	runComplete := func() {
+		defer waitGroup.Done()
+
+		<-start
+
+		results <- completionStore.Complete(
+			context.Background(),
+			auth.IdentifierUnlinkCompletionInput{
+				ChallengeID: challengeID,
+				IdentityID:  identityID,
+				VerifiedAt:  time.Now().UTC(),
+			},
+		)
+	}
+
+	go runComplete()
+	go runComplete()
+
+	close(start)
+
+	waitGroup.Wait()
+	close(results)
+
+	successCount := 0
+	challengeUsedCount := 0
+
+	for completeErr := range results {
+		switch {
+		case completeErr == nil:
+			successCount++
+
+		case errors.Is(
+			completeErr,
+			auth.ErrChallengeUsed,
+		):
+			challengeUsedCount++
+
+		default:
+			t.Fatalf(
+				"unexpected concurrent Complete() error: %v",
+				completeErr,
+			)
+		}
+	}
+
+	if successCount != 1 {
+		t.Fatalf(
+			"successful completions = %d, want 1",
+			successCount,
+		)
+	}
+
+	if challengeUsedCount != 1 {
+		t.Fatalf(
+			"ErrChallengeUsed results = %d, want 1",
+			challengeUsedCount,
+		)
+	}
+
+	var targetIdentifierCount int
+
+	err := pool.QueryRow(
+		ctx,
+		`
+			SELECT COUNT(*)
+			FROM identity_identifiers
+			WHERE identity_id = $1::uuid
+			  AND identifier_type = $2
+			  AND normalized_value = $3
+		`,
+		identityID,
+		string(targetIdentifier.Type),
+		targetIdentifier.Value,
+	).Scan(
+		&targetIdentifierCount,
+	)
+	if err != nil {
+		t.Fatalf(
+			"count target identifier rows: %v",
+			err,
+		)
+	}
+
+	if targetIdentifierCount != 0 {
+		t.Fatalf(
+			"target identifier rows = %d, want 0",
+			targetIdentifierCount,
+		)
+	}
+
+	var verificationIdentifierCount int
+
+	err = pool.QueryRow(
+		ctx,
+		`
+			SELECT COUNT(*)
+			FROM identity_identifiers
+			WHERE identity_id = $1::uuid
+			  AND identifier_type = $2
+			  AND normalized_value = $3
+		`,
+		identityID,
+		string(verificationIdentifier.Type),
+		verificationIdentifier.Value,
+	).Scan(
+		&verificationIdentifierCount,
+	)
+	if err != nil {
+		t.Fatalf(
+			"count verification identifier rows: %v",
+			err,
+		)
+	}
+
+	if verificationIdentifierCount != 1 {
+		t.Fatalf(
+			"verification identifier rows = %d, want 1",
+			verificationIdentifierCount,
+		)
+	}
+
+	var verifiedChallengeCount int
+
+	err = pool.QueryRow(
+		ctx,
+		`
+			SELECT COUNT(*)
+			FROM otp_challenges
+			WHERE id = $1
+			  AND verified_at IS NOT NULL
+		`,
+		challengeID,
+	).Scan(
+		&verifiedChallengeCount,
+	)
+	if err != nil {
+		t.Fatalf(
+			"count verified unlink challenge: %v",
+			err,
+		)
+	}
+
+	if verifiedChallengeCount != 1 {
+		t.Fatalf(
+			"verified challenges = %d, want 1",
+			verifiedChallengeCount,
+		)
+	}
+}

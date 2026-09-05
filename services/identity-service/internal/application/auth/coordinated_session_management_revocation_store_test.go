@@ -77,23 +77,20 @@ type testManagedSessionPersistentRevocationStore struct {
 
 	called     bool
 	identityID string
-	sessionIDs []string
+	sessionID  string
 	revokedAt  time.Time
 	order      *[]string
 }
 
-func (s *testManagedSessionPersistentRevocationStore) RevokeSessions(
+func (s *testManagedSessionPersistentRevocationStore) RevokeSession(
 	ctx context.Context,
 	identityID string,
-	sessionIDs []string,
+	sessionID string,
 	revokedAt time.Time,
 ) error {
 	s.called = true
 	s.identityID = identityID
-	s.sessionIDs = append(
-		[]string(nil),
-		sessionIDs...,
-	)
+	s.sessionID = sessionID
 	s.revokedAt = revokedAt
 
 	if s.order != nil {
@@ -256,11 +253,11 @@ func TestCoordinatedSessionManagementRevocationStoreRevokesAccessBeforePersisten
 		)
 	}
 
-	if len(persistentStore.sessionIDs) != 1 ||
-		persistentStore.sessionIDs[0] != "session-1" {
+	if persistentStore.sessionID != "session-1" {
 		t.Errorf(
-			"persistent session IDs = %v, expected [session-1]",
-			persistentStore.sessionIDs,
+			"persistent session ID = %q, expected %q",
+			persistentStore.sessionID,
+			"session-1",
 		)
 	}
 

@@ -52,6 +52,25 @@ type IdentityReader interface {
 	) (IdentityDetails, bool, error)
 }
 
+type IdentityLifecycleTransition struct {
+	IdentityID     string
+	TargetStatus   IdentityStatus
+	TransitionedAt time.Time
+}
+
+type IdentityLifecycleTransitionResult struct {
+	PreviousStatus IdentityStatus
+	CurrentStatus  IdentityStatus
+	Changed        bool
+}
+
+type IdentityLifecycleStore interface {
+	Transition(
+		ctx context.Context,
+		input IdentityLifecycleTransition,
+	) (IdentityLifecycleTransitionResult, bool, error)
+}
+
 type ChallengeRepository interface {
 	Create(
 		ctx context.Context,
@@ -159,11 +178,12 @@ type OTPHasher interface {
 }
 
 type OTPDeliveryInput struct {
-	Identifier Identifier
-	Code       string
-	Purpose    OTPPurpose
-	Channel    OTPDeliveryChannel
-	Locale     string
+	ChallengeID string
+	Identifier  Identifier
+	Code        string
+	Purpose     OTPPurpose
+	Channel     OTPDeliveryChannel
+	Locale      string
 }
 
 type OTPDelivery interface {
@@ -202,16 +222,24 @@ type Clock interface {
 	Now() time.Time
 }
 
+type OTPRequestAbuseLimitPolicy struct {
+	Window      time.Duration
+	MaxRequests int
+}
+
 type OTPRequestRateLimitPolicy struct {
 	Cooldown    time.Duration
 	Window      time.Duration
 	MaxRequests int
+
+	Abuse OTPRequestAbuseLimitPolicy
 }
 
 type OTPRequestScope struct {
 	Identifier       Identifier
 	Purpose          OTPPurpose
 	TargetIdentityID *string
+	SourceIPAddress  string
 }
 
 type OTPRequestRateLimiter interface {
@@ -303,6 +331,14 @@ type SessionRevocationTargetStore interface {
 	) (SessionRevocationTarget, bool, error)
 }
 
+type PersistentSessionRevocationStore interface {
+	RevokeSessionByRefreshTokenHash(
+		ctx context.Context,
+		refreshTokenHash string,
+		revokedAt time.Time,
+	) error
+}
+
 type SessionManagementRevocationTargetStore interface {
 	FindRevocationTargetByIdentityAndSessionID(
 		ctx context.Context,
@@ -364,6 +400,15 @@ type AllSessionsRevocationTargetStore interface {
 		refreshTokenHash string,
 		now time.Time,
 	) (AllSessionsRevocationTarget, bool, error)
+}
+
+type SingleSessionPersistentRevocationStore interface {
+	RevokeSession(
+		ctx context.Context,
+		identityID string,
+		sessionID string,
+		revokedAt time.Time,
+	) error
 }
 
 type AllSessionsPersistentRevocationStore interface {

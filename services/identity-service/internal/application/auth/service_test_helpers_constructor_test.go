@@ -14,6 +14,7 @@ type serviceConstructorTestDependencies struct {
 	challengeRepository              ChallengeRepository
 	identityIdentifierRepository     IdentityIdentifierRepository
 	identityReader                   IdentityReader
+	identityLifecycleStore           IdentityLifecycleStore
 	identifierLinkCompletionStore    IdentifierLinkCompletionStore
 	identifierUnlinkRequestStore     IdentifierUnlinkRequestStore
 	identifierUnlinkCompletionStore  IdentifierUnlinkCompletionStore
@@ -43,6 +44,7 @@ func newValidServiceConstructorTestDependencies() serviceConstructorTestDependen
 		challengeRepository:              &testChallengeRepository{},
 		identityIdentifierRepository:     &testIdentityIdentifierRepository{},
 		identityReader:                   &testIdentityReader{},
+		identityLifecycleStore:           &testIdentityLifecycleStore{},
 		identifierLinkCompletionStore:    &testIdentifierLinkCompletionStore{},
 		identifierUnlinkRequestStore:     &testIdentifierUnlinkRequestStore{},
 		identifierUnlinkCompletionStore:  &testIdentifierUnlinkCompletionStore{},
@@ -74,11 +76,12 @@ func newValidServiceConstructorTestDependencies() serviceConstructorTestDependen
 
 func newServiceFromConstructorTestDependencies(
 	dependencies serviceConstructorTestDependencies,
-) Service {
-	return NewServiceWithIdentityIdentifiers(
+) ServiceWithIdentityLifecycle {
+	return NewServiceWithIdentityLifecycle(
 		dependencies.challengeRepository,
 		dependencies.identityIdentifierRepository,
 		dependencies.identityReader,
+		dependencies.identityLifecycleStore,
 		dependencies.identifierLinkCompletionStore,
 		dependencies.identifierUnlinkRequestStore,
 		dependencies.identifierUnlinkCompletionStore,
@@ -111,6 +114,7 @@ func newIdentifierAwareServiceForTest(
 	otpHasher OTPHasher,
 	tokenIssuer TokenIssuer,
 	clock Clock,
+	options ...ServiceOption,
 ) Service {
 	return NewServiceWithIdentityIdentifiers(
 		challengeRepository,
@@ -141,5 +145,50 @@ func newIdentifierAwareServiceForTest(
 			MaxRequests: 5,
 		},
 		29*24*time.Hour,
+		options...,
+	)
+}
+
+func newIdentifierAwareServiceWithUnlinkStoreForTest(
+	challengeRepository ChallengeRepository,
+	identityIdentifierRepository IdentityIdentifierRepository,
+	identityReader IdentityReader,
+	identifierLinkCompletionStore IdentifierLinkCompletionStore,
+	identifierUnlinkCompletionStore IdentifierUnlinkCompletionStore,
+	otpHasher OTPHasher,
+	tokenIssuer TokenIssuer,
+	clock Clock,
+	options ...ServiceOption,
+) Service {
+	return NewServiceWithIdentityIdentifiers(
+		challengeRepository,
+		identityIdentifierRepository,
+		identityReader,
+		identifierLinkCompletionStore,
+		&testIdentifierUnlinkRequestStore{},
+		identifierUnlinkCompletionStore,
+		&testOTPGenerator{},
+		otpHasher,
+		&testOTPDelivery{},
+		&testOTPRequestRateLimiter{},
+		&testChallengeIDGenerator{},
+		tokenIssuer,
+		&testRefreshTokenRotationStore{},
+		&testSessionRevocationStore{},
+		&testAllSessionsRevocationStore{},
+		&testSessionReader{},
+		&testSessionManagementRevocationStore{},
+		&testRefreshTokenGenerator{},
+		&testRefreshTokenHasher{},
+		&testAccessTokenSigner{},
+		clock,
+		5*time.Minute,
+		OTPRequestRateLimitPolicy{
+			Cooldown:    time.Minute,
+			Window:      15 * time.Minute,
+			MaxRequests: 5,
+		},
+		29*24*time.Hour,
+		options...,
 	)
 }

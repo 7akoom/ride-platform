@@ -3,10 +3,44 @@
 package postgres
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 )
+
+type integrationSessionAccessRevocationStore struct {
+	revokedSessions map[string]time.Duration
+}
+
+func newIntegrationSessionAccessRevocationStore() *integrationSessionAccessRevocationStore {
+	return &integrationSessionAccessRevocationStore{
+		revokedSessions: make(
+			map[string]time.Duration,
+		),
+	}
+}
+
+func (s *integrationSessionAccessRevocationStore) MarkRevoked(
+	ctx context.Context,
+	sessionID string,
+	ttl time.Duration,
+) error {
+	s.revokedSessions[sessionID] = ttl
+
+	return nil
+}
+
+func (s *integrationSessionAccessRevocationStore) IsRevoked(
+	ctx context.Context,
+	sessionID string,
+) (bool, error) {
+	_, revoked := s.revokedSessions[sessionID]
+
+	return revoked, nil
+}
 
 func TestAllSessionsRevocationStoreRevokesAllSessionsAndOldTokenCannotRevokeNewSession(
 	t *testing.T,
@@ -14,6 +48,11 @@ func TestAllSessionsRevocationStoreRevokesAllSessionsAndOldTokenCannotRevokeNewS
 	fixture := newAllSessionsRevocationTestFixture(
 		t,
 		"+9647500000052",
+	)
+
+	cleanupIdentitySessionsRevokedOutboxEvents(
+		t,
+		fixture,
 	)
 
 	firstTokenHash := strings.Repeat(
@@ -26,25 +65,42 @@ func TestAllSessionsRevocationStoreRevokesAllSessionsAndOldTokenCannotRevokeNewS
 		64,
 	)
 
-	fixture.createSessionWithRefreshToken(
-		fixture.now,
-		firstTokenHash,
-	)
+	firstSessionID :=
+		fixture.createSessionWithRefreshToken(
+			fixture.now,
+			firstTokenHash,
+		)
 
-	fixture.createSessionWithRefreshToken(
-		fixture.now.Add(time.Second),
-		secondTokenHash,
-	)
+	secondSessionID :=
+		fixture.createSessionWithRefreshToken(
+			fixture.now.Add(time.Second),
+			secondTokenHash,
+		)
 
-	store := NewAllSessionsRevocationStore(
+	persistentStore := NewAllSessionsRevocationStore(
 		fixture.pool,
 	)
+
+	accessRevocationStore :=
+		newIntegrationSessionAccessRevocationStore()
+
+	store, err := auth.NewCoordinatedAllSessionsRevocationStore(
+		persistentStore,
+		accessRevocationStore,
+		persistentStore,
+	)
+	if err != nil {
+		t.Fatalf(
+			"NewCoordinatedAllSessionsRevocationStore() returned an error: %v",
+			err,
+		)
+	}
 
 	logoutAllAt := fixture.now.Add(
 		time.Minute,
 	)
 
-	err := store.RevokeAllByRefreshTokenHash(
+	err = store.RevokeAllByRefreshTokenHash(
 		fixture.ctx,
 		firstTokenHash,
 		logoutAllAt,
@@ -104,6 +160,76 @@ func TestAllSessionsRevocationStoreRevokesAllSessionsAndOldTokenCannotRevokeNewS
 		)
 	}
 
+	firstAccessRevoked, err :=
+		accessRevocationStore.IsRevoked(
+			fixture.ctx,
+			firstSessionID,
+		)
+	if err != nil {
+		t.Fatalf(
+			"check first session access revocation: %v",
+			err,
+		)
+	}
+
+	if !firstAccessRevoked {
+		t.Fatal(
+			"first session access was not revoked",
+		)
+	}
+
+	secondAccessRevoked, err :=
+		accessRevocationStore.IsRevoked(
+			fixture.ctx,
+			secondSessionID,
+		)
+	if err != nil {
+		t.Fatalf(
+			"check second session access revocation: %v",
+			err,
+		)
+	}
+
+	if !secondAccessRevoked {
+		t.Fatal(
+			"second session access was not revoked",
+		)
+	}
+
+	if accessRevocationStore.revokedSessions[firstSessionID] <= 0 {
+		t.Fatal(
+			"first session access revocation TTL is not positive",
+		)
+	}
+
+	if accessRevocationStore.revokedSessions[secondSessionID] <= 0 {
+		t.Fatal(
+			"second session access revocation TTL is not positive",
+		)
+	}
+
+	assertIdentitySessionsRevokedOutboxEvent(
+		t,
+		fixture,
+		[]string{
+			firstSessionID,
+			secondSessionID,
+		},
+		logoutAllAt,
+	)
+
+	eventCount := countIdentitySessionsRevokedOutboxEvents(
+		t,
+		fixture,
+	)
+
+	if eventCount != 1 {
+		t.Fatalf(
+			"sessions revoked outbox event count = %d, want 1",
+			eventCount,
+		)
+	}
+
 	newSessionCreatedAt := logoutAllAt.Add(
 		time.Minute,
 	)
@@ -145,6 +271,36 @@ func TestAllSessionsRevocationStoreRevokesAllSessionsAndOldTokenCannotRevokeNewS
 	if newState.tokenRevokedAt != nil {
 		t.Fatal(
 			"old refresh token revoked a newly created refresh token",
+		)
+	}
+
+	newAccessRevoked, err :=
+		accessRevocationStore.IsRevoked(
+			fixture.ctx,
+			newSessionID,
+		)
+	if err != nil {
+		t.Fatalf(
+			"check new session access revocation: %v",
+			err,
+		)
+	}
+
+	if newAccessRevoked {
+		t.Fatal(
+			"old refresh token revoked access for newly created session",
+		)
+	}
+
+	eventCount = countIdentitySessionsRevokedOutboxEvents(
+		t,
+		fixture,
+	)
+
+	if eventCount != 1 {
+		t.Fatalf(
+			"sessions revoked outbox event count after old token reuse = %d, want 1",
+			eventCount,
 		)
 	}
 }

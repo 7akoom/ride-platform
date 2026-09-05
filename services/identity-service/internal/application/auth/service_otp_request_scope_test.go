@@ -42,8 +42,9 @@ func TestRequestOTPUsesGenericPhoneLoginIdentifier(
 				Type:  IdentifierTypePhone,
 				Value: "  +9647501234567  ",
 			},
-			Purpose: OTPPurposeLogin,
-			Locale:  "ar",
+			Purpose:         OTPPurposeLogin,
+			Locale:          "ar",
+			SourceIPAddress: "203.0.113.45",
 		},
 	)
 	if err != nil {
@@ -88,6 +89,15 @@ func TestRequestOTPUsesGenericPhoneLoginIdentifier(
 			"rate limiter identifier = %q, expected %q",
 			rateLimiter.identifierValue,
 			expectedIdentifier.Value,
+		)
+	}
+
+	if rateLimiter.scope.SourceIPAddress !=
+		"203.0.113.45" {
+		t.Fatalf(
+			"rate limiter source IP address = %q, expected %q",
+			rateLimiter.scope.SourceIPAddress,
+			"203.0.113.45",
 		)
 	}
 

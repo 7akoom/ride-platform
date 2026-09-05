@@ -86,6 +86,20 @@ func (s *service) RevokeSession(
 		return ErrSessionNotFound
 	}
 
+	recordSessionOutcome := func(
+		outcome MetricOutcome,
+	) {
+		if s.metricsRecorder == nil {
+			return
+		}
+
+		s.metricsRecorder.RecordSessionOperation(
+			ctx,
+			SessionMetricOperationRevoke,
+			outcome,
+		)
+	}
+
 	err := s.sessionManagementRevocationStore.RevokeSession(
 		ctx,
 		identityID,
@@ -97,14 +111,26 @@ func (s *service) RevokeSession(
 			err,
 			ErrSessionNotFound,
 		) {
+			recordSessionOutcome(
+				MetricOutcomeRejected,
+			)
+
 			return ErrSessionNotFound
 		}
+
+		recordSessionOutcome(
+			MetricOutcomeFailed,
+		)
 
 		return fmt.Errorf(
 			"revoke authentication session: %w",
 			err,
 		)
 	}
+
+	recordSessionOutcome(
+		MetricOutcomeSuccess,
+	)
 
 	return nil
 }

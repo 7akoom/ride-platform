@@ -34,6 +34,7 @@ func TestRefreshTokenRejectsBlankRefreshToken(
 			refreshHasher := &testRefreshTokenHasher{}
 			refreshGenerator := &testRefreshTokenGenerator{}
 			accessSigner := &testAccessTokenSigner{}
+			metricsRecorder := &testMetricsRecorder{}
 
 			service := NewServiceWithIdentityIdentifiers(
 				&testChallengeRepository{},
@@ -64,6 +65,7 @@ func TestRefreshTokenRejectsBlankRefreshToken(
 					MaxRequests: 5,
 				},
 				29*24*time.Hour,
+				WithMetricsRecorder(metricsRecorder),
 			)
 
 			_, err := service.RefreshToken(
@@ -109,6 +111,26 @@ func TestRefreshTokenRejectsBlankRefreshToken(
 				t.Fatalf(
 					"AccessTokenSigner calls = %d, expected 0",
 					accessSigner.calls,
+				)
+			}
+			requireSingleAuthOperationMetric(
+				t,
+				metricsRecorder,
+				AuthMetricOperationRefresh,
+				MetricOutcomeRejected,
+			)
+
+			if len(metricsRecorder.sessionOperations) != 0 {
+				t.Fatalf(
+					"session operation metric count = %d, expected 0",
+					len(metricsRecorder.sessionOperations),
+				)
+			}
+
+			if len(metricsRecorder.securityEvents) != 0 {
+				t.Fatalf(
+					"security event metric count = %d, expected 0",
+					len(metricsRecorder.securityEvents),
 				)
 			}
 		})

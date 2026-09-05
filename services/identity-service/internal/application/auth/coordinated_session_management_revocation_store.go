@@ -11,7 +11,7 @@ import (
 type CoordinatedSessionManagementRevocationStore struct {
 	targetStore           SessionManagementRevocationTargetStore
 	accessRevocationStore SessionAccessRevocationStore
-	persistentStore       AllSessionsPersistentRevocationStore
+	persistentStore       SingleSessionPersistentRevocationStore
 }
 
 var _ SessionManagementRevocationStore = (*CoordinatedSessionManagementRevocationStore)(nil)
@@ -19,7 +19,7 @@ var _ SessionManagementRevocationStore = (*CoordinatedSessionManagementRevocatio
 func NewCoordinatedSessionManagementRevocationStore(
 	targetStore SessionManagementRevocationTargetStore,
 	accessRevocationStore SessionAccessRevocationStore,
-	persistentStore AllSessionsPersistentRevocationStore,
+	persistentStore SingleSessionPersistentRevocationStore,
 ) (*CoordinatedSessionManagementRevocationStore, error) {
 	if targetStore == nil {
 		return nil, errors.New(
@@ -127,12 +127,10 @@ func (s *CoordinatedSessionManagementRevocationStore) RevokeSession(
 		}
 	}
 
-	if err := s.persistentStore.RevokeSessions(
+	if err := s.persistentStore.RevokeSession(
 		ctx,
 		identityID,
-		[]string{
-			sessionID,
-		},
+		sessionID,
 		revokedAt,
 	); err != nil {
 		return fmt.Errorf(

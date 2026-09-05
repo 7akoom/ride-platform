@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -32,6 +33,15 @@ type telnyxSendMessageRequest struct {
 	Text               string `json:"text"`
 	Type               string `json:"type"`
 	MessagingProfileID string `json:"messaging_profile_id,omitempty"`
+}
+
+type telnyxSendMessageResponse struct {
+	Data struct {
+		ID string `json:"id"`
+		To []struct {
+			Status string `json:"status"`
+		} `json:"to"`
+	} `json:"data"`
 }
 
 func NewTelnyxProvider(
@@ -106,23 +116,65 @@ func (p *TelnyxProvider) Send(
 	ctx context.Context,
 	message SMSMessage,
 ) error {
+	_, err := p.send(
+		ctx,
+		message,
+	)
+
+	return err
+}
+
+func (p *TelnyxProvider) SendTracked(
+	ctx context.Context,
+	message SMSMessage,
+) (SMSProviderDeliveryResult, error) {
+	result, err := p.send(
+		ctx,
+		message,
+	)
+	if err != nil {
+		return SMSProviderDeliveryResult{}, err
+	}
+
+	result.ProviderMessageID = strings.TrimSpace(
+		result.ProviderMessageID,
+	)
+	result.ProviderStatus = strings.TrimSpace(
+		result.ProviderStatus,
+	)
+
+	if result.ProviderMessageID == "" {
+		return SMSProviderDeliveryResult{},
+			&SMSProviderError{
+				Provider: "telnyx",
+				Kind:     SMSProviderErrorUnknownDeliveryState,
+			}
+	}
+
+	return result, nil
+}
+
+func (p *TelnyxProvider) send(
+	ctx context.Context,
+	message SMSMessage,
+) (SMSProviderDeliveryResult, error) {
 	recipient := strings.TrimSpace(
 		message.To,
 	)
 	if recipient == "" {
-		return errors.New(
+		return SMSProviderDeliveryResult{}, errors.New(
 			"Telnyx recipient is required",
 		)
 	}
 
 	if recipient[0] != '+' {
-		return errors.New(
+		return SMSProviderDeliveryResult{}, errors.New(
 			"Telnyx recipient must use international E.164 format",
 		)
 	}
 
 	if len(recipient) == 1 {
-		return errors.New(
+		return SMSProviderDeliveryResult{}, errors.New(
 			"Telnyx recipient must contain digits",
 		)
 	}
@@ -130,7 +182,7 @@ func (p *TelnyxProvider) Send(
 	for _, character := range recipient[1:] {
 		if character < '0' ||
 			character > '9' {
-			return errors.New(
+			return SMSProviderDeliveryResult{}, errors.New(
 				"Telnyx recipient must contain only digits after +",
 			)
 		}
@@ -140,7 +192,7 @@ func (p *TelnyxProvider) Send(
 		message.Body,
 	)
 	if body == "" {
-		return errors.New(
+		return SMSProviderDeliveryResult{}, errors.New(
 			"Telnyx message body is required",
 		)
 	}
@@ -155,7 +207,7 @@ func (p *TelnyxProvider) Send(
 		},
 	)
 	if err != nil {
-		return fmt.Errorf(
+		return SMSProviderDeliveryResult{}, fmt.Errorf(
 			"encode Telnyx request: %w",
 			err,
 		)
@@ -168,7 +220,7 @@ func (p *TelnyxProvider) Send(
 		bytes.NewReader(payload),
 	)
 	if err != nil {
-		return fmt.Errorf(
+		return SMSProviderDeliveryResult{}, fmt.Errorf(
 			"create Telnyx request: %w",
 			err,
 		)
@@ -193,18 +245,20 @@ func (p *TelnyxProvider) Send(
 		request,
 	)
 	if err != nil {
-		return &SMSProviderError{
-			Provider: "telnyx",
-			Kind:     SMSProviderErrorUnknownDeliveryState,
-			Err:      err,
-		}
+		return SMSProviderDeliveryResult{},
+			&SMSProviderError{
+				Provider: "telnyx",
+				Kind:     SMSProviderErrorUnknownDeliveryState,
+				Err:      err,
+			}
 	}
 
 	if response == nil {
-		return &SMSProviderError{
-			Provider: "telnyx",
-			Kind:     SMSProviderErrorUnknownDeliveryState,
-		}
+		return SMSProviderDeliveryResult{},
+			&SMSProviderError{
+				Provider: "telnyx",
+				Kind:     SMSProviderErrorUnknownDeliveryState,
+			}
 	}
 
 	if response.Body != nil {
@@ -225,15 +279,51 @@ func (p *TelnyxProvider) Send(
 			kind = SMSProviderErrorTemporary
 		}
 
-		return &SMSProviderError{
-			Provider:   "telnyx",
-			Kind:       kind,
-			StatusCode: response.StatusCode,
+		return SMSProviderDeliveryResult{},
+			&SMSProviderError{
+				Provider:   "telnyx",
+				Kind:       kind,
+				StatusCode: response.StatusCode,
+			}
+	}
+
+	if response.Body == nil {
+		return SMSProviderDeliveryResult{}, nil
+	}
+
+	var responsePayload telnyxSendMessageResponse
+
+	if err := json.NewDecoder(
+		io.LimitReader(
+			response.Body,
+			64*1024,
+		),
+	).Decode(
+		&responsePayload,
+	); err != nil {
+		return SMSProviderDeliveryResult{}, nil
+	}
+
+	providerStatus := ""
+
+	for _, destination := range responsePayload.Data.To {
+		status := strings.TrimSpace(
+			destination.Status,
+		)
+		if status != "" {
+			providerStatus = status
+			break
 		}
 	}
 
-	return nil
+	return SMSProviderDeliveryResult{
+		ProviderMessageID: strings.TrimSpace(
+			responsePayload.Data.ID,
+		),
+		ProviderStatus: providerStatus,
+	}, nil
 }
+
 func containsLetter(
 	value string,
 ) bool {

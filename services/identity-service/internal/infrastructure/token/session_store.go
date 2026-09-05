@@ -220,6 +220,50 @@ func (s *SessionStore) Create(
 		)
 	}
 
+	const lockIdentityQuery = `
+		SELECT status
+		FROM identities
+		WHERE id = $1::uuid
+		FOR UPDATE
+	`
+
+	var identityStatus string
+
+	err = tx.QueryRow(
+		ctx,
+		lockIdentityQuery,
+		input.IdentityID,
+	).Scan(
+		&identityStatus,
+	)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return IssuedSession{},
+			auth.ErrIdentityNotFound
+	}
+
+	if err != nil {
+		return IssuedSession{}, fmt.Errorf(
+			"lock identity for session creation: %w",
+			err,
+		)
+	}
+
+	status, err := auth.ParseIdentityStatus(
+		identityStatus,
+	)
+	if err != nil {
+		return IssuedSession{}, fmt.Errorf(
+			"parse identity status for session creation: %w",
+			err,
+		)
+	}
+
+	if status != auth.IdentityStatusActive {
+		return IssuedSession{},
+			auth.ErrIdentityInactive
+	}
+
 	const sessionQuery = `
 		INSERT INTO auth_sessions (
 			id,

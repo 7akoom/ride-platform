@@ -3,11 +3,13 @@
 package postgres
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func TestIdentifierUnlinkCompletionStoreCompletesAtomically(
@@ -23,6 +25,12 @@ func TestIdentifierUnlinkCompletionStoreCompletesAtomically(
 		t,
 		ctx,
 		pool,
+	)
+
+	cleanupIdentifierUnlinkOutboxEvents(
+		t,
+		pool,
+		identityID,
 	)
 
 	targetIdentifier := auth.Identifier{
@@ -63,12 +71,14 @@ func TestIdentifierUnlinkCompletionStoreCompletesAtomically(
 		verificationIdentifier,
 	)
 
+	verifiedAt := time.Now().UTC()
+
 	err := completionStore.Complete(
 		ctx,
 		auth.IdentifierUnlinkCompletionInput{
 			ChallengeID: challengeID,
 			IdentityID:  identityID,
-			VerifiedAt:  time.Now().UTC(),
+			VerifiedAt:  verifiedAt,
 		},
 	)
 	if err != nil {
@@ -154,6 +164,46 @@ func TestIdentifierUnlinkCompletionStoreCompletesAtomically(
 			operationCount,
 		)
 	}
+
+	assertIdentifierUnlinkedOutboxEvent(
+		t,
+		pool,
+		identityID,
+		targetIdentifier.Type,
+	)
+
+	err = completionStore.Complete(
+		ctx,
+		auth.IdentifierUnlinkCompletionInput{
+			ChallengeID: challengeID,
+			IdentityID:  identityID,
+			VerifiedAt:  verifiedAt.Add(time.Second),
+		},
+	)
+
+	if !errors.Is(
+		err,
+		auth.ErrChallengeUsed,
+	) {
+		t.Fatalf(
+			"second Complete() error = %v, want %v",
+			err,
+			auth.ErrChallengeUsed,
+		)
+	}
+
+	eventCount := countIdentifierUnlinkedOutboxEvents(
+		t,
+		pool,
+		identityID,
+	)
+
+	if eventCount != 1 {
+		t.Fatalf(
+			"identifier unlinked outbox event count after retry = %d, want 1",
+			eventCount,
+		)
+	}
 }
 
 func TestIdentifierUnlinkCompletionStoreRejectsMissingTargetIdentifier(
@@ -169,6 +219,12 @@ func TestIdentifierUnlinkCompletionStoreRejectsMissingTargetIdentifier(
 		t,
 		ctx,
 		pool,
+	)
+
+	cleanupIdentifierUnlinkOutboxEvents(
+		t,
+		pool,
+		identityID,
 	)
 
 	targetIdentifier := auth.Identifier{
@@ -266,6 +322,19 @@ func TestIdentifierUnlinkCompletionStoreRejectsMissingTargetIdentifier(
 			"verification identifier changed after failed completion",
 		)
 	}
+
+	eventCount := countIdentifierUnlinkedOutboxEvents(
+		t,
+		pool,
+		identityID,
+	)
+
+	if eventCount != 0 {
+		t.Fatalf(
+			"identifier unlinked outbox event count = %d, want 0",
+			eventCount,
+		)
+	}
 }
 
 func TestIdentifierUnlinkCompletionStoreRejectsMissingVerificationIdentifier(
@@ -281,6 +350,12 @@ func TestIdentifierUnlinkCompletionStoreRejectsMissingVerificationIdentifier(
 		t,
 		ctx,
 		pool,
+	)
+
+	cleanupIdentifierUnlinkOutboxEvents(
+		t,
+		pool,
+		identityID,
 	)
 
 	targetIdentifier := auth.Identifier{
@@ -378,4 +453,198 @@ func TestIdentifierUnlinkCompletionStoreRejectsMissingVerificationIdentifier(
 		pool,
 		challengeID,
 	)
+
+	eventCount := countIdentifierUnlinkedOutboxEvents(
+		t,
+		pool,
+		identityID,
+	)
+
+	if eventCount != 0 {
+		t.Fatalf(
+			"identifier unlinked outbox event count = %d, want 0",
+			eventCount,
+		)
+	}
+}
+
+func assertIdentifierUnlinkedOutboxEvent(
+	t *testing.T,
+	pool *pgxpool.Pool,
+	identityID string,
+	identifierType auth.IdentifierType,
+) {
+	t.Helper()
+
+	var aggregateType string
+	var aggregateID string
+	var eventType string
+	var schemaVersion int16
+	var payloadIdentityID string
+	var payloadIdentifierType string
+	var published bool
+	var publishAttempts int
+
+	err := pool.QueryRow(
+		context.Background(),
+		`
+			SELECT
+				aggregate_type,
+				aggregate_id::text,
+				event_type,
+				schema_version,
+				payload ->> 'identity_id',
+				payload ->> 'identifier_type',
+				published_at IS NOT NULL,
+				publish_attempts
+			FROM outbox_events
+			WHERE aggregate_type = $1
+			  AND aggregate_id = $2::uuid
+			  AND event_type = $3
+		`,
+		identityOutboxAggregateType,
+		identityID,
+		string(auth.IdentityDomainEventIdentifierUnlinked),
+	).Scan(
+		&aggregateType,
+		&aggregateID,
+		&eventType,
+		&schemaVersion,
+		&payloadIdentityID,
+		&payloadIdentifierType,
+		&published,
+		&publishAttempts,
+	)
+	if err != nil {
+		t.Fatalf(
+			"query identifier unlinked outbox event: %v",
+			err,
+		)
+	}
+
+	if aggregateType != identityOutboxAggregateType {
+		t.Fatalf(
+			"aggregate type = %q, want %q",
+			aggregateType,
+			identityOutboxAggregateType,
+		)
+	}
+
+	if aggregateID != identityID {
+		t.Fatalf(
+			"aggregate ID = %q, want %q",
+			aggregateID,
+			identityID,
+		)
+	}
+
+	if eventType != string(
+		auth.IdentityDomainEventIdentifierUnlinked,
+	) {
+		t.Fatalf(
+			"event type = %q, want %q",
+			eventType,
+			auth.IdentityDomainEventIdentifierUnlinked,
+		)
+	}
+
+	if schemaVersion != auth.IdentityDomainEventSchemaVersion {
+		t.Fatalf(
+			"schema version = %d, want %d",
+			schemaVersion,
+			auth.IdentityDomainEventSchemaVersion,
+		)
+	}
+
+	if payloadIdentityID != identityID {
+		t.Fatalf(
+			"payload identity ID = %q, want %q",
+			payloadIdentityID,
+			identityID,
+		)
+	}
+
+	if payloadIdentifierType != string(identifierType) {
+		t.Fatalf(
+			"payload identifier type = %q, want %q",
+			payloadIdentifierType,
+			identifierType,
+		)
+	}
+
+	if published {
+		t.Fatal(
+			"identifier unlinked outbox event is already published",
+		)
+	}
+
+	if publishAttempts != 0 {
+		t.Fatalf(
+			"publish attempts = %d, want 0",
+			publishAttempts,
+		)
+	}
+}
+
+func countIdentifierUnlinkedOutboxEvents(
+	t *testing.T,
+	pool *pgxpool.Pool,
+	identityID string,
+) int {
+	t.Helper()
+
+	var count int
+
+	err := pool.QueryRow(
+		context.Background(),
+		`
+			SELECT COUNT(*)
+			FROM outbox_events
+			WHERE aggregate_type = $1
+			  AND aggregate_id = $2::uuid
+			  AND event_type = $3
+		`,
+		identityOutboxAggregateType,
+		identityID,
+		string(auth.IdentityDomainEventIdentifierUnlinked),
+	).Scan(
+		&count,
+	)
+	if err != nil {
+		t.Fatalf(
+			"count identifier unlinked outbox events: %v",
+			err,
+		)
+	}
+
+	return count
+}
+
+func cleanupIdentifierUnlinkOutboxEvents(
+	t *testing.T,
+	pool *pgxpool.Pool,
+	identityID string,
+) {
+	t.Helper()
+
+	t.Cleanup(func() {
+		_, err := pool.Exec(
+			context.Background(),
+			`
+				DELETE FROM outbox_events
+				WHERE aggregate_type = $1
+				  AND aggregate_id = $2::uuid
+				  AND event_type = $3
+			`,
+			identityOutboxAggregateType,
+			identityID,
+			string(auth.IdentityDomainEventIdentifierUnlinked),
+		)
+		if err != nil {
+			t.Errorf(
+				"clean identifier unlinked outbox events: %v",
+				err,
+			)
+		}
+	})
 }

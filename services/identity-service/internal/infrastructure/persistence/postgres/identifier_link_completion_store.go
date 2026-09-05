@@ -203,6 +203,7 @@ func (s *IdentifierLinkCompletionStore) Complete(
 	`
 
 	var existingIdentityID string
+	identifierLinked := false
 
 	err = tx.QueryRow(
 		ctx,
@@ -248,6 +249,8 @@ func (s *IdentifierLinkCompletionStore) Complete(
 			)
 		}
 
+		identifierLinked = true
+
 	default:
 		return fmt.Errorf(
 			"query identifier ownership: %w",
@@ -287,6 +290,31 @@ func (s *IdentifierLinkCompletionStore) Complete(
 			"mark identifier link OTP challenge verified: %w",
 			err,
 		)
+	}
+
+	if identifierLinked {
+		event, err := auth.NewIdentityIdentifierLinkedDomainEvent(
+			identityID,
+			identifier.Type,
+			verifiedAt,
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"build identity identifier linked domain event: %w",
+				err,
+			)
+		}
+
+		if err := insertIdentityIdentifierOutboxEventInTransaction(
+			ctx,
+			tx,
+			event,
+		); err != nil {
+			return fmt.Errorf(
+				"persist identity identifier linked domain event: %w",
+				err,
+			)
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {

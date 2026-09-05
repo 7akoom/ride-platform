@@ -19,6 +19,11 @@ func TestRefreshTokenRotationStoreRotatesAndDetectsReuse(
 		"+9647500000050",
 	)
 
+	cleanupIdentityRefreshTokenReuseDetectedOutboxEvents(
+		t,
+		fixture,
+	)
+
 	currentTokenHash := strings.Repeat(
 		"a",
 		64,
@@ -200,10 +205,14 @@ func TestRefreshTokenRotationStoreRotatesAndDetectsReuse(
 		)
 	}
 
+	reuseDetectedAt := rotatedAt.Add(
+		2 * time.Second,
+	)
+
 	_, err = store.Inspect(
 		fixture.ctx,
 		currentTokenHash,
-		rotatedAt.Add(2*time.Second),
+		reuseDetectedAt,
 	)
 
 	if !errors.Is(
@@ -232,4 +241,327 @@ func TestRefreshTokenRotationStoreRotatesAndDetectsReuse(
 			activeRefreshTokenCount,
 		)
 	}
+
+	var storedReuseDetectedAt *time.Time
+
+	err = fixture.pool.QueryRow(
+		fixture.ctx,
+		`
+			SELECT reuse_detected_at
+			FROM refresh_tokens
+			WHERE id = $1::uuid
+		`,
+		currentTokenID,
+	).Scan(
+		&storedReuseDetectedAt,
+	)
+	if err != nil {
+		t.Fatalf(
+			"query refresh token reuse detection marker: %v",
+			err,
+		)
+	}
+
+	if storedReuseDetectedAt == nil {
+		t.Fatal(
+			"refresh token reuse detection marker was not stored",
+		)
+	}
+
+	if !storedReuseDetectedAt.Equal(
+		reuseDetectedAt,
+	) {
+		t.Fatalf(
+			"reuse detected at = %v, want %v",
+			storedReuseDetectedAt,
+			reuseDetectedAt,
+		)
+	}
+
+	assertIdentityRefreshTokenReuseDetectedOutboxEvent(
+		t,
+		fixture,
+		reuseDetectedAt,
+	)
+
+	eventCount :=
+		countIdentityRefreshTokenReuseDetectedOutboxEvents(
+			t,
+			fixture,
+		)
+
+	if eventCount != 1 {
+		t.Fatalf(
+			"refresh token reuse detected outbox event count = %d, want 1",
+			eventCount,
+		)
+	}
+
+	secondReuseDetectedAt := reuseDetectedAt.Add(
+		time.Second,
+	)
+
+	_, err = store.Inspect(
+		fixture.ctx,
+		currentTokenHash,
+		secondReuseDetectedAt,
+	)
+
+	if !errors.Is(
+		err,
+		auth.ErrRefreshTokenReused,
+	) && !errors.Is(
+		err,
+		auth.ErrSessionRevoked,
+	) {
+		t.Fatalf(
+			"repeated reused token returned %v, expected reuse or revoked-session error",
+			err,
+		)
+	}
+
+	eventCount =
+		countIdentityRefreshTokenReuseDetectedOutboxEvents(
+			t,
+			fixture,
+		)
+
+	if eventCount != 1 {
+		t.Fatalf(
+			"refresh token reuse detected outbox event count after repeated reuse = %d, want 1",
+			eventCount,
+		)
+	}
+
+	var reuseDetectedAtAfterRepeat *time.Time
+
+	err = fixture.pool.QueryRow(
+		fixture.ctx,
+		`
+		SELECT reuse_detected_at
+		FROM refresh_tokens
+		WHERE id = $1::uuid
+	`,
+		currentTokenID,
+	).Scan(
+		&reuseDetectedAtAfterRepeat,
+	)
+	if err != nil {
+		t.Fatalf(
+			"query reuse detection marker after repeated reuse: %v",
+			err,
+		)
+	}
+
+	if reuseDetectedAtAfterRepeat == nil {
+		t.Fatal(
+			"refresh token reuse detection marker disappeared",
+		)
+	}
+
+	if !reuseDetectedAtAfterRepeat.Equal(
+		reuseDetectedAt,
+	) {
+		t.Fatalf(
+			"reuse detected at after repeated reuse = %v, want original %v",
+			reuseDetectedAtAfterRepeat,
+			reuseDetectedAt,
+		)
+	}
+}
+
+func assertIdentityRefreshTokenReuseDetectedOutboxEvent(
+	t *testing.T,
+	fixture *refreshTokenRotationIntegrationFixture,
+	occurredAt time.Time,
+) {
+	t.Helper()
+
+	var aggregateType string
+	var aggregateID string
+	var eventType string
+	var schemaVersion int16
+	var payloadIdentityID string
+	var payloadSessionID string
+	var storedOccurredAt time.Time
+	var published bool
+	var publishAttempts int
+
+	err := fixture.pool.QueryRow(
+		fixture.ctx,
+		`
+			SELECT
+				aggregate_type,
+				aggregate_id::text,
+				event_type,
+				schema_version,
+				payload ->> 'identity_id',
+				payload ->> 'session_id',
+				occurred_at,
+				published_at IS NOT NULL,
+				publish_attempts
+			FROM outbox_events
+			WHERE aggregate_type = $1
+			  AND aggregate_id = $2::uuid
+			  AND event_type = $3
+		`,
+		identityOutboxAggregateType,
+		fixture.identityID,
+		string(
+			auth.IdentityDomainEventRefreshTokenReuseDetected,
+		),
+	).Scan(
+		&aggregateType,
+		&aggregateID,
+		&eventType,
+		&schemaVersion,
+		&payloadIdentityID,
+		&payloadSessionID,
+		&storedOccurredAt,
+		&published,
+		&publishAttempts,
+	)
+	if err != nil {
+		t.Fatalf(
+			"query refresh token reuse detected outbox event: %v",
+			err,
+		)
+	}
+
+	if aggregateType != identityOutboxAggregateType {
+		t.Fatalf(
+			"aggregate type = %q, want %q",
+			aggregateType,
+			identityOutboxAggregateType,
+		)
+	}
+
+	if aggregateID != fixture.identityID {
+		t.Fatalf(
+			"aggregate ID = %q, want %q",
+			aggregateID,
+			fixture.identityID,
+		)
+	}
+
+	if eventType != string(
+		auth.IdentityDomainEventRefreshTokenReuseDetected,
+	) {
+		t.Fatalf(
+			"event type = %q, want %q",
+			eventType,
+			auth.IdentityDomainEventRefreshTokenReuseDetected,
+		)
+	}
+
+	if schemaVersion !=
+		auth.IdentityDomainEventSchemaVersion {
+		t.Fatalf(
+			"schema version = %d, want %d",
+			schemaVersion,
+			auth.IdentityDomainEventSchemaVersion,
+		)
+	}
+
+	if payloadIdentityID != fixture.identityID {
+		t.Fatalf(
+			"payload identity ID = %q, want %q",
+			payloadIdentityID,
+			fixture.identityID,
+		)
+	}
+
+	if payloadSessionID != fixture.sessionID {
+		t.Fatalf(
+			"payload session ID = %q, want %q",
+			payloadSessionID,
+			fixture.sessionID,
+		)
+	}
+
+	if !storedOccurredAt.Equal(occurredAt) {
+		t.Fatalf(
+			"occurred at = %v, want %v",
+			storedOccurredAt,
+			occurredAt,
+		)
+	}
+
+	if published {
+		t.Fatal(
+			"refresh token reuse detected outbox event is already published",
+		)
+	}
+
+	if publishAttempts != 0 {
+		t.Fatalf(
+			"publish attempts = %d, want 0",
+			publishAttempts,
+		)
+	}
+}
+
+func countIdentityRefreshTokenReuseDetectedOutboxEvents(
+	t *testing.T,
+	fixture *refreshTokenRotationIntegrationFixture,
+) int {
+	t.Helper()
+
+	var count int
+
+	err := fixture.pool.QueryRow(
+		fixture.ctx,
+		`
+			SELECT COUNT(*)
+			FROM outbox_events
+			WHERE aggregate_type = $1
+			  AND aggregate_id = $2::uuid
+			  AND event_type = $3
+		`,
+		identityOutboxAggregateType,
+		fixture.identityID,
+		string(
+			auth.IdentityDomainEventRefreshTokenReuseDetected,
+		),
+	).Scan(
+		&count,
+	)
+	if err != nil {
+		t.Fatalf(
+			"count refresh token reuse detected outbox events: %v",
+			err,
+		)
+	}
+
+	return count
+}
+
+func cleanupIdentityRefreshTokenReuseDetectedOutboxEvents(
+	t *testing.T,
+	fixture *refreshTokenRotationIntegrationFixture,
+) {
+	t.Helper()
+
+	t.Cleanup(func() {
+		_, err := fixture.pool.Exec(
+			fixture.ctx,
+			`
+				DELETE FROM outbox_events
+				WHERE aggregate_type = $1
+				  AND aggregate_id = $2::uuid
+				  AND event_type = $3
+			`,
+			identityOutboxAggregateType,
+			fixture.identityID,
+			string(
+				auth.IdentityDomainEventRefreshTokenReuseDetected,
+			),
+		)
+		if err != nil {
+			t.Errorf(
+				"clean refresh token reuse detected outbox events: %v",
+				err,
+			)
+		}
+	})
 }

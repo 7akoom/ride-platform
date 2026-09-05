@@ -18,6 +18,7 @@ func TestRequestOTPStopsBeforeGeneratingOTPWhenRateLimited(
 		err: ErrOTPRequestRateLimited,
 	}
 	challengeIDGenerator := &testChallengeIDGenerator{}
+	metricsRecorder := &testMetricsRecorder{}
 
 	service := NewServiceWithIdentityIdentifiers(
 		challengeRepository,
@@ -59,6 +60,7 @@ func TestRequestOTPStopsBeforeGeneratingOTPWhenRateLimited(
 			MaxRequests: 5,
 		},
 		29*24*time.Hour,
+		WithMetricsRecorder(metricsRecorder),
 	)
 
 	_, err := service.RequestOTP(
@@ -116,6 +118,55 @@ func TestRequestOTPStopsBeforeGeneratingOTPWhenRateLimited(
 			"OTP delivery was called after request was rate limited",
 		)
 	}
+
+	if len(metricsRecorder.otpRequests) != 1 {
+		t.Fatalf(
+			"OTP request metric count = %d, expected 1",
+			len(metricsRecorder.otpRequests),
+		)
+	}
+
+	requestMetric := metricsRecorder.otpRequests[0]
+
+	if requestMetric.purpose != OTPPurposeLogin {
+		t.Fatalf(
+			"OTP request metric purpose = %q, expected %q",
+			requestMetric.purpose,
+			OTPPurposeLogin,
+		)
+	}
+
+	if requestMetric.channel != OTPDeliveryChannelAuto {
+		t.Fatalf(
+			"OTP request metric channel = %q, expected %q",
+			requestMetric.channel,
+			OTPDeliveryChannelAuto,
+		)
+	}
+
+	if requestMetric.outcome != MetricOutcomeRejected {
+		t.Fatalf(
+			"OTP request metric outcome = %q, expected %q",
+			requestMetric.outcome,
+			MetricOutcomeRejected,
+		)
+	}
+
+	if len(metricsRecorder.securityEvents) != 1 {
+		t.Fatalf(
+			"security event metric count = %d, expected 1",
+			len(metricsRecorder.securityEvents),
+		)
+	}
+
+	if metricsRecorder.securityEvents[0] !=
+		SecurityMetricEventOTPRateLimited {
+		t.Fatalf(
+			"security event = %q, expected %q",
+			metricsRecorder.securityEvents[0],
+			SecurityMetricEventOTPRateLimited,
+		)
+	}
 }
 
 func TestRequestOTPContinuesWhenRateLimiterAllows(
@@ -127,6 +178,7 @@ func TestRequestOTPContinuesWhenRateLimiterAllows(
 	otpDelivery := &testOTPDelivery{}
 	rateLimiter := &testOTPRequestRateLimiter{}
 	challengeIDGenerator := &testChallengeIDGenerator{}
+	metricsRecorder := &testMetricsRecorder{}
 
 	fixedTime := time.Date(
 		2026,
@@ -170,6 +222,7 @@ func TestRequestOTPContinuesWhenRateLimiterAllows(
 			MaxRequests: 5,
 		},
 		29*24*time.Hour,
+		WithMetricsRecorder(metricsRecorder),
 	)
 
 	result, err := service.RequestOTP(
@@ -255,4 +308,144 @@ func TestRequestOTPContinuesWhenRateLimiterAllows(
 			result.ExpiresInSeconds,
 		)
 	}
+
+	if len(metricsRecorder.otpRequests) != 1 {
+		t.Fatalf(
+			"OTP request metric count = %d, expected 1",
+			len(metricsRecorder.otpRequests),
+		)
+	}
+
+	requestMetric := metricsRecorder.otpRequests[0]
+
+	if requestMetric.purpose != OTPPurposeLogin {
+		t.Fatalf(
+			"OTP request metric purpose = %q, expected %q",
+			requestMetric.purpose,
+			OTPPurposeLogin,
+		)
+	}
+
+	if requestMetric.channel != OTPDeliveryChannelAuto {
+		t.Fatalf(
+			"OTP request metric channel = %q, expected %q",
+			requestMetric.channel,
+			OTPDeliveryChannelAuto,
+		)
+	}
+
+	if requestMetric.outcome != MetricOutcomeSuccess {
+		t.Fatalf(
+			"OTP request metric outcome = %q, expected %q",
+			requestMetric.outcome,
+			MetricOutcomeSuccess,
+		)
+	}
+
+	if len(metricsRecorder.securityEvents) != 0 {
+		t.Fatalf(
+			"security event metric count = %d, expected 0",
+			len(metricsRecorder.securityEvents),
+		)
+	}
+}
+
+type testOTPRequestMetric struct {
+	purpose OTPPurpose
+	channel OTPDeliveryChannel
+	outcome MetricOutcome
+}
+
+type testOTPVerificationMetric struct {
+	purpose OTPPurpose
+	outcome MetricOutcome
+}
+
+type testAuthOperationMetric struct {
+	operation AuthMetricOperation
+	outcome   MetricOutcome
+	duration  time.Duration
+}
+
+type testSessionOperationMetric struct {
+	operation SessionMetricOperation
+	outcome   MetricOutcome
+}
+
+type testMetricsRecorder struct {
+	authOperations    []testAuthOperationMetric
+	otpRequests       []testOTPRequestMetric
+	otpVerifications  []testOTPVerificationMetric
+	sessionOperations []testSessionOperationMetric
+	securityEvents    []SecurityMetricEvent
+}
+
+func (r *testMetricsRecorder) RecordAuthOperation(
+	_ context.Context,
+	operation AuthMetricOperation,
+	outcome MetricOutcome,
+	duration time.Duration,
+) {
+	r.authOperations = append(
+		r.authOperations,
+		testAuthOperationMetric{
+			operation: operation,
+			outcome:   outcome,
+			duration:  duration,
+		},
+	)
+}
+
+func (r *testMetricsRecorder) RecordOTPRequest(
+	_ context.Context,
+	purpose OTPPurpose,
+	channel OTPDeliveryChannel,
+	outcome MetricOutcome,
+) {
+	r.otpRequests = append(
+		r.otpRequests,
+		testOTPRequestMetric{
+			purpose: purpose,
+			channel: channel,
+			outcome: outcome,
+		},
+	)
+}
+
+func (r *testMetricsRecorder) RecordOTPVerification(
+	_ context.Context,
+	purpose OTPPurpose,
+	outcome MetricOutcome,
+) {
+	r.otpVerifications = append(
+		r.otpVerifications,
+		testOTPVerificationMetric{
+			purpose: purpose,
+			outcome: outcome,
+		},
+	)
+}
+
+func (r *testMetricsRecorder) RecordSessionOperation(
+	_ context.Context,
+	operation SessionMetricOperation,
+	outcome MetricOutcome,
+) {
+	r.sessionOperations = append(
+		r.sessionOperations,
+		testSessionOperationMetric{
+			operation: operation,
+			outcome:   outcome,
+		},
+	)
+}
+
+func (r *testMetricsRecorder) RecordSecurityEvent(
+	_ context.Context,
+	event SecurityMetricEvent,
+) {
+	r.securityEvents = append(
+		r.securityEvents,
+		event,
+	)
 }

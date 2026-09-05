@@ -80,6 +80,12 @@ func (h *IdentityHandler) RequestIdentifierLinkOTP(
 		)
 	}
 
+	sourceIPAddress := ""
+
+	if source, ok := requestSourceFromContext(ctx); ok {
+		sourceIPAddress = source.IPAddress
+	}
+
 	targetIdentityID := principal.IdentityID
 
 	result, err := h.authService.RequestOTP(
@@ -91,6 +97,7 @@ func (h *IdentityHandler) RequestIdentifierLinkOTP(
 			TenantHint:       principal.TenantHint,
 			Channel:          deliveryChannel,
 			Locale:           requestLocaleFromIncomingContext(ctx),
+			SourceIPAddress:  sourceIPAddress,
 		},
 	)
 	if err != nil {

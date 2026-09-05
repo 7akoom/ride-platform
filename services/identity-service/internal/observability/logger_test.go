@@ -32,6 +32,34 @@ func TestRedactSensitiveAttributeRedactsSensitiveValues(
 			name: "mixed case and surrounding spaces",
 			key:  " Refresh_Token ",
 		},
+		{
+			name: "provider API key",
+			key:  "telnyx_api_key",
+		},
+		{
+			name: "provider access token",
+			key:  "meta_whatsapp_access_token",
+		},
+		{
+			name: "camel case access token",
+			key:  "accessToken",
+		},
+		{
+			name: "camel case refresh token",
+			key:  "refreshToken",
+		},
+		{
+			name: "bearer token",
+			key:  "bearer_token",
+		},
+		{
+			name: "authorization header",
+			key:  "authorization_header",
+		},
+		{
+			name: "hyphenated API key header",
+			key:  "x-api-key",
+		},
 	}
 
 	for _, tt := range tests {

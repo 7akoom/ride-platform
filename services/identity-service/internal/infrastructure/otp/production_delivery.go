@@ -119,6 +119,7 @@ func (d *ProductionDelivery) Send(
 		case auth.IdentifierTypePhone:
 			return d.sendSMS(
 				ctx,
+				input.ChallengeID,
 				identifier.Value,
 				code,
 				purpose,
@@ -148,6 +149,7 @@ func (d *ProductionDelivery) Send(
 
 		return d.sendSMS(
 			ctx,
+			input.ChallengeID,
 			identifier.Value,
 			code,
 			purpose,
@@ -164,6 +166,7 @@ func (d *ProductionDelivery) Send(
 
 		return d.sendWhatsApp(
 			ctx,
+			input.ChallengeID,
 			identifier.Value,
 			code,
 			purpose,
@@ -193,11 +196,32 @@ func (d *ProductionDelivery) Send(
 
 func (d *ProductionDelivery) sendSMS(
 	ctx context.Context,
+	challengeID string,
 	phoneNumber string,
 	code string,
 	purpose auth.OTPPurpose,
 	locale string,
 ) error {
+	if challengeAwareSender, ok :=
+		d.smsSender.(ChallengeAwareSMSSender); ok &&
+		strings.TrimSpace(challengeID) != "" {
+		if err := challengeAwareSender.SendForChallenge(
+			ctx,
+			challengeID,
+			phoneNumber,
+			code,
+			purpose,
+			locale,
+		); err != nil {
+			return fmt.Errorf(
+				"send OTP by SMS: %w",
+				err,
+			)
+		}
+
+		return nil
+	}
+
 	if err := d.smsSender.Send(
 		ctx,
 		phoneNumber,
@@ -216,6 +240,7 @@ func (d *ProductionDelivery) sendSMS(
 
 func (d *ProductionDelivery) sendWhatsApp(
 	ctx context.Context,
+	challengeID string,
 	phoneNumber string,
 	code string,
 	purpose auth.OTPPurpose,
@@ -226,6 +251,26 @@ func (d *ProductionDelivery) sendWhatsApp(
 			"%w: WhatsApp sender is not configured",
 			auth.ErrOTPDeliveryChannelUnavailable,
 		)
+	}
+
+	if challengeAwareSender, ok :=
+		d.whatsAppSender.(ChallengeAwareWhatsAppSender); ok &&
+		strings.TrimSpace(challengeID) != "" {
+		if err := challengeAwareSender.SendForChallenge(
+			ctx,
+			challengeID,
+			phoneNumber,
+			code,
+			purpose,
+			locale,
+		); err != nil {
+			return fmt.Errorf(
+				"send OTP by WhatsApp: %w",
+				err,
+			)
+		}
+
+		return nil
 	}
 
 	if err := d.whatsAppSender.Send(

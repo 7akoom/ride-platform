@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,7 +15,47 @@ import (
 
 func buildProductionOTPDelivery(
 	cfg config.Config,
+	metricsRecorders ...otp.DeliveryMetricsRecorder,
 ) (auth.OTPDelivery, error) {
+	return buildProductionOTPDeliveryWithTracking(
+		cfg,
+		nil,
+		metricsRecorders...,
+	)
+}
+
+func buildProductionOTPDeliveryWithTracking(
+	cfg config.Config,
+	trackingStore otp.DeliveryTrackingStore,
+	metricsRecorders ...otp.DeliveryMetricsRecorder,
+) (auth.OTPDelivery, error) {
+	var metricsRecorder otp.DeliveryMetricsRecorder
+
+	switch len(metricsRecorders) {
+	case 0:
+	case 1:
+		if metricsRecorders[0] == nil {
+			return nil, errors.New(
+				"OTP delivery metrics recorder cannot be nil",
+			)
+		}
+
+		metricsRecorder = metricsRecorders[0]
+
+	default:
+		return nil, errors.New(
+			"only one OTP delivery metrics recorder is supported",
+		)
+	}
+
+	var providerHealthMetricsRecorder otp.ProviderHealthMetricsRecorder
+
+	if metricsRecorder != nil {
+		if recorder, ok := metricsRecorder.(otp.ProviderHealthMetricsRecorder); ok {
+			providerHealthMetricsRecorder = recorder
+		}
+	}
+
 	httpTimeout, err := time.ParseDuration(
 		strings.TrimSpace(
 			cfg.OTPProviderHTTPTimeout,
@@ -63,6 +104,35 @@ func buildProductionOTPDelivery(
 		)
 	}
 
+	fallbackSMSProviderName := normalizeProviderName(
+		cfg.SMSFallbackProvider,
+	)
+
+	var fallbackSMSProvider otp.SMSProvider
+
+	if fallbackSMSProviderName != "" {
+		fallbackSMSProvider, err =
+			buildSMSProvider(
+				fallbackSMSProviderName,
+				httpClient,
+				cfg,
+			)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"configure SMS fallback provider: %w",
+				err,
+			)
+		}
+	}
+
+	smsHealthTracker, err :=
+		buildSMSProviderHealthTracker(
+			cfg,
+		)
+	if err != nil {
+		return nil, err
+	}
+
 	smsRoutes, err := buildSMSRoutes(
 		cfg.SMSRoutes,
 		httpClient,
@@ -75,9 +145,62 @@ func buildProductionOTPDelivery(
 		)
 	}
 
+	smsRouterOptions := make(
+		[]otp.SMSRouterOption,
+		0,
+		5,
+	)
+
+	if metricsRecorder != nil {
+		smsRouterOptions = append(
+			smsRouterOptions,
+			otp.WithSMSDeliveryMetricsRecorder(
+				metricsRecorder,
+			),
+		)
+	}
+
+	if providerHealthMetricsRecorder != nil {
+		smsRouterOptions = append(
+			smsRouterOptions,
+			otp.WithSMSProviderHealthMetricsRecorder(
+				providerHealthMetricsRecorder,
+			),
+		)
+	}
+
+	if trackingStore != nil {
+		smsRouterOptions = append(
+			smsRouterOptions,
+			otp.WithSMSDeliveryTrackingStore(
+				trackingStore,
+			),
+		)
+	}
+
+	smsRouterOptions = append(
+		smsRouterOptions,
+		otp.WithSMSProviderHealthTracker(
+			smsHealthTracker,
+		),
+	)
+
+	if fallbackSMSProvider != nil {
+		smsRouterOptions = append(
+			smsRouterOptions,
+			otp.WithSMSFallbackProvider(
+				fallbackSMSProviderName,
+				fallbackSMSProvider,
+				otp.ConservativeProviderFailoverPolicy{},
+			),
+		)
+	}
+
 	smsRouter, err := otp.NewSMSRouter(
 		smsRoutes,
+		defaultSMSProviderName,
 		defaultSMSProvider,
+		smsRouterOptions...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -98,10 +221,24 @@ func buildProductionOTPDelivery(
 		)
 	}
 
-	whatsAppSender, err := buildWhatsAppSender(
-		httpClient,
-		cfg,
-	)
+	var whatsAppSender otp.WhatsAppSender
+
+	if metricsRecorder == nil {
+		whatsAppSender, err =
+			buildWhatsAppSenderWithTracking(
+				httpClient,
+				cfg,
+				trackingStore,
+			)
+	} else {
+		whatsAppSender, err =
+			buildWhatsAppSenderWithTracking(
+				httpClient,
+				cfg,
+				trackingStore,
+				metricsRecorder,
+			)
+	}
 	if err != nil {
 		return nil, fmt.Errorf(
 			"configure WhatsApp sender: %w",
@@ -122,9 +259,11 @@ func buildProductionOTPDelivery(
 
 	var emailProvider otp.EmailProvider
 
-	switch normalizeProviderName(
+	emailProviderName := normalizeProviderName(
 		cfg.EmailProvider,
-	) {
+	)
+
+	switch emailProviderName {
 	case "resend":
 		emailProvider, err =
 			otp.NewResendProvider(
@@ -149,10 +288,28 @@ func buildProductionOTPDelivery(
 		)
 	}
 
+	emailSenderOptions := []otp.ProviderEmailSenderOption{
+		otp.WithEmailProviderName(
+			otp.DeliveryMetricProvider(
+				emailProviderName,
+			),
+		),
+	}
+
+	if metricsRecorder != nil {
+		emailSenderOptions = append(
+			emailSenderOptions,
+			otp.WithEmailDeliveryMetricsRecorder(
+				metricsRecorder,
+			),
+		)
+	}
+
 	emailSender, err :=
 		otp.NewProviderEmailSender(
 			emailProvider,
 			emailRenderer,
+			emailSenderOptions...,
 		)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -251,8 +408,9 @@ func buildSMSRoutes(
 		routes = append(
 			routes,
 			otp.SMSRoute{
-				PhonePrefix: prefix,
-				Provider:    provider,
+				PhonePrefix:  prefix,
+				ProviderName: providerName,
+				Provider:     provider,
 			},
 		)
 	}
@@ -281,9 +439,10 @@ func buildSMSProvider(
 		return otp.NewBulkSMSIraqProvider(
 			httpClient,
 			otp.BulkSMSIraqProviderConfig{
-				Endpoint: cfg.BulkSMSIraqEndpoint,
-				APIKey:   cfg.BulkSMSIraqAPIKey,
-				SenderID: cfg.BulkSMSIraqSenderID,
+				Endpoint:    cfg.BulkSMSIraqEndpoint,
+				OTPEndpoint: cfg.BulkSMSIraqOTPEndpoint,
+				APIKey:      cfg.BulkSMSIraqAPIKey,
+				SenderID:    cfg.BulkSMSIraqSenderID,
 			},
 		)
 
@@ -298,7 +457,49 @@ func buildSMSProvider(
 func buildWhatsAppSender(
 	httpClient otp.HTTPDoer,
 	cfg config.Config,
+	metricsRecorders ...otp.DeliveryMetricsRecorder,
 ) (otp.WhatsAppSender, error) {
+	return buildWhatsAppSenderWithTracking(
+		httpClient,
+		cfg,
+		nil,
+		metricsRecorders...,
+	)
+}
+
+func buildWhatsAppSenderWithTracking(
+	httpClient otp.HTTPDoer,
+	cfg config.Config,
+	trackingStore otp.DeliveryTrackingStore,
+	metricsRecorders ...otp.DeliveryMetricsRecorder,
+) (otp.WhatsAppSender, error) {
+	var metricsRecorder otp.DeliveryMetricsRecorder
+
+	switch len(metricsRecorders) {
+	case 0:
+	case 1:
+		if metricsRecorders[0] == nil {
+			return nil, errors.New(
+				"WhatsApp delivery metrics recorder cannot be nil",
+			)
+		}
+
+		metricsRecorder = metricsRecorders[0]
+
+	default:
+		return nil, errors.New(
+			"only one WhatsApp delivery metrics recorder is supported",
+		)
+	}
+
+	var providerHealthMetricsRecorder otp.ProviderHealthMetricsRecorder
+
+	if metricsRecorder != nil {
+		if recorder, ok := metricsRecorder.(otp.ProviderHealthMetricsRecorder); ok {
+			providerHealthMetricsRecorder = recorder
+		}
+	}
+
 	defaultProviderName := normalizeProviderName(
 		cfg.WhatsAppDefaultProvider,
 	)
@@ -337,9 +538,103 @@ func buildWhatsAppSender(
 		}
 	}
 
+	fallbackProviderName := normalizeProviderName(
+		cfg.WhatsAppFallbackProvider,
+	)
+
+	var fallbackProvider otp.WhatsAppProvider
+
+	if fallbackProviderName != "" {
+		fallbackProvider, err =
+			buildWhatsAppProvider(
+				fallbackProviderName,
+				httpClient,
+				cfg,
+			)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"configure WhatsApp fallback provider: %w",
+				err,
+			)
+		}
+	}
+
+	healthTracker, err :=
+		buildWhatsAppProviderHealthTracker(
+			cfg,
+		)
+	if err != nil {
+		return nil, err
+	}
+
+	routerOptions := make(
+		[]otp.WhatsAppRouterOption,
+		0,
+		6,
+	)
+
+	if defaultProviderName != "" {
+		routerOptions = append(
+			routerOptions,
+			otp.WithWhatsAppRouterDefaultProviderName(
+				otp.DeliveryMetricProvider(
+					defaultProviderName,
+				),
+			),
+		)
+	}
+
+	if metricsRecorder != nil {
+		routerOptions = append(
+			routerOptions,
+			otp.WithWhatsAppRouterDeliveryMetricsRecorder(
+				metricsRecorder,
+			),
+		)
+	}
+
+	if providerHealthMetricsRecorder != nil {
+		routerOptions = append(
+			routerOptions,
+			otp.WithWhatsAppProviderHealthMetricsRecorder(
+				providerHealthMetricsRecorder,
+			),
+		)
+	}
+
+	if trackingStore != nil {
+		routerOptions = append(
+			routerOptions,
+			otp.WithWhatsAppDeliveryTrackingStore(
+				trackingStore,
+			),
+		)
+	}
+
+	routerOptions = append(
+		routerOptions,
+		otp.WithWhatsAppProviderHealthTracker(
+			healthTracker,
+		),
+	)
+
+	if fallbackProvider != nil {
+		routerOptions = append(
+			routerOptions,
+			otp.WithWhatsAppFallbackProvider(
+				otp.DeliveryMetricProvider(
+					fallbackProviderName,
+				),
+				fallbackProvider,
+				otp.ConservativeProviderFailoverPolicy{},
+			),
+		)
+	}
+
 	router, err := otp.NewWhatsAppRouter(
 		routes,
 		defaultProvider,
+		routerOptions...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -438,7 +733,10 @@ func buildWhatsAppRoutes(
 			routes,
 			otp.WhatsAppRoute{
 				PhonePrefix: prefix,
-				Provider:    provider,
+				ProviderName: otp.DeliveryMetricProvider(
+					providerName,
+				),
+				Provider: provider,
 			},
 		)
 	}
@@ -452,6 +750,17 @@ func buildWhatsAppProvider(
 	cfg config.Config,
 ) (otp.WhatsAppProvider, error) {
 	switch normalizeProviderName(name) {
+	case "bulksmsiraq":
+		return otp.NewBulkSMSIraqProvider(
+			httpClient,
+			otp.BulkSMSIraqProviderConfig{
+				Endpoint:    cfg.BulkSMSIraqEndpoint,
+				OTPEndpoint: cfg.BulkSMSIraqOTPEndpoint,
+				APIKey:      cfg.BulkSMSIraqAPIKey,
+				SenderID:    cfg.BulkSMSIraqSenderID,
+			},
+		)
+
 	case "meta":
 		templates := map[string]otp.MetaWhatsAppTemplate{
 			"en": {
@@ -541,4 +850,106 @@ func isValidSMSRoutePrefix(
 	}
 
 	return true
+}
+func buildSMSProviderHealthTracker(
+	cfg config.Config,
+) (otp.ProviderHealthTracker, error) {
+	failureThresholdValue := strings.TrimSpace(
+		cfg.SMSProviderHealthFailureThreshold,
+	)
+
+	if failureThresholdValue == "" {
+		failureThresholdValue = "3"
+	}
+
+	failureThreshold, err := strconv.Atoi(
+		failureThresholdValue,
+	)
+	if err != nil || failureThreshold <= 0 {
+		return nil, errors.New(
+			"SMS provider health failure threshold must be a positive integer",
+		)
+	}
+
+	cooldownValue := strings.TrimSpace(
+		cfg.SMSProviderHealthCooldown,
+	)
+
+	if cooldownValue == "" {
+		cooldownValue = "60s"
+	}
+
+	cooldown, err := time.ParseDuration(
+		cooldownValue,
+	)
+	if err != nil || cooldown <= 0 {
+		return nil, errors.New(
+			"SMS provider health cooldown must be a positive duration",
+		)
+	}
+
+	tracker, err :=
+		otp.NewCircuitBreakerProviderHealthTracker(
+			failureThreshold,
+			cooldown,
+		)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"configure SMS provider health tracker: %w",
+			err,
+		)
+	}
+
+	return tracker, nil
+}
+func buildWhatsAppProviderHealthTracker(
+	cfg config.Config,
+) (otp.ProviderHealthTracker, error) {
+	failureThresholdValue := strings.TrimSpace(
+		cfg.WhatsAppProviderHealthFailureThreshold,
+	)
+
+	if failureThresholdValue == "" {
+		failureThresholdValue = "3"
+	}
+
+	failureThreshold, err := strconv.Atoi(
+		failureThresholdValue,
+	)
+	if err != nil || failureThreshold <= 0 {
+		return nil, errors.New(
+			"WhatsApp provider health failure threshold must be a positive integer",
+		)
+	}
+
+	cooldownValue := strings.TrimSpace(
+		cfg.WhatsAppProviderHealthCooldown,
+	)
+
+	if cooldownValue == "" {
+		cooldownValue = "60s"
+	}
+
+	cooldown, err := time.ParseDuration(
+		cooldownValue,
+	)
+	if err != nil || cooldown <= 0 {
+		return nil, errors.New(
+			"WhatsApp provider health cooldown must be a positive duration",
+		)
+	}
+
+	tracker, err :=
+		otp.NewCircuitBreakerProviderHealthTracker(
+			failureThreshold,
+			cooldown,
+		)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"configure WhatsApp provider health tracker: %w",
+			err,
+		)
+	}
+
+	return tracker, nil
 }

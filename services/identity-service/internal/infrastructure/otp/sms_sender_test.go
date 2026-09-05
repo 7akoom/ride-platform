@@ -103,8 +103,10 @@ func TestProviderSMSSenderRendersAndSendsMessage(
 	}
 
 	expectedMessage := SMSMessage{
-		To:   "+9647501234567",
-		Body: "Your verification code is 123456",
+		To:     "+9647501234567",
+		Body:   "Your verification code is 123456",
+		Code:   "123456",
+		Locale: "ar",
 	}
 
 	if provider.message != expectedMessage {

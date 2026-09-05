@@ -233,6 +233,7 @@ func (s *service) RequestIdentifierUnlinkOTP(
 			Identifier:       verificationIdentifier,
 			Purpose:          OTPPurposeUnlinkIdentifier,
 			TargetIdentityID: &targetIdentityID,
+			SourceIPAddress:  strings.TrimSpace(input.SourceIPAddress),
 		},
 		now,
 		s.otpRequestRateLimitPolicy,
@@ -333,11 +334,12 @@ func (s *service) RequestIdentifierUnlinkOTP(
 	if deliveryErr := s.otpDelivery.Send(
 		ctx,
 		OTPDeliveryInput{
-			Identifier: verificationIdentifier,
-			Code:       code,
-			Purpose:    OTPPurposeUnlinkIdentifier,
-			Channel:    channel,
-			Locale:     input.Locale,
+			ChallengeID: challenge.ID,
+			Identifier:  verificationIdentifier,
+			Code:        code,
+			Purpose:     OTPPurposeUnlinkIdentifier,
+			Channel:     channel,
+			Locale:      input.Locale,
 		},
 	); deliveryErr != nil {
 		cancelledAt := s.clock.Now()

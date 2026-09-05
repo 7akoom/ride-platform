@@ -36,6 +36,12 @@ func TestIdentityIdentifierRepositoryCreatesAndFindsIdentityByPhone(
 		)
 	}
 
+	cleanupIdentityCreatedOutboxEvents(
+		t,
+		fixture,
+		identity.ID,
+	)
+
 	if identity.ID == "" {
 		t.Fatal("created identity has an empty ID")
 	}
@@ -43,6 +49,12 @@ func TestIdentityIdentifierRepositoryCreatesAndFindsIdentityByPhone(
 	if !identity.IsActive {
 		t.Fatal("new identity is not active")
 	}
+
+	assertIdentityCreatedOutboxEvent(
+		t,
+		fixture,
+		identity.ID,
+	)
 
 	foundIdentity, found, err :=
 		fixture.repository.FindIdentityByIdentifier(
@@ -100,6 +112,12 @@ func TestIdentityIdentifierRepositoryCreatesEmailOnlyIdentity(
 			err,
 		)
 	}
+
+	cleanupIdentityCreatedOutboxEvents(
+		t,
+		fixture,
+		identity.ID,
+	)
 
 	if identity.ID == "" {
 		t.Fatal("created identity has an empty ID")
@@ -165,6 +183,12 @@ func TestIdentityIdentifierRepositoryCreateIsIdempotentForSameIdentifier(
 		)
 	}
 
+	cleanupIdentityCreatedOutboxEvents(
+		t,
+		fixture,
+		firstIdentity.ID,
+	)
+
 	secondIdentity, err :=
 		fixture.repository.CreateIdentityWithIdentifier(
 			fixture.ctx,
@@ -215,4 +239,178 @@ func TestIdentityIdentifierRepositoryCreateIsIdempotentForSameIdentifier(
 			count,
 		)
 	}
+
+	var eventCount int
+
+	if err := fixture.pool.QueryRow(
+		fixture.ctx,
+		`
+			SELECT COUNT(*)
+			FROM outbox_events
+			WHERE aggregate_type = $1
+			  AND aggregate_id = $2::uuid
+			  AND event_type = $3
+		`,
+		identityOutboxAggregateType,
+		firstIdentity.ID,
+		string(auth.IdentityDomainEventCreated),
+	).Scan(
+		&eventCount,
+	); err != nil {
+		t.Fatalf(
+			"count identity created outbox events: %v",
+			err,
+		)
+	}
+
+	if eventCount != 1 {
+		t.Fatalf(
+			"identity created outbox event count = %d, want 1",
+			eventCount,
+		)
+	}
+}
+
+func assertIdentityCreatedOutboxEvent(
+	t *testing.T,
+	fixture *identityIdentifierRepositoryIntegrationFixture,
+	identityID string,
+) {
+	t.Helper()
+
+	var aggregateType string
+	var aggregateID string
+	var eventType string
+	var schemaVersion int16
+	var payloadIdentityID string
+	var payloadStatus string
+	var published bool
+	var publishAttempts int
+
+	err := fixture.pool.QueryRow(
+		fixture.ctx,
+		`
+			SELECT
+				aggregate_type,
+				aggregate_id::text,
+				event_type,
+				schema_version,
+				payload ->> 'identity_id',
+				payload ->> 'status',
+				published_at IS NOT NULL,
+				publish_attempts
+			FROM outbox_events
+			WHERE aggregate_type = $1
+			  AND aggregate_id = $2::uuid
+			  AND event_type = $3
+		`,
+		identityOutboxAggregateType,
+		identityID,
+		string(auth.IdentityDomainEventCreated),
+	).Scan(
+		&aggregateType,
+		&aggregateID,
+		&eventType,
+		&schemaVersion,
+		&payloadIdentityID,
+		&payloadStatus,
+		&published,
+		&publishAttempts,
+	)
+	if err != nil {
+		t.Fatalf(
+			"query identity created outbox event: %v",
+			err,
+		)
+	}
+
+	if aggregateType != identityOutboxAggregateType {
+		t.Fatalf(
+			"aggregate type = %q, want %q",
+			aggregateType,
+			identityOutboxAggregateType,
+		)
+	}
+
+	if aggregateID != identityID {
+		t.Fatalf(
+			"aggregate ID = %q, want %q",
+			aggregateID,
+			identityID,
+		)
+	}
+
+	if eventType != string(auth.IdentityDomainEventCreated) {
+		t.Fatalf(
+			"event type = %q, want %q",
+			eventType,
+			auth.IdentityDomainEventCreated,
+		)
+	}
+
+	if schemaVersion != auth.IdentityDomainEventSchemaVersion {
+		t.Fatalf(
+			"schema version = %d, want %d",
+			schemaVersion,
+			auth.IdentityDomainEventSchemaVersion,
+		)
+	}
+
+	if payloadIdentityID != identityID {
+		t.Fatalf(
+			"payload identity ID = %q, want %q",
+			payloadIdentityID,
+			identityID,
+		)
+	}
+
+	if payloadStatus != string(auth.IdentityStatusActive) {
+		t.Fatalf(
+			"payload status = %q, want %q",
+			payloadStatus,
+			auth.IdentityStatusActive,
+		)
+	}
+
+	if published {
+		t.Fatal(
+			"identity created outbox event is already published",
+		)
+	}
+
+	if publishAttempts != 0 {
+		t.Fatalf(
+			"publish attempts = %d, want 0",
+			publishAttempts,
+		)
+	}
+}
+
+func cleanupIdentityCreatedOutboxEvents(
+	t *testing.T,
+	fixture *identityIdentifierRepositoryIntegrationFixture,
+	identityID string,
+) {
+	t.Helper()
+
+	t.Cleanup(func() {
+		_, err := fixture.pool.Exec(
+			fixture.ctx,
+			`
+				DELETE FROM outbox_events
+				WHERE aggregate_type = $1
+				  AND aggregate_id = $2::uuid
+				  AND event_type = $3
+			`,
+			identityOutboxAggregateType,
+			identityID,
+			string(auth.IdentityDomainEventCreated),
+		)
+		if err != nil {
+			t.Errorf(
+				"clean identity created outbox events: %v",
+				err,
+			)
+		}
+	})
 }

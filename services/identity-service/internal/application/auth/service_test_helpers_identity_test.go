@@ -138,3 +138,25 @@ func (s *testIdentifierUnlinkCompletionStore) Complete(
 
 	return s.err
 }
+
+type testIdentityLifecycleStore struct {
+	calls  int
+	input  IdentityLifecycleTransition
+	result IdentityLifecycleTransitionResult
+	found  bool
+	err    error
+}
+
+func (s *testIdentityLifecycleStore) Transition(
+	ctx context.Context,
+	input IdentityLifecycleTransition,
+) (IdentityLifecycleTransitionResult, bool, error) {
+	s.calls++
+	s.input = input
+
+	if s.err != nil {
+		return IdentityLifecycleTransitionResult{}, false, s.err
+	}
+
+	return s.result, s.found, nil
+}

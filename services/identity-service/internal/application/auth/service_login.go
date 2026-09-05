@@ -85,6 +85,20 @@ func (s *service) issueLoginTokensWithSessionMetadata(
 			ErrIdentityInactive
 	}
 
+	recordSessionOutcome := func(
+		outcome MetricOutcome,
+	) {
+		if s.metricsRecorder == nil {
+			return
+		}
+
+		s.metricsRecorder.RecordSessionOperation(
+			ctx,
+			SessionMetricOperationCreate,
+			outcome,
+		)
+	}
+
 	tokenPair, err := s.tokenIssuer.Issue(
 		ctx,
 		TokenIssueInput{
@@ -101,6 +115,10 @@ func (s *service) issueLoginTokensWithSessionMetadata(
 			err,
 			ErrChallengeNotFound,
 		):
+			recordSessionOutcome(
+				MetricOutcomeRejected,
+			)
+
 			return VerifyOTPResult{},
 				ErrChallengeNotFound
 
@@ -108,6 +126,10 @@ func (s *service) issueLoginTokensWithSessionMetadata(
 			err,
 			ErrChallengeExpired,
 		):
+			recordSessionOutcome(
+				MetricOutcomeRejected,
+			)
+
 			return VerifyOTPResult{},
 				ErrChallengeExpired
 
@@ -115,6 +137,10 @@ func (s *service) issueLoginTokensWithSessionMetadata(
 			err,
 			ErrChallengeUsed,
 		):
+			recordSessionOutcome(
+				MetricOutcomeRejected,
+			)
+
 			return VerifyOTPResult{},
 				ErrChallengeUsed
 
@@ -122,6 +148,10 @@ func (s *service) issueLoginTokensWithSessionMetadata(
 			err,
 			ErrChallengeCancelled,
 		):
+			recordSessionOutcome(
+				MetricOutcomeRejected,
+			)
+
 			return VerifyOTPResult{},
 				ErrChallengeCancelled
 
@@ -129,16 +159,28 @@ func (s *service) issueLoginTokensWithSessionMetadata(
 			err,
 			ErrChallengeAttemptsExceeded,
 		):
+			recordSessionOutcome(
+				MetricOutcomeRejected,
+			)
+
 			return VerifyOTPResult{},
 				ErrChallengeAttemptsExceeded
 
 		default:
+			recordSessionOutcome(
+				MetricOutcomeFailed,
+			)
+
 			return VerifyOTPResult{}, fmt.Errorf(
 				"issue token pair: %w",
 				err,
 			)
 		}
 	}
+
+	recordSessionOutcome(
+		MetricOutcomeSuccess,
+	)
 
 	return VerifyOTPResult{
 		IdentityID:                  identity.ID,

@@ -80,6 +80,12 @@ func (h *IdentityHandler) RequestIdentifierUnlinkOTP(
 		)
 	}
 
+	sourceIPAddress := ""
+
+	if source, ok := requestSourceFromContext(ctx); ok {
+		sourceIPAddress = source.IPAddress
+	}
+
 	result, err := h.authService.RequestIdentifierUnlinkOTP(
 		ctx,
 		auth.RequestIdentifierUnlinkOTPInput{
@@ -88,6 +94,7 @@ func (h *IdentityHandler) RequestIdentifierUnlinkOTP(
 			TenantHint:       principal.TenantHint,
 			Channel:          deliveryChannel,
 			Locale:           requestLocaleFromIncomingContext(ctx),
+			SourceIPAddress:  sourceIPAddress,
 		},
 	)
 	if err != nil {

@@ -15,11 +15,11 @@ type AllSessionsRevocationStore struct {
 	pool *pgxpool.Pool
 }
 
-var _ auth.AllSessionsRevocationStore = (*AllSessionsRevocationStore)(nil)
-
 var _ auth.AllSessionsRevocationTargetStore = (*AllSessionsRevocationStore)(nil)
 
 var _ auth.AllSessionsPersistentRevocationStore = (*AllSessionsRevocationStore)(nil)
+
+var _ auth.SingleSessionPersistentRevocationStore = (*AllSessionsRevocationStore)(nil)
 
 func NewAllSessionsRevocationStore(
 	pool *pgxpool.Pool,
@@ -146,6 +146,144 @@ func (s *AllSessionsRevocationStore) FindAllSessionRevocationTargetsByRefreshTok
 	return target, true, nil
 }
 
+func (s *AllSessionsRevocationStore) RevokeSession(
+	ctx context.Context,
+	identityID string,
+	sessionID string,
+	revokedAt time.Time,
+) error {
+	if identityID == "" {
+		return errors.New(
+			"identity ID cannot be empty",
+		)
+	}
+
+	if sessionID == "" {
+		return errors.New(
+			"session ID cannot be empty",
+		)
+	}
+
+	if revokedAt.IsZero() {
+		return errors.New(
+			"session revocation time cannot be zero",
+		)
+	}
+
+	revokedAt = revokedAt.UTC()
+
+	tx, err := s.pool.BeginTx(
+		ctx,
+		pgx.TxOptions{},
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"begin single session revocation transaction: %w",
+			err,
+		)
+	}
+
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	const revokeSessionQuery = `
+		UPDATE auth_sessions
+		SET
+			revoked_at = $1,
+			updated_at = $1
+		WHERE identity_id = $2::uuid
+		  AND id::text = $3
+		  AND revoked_at IS NULL
+		RETURNING id::text
+	`
+
+	var revokedSessionID string
+
+	err = tx.QueryRow(
+		ctx,
+		revokeSessionQuery,
+		revokedAt,
+		identityID,
+		sessionID,
+	).Scan(
+		&revokedSessionID,
+	)
+
+	sessionWasRevoked := true
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		sessionWasRevoked = false
+	} else if err != nil {
+		return fmt.Errorf(
+			"revoke authentication session: %w",
+			err,
+		)
+	}
+
+	const revokeRefreshTokensQuery = `
+		UPDATE refresh_tokens
+		SET revoked_at = COALESCE(
+			revoked_at,
+			$1
+		)
+		WHERE session_id IN (
+			SELECT id
+			FROM auth_sessions
+			WHERE identity_id = $2::uuid
+			  AND id::text = $3
+		)
+		  AND revoked_at IS NULL
+	`
+
+	if _, err := tx.Exec(
+		ctx,
+		revokeRefreshTokensQuery,
+		revokedAt,
+		identityID,
+		sessionID,
+	); err != nil {
+		return fmt.Errorf(
+			"revoke session refresh tokens: %w",
+			err,
+		)
+	}
+
+	if sessionWasRevoked {
+		event, err := auth.NewIdentitySessionRevokedDomainEvent(
+			identityID,
+			revokedSessionID,
+			revokedAt,
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"build identity session revoked domain event: %w",
+				err,
+			)
+		}
+
+		if err := insertIdentitySessionRevokedOutboxEventInTransaction(
+			ctx,
+			tx,
+			event,
+		); err != nil {
+			return fmt.Errorf(
+				"persist identity session revoked domain event: %w",
+				err,
+			)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf(
+			"commit single session revocation: %w",
+			err,
+		)
+	}
+
+	return nil
+}
+
 func (s *AllSessionsRevocationStore) RevokeSessions(
 	ctx context.Context,
 	identityID string,
@@ -188,25 +326,56 @@ func (s *AllSessionsRevocationStore) RevokeSessions(
 	const revokeSessionsQuery = `
 		UPDATE auth_sessions
 		SET
-			revoked_at = COALESCE(
-				revoked_at,
-				$1
-			),
+			revoked_at = $1,
 			updated_at = $1
 		WHERE identity_id = $2::uuid
 		  AND id::text = ANY($3::text[])
 		  AND revoked_at IS NULL
+		RETURNING id::text
 	`
 
-	if _, err := tx.Exec(
+	rows, err := tx.Query(
 		ctx,
 		revokeSessionsQuery,
 		revokedAt,
 		identityID,
 		sessionIDs,
-	); err != nil {
+	)
+	if err != nil {
 		return fmt.Errorf(
 			"revoke exact authentication sessions: %w",
+			err,
+		)
+	}
+	defer rows.Close()
+
+	revokedSessionIDs := make(
+		[]string,
+		0,
+		len(sessionIDs),
+	)
+
+	for rows.Next() {
+		var revokedSessionID string
+
+		if err := rows.Scan(
+			&revokedSessionID,
+		); err != nil {
+			return fmt.Errorf(
+				"scan revoked authentication session: %w",
+				err,
+			)
+		}
+
+		revokedSessionIDs = append(
+			revokedSessionIDs,
+			revokedSessionID,
+		)
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf(
+			"iterate revoked authentication sessions: %w",
 			err,
 		)
 	}
@@ -239,137 +408,34 @@ func (s *AllSessionsRevocationStore) RevokeSessions(
 		)
 	}
 
+	if len(revokedSessionIDs) > 0 {
+		event, err := auth.NewIdentitySessionsRevokedDomainEvent(
+			identityID,
+			revokedSessionIDs,
+			revokedAt,
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"build identity sessions revoked domain event: %w",
+				err,
+			)
+		}
+
+		if err := insertIdentitySessionsRevokedOutboxEventInTransaction(
+			ctx,
+			tx,
+			event,
+		); err != nil {
+			return fmt.Errorf(
+				"persist identity sessions revoked domain event: %w",
+				err,
+			)
+		}
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf(
 			"commit exact sessions revocation: %w",
-			err,
-		)
-	}
-
-	return nil
-}
-
-func (s *AllSessionsRevocationStore) RevokeAllByRefreshTokenHash(
-	ctx context.Context,
-	refreshTokenHash string,
-	revokedAt time.Time,
-) error {
-	if refreshTokenHash == "" {
-		return auth.ErrInvalidRefreshToken
-	}
-
-	if revokedAt.IsZero() {
-		return errors.New(
-			"all sessions revocation time cannot be zero",
-		)
-	}
-
-	revokedAt = revokedAt.UTC()
-
-	tx, err := s.pool.BeginTx(
-		ctx,
-		pgx.TxOptions{},
-	)
-	if err != nil {
-		return fmt.Errorf(
-			"begin all sessions revocation transaction: %w",
-			err,
-		)
-	}
-
-	defer func() {
-		_ = tx.Rollback(ctx)
-	}()
-
-	const selectIdentityQuery = `
-		SELECT s.identity_id::text
-		FROM refresh_tokens AS rt
-		INNER JOIN auth_sessions AS s
-			ON s.id = rt.session_id
-		WHERE rt.token_hash = $1
-		  AND rt.used_at IS NULL
-		  AND rt.revoked_at IS NULL
-		  AND rt.expires_at > $2
-		  AND s.revoked_at IS NULL
-		  AND s.expires_at > $2
-		FOR UPDATE OF rt, s
-	`
-
-	var identityID string
-
-	err = tx.QueryRow(
-		ctx,
-		selectIdentityQuery,
-		refreshTokenHash,
-		revokedAt,
-	).Scan(
-		&identityID,
-	)
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil
-	}
-
-	if err != nil {
-		return fmt.Errorf(
-			"find active identity session by refresh token hash: %w",
-			err,
-		)
-	}
-
-	const revokeSessionsQuery = `
-		UPDATE auth_sessions
-		SET
-			revoked_at = COALESCE(
-				revoked_at,
-				$1
-			),
-			updated_at = $1
-		WHERE identity_id = $2::uuid
-		  AND revoked_at IS NULL
-	`
-
-	if _, err := tx.Exec(
-		ctx,
-		revokeSessionsQuery,
-		revokedAt,
-		identityID,
-	); err != nil {
-		return fmt.Errorf(
-			"revoke identity authentication sessions: %w",
-			err,
-		)
-	}
-
-	const revokeRefreshTokensQuery = `
-		UPDATE refresh_tokens
-		SET revoked_at = COALESCE(
-			revoked_at,
-			$1
-		)
-		WHERE session_id IN (
-			SELECT id
-			FROM auth_sessions
-			WHERE identity_id = $2::uuid
-		)
-		  AND revoked_at IS NULL
-	`
-
-	if _, err := tx.Exec(
-		ctx,
-		revokeRefreshTokensQuery,
-		revokedAt,
-		identityID,
-	); err != nil {
-		return fmt.Errorf(
-			"revoke identity refresh tokens: %w",
-			err,
-		)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf(
-			"commit all sessions revocation: %w",
 			err,
 		)
 	}

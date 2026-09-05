@@ -75,14 +75,21 @@ func (h *IdentityHandler) RequestLoginOTP(
 		)
 	}
 
+	sourceIPAddress := ""
+
+	if source, ok := requestSourceFromContext(ctx); ok {
+		sourceIPAddress = source.IPAddress
+	}
+
 	result, err := h.authService.RequestOTP(
 		ctx,
 		auth.RequestOTPInput{
-			Identifier: identifier,
-			Purpose:    auth.OTPPurposeLogin,
-			TenantHint: request.GetTenantHint(),
-			Channel:    deliveryChannel,
-			Locale:     requestLocaleFromIncomingContext(ctx),
+			Identifier:      identifier,
+			Purpose:         auth.OTPPurposeLogin,
+			TenantHint:      request.GetTenantHint(),
+			Channel:         deliveryChannel,
+			Locale:          requestLocaleFromIncomingContext(ctx),
+			SourceIPAddress: sourceIPAddress,
 		},
 	)
 	if err != nil {

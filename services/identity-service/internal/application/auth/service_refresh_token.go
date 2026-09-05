@@ -5,14 +5,64 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 func (s *service) RefreshToken(
 	ctx context.Context,
 	input RefreshTokenInput,
 ) (RefreshTokenResult, error) {
+	startedAt := time.Now()
+
+	recordAuthOutcome := func(
+		outcome MetricOutcome,
+	) {
+		if s.metricsRecorder == nil {
+			return
+		}
+
+		s.metricsRecorder.RecordAuthOperation(
+			ctx,
+			AuthMetricOperationRefresh,
+			outcome,
+			time.Since(startedAt),
+		)
+	}
+
+	recordSessionOutcome := func(
+		outcome MetricOutcome,
+	) {
+		if s.metricsRecorder == nil {
+			return
+		}
+
+		s.metricsRecorder.RecordSessionOperation(
+			ctx,
+			SessionMetricOperationRefresh,
+			outcome,
+		)
+	}
+
+	recordSecurityEvent := func(
+		event SecurityMetricEvent,
+	) {
+		if s.metricsRecorder == nil {
+			return
+		}
+
+		s.metricsRecorder.RecordSecurityEvent(
+			ctx,
+			event,
+		)
+	}
+
 	if strings.TrimSpace(input.RefreshToken) == "" {
-		return RefreshTokenResult{}, ErrInvalidRefreshToken
+		recordAuthOutcome(
+			MetricOutcomeRejected,
+		)
+
+		return RefreshTokenResult{},
+			ErrInvalidRefreshToken
 	}
 
 	currentTokenHash := s.refreshTokenHasher.Hash(
@@ -28,46 +78,41 @@ func (s *service) RefreshToken(
 			now,
 		)
 	if err != nil {
-		switch {
-		case errors.Is(err, ErrInvalidRefreshToken):
-			return RefreshTokenResult{},
-				ErrInvalidRefreshToken
+		mappedErr, securityEvent, handled :=
+			classifyRefreshTokenDomainError(err)
 
-		case errors.Is(err, ErrRefreshTokenExpired):
-			return RefreshTokenResult{},
-				ErrRefreshTokenExpired
-
-		case errors.Is(err, ErrRefreshTokenRevoked):
-			return RefreshTokenResult{},
-				ErrRefreshTokenRevoked
-
-		case errors.Is(err, ErrRefreshTokenReused):
-			return RefreshTokenResult{},
-				ErrRefreshTokenReused
-
-		case errors.Is(err, ErrSessionExpired):
-			return RefreshTokenResult{},
-				ErrSessionExpired
-
-		case errors.Is(err, ErrSessionRevoked):
-			return RefreshTokenResult{},
-				ErrSessionRevoked
-
-		case errors.Is(err, ErrIdentityInactive):
-			return RefreshTokenResult{},
-				ErrIdentityInactive
-
-		default:
-			return RefreshTokenResult{}, fmt.Errorf(
-				"inspect refresh token: %w",
-				err,
+		if handled {
+			recordAuthOutcome(
+				MetricOutcomeRejected,
 			)
+
+			if securityEvent != "" {
+				recordSecurityEvent(
+					securityEvent,
+				)
+			}
+
+			return RefreshTokenResult{},
+				mappedErr
 		}
+
+		recordAuthOutcome(
+			MetricOutcomeFailed,
+		)
+
+		return RefreshTokenResult{}, fmt.Errorf(
+			"inspect refresh token: %w",
+			err,
+		)
 	}
 
 	replacementRefreshToken, err :=
 		s.refreshTokenGenerator.Generate()
 	if err != nil {
+		recordAuthOutcome(
+			MetricOutcomeFailed,
+		)
+
 		return RefreshTokenResult{}, fmt.Errorf(
 			"generate replacement refresh token: %w",
 			err,
@@ -90,6 +135,10 @@ func (s *service) RefreshToken(
 	}
 
 	if !replacementExpiresAt.After(now) {
+		recordAuthOutcome(
+			MetricOutcomeRejected,
+		)
+
 		return RefreshTokenResult{},
 			ErrSessionExpired
 	}
@@ -102,8 +151,11 @@ func (s *service) RefreshToken(
 			now,
 			refreshContext.SessionExpiresAt,
 		)
-
 	if err != nil {
+		recordAuthOutcome(
+			MetricOutcomeFailed,
+		)
+
 		return RefreshTokenResult{}, fmt.Errorf(
 			"issue refreshed access token: %w",
 			err,
@@ -120,42 +172,45 @@ func (s *service) RefreshToken(
 		},
 	)
 	if err != nil {
-		switch {
-		case errors.Is(err, ErrInvalidRefreshToken):
-			return RefreshTokenResult{},
-				ErrInvalidRefreshToken
+		mappedErr, securityEvent, handled :=
+			classifyRefreshTokenDomainError(err)
 
-		case errors.Is(err, ErrRefreshTokenExpired):
-			return RefreshTokenResult{},
-				ErrRefreshTokenExpired
-
-		case errors.Is(err, ErrRefreshTokenRevoked):
-			return RefreshTokenResult{},
-				ErrRefreshTokenRevoked
-
-		case errors.Is(err, ErrRefreshTokenReused):
-			return RefreshTokenResult{},
-				ErrRefreshTokenReused
-
-		case errors.Is(err, ErrSessionExpired):
-			return RefreshTokenResult{},
-				ErrSessionExpired
-
-		case errors.Is(err, ErrSessionRevoked):
-			return RefreshTokenResult{},
-				ErrSessionRevoked
-
-		case errors.Is(err, ErrIdentityInactive):
-			return RefreshTokenResult{},
-				ErrIdentityInactive
-
-		default:
-			return RefreshTokenResult{}, fmt.Errorf(
-				"rotate refresh token: %w",
-				err,
+		if handled {
+			recordAuthOutcome(
+				MetricOutcomeRejected,
 			)
+
+			if securityEvent != "" {
+				recordSecurityEvent(
+					securityEvent,
+				)
+			}
+
+			return RefreshTokenResult{},
+				mappedErr
 		}
+
+		recordSessionOutcome(
+			MetricOutcomeFailed,
+		)
+
+		recordAuthOutcome(
+			MetricOutcomeFailed,
+		)
+
+		return RefreshTokenResult{}, fmt.Errorf(
+			"rotate refresh token: %w",
+			err,
+		)
 	}
+
+	recordSessionOutcome(
+		MetricOutcomeSuccess,
+	)
+
+	recordAuthOutcome(
+		MetricOutcomeSuccess,
+	)
 
 	return RefreshTokenResult{
 		IdentityID:                  refreshContext.IdentityID,
@@ -163,4 +218,75 @@ func (s *service) RefreshToken(
 		RefreshToken:                replacementRefreshToken,
 		AccessTokenExpiresInSeconds: accessTokenExpiresInSeconds,
 	}, nil
+}
+
+func classifyRefreshTokenDomainError(
+	err error,
+) (
+	error,
+	SecurityMetricEvent,
+	bool,
+) {
+	switch {
+	case errors.Is(
+		err,
+		ErrInvalidRefreshToken,
+	):
+		return ErrInvalidRefreshToken,
+			"",
+			true
+
+	case errors.Is(
+		err,
+		ErrRefreshTokenExpired,
+	):
+		return ErrRefreshTokenExpired,
+			"",
+			true
+
+	case errors.Is(
+		err,
+		ErrRefreshTokenRevoked,
+	):
+		return ErrRefreshTokenRevoked,
+			"",
+			true
+
+	case errors.Is(
+		err,
+		ErrRefreshTokenReused,
+	):
+		return ErrRefreshTokenReused,
+			SecurityMetricEventRefreshTokenReuse,
+			true
+
+	case errors.Is(
+		err,
+		ErrSessionExpired,
+	):
+		return ErrSessionExpired,
+			"",
+			true
+
+	case errors.Is(
+		err,
+		ErrSessionRevoked,
+	):
+		return ErrSessionRevoked,
+			"",
+			true
+
+	case errors.Is(
+		err,
+		ErrIdentityInactive,
+	):
+		return ErrIdentityInactive,
+			"",
+			true
+
+	default:
+		return nil,
+			"",
+			false
+	}
 }

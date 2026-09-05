@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/netip"
+	"strings"
 	"time"
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
@@ -77,6 +79,48 @@ func (r *OTPRequestRateLimiter) Allow(
 		)
 	}
 
+	abuseLimitEnabled :=
+		policy.Abuse.Window != 0 ||
+			policy.Abuse.MaxRequests != 0
+
+	if abuseLimitEnabled {
+		if policy.Abuse.Window <= 0 {
+			return errors.New(
+				"OTP request abuse window must be greater than zero",
+			)
+		}
+
+		if policy.Abuse.MaxRequests <= 0 {
+			return errors.New(
+				"OTP request abuse max requests must be greater than zero",
+			)
+		}
+	}
+
+	sourceIPAddress := strings.TrimSpace(
+		scope.SourceIPAddress,
+	)
+
+	if sourceIPAddress != "" {
+		address, err := netip.ParseAddr(
+			sourceIPAddress,
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"invalid OTP request source IP address: %w",
+				err,
+			)
+		}
+
+		sourceIPAddress = address.Unmap().String()
+	}
+
+	if abuseLimitEnabled && sourceIPAddress == "" {
+		return errors.New(
+			"OTP request source IP address is required when abuse limit is enabled",
+		)
+	}
+
 	now = now.UTC()
 
 	var targetIdentityID any
@@ -85,8 +129,14 @@ func (r *OTPRequestRateLimiter) Allow(
 		targetIdentityID = *scope.TargetIdentityID
 	}
 
-	lockKey := fmt.Sprintf(
-		"%s:%s:%s:%v",
+	var sourceIPAddressValue any
+
+	if sourceIPAddress != "" {
+		sourceIPAddressValue = sourceIPAddress
+	}
+
+	identifierLockKey := fmt.Sprintf(
+		"otp:identifier:%s:%s:%s:%v",
 		scope.Identifier.Type,
 		scope.Identifier.Value,
 		scope.Purpose,
@@ -117,12 +167,30 @@ func (r *OTPRequestRateLimiter) Allow(
 	if _, err := tx.Exec(
 		ctx,
 		lockQuery,
-		lockKey,
+		identifierLockKey,
 	); err != nil {
 		return fmt.Errorf(
-			"lock OTP rate limit key: %w",
+			"lock OTP identifier rate limit key: %w",
 			err,
 		)
+	}
+
+	if abuseLimitEnabled {
+		sourceLockKey := fmt.Sprintf(
+			"otp:source:%s",
+			sourceIPAddress,
+		)
+
+		if _, err := tx.Exec(
+			ctx,
+			lockQuery,
+			sourceLockKey,
+		); err != nil {
+			return fmt.Errorf(
+				"lock OTP source rate limit key: %w",
+				err,
+			)
+		}
 	}
 
 	latestRequestQuery := `
@@ -250,12 +318,46 @@ func (r *OTPRequestRateLimiter) Allow(
 		return auth.ErrOTPRequestRateLimited
 	}
 
+	if abuseLimitEnabled {
+		sourceWindowStartedAt := now.Add(
+			-policy.Abuse.Window,
+		)
+
+		const sourceCountQuery = `
+			SELECT COUNT(*)
+			FROM otp_request_events
+			WHERE source_ip_address = $1::inet
+			AND requested_at >= $2
+		`
+
+		var sourceRequestCount int
+
+		if err := tx.QueryRow(
+			ctx,
+			sourceCountQuery,
+			sourceIPAddress,
+			sourceWindowStartedAt,
+		).Scan(
+			&sourceRequestCount,
+		); err != nil {
+			return fmt.Errorf(
+				"count OTP source requests in abuse window: %w",
+				err,
+			)
+		}
+
+		if sourceRequestCount >= policy.Abuse.MaxRequests {
+			return auth.ErrOTPRequestRateLimited
+		}
+	}
+
 	const insertQuery = `
 		INSERT INTO otp_request_events (
 			identifier_type,
 			normalized_value,
 			purpose,
 			target_identity_id,
+			source_ip_address,
 			requested_at
 		)
 		VALUES (
@@ -263,7 +365,8 @@ func (r *OTPRequestRateLimiter) Allow(
 			$2,
 			$3,
 			$4,
-			$5
+			$5,
+			$6
 		)
 	`
 
@@ -274,6 +377,7 @@ func (r *OTPRequestRateLimiter) Allow(
 		scope.Identifier.Value,
 		string(scope.Purpose),
 		targetIdentityID,
+		sourceIPAddressValue,
 		now,
 	); err != nil {
 		return fmt.Errorf(

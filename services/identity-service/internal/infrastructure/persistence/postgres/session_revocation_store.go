@@ -16,7 +16,7 @@ type SessionRevocationStore struct {
 	pool *pgxpool.Pool
 }
 
-var _ auth.SessionRevocationStore = (*SessionRevocationStore)(nil)
+var _ auth.PersistentSessionRevocationStore = (*SessionRevocationStore)(nil)
 
 var _ auth.SessionRevocationTargetStore = (*SessionRevocationStore)(nil)
 
@@ -182,7 +182,7 @@ func (s *SessionRevocationStore) FindRevocationTargetByIdentityAndSessionID(
 	return target, true, nil
 }
 
-func (s *SessionRevocationStore) RevokeByRefreshTokenHash(
+func (s *SessionRevocationStore) RevokeSessionByRefreshTokenHash(
 	ctx context.Context,
 	refreshTokenHash string,
 	revokedAt time.Time,
@@ -215,22 +215,33 @@ func (s *SessionRevocationStore) RevokeByRefreshTokenHash(
 	}()
 
 	const selectSessionQuery = `
-		SELECT s.id::text
+		SELECT
+			i.id::text,
+			s.id::text,
+			s.revoked_at
 		FROM refresh_tokens AS rt
 		INNER JOIN auth_sessions AS s
 			ON s.id = rt.session_id
+		INNER JOIN identities AS i
+			ON i.id = s.identity_id
 		WHERE rt.token_hash = $1
 		FOR UPDATE OF rt, s
 	`
 
-	var sessionID string
+	var (
+		identityID       string
+		sessionID        string
+		sessionRevokedAt *time.Time
+	)
 
 	err = tx.QueryRow(
 		ctx,
 		selectSessionQuery,
 		refreshTokenHash,
 	).Scan(
+		&identityID,
 		&sessionID,
+		&sessionRevokedAt,
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -254,6 +265,33 @@ func (s *SessionRevocationStore) RevokeByRefreshTokenHash(
 			"revoke authentication session: %w",
 			err,
 		)
+	}
+
+	if sessionRevokedAt == nil {
+		event, err :=
+			auth.NewIdentitySessionRevokedDomainEvent(
+				identityID,
+				sessionID,
+				revokedAt,
+			)
+		if err != nil {
+			return fmt.Errorf(
+				"build identity session revoked domain event: %w",
+				err,
+			)
+		}
+
+		if err :=
+			insertIdentitySessionRevokedOutboxEventInTransaction(
+				ctx,
+				tx,
+				event,
+			); err != nil {
+			return fmt.Errorf(
+				"persist identity session revoked domain event: %w",
+				err,
+			)
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {

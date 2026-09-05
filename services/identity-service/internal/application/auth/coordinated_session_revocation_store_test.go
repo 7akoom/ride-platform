@@ -75,7 +75,7 @@ type testPersistentSessionRevocationStore struct {
 	callOrder        *[]string
 }
 
-func (s *testPersistentSessionRevocationStore) RevokeByRefreshTokenHash(
+func (s *testPersistentSessionRevocationStore) RevokeSessionByRefreshTokenHash(
 	ctx context.Context,
 	refreshTokenHash string,
 	revokedAt time.Time,

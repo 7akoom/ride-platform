@@ -194,6 +194,31 @@ func (r *IdentityIdentifierRepository) CreateIdentityWithIdentifier(
 		)
 	}
 
+	createdEvent, err := auth.NewIdentityCreatedDomainEvent(
+		identity.ID,
+		auth.IdentityStatus(status),
+		verifiedAt,
+	)
+	if err != nil {
+		return auth.Identity{},
+			fmt.Errorf(
+				"build identity created domain event: %w",
+				err,
+			)
+	}
+
+	if err := insertIdentityCreatedOutboxEventInTransaction(
+		ctx,
+		tx,
+		createdEvent,
+	); err != nil {
+		return auth.Identity{},
+			fmt.Errorf(
+				"persist identity created domain event: %w",
+				err,
+			)
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return auth.Identity{}, fmt.Errorf(
 			"commit identity creation transaction: %w",

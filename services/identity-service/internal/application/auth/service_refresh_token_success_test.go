@@ -43,6 +43,8 @@ func TestRefreshTokenRotatesTokenAndClampsExpirationToSession(
 		expiresInSeconds: 900,
 	}
 
+	metricsRecorder := &testMetricsRecorder{}
+
 	service := NewServiceWithIdentityIdentifiers(
 		&testChallengeRepository{},
 		&testIdentityIdentifierRepository{},
@@ -74,6 +76,7 @@ func TestRefreshTokenRotatesTokenAndClampsExpirationToSession(
 			MaxRequests: 5,
 		},
 		29*24*time.Hour,
+		WithMetricsRecorder(metricsRecorder),
 	)
 
 	result, err := service.RefreshToken(
@@ -207,6 +210,27 @@ func TestRefreshTokenRotatesTokenAndClampsExpirationToSession(
 		t.Fatalf(
 			"RefreshTokenHasher calls = %d, expected 2",
 			refreshHasher.calls,
+		)
+	}
+
+	requireSingleAuthOperationMetric(
+		t,
+		metricsRecorder,
+		AuthMetricOperationRefresh,
+		MetricOutcomeSuccess,
+	)
+
+	requireSingleSessionOperationMetric(
+		t,
+		metricsRecorder,
+		SessionMetricOperationRefresh,
+		MetricOutcomeSuccess,
+	)
+
+	if len(metricsRecorder.securityEvents) != 0 {
+		t.Fatalf(
+			"security event metric count = %d, expected 0",
+			len(metricsRecorder.securityEvents),
 		)
 	}
 }
