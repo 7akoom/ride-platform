@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${IDENTITY_DB_PASSWORD:?IDENTITY_DB_PASSWORD is required}
 
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
 
     volumes:
       - identity-postgres-data:/var/lib/postgresql/data
@@ -27,5 +27,92 @@ services:
 
     restart: unless-stopped
 
+  identity-valkey:
+    image: valkey/valkey:9.1.1-alpine3.24
+    container_name: ride-identity-valkey
+
+    environment:
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:?VALKEY_PASSWORD is required}
+
+    command:
+      - sh
+      - -c
+      - exec valkey-server --appendonly yes --requirepass "$$VALKEY_PASSWORD"
+
+    ports:
+      - "127.0.0.1:6380:6379"
+
+    volumes:
+      - identity-valkey-data:/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'valkey-cli -a "$$VALKEY_PASSWORD" ping | grep -q PONG',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+  nats:
+    image: nats:2.14.5-alpine3.22
+    container_name: ride-nats
+
+    command:
+      - "-js"
+      - "-sd"
+      - "/data"
+      - "-m"
+      - "8222"
+
+    ports:
+      - "127.0.0.1:4222:4222"
+      - "127.0.0.1:8222:8222"
+
+    volumes:
+      - nats-jetstream-data:/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:8222/healthz >/dev/null || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+  nats-bootstrap:
+    image: natsio/nats-box:0.19.7
+    container_name: ride-nats-bootstrap
+
+    depends_on:
+      nats:
+        condition: service_healthy
+
+    environment:
+      NATS_URL: nats://nats:4222
+      STREAM_NAME: IDENTITY_EVENTS
+      STREAM_CONFIG: /streams/identity-events.json
+
+    volumes:
+      - ./nats/bootstrap.sh:/bootstrap.sh:ro
+      - ./nats/streams:/streams:ro
+
+    command:
+      - /bin/sh
+      - /bootstrap.sh
+
+    restart: "no"
+
 volumes:
   identity-postgres-data:
+  identity-valkey-data:
+  nats-jetstream-data:

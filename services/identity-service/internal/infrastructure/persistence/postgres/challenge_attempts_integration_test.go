@@ -38,10 +38,14 @@ func TestChallengeRepositoryLocksChallengeAfterMaximumFailedAttempts(
 	now := time.Now().UTC()
 
 	challenge := auth.OTPChallenge{
-		ID:          "otp_ch_attempt_limit_integration_test",
-		PhoneNumber: "+9647500000010",
-		CodeHash:    "integration-test-code-hash",
-		ExpiresAt:   now.Add(10 * time.Minute),
+		ID: "otp_ch_attempt_limit_integration_test",
+		Identifier: auth.Identifier{
+			Type:  auth.IdentifierTypePhone,
+			Value: "+9647500000010",
+		},
+		Purpose:   auth.OTPPurposeLogin,
+		CodeHash:  "integration-test-code-hash",
+		ExpiresAt: now.Add(10 * time.Minute),
 	}
 
 	_, err = pool.Exec(
