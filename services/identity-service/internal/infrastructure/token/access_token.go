@@ -9,13 +9,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 const accessTokenIDRandomBytes = 16
 
 type AccessTokenClaims struct {
-	SessionID string `json:"sid"`
+	SessionID  string `json:"sid"`
+	TenantHint string `json:"tenant_hint,omitempty"`
 
 	jwt.RegisteredClaims
 }
@@ -89,17 +91,78 @@ func NewAccessTokenSigner(
 	}, nil
 }
 
-func (s *AccessTokenSigner) Issue(
+func (s *AccessTokenSigner) IssueForSession(
 	identityID string,
 	sessionID string,
+	tenantHint string,
 	issuedAt time.Time,
+	sessionExpiresAt time.Time,
+) (string, int32, error) {
+	if sessionExpiresAt.IsZero() {
+		return "", 0, errors.New(
+			"session expiration cannot be zero",
+		)
+	}
+
+	issuedAt = issuedAt.UTC()
+	sessionExpiresAt = sessionExpiresAt.UTC()
+
+	normalizedTenantHint, err := auth.NormalizeTenantHint(
+		tenantHint,
+	)
+	if err != nil {
+		return "", 0, fmt.Errorf(
+			"validate access token tenant hint: %w",
+			err,
+		)
+	}
+
+	if !sessionExpiresAt.After(issuedAt) {
+		return "", 0, errors.New(
+			"session must expire after access token issue time",
+		)
+	}
+
+	expiresAt := issuedAt.Add(
+		s.ttl,
+	)
+
+	if sessionExpiresAt.Before(expiresAt) {
+		expiresAt = sessionExpiresAt
+	}
+
+	return s.issueWithExpiration(
+		identityID,
+		sessionID,
+		normalizedTenantHint,
+		issuedAt,
+		expiresAt,
+	)
+}
+
+func (s *AccessTokenSigner) issueWithExpiration(
+	identityID string,
+	sessionID string,
+	tenantHint string,
+	issuedAt time.Time,
+	expiresAt time.Time,
 ) (string, int32, error) {
 	if identityID == "" {
-		return "", 0, errors.New("identity ID cannot be empty")
+		return "", 0, errors.New(
+			"identity ID cannot be empty",
+		)
 	}
 
 	if sessionID == "" {
-		return "", 0, errors.New("session ID cannot be empty")
+		return "", 0, errors.New(
+			"session ID cannot be empty",
+		)
+	}
+
+	if !expiresAt.After(issuedAt) {
+		return "", 0, errors.New(
+			"access token expiration must be after issue time",
+		)
 	}
 
 	tokenID, err := generateAccessTokenID()
@@ -107,11 +170,9 @@ func (s *AccessTokenSigner) Issue(
 		return "", 0, err
 	}
 
-	issuedAt = issuedAt.UTC()
-	expiresAt := issuedAt.Add(s.ttl)
-
 	claims := AccessTokenClaims{
-		SessionID: sessionID,
+		SessionID:  sessionID,
+		TenantHint: tenantHint,
 
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    s.issuer,
@@ -140,7 +201,11 @@ func (s *AccessTokenSigner) Issue(
 		)
 	}
 
-	return signedToken, int32(s.ttl.Seconds()), nil
+	expiresInSeconds := int32(
+		expiresAt.Sub(issuedAt).Seconds(),
+	)
+
+	return signedToken, expiresInSeconds, nil
 }
 
 func generateAccessTokenID() (string, error) {

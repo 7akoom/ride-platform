@@ -10,6 +10,11 @@ type Durations struct {
 	AccessTokenTTL  time.Duration
 	SessionTTL      time.Duration
 	RefreshTokenTTL time.Duration
+
+	CleanupInterval          time.Duration
+	OTPRequestEventRetention time.Duration
+	OTPChallengeRetention    time.Duration
+	AuthSessionRetention     time.Duration
 }
 
 func ParseDurations(cfg Config) (Durations, error) {
@@ -51,11 +56,48 @@ func ParseDurations(cfg Config) (Durations, error) {
 		)
 	}
 
+	cleanupInterval, err := parsePositiveDuration(
+		"CLEANUP_INTERVAL",
+		cfg.CleanupInterval,
+	)
+	if err != nil {
+		return Durations{}, err
+	}
+
+	otpRequestEventRetention, err := parsePositiveDuration(
+		"OTP_REQUEST_EVENT_RETENTION",
+		cfg.OTPRequestEventRetention,
+	)
+	if err != nil {
+		return Durations{}, err
+	}
+
+	otpChallengeRetention, err := parsePositiveDuration(
+		"OTP_CHALLENGE_RETENTION",
+		cfg.OTPChallengeRetention,
+	)
+	if err != nil {
+		return Durations{}, err
+	}
+
+	authSessionRetention, err := parsePositiveDuration(
+		"AUTH_SESSION_RETENTION",
+		cfg.AuthSessionRetention,
+	)
+	if err != nil {
+		return Durations{}, err
+	}
+
 	return Durations{
 		OTPChallengeTTL: otpChallengeTTL,
 		AccessTokenTTL:  accessTokenTTL,
 		SessionTTL:      sessionTTL,
 		RefreshTokenTTL: refreshTokenTTL,
+
+		CleanupInterval:          cleanupInterval,
+		OTPRequestEventRetention: otpRequestEventRetention,
+		OTPChallengeRetention:    otpChallengeRetention,
+		AuthSessionRetention:     authSessionRetention,
 	}, nil
 }
 

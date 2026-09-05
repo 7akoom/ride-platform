@@ -2,34 +2,154 @@ syntax = "proto3";
 
 package ride.identity.v1;
 
+import "google/protobuf/timestamp.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1";
 
 service IdentityService {
-  rpc RequestOTP(RequestOTPRequest) returns (RequestOTPResponse);
-  rpc VerifyOTP(VerifyOTPRequest) returns (VerifyOTPResponse);
+  rpc RequestLoginOTP(RequestLoginOTPRequest) returns (RequestLoginOTPResponse);
+  rpc VerifyLoginOTP(VerifyLoginOTPRequest) returns (VerifyLoginOTPResponse);
+
+  rpc RequestIdentifierLinkOTP(RequestIdentifierLinkOTPRequest) returns (RequestIdentifierLinkOTPResponse);
+  rpc VerifyIdentifierLinkOTP(VerifyIdentifierLinkOTPRequest) returns (VerifyIdentifierLinkOTPResponse);
+  rpc RequestIdentifierUnlinkOTP(RequestIdentifierUnlinkOTPRequest) returns (RequestIdentifierUnlinkOTPResponse);
+  rpc VerifyIdentifierUnlinkOTP(VerifyIdentifierUnlinkOTPRequest) returns (VerifyIdentifierUnlinkOTPResponse);
+  rpc GetMyIdentity(GetMyIdentityRequest) returns (GetMyIdentityResponse);
+  rpc ListMySessions(ListMySessionsRequest) returns (ListMySessionsResponse);
+  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc LogoutAllSessions(LogoutAllSessionsRequest) returns (LogoutAllSessionsResponse);
 }
 
-message RequestOTPRequest {
-  string phone_number = 1;
+enum IdentifierType {
+  IDENTIFIER_TYPE_UNSPECIFIED = 0;
+  IDENTIFIER_TYPE_PHONE = 1;
+  IDENTIFIER_TYPE_EMAIL = 2;
 }
 
-message RequestOTPResponse {
+enum OTPDeliveryChannel {
+  OTP_DELIVERY_CHANNEL_UNSPECIFIED = 0;
+  OTP_DELIVERY_CHANNEL_AUTO = 1;
+  OTP_DELIVERY_CHANNEL_SMS = 2;
+  OTP_DELIVERY_CHANNEL_WHATSAPP = 3;
+  OTP_DELIVERY_CHANNEL_EMAIL = 4;
+}
+
+enum IdentityStatus {
+  IDENTITY_STATUS_UNSPECIFIED = 0;
+  IDENTITY_STATUS_ACTIVE = 1;
+  IDENTITY_STATUS_SUSPENDED = 2;
+  IDENTITY_STATUS_DISABLED = 3;
+}
+
+message Identifier {
+  IdentifierType type = 1;
+  string value = 2;
+}
+
+message RequestLoginOTPRequest {
+  Identifier identifier = 1;
+  string tenant_hint = 2;
+  OTPDeliveryChannel delivery_channel = 3;
+}
+
+message RequestLoginOTPResponse {
   string challenge_id = 1;
   int32 expires_in_seconds = 2;
 }
 
-message VerifyOTPRequest {
+message VerifyLoginOTPRequest {
   string challenge_id = 1;
   string code = 2;
+
+  string client_id = 3;
+  string device_id = 4;
+  string device_name = 5;
+  string platform = 6;
+  string app_version = 7;
 }
 
-message VerifyOTPResponse {
+message VerifyLoginOTPResponse {
   string identity_id = 1;
   string access_token = 2;
   string refresh_token = 3;
   int32 access_token_expires_in_seconds = 4;
 }
+
+message RequestIdentifierLinkOTPRequest {
+  Identifier identifier = 1;
+  OTPDeliveryChannel delivery_channel = 2;
+}
+
+message RequestIdentifierLinkOTPResponse {
+  string challenge_id = 1;
+  int32 expires_in_seconds = 2;
+}
+
+message VerifyIdentifierLinkOTPRequest {
+  string challenge_id = 1;
+  string code = 2;
+}
+
+message VerifyIdentifierLinkOTPResponse {}
+
+message RequestIdentifierUnlinkOTPRequest {
+  Identifier identifier = 1;
+  OTPDeliveryChannel delivery_channel = 2;
+}
+
+message RequestIdentifierUnlinkOTPResponse {
+  string challenge_id = 1;
+  int32 expires_in_seconds = 2;
+}
+
+message VerifyIdentifierUnlinkOTPRequest {
+  string challenge_id = 1;
+  string code = 2;
+}
+
+message VerifyIdentifierUnlinkOTPResponse {}
+
+message GetMyIdentityRequest {}
+
+message VerifiedIdentifier {
+  IdentifierType type = 1;
+  string value = 2;
+  google.protobuf.Timestamp verified_at = 3;
+}
+
+message GetMyIdentityResponse {
+  string identity_id = 1;
+  IdentityStatus status = 2;
+  repeated VerifiedIdentifier identifiers = 3;
+}
+
+message ListMySessionsRequest {}
+
+message Session {
+  string session_id = 1;
+  optional string client_id = 2;
+  optional string device_id = 3;
+  optional string device_name = 4;
+  optional string platform = 5;
+  optional string app_version = 6;
+  optional string ip_address = 7;
+  optional string user_agent = 8;
+  google.protobuf.Timestamp expires_at = 9;
+  google.protobuf.Timestamp last_seen_at = 10;
+  google.protobuf.Timestamp created_at = 11;
+  bool is_current = 12;
+}
+
+message ListMySessionsResponse {
+  repeated Session sessions = 1;
+}
+
+message RevokeSessionRequest {
+  string session_id = 1;
+}
+
+message RevokeSessionResponse {}
 
 message RefreshTokenRequest {
   string refresh_token = 1;
@@ -41,3 +161,15 @@ message RefreshTokenResponse {
   string refresh_token = 3;
   int32 access_token_expires_in_seconds = 4;
 }
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {}
+
+message LogoutAllSessionsRequest {
+  string refresh_token = 1;
+}
+
+message LogoutAllSessionsResponse {}

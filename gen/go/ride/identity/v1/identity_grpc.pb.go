@@ -19,18 +19,36 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	IdentityService_RequestOTP_FullMethodName   = "/ride.identity.v1.IdentityService/RequestOTP"
-	IdentityService_VerifyOTP_FullMethodName    = "/ride.identity.v1.IdentityService/VerifyOTP"
-	IdentityService_RefreshToken_FullMethodName = "/ride.identity.v1.IdentityService/RefreshToken"
+	IdentityService_RequestLoginOTP_FullMethodName            = "/ride.identity.v1.IdentityService/RequestLoginOTP"
+	IdentityService_VerifyLoginOTP_FullMethodName             = "/ride.identity.v1.IdentityService/VerifyLoginOTP"
+	IdentityService_RequestIdentifierLinkOTP_FullMethodName   = "/ride.identity.v1.IdentityService/RequestIdentifierLinkOTP"
+	IdentityService_VerifyIdentifierLinkOTP_FullMethodName    = "/ride.identity.v1.IdentityService/VerifyIdentifierLinkOTP"
+	IdentityService_RequestIdentifierUnlinkOTP_FullMethodName = "/ride.identity.v1.IdentityService/RequestIdentifierUnlinkOTP"
+	IdentityService_VerifyIdentifierUnlinkOTP_FullMethodName  = "/ride.identity.v1.IdentityService/VerifyIdentifierUnlinkOTP"
+	IdentityService_GetMyIdentity_FullMethodName              = "/ride.identity.v1.IdentityService/GetMyIdentity"
+	IdentityService_ListMySessions_FullMethodName             = "/ride.identity.v1.IdentityService/ListMySessions"
+	IdentityService_RevokeSession_FullMethodName              = "/ride.identity.v1.IdentityService/RevokeSession"
+	IdentityService_RefreshToken_FullMethodName               = "/ride.identity.v1.IdentityService/RefreshToken"
+	IdentityService_Logout_FullMethodName                     = "/ride.identity.v1.IdentityService/Logout"
+	IdentityService_LogoutAllSessions_FullMethodName          = "/ride.identity.v1.IdentityService/LogoutAllSessions"
 )
 
 // IdentityServiceClient is the client API for IdentityService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type IdentityServiceClient interface {
-	RequestOTP(ctx context.Context, in *RequestOTPRequest, opts ...grpc.CallOption) (*RequestOTPResponse, error)
-	VerifyOTP(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*VerifyOTPResponse, error)
+	RequestLoginOTP(ctx context.Context, in *RequestLoginOTPRequest, opts ...grpc.CallOption) (*RequestLoginOTPResponse, error)
+	VerifyLoginOTP(ctx context.Context, in *VerifyLoginOTPRequest, opts ...grpc.CallOption) (*VerifyLoginOTPResponse, error)
+	RequestIdentifierLinkOTP(ctx context.Context, in *RequestIdentifierLinkOTPRequest, opts ...grpc.CallOption) (*RequestIdentifierLinkOTPResponse, error)
+	VerifyIdentifierLinkOTP(ctx context.Context, in *VerifyIdentifierLinkOTPRequest, opts ...grpc.CallOption) (*VerifyIdentifierLinkOTPResponse, error)
+	RequestIdentifierUnlinkOTP(ctx context.Context, in *RequestIdentifierUnlinkOTPRequest, opts ...grpc.CallOption) (*RequestIdentifierUnlinkOTPResponse, error)
+	VerifyIdentifierUnlinkOTP(ctx context.Context, in *VerifyIdentifierUnlinkOTPRequest, opts ...grpc.CallOption) (*VerifyIdentifierUnlinkOTPResponse, error)
+	GetMyIdentity(ctx context.Context, in *GetMyIdentityRequest, opts ...grpc.CallOption) (*GetMyIdentityResponse, error)
+	ListMySessions(ctx context.Context, in *ListMySessionsRequest, opts ...grpc.CallOption) (*ListMySessionsResponse, error)
+	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*RevokeSessionResponse, error)
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
+	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
+	LogoutAllSessions(ctx context.Context, in *LogoutAllSessionsRequest, opts ...grpc.CallOption) (*LogoutAllSessionsResponse, error)
 }
 
 type identityServiceClient struct {
@@ -41,20 +59,90 @@ func NewIdentityServiceClient(cc grpc.ClientConnInterface) IdentityServiceClient
 	return &identityServiceClient{cc}
 }
 
-func (c *identityServiceClient) RequestOTP(ctx context.Context, in *RequestOTPRequest, opts ...grpc.CallOption) (*RequestOTPResponse, error) {
+func (c *identityServiceClient) RequestLoginOTP(ctx context.Context, in *RequestLoginOTPRequest, opts ...grpc.CallOption) (*RequestLoginOTPResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RequestOTPResponse)
-	err := c.cc.Invoke(ctx, IdentityService_RequestOTP_FullMethodName, in, out, cOpts...)
+	out := new(RequestLoginOTPResponse)
+	err := c.cc.Invoke(ctx, IdentityService_RequestLoginOTP_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *identityServiceClient) VerifyOTP(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*VerifyOTPResponse, error) {
+func (c *identityServiceClient) VerifyLoginOTP(ctx context.Context, in *VerifyLoginOTPRequest, opts ...grpc.CallOption) (*VerifyLoginOTPResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(VerifyOTPResponse)
-	err := c.cc.Invoke(ctx, IdentityService_VerifyOTP_FullMethodName, in, out, cOpts...)
+	out := new(VerifyLoginOTPResponse)
+	err := c.cc.Invoke(ctx, IdentityService_VerifyLoginOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) RequestIdentifierLinkOTP(ctx context.Context, in *RequestIdentifierLinkOTPRequest, opts ...grpc.CallOption) (*RequestIdentifierLinkOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RequestIdentifierLinkOTPResponse)
+	err := c.cc.Invoke(ctx, IdentityService_RequestIdentifierLinkOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) VerifyIdentifierLinkOTP(ctx context.Context, in *VerifyIdentifierLinkOTPRequest, opts ...grpc.CallOption) (*VerifyIdentifierLinkOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyIdentifierLinkOTPResponse)
+	err := c.cc.Invoke(ctx, IdentityService_VerifyIdentifierLinkOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) RequestIdentifierUnlinkOTP(ctx context.Context, in *RequestIdentifierUnlinkOTPRequest, opts ...grpc.CallOption) (*RequestIdentifierUnlinkOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RequestIdentifierUnlinkOTPResponse)
+	err := c.cc.Invoke(ctx, IdentityService_RequestIdentifierUnlinkOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) VerifyIdentifierUnlinkOTP(ctx context.Context, in *VerifyIdentifierUnlinkOTPRequest, opts ...grpc.CallOption) (*VerifyIdentifierUnlinkOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyIdentifierUnlinkOTPResponse)
+	err := c.cc.Invoke(ctx, IdentityService_VerifyIdentifierUnlinkOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) GetMyIdentity(ctx context.Context, in *GetMyIdentityRequest, opts ...grpc.CallOption) (*GetMyIdentityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMyIdentityResponse)
+	err := c.cc.Invoke(ctx, IdentityService_GetMyIdentity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) ListMySessions(ctx context.Context, in *ListMySessionsRequest, opts ...grpc.CallOption) (*ListMySessionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMySessionsResponse)
+	err := c.cc.Invoke(ctx, IdentityService_ListMySessions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*RevokeSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RevokeSessionResponse)
+	err := c.cc.Invoke(ctx, IdentityService_RevokeSession_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +159,42 @@ func (c *identityServiceClient) RefreshToken(ctx context.Context, in *RefreshTok
 	return out, nil
 }
 
+func (c *identityServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LogoutResponse)
+	err := c.cc.Invoke(ctx, IdentityService_Logout_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) LogoutAllSessions(ctx context.Context, in *LogoutAllSessionsRequest, opts ...grpc.CallOption) (*LogoutAllSessionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LogoutAllSessionsResponse)
+	err := c.cc.Invoke(ctx, IdentityService_LogoutAllSessions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IdentityServiceServer is the server API for IdentityService service.
 // All implementations must embed UnimplementedIdentityServiceServer
 // for forward compatibility.
 type IdentityServiceServer interface {
-	RequestOTP(context.Context, *RequestOTPRequest) (*RequestOTPResponse, error)
-	VerifyOTP(context.Context, *VerifyOTPRequest) (*VerifyOTPResponse, error)
+	RequestLoginOTP(context.Context, *RequestLoginOTPRequest) (*RequestLoginOTPResponse, error)
+	VerifyLoginOTP(context.Context, *VerifyLoginOTPRequest) (*VerifyLoginOTPResponse, error)
+	RequestIdentifierLinkOTP(context.Context, *RequestIdentifierLinkOTPRequest) (*RequestIdentifierLinkOTPResponse, error)
+	VerifyIdentifierLinkOTP(context.Context, *VerifyIdentifierLinkOTPRequest) (*VerifyIdentifierLinkOTPResponse, error)
+	RequestIdentifierUnlinkOTP(context.Context, *RequestIdentifierUnlinkOTPRequest) (*RequestIdentifierUnlinkOTPResponse, error)
+	VerifyIdentifierUnlinkOTP(context.Context, *VerifyIdentifierUnlinkOTPRequest) (*VerifyIdentifierUnlinkOTPResponse, error)
+	GetMyIdentity(context.Context, *GetMyIdentityRequest) (*GetMyIdentityResponse, error)
+	ListMySessions(context.Context, *ListMySessionsRequest) (*ListMySessionsResponse, error)
+	RevokeSession(context.Context, *RevokeSessionRequest) (*RevokeSessionResponse, error)
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
+	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
+	LogoutAllSessions(context.Context, *LogoutAllSessionsRequest) (*LogoutAllSessionsResponse, error)
 	mustEmbedUnimplementedIdentityServiceServer()
 }
 
@@ -88,14 +205,41 @@ type IdentityServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedIdentityServiceServer struct{}
 
-func (UnimplementedIdentityServiceServer) RequestOTP(context.Context, *RequestOTPRequest) (*RequestOTPResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method RequestOTP not implemented")
+func (UnimplementedIdentityServiceServer) RequestLoginOTP(context.Context, *RequestLoginOTPRequest) (*RequestLoginOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestLoginOTP not implemented")
 }
-func (UnimplementedIdentityServiceServer) VerifyOTP(context.Context, *VerifyOTPRequest) (*VerifyOTPResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method VerifyOTP not implemented")
+func (UnimplementedIdentityServiceServer) VerifyLoginOTP(context.Context, *VerifyLoginOTPRequest) (*VerifyLoginOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyLoginOTP not implemented")
+}
+func (UnimplementedIdentityServiceServer) RequestIdentifierLinkOTP(context.Context, *RequestIdentifierLinkOTPRequest) (*RequestIdentifierLinkOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestIdentifierLinkOTP not implemented")
+}
+func (UnimplementedIdentityServiceServer) VerifyIdentifierLinkOTP(context.Context, *VerifyIdentifierLinkOTPRequest) (*VerifyIdentifierLinkOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyIdentifierLinkOTP not implemented")
+}
+func (UnimplementedIdentityServiceServer) RequestIdentifierUnlinkOTP(context.Context, *RequestIdentifierUnlinkOTPRequest) (*RequestIdentifierUnlinkOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestIdentifierUnlinkOTP not implemented")
+}
+func (UnimplementedIdentityServiceServer) VerifyIdentifierUnlinkOTP(context.Context, *VerifyIdentifierUnlinkOTPRequest) (*VerifyIdentifierUnlinkOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyIdentifierUnlinkOTP not implemented")
+}
+func (UnimplementedIdentityServiceServer) GetMyIdentity(context.Context, *GetMyIdentityRequest) (*GetMyIdentityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMyIdentity not implemented")
+}
+func (UnimplementedIdentityServiceServer) ListMySessions(context.Context, *ListMySessionsRequest) (*ListMySessionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMySessions not implemented")
+}
+func (UnimplementedIdentityServiceServer) RevokeSession(context.Context, *RevokeSessionRequest) (*RevokeSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeSession not implemented")
 }
 func (UnimplementedIdentityServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedIdentityServiceServer) Logout(context.Context, *LogoutRequest) (*LogoutResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
+}
+func (UnimplementedIdentityServiceServer) LogoutAllSessions(context.Context, *LogoutAllSessionsRequest) (*LogoutAllSessionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method LogoutAllSessions not implemented")
 }
 func (UnimplementedIdentityServiceServer) mustEmbedUnimplementedIdentityServiceServer() {}
 func (UnimplementedIdentityServiceServer) testEmbeddedByValue()                         {}
@@ -118,38 +262,164 @@ func RegisterIdentityServiceServer(s grpc.ServiceRegistrar, srv IdentityServiceS
 	s.RegisterService(&IdentityService_ServiceDesc, srv)
 }
 
-func _IdentityService_RequestOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestOTPRequest)
+func _IdentityService_RequestLoginOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestLoginOTPRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IdentityServiceServer).RequestOTP(ctx, in)
+		return srv.(IdentityServiceServer).RequestLoginOTP(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: IdentityService_RequestOTP_FullMethodName,
+		FullMethod: IdentityService_RequestLoginOTP_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IdentityServiceServer).RequestOTP(ctx, req.(*RequestOTPRequest))
+		return srv.(IdentityServiceServer).RequestLoginOTP(ctx, req.(*RequestLoginOTPRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IdentityService_VerifyOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(VerifyOTPRequest)
+func _IdentityService_VerifyLoginOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyLoginOTPRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IdentityServiceServer).VerifyOTP(ctx, in)
+		return srv.(IdentityServiceServer).VerifyLoginOTP(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: IdentityService_VerifyOTP_FullMethodName,
+		FullMethod: IdentityService_VerifyLoginOTP_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IdentityServiceServer).VerifyOTP(ctx, req.(*VerifyOTPRequest))
+		return srv.(IdentityServiceServer).VerifyLoginOTP(ctx, req.(*VerifyLoginOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_RequestIdentifierLinkOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestIdentifierLinkOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).RequestIdentifierLinkOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_RequestIdentifierLinkOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).RequestIdentifierLinkOTP(ctx, req.(*RequestIdentifierLinkOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_VerifyIdentifierLinkOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyIdentifierLinkOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).VerifyIdentifierLinkOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_VerifyIdentifierLinkOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).VerifyIdentifierLinkOTP(ctx, req.(*VerifyIdentifierLinkOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_RequestIdentifierUnlinkOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestIdentifierUnlinkOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).RequestIdentifierUnlinkOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_RequestIdentifierUnlinkOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).RequestIdentifierUnlinkOTP(ctx, req.(*RequestIdentifierUnlinkOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_VerifyIdentifierUnlinkOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyIdentifierUnlinkOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).VerifyIdentifierUnlinkOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_VerifyIdentifierUnlinkOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).VerifyIdentifierUnlinkOTP(ctx, req.(*VerifyIdentifierUnlinkOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_GetMyIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMyIdentityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).GetMyIdentity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_GetMyIdentity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).GetMyIdentity(ctx, req.(*GetMyIdentityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_ListMySessions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMySessionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).ListMySessions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_ListMySessions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).ListMySessions(ctx, req.(*ListMySessionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_RevokeSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).RevokeSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_RevokeSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).RevokeSession(ctx, req.(*RevokeSessionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -172,6 +442,42 @@ func _IdentityService_RefreshToken_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IdentityService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LogoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).Logout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_Logout_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).Logout(ctx, req.(*LogoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_LogoutAllSessions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LogoutAllSessionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).LogoutAllSessions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_LogoutAllSessions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).LogoutAllSessions(ctx, req.(*LogoutAllSessionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IdentityService_ServiceDesc is the grpc.ServiceDesc for IdentityService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -180,16 +486,52 @@ var IdentityService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*IdentityServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "RequestOTP",
-			Handler:    _IdentityService_RequestOTP_Handler,
+			MethodName: "RequestLoginOTP",
+			Handler:    _IdentityService_RequestLoginOTP_Handler,
 		},
 		{
-			MethodName: "VerifyOTP",
-			Handler:    _IdentityService_VerifyOTP_Handler,
+			MethodName: "VerifyLoginOTP",
+			Handler:    _IdentityService_VerifyLoginOTP_Handler,
+		},
+		{
+			MethodName: "RequestIdentifierLinkOTP",
+			Handler:    _IdentityService_RequestIdentifierLinkOTP_Handler,
+		},
+		{
+			MethodName: "VerifyIdentifierLinkOTP",
+			Handler:    _IdentityService_VerifyIdentifierLinkOTP_Handler,
+		},
+		{
+			MethodName: "RequestIdentifierUnlinkOTP",
+			Handler:    _IdentityService_RequestIdentifierUnlinkOTP_Handler,
+		},
+		{
+			MethodName: "VerifyIdentifierUnlinkOTP",
+			Handler:    _IdentityService_VerifyIdentifierUnlinkOTP_Handler,
+		},
+		{
+			MethodName: "GetMyIdentity",
+			Handler:    _IdentityService_GetMyIdentity_Handler,
+		},
+		{
+			MethodName: "ListMySessions",
+			Handler:    _IdentityService_ListMySessions_Handler,
+		},
+		{
+			MethodName: "RevokeSession",
+			Handler:    _IdentityService_RevokeSession_Handler,
 		},
 		{
 			MethodName: "RefreshToken",
 			Handler:    _IdentityService_RefreshToken_Handler,
+		},
+		{
+			MethodName: "Logout",
+			Handler:    _IdentityService_Logout_Handler,
+		},
+		{
+			MethodName: "LogoutAllSessions",
+			Handler:    _IdentityService_LogoutAllSessions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

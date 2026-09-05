@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -21,6 +24,10 @@ type SessionStore struct {
 func NewSessionStore(
 	pool *pgxpool.Pool,
 ) *SessionStore {
+	if pool == nil {
+		panic("PostgreSQL pool is required")
+	}
+
 	return &SessionStore{
 		pool: pool,
 	}
@@ -28,25 +35,74 @@ func NewSessionStore(
 
 func (s *SessionStore) Create(
 	ctx context.Context,
-	sessionID string,
-	identityID string,
-	sessionExpiresAt time.Time,
-	refreshTokenHash string,
-	refreshTokenExpiresAt time.Time,
+	input SessionCreationInput,
 ) (IssuedSession, error) {
-	if sessionID == "" {
-		return IssuedSession{}, errors.New("session ID cannot be empty")
+	if strings.TrimSpace(input.ChallengeID) == "" {
+		return IssuedSession{}, errors.New(
+			"challenge ID cannot be blank",
+		)
 	}
 
-	if identityID == "" {
-		return IssuedSession{}, errors.New("identity ID cannot be empty")
+	if input.VerifiedAt.IsZero() {
+		return IssuedSession{}, errors.New(
+			"OTP verification time cannot be zero",
+		)
 	}
 
-	if refreshTokenHash == "" {
-		return IssuedSession{}, errors.New("refresh token hash cannot be empty")
+	if input.SessionID == "" {
+		return IssuedSession{}, errors.New(
+			"session ID cannot be empty",
+		)
 	}
 
-	if refreshTokenExpiresAt.After(sessionExpiresAt) {
+	if input.IdentityID == "" {
+		return IssuedSession{}, errors.New(
+			"identity ID cannot be empty",
+		)
+	}
+
+	if input.RefreshTokenHash == "" {
+		return IssuedSession{}, errors.New(
+			"refresh token hash cannot be empty",
+		)
+	}
+
+	if input.SessionExpiresAt.IsZero() {
+		return IssuedSession{}, errors.New(
+			"session expiration cannot be zero",
+		)
+	}
+
+	if input.RefreshTokenExpiresAt.IsZero() {
+		return IssuedSession{}, errors.New(
+			"refresh token expiration cannot be zero",
+		)
+	}
+
+	tenantHint, err := auth.NormalizeTenantHint(
+		input.TenantHint,
+	)
+	if err != nil {
+		return IssuedSession{}, fmt.Errorf(
+			"validate session tenant hint: %w",
+			err,
+		)
+	}
+
+	var nullableTenantHint any
+
+	if tenantHint != "" {
+		nullableTenantHint = tenantHint
+	}
+
+	input.VerifiedAt = input.VerifiedAt.UTC()
+	input.SessionExpiresAt = input.SessionExpiresAt.UTC()
+	input.RefreshTokenExpiresAt =
+		input.RefreshTokenExpiresAt.UTC()
+
+	if input.RefreshTokenExpiresAt.After(
+		input.SessionExpiresAt,
+	) {
 		return IssuedSession{}, errors.New(
 			"refresh token cannot expire after its session",
 		)
@@ -64,21 +120,207 @@ func (s *SessionStore) Create(
 		_ = tx.Rollback(ctx)
 	}()
 
+	const verifyChallengeQuery = `
+		UPDATE otp_challenges
+		SET verified_at = $1
+		WHERE id = $2
+		AND tenant_hint IS NOT DISTINCT FROM $3
+		AND verified_at IS NULL
+		AND cancelled_at IS NULL
+		AND expires_at > $1
+		AND failed_attempts < max_attempts
+		RETURNING id::text
+	`
+
+	var verifiedChallengeID string
+
+	err = tx.QueryRow(
+		ctx,
+		verifyChallengeQuery,
+		input.VerifiedAt,
+		input.ChallengeID,
+		nullableTenantHint,
+	).Scan(
+		&verifiedChallengeID,
+	)
+
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return IssuedSession{}, fmt.Errorf(
+				"mark OTP challenge verified: %w",
+				err,
+			)
+		}
+
+		const challengeStateQuery = `
+			SELECT
+				expires_at,
+				verified_at,
+				cancelled_at,
+				failed_attempts,
+				max_attempts
+			FROM otp_challenges
+			WHERE id = $1
+			AND tenant_hint IS NOT DISTINCT FROM $2
+		`
+
+		var expiresAt time.Time
+		var existingVerifiedAt *time.Time
+		var cancelledAt *time.Time
+		var failedAttempts int16
+		var maxAttempts int16
+
+		stateErr := tx.QueryRow(
+			ctx,
+			challengeStateQuery,
+			input.ChallengeID,
+			nullableTenantHint,
+		).Scan(
+			&expiresAt,
+			&existingVerifiedAt,
+			&cancelledAt,
+			&failedAttempts,
+			&maxAttempts,
+		)
+
+		if errors.Is(stateErr, pgx.ErrNoRows) {
+			return IssuedSession{},
+				auth.ErrChallengeNotFound
+		}
+
+		if stateErr != nil {
+			return IssuedSession{}, fmt.Errorf(
+				"query OTP challenge after verification failure: %w",
+				stateErr,
+			)
+		}
+
+		if existingVerifiedAt != nil {
+			return IssuedSession{},
+				auth.ErrChallengeUsed
+		}
+
+		if cancelledAt != nil {
+			return IssuedSession{},
+				auth.ErrChallengeCancelled
+		}
+
+		if !input.VerifiedAt.Before(expiresAt) {
+			return IssuedSession{},
+				auth.ErrChallengeExpired
+		}
+
+		if failedAttempts >= maxAttempts {
+			return IssuedSession{},
+				auth.ErrChallengeAttemptsExceeded
+		}
+
+		return IssuedSession{}, errors.New(
+			"OTP challenge could not be marked verified",
+		)
+	}
+
+	const lockIdentityQuery = `
+		SELECT status
+		FROM identities
+		WHERE id = $1::uuid
+		FOR UPDATE
+	`
+
+	var identityStatus string
+
+	err = tx.QueryRow(
+		ctx,
+		lockIdentityQuery,
+		input.IdentityID,
+	).Scan(
+		&identityStatus,
+	)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return IssuedSession{},
+			auth.ErrIdentityNotFound
+	}
+
+	if err != nil {
+		return IssuedSession{}, fmt.Errorf(
+			"lock identity for session creation: %w",
+			err,
+		)
+	}
+
+	status, err := auth.ParseIdentityStatus(
+		identityStatus,
+	)
+	if err != nil {
+		return IssuedSession{}, fmt.Errorf(
+			"parse identity status for session creation: %w",
+			err,
+		)
+	}
+
+	if status != auth.IdentityStatusActive {
+		return IssuedSession{},
+			auth.ErrIdentityInactive
+	}
+
 	const sessionQuery = `
 		INSERT INTO auth_sessions (
 			id,
 			identity_id,
-			expires_at
+			tenant_hint,
+			expires_at,
+			client_id,
+			device_id,
+			device_name,
+			platform,
+			app_version,
+			ip_address,
+			user_agent
 		)
-		VALUES ($1::uuid, $2::uuid, $3)
+		VALUES (
+			$1::uuid,
+			$2::uuid,
+			$3,
+			$4,
+			$5,
+			$6,
+			$7,
+			$8,
+			$9,
+			$10,
+			$11
+		)
 	`
 
 	if _, err := tx.Exec(
 		ctx,
 		sessionQuery,
-		sessionID,
-		identityID,
-		sessionExpiresAt,
+		input.SessionID,
+		input.IdentityID,
+		nullableTenantHint,
+		input.SessionExpiresAt,
+		nullableSessionMetadataValue(
+			input.SessionMetadata.ClientID,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.DeviceID,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.DeviceName,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.Platform,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.AppVersion,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.IPAddress,
+		),
+		nullableSessionMetadataValue(
+			input.SessionMetadata.UserAgent,
+		),
 	); err != nil {
 		return IssuedSession{}, fmt.Errorf(
 			"insert auth session: %w",
@@ -101,9 +343,9 @@ func (s *SessionStore) Create(
 	if err := tx.QueryRow(
 		ctx,
 		refreshTokenQuery,
-		sessionID,
-		refreshTokenHash,
-		refreshTokenExpiresAt,
+		input.SessionID,
+		input.RefreshTokenHash,
+		input.RefreshTokenExpiresAt,
 	).Scan(&refreshTokenID); err != nil {
 		return IssuedSession{}, fmt.Errorf(
 			"insert refresh token: %w",
@@ -119,7 +361,19 @@ func (s *SessionStore) Create(
 	}
 
 	return IssuedSession{
-		SessionID:      sessionID,
+		SessionID:      input.SessionID,
 		RefreshTokenID: refreshTokenID,
 	}, nil
+}
+
+func nullableSessionMetadataValue(
+	value string,
+) any {
+	normalized := strings.TrimSpace(value)
+
+	if normalized == "" {
+		return nil
+	}
+
+	return normalized
 }

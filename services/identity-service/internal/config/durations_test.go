@@ -11,6 +11,11 @@ func TestParseDurationsReturnsParsedValues(t *testing.T) {
 		AccessTokenTTL:  "15m",
 		SessionTTL:      "720h",
 		RefreshTokenTTL: "696h",
+
+		CleanupInterval:          "1h",
+		OTPRequestEventRetention: "24h",
+		OTPChallengeRetention:    "24h",
+		AuthSessionRetention:     "720h",
 	}
 
 	durations, err := ParseDurations(cfg)
@@ -49,6 +54,38 @@ func TestParseDurationsReturnsParsedValues(t *testing.T) {
 			696*time.Hour,
 		)
 	}
+
+	if durations.CleanupInterval != time.Hour {
+		t.Fatalf(
+			"CleanupInterval is %v, expected %v",
+			durations.CleanupInterval,
+			time.Hour,
+		)
+	}
+
+	if durations.OTPRequestEventRetention != 24*time.Hour {
+		t.Fatalf(
+			"OTPRequestEventRetention is %v, expected %v",
+			durations.OTPRequestEventRetention,
+			24*time.Hour,
+		)
+	}
+
+	if durations.OTPChallengeRetention != 24*time.Hour {
+		t.Fatalf(
+			"OTPChallengeRetention is %v, expected %v",
+			durations.OTPChallengeRetention,
+			24*time.Hour,
+		)
+	}
+
+	if durations.AuthSessionRetention != 720*time.Hour {
+		t.Fatalf(
+			"AuthSessionRetention is %v, expected %v",
+			durations.AuthSessionRetention,
+			720*time.Hour,
+		)
+	}
 }
 
 func TestParseDurationsRejectsInvalidDuration(t *testing.T) {
@@ -57,6 +94,11 @@ func TestParseDurationsRejectsInvalidDuration(t *testing.T) {
 		AccessTokenTTL:  "15m",
 		SessionTTL:      "720h",
 		RefreshTokenTTL: "696h",
+
+		CleanupInterval:          "1h",
+		OTPRequestEventRetention: "24h",
+		OTPChallengeRetention:    "24h",
+		AuthSessionRetention:     "720h",
 	}
 
 	_, err := ParseDurations(cfg)
@@ -73,6 +115,11 @@ func TestParseDurationsRejectsNonPositiveDuration(t *testing.T) {
 		AccessTokenTTL:  "15m",
 		SessionTTL:      "720h",
 		RefreshTokenTTL: "696h",
+
+		CleanupInterval:          "1h",
+		OTPRequestEventRetention: "24h",
+		OTPChallengeRetention:    "24h",
+		AuthSessionRetention:     "720h",
 	}
 
 	_, err := ParseDurations(cfg)
@@ -91,12 +138,40 @@ func TestParseDurationsRejectsRefreshTokenTTLGreaterThanSessionTTL(
 		AccessTokenTTL:  "15m",
 		SessionTTL:      "24h",
 		RefreshTokenTTL: "48h",
+
+		CleanupInterval:          "1h",
+		OTPRequestEventRetention: "24h",
+		OTPChallengeRetention:    "24h",
+		AuthSessionRetention:     "720h",
 	}
 
 	_, err := ParseDurations(cfg)
 	if err == nil {
 		t.Fatal(
 			"ParseDurations() allowed refresh token TTL to exceed session TTL",
+		)
+	}
+}
+
+func TestParseDurationsRejectsInvalidCleanupDuration(
+	t *testing.T,
+) {
+	cfg := Config{
+		OTPChallengeTTL: "5m",
+		AccessTokenTTL:  "15m",
+		SessionTTL:      "720h",
+		RefreshTokenTTL: "696h",
+
+		CleanupInterval:          "0s",
+		OTPRequestEventRetention: "24h",
+		OTPChallengeRetention:    "24h",
+		AuthSessionRetention:     "720h",
+	}
+
+	_, err := ParseDurations(cfg)
+	if err == nil {
+		t.Fatal(
+			"ParseDurations() returned nil error for zero cleanup interval",
 		)
 	}
 }

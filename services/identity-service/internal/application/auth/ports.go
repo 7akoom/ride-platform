@@ -6,8 +6,12 @@ import (
 )
 
 type OTPChallenge struct {
-	ID             string
-	PhoneNumber    string
+	ID               string
+	Identifier       Identifier
+	Purpose          OTPPurpose
+	TargetIdentityID *string
+	TenantHint       string
+
 	CodeHash       string
 	ExpiresAt      time.Time
 	VerifiedAt     *time.Time
@@ -17,9 +21,54 @@ type OTPChallenge struct {
 }
 
 type Identity struct {
+	ID       string
+	IsActive bool
+}
+
+type IdentityIdentifier struct {
+	ID         string
+	IdentityID string
+	Identifier Identifier
+	VerifiedAt *time.Time
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+type IdentityDetailsIdentifier struct {
+	Identifier Identifier
+	VerifiedAt time.Time
+}
+
+type IdentityDetails struct {
 	ID          string
-	PhoneNumber string
-	IsActive    bool
+	Status      IdentityStatus
+	Identifiers []IdentityDetailsIdentifier
+}
+
+type IdentityReader interface {
+	FindByID(
+		ctx context.Context,
+		identityID string,
+	) (IdentityDetails, bool, error)
+}
+
+type IdentityLifecycleTransition struct {
+	IdentityID     string
+	TargetStatus   IdentityStatus
+	TransitionedAt time.Time
+}
+
+type IdentityLifecycleTransitionResult struct {
+	PreviousStatus IdentityStatus
+	CurrentStatus  IdentityStatus
+	Changed        bool
+}
+
+type IdentityLifecycleStore interface {
+	Transition(
+		ctx context.Context,
+		input IdentityLifecycleTransition,
+	) (IdentityLifecycleTransitionResult, bool, error)
 }
 
 type ChallengeRepository interface {
@@ -52,11 +101,63 @@ type ChallengeRepository interface {
 	) error
 }
 
-type IdentityRepository interface {
-	FindOrCreateByPhoneNumber(
+type IdentityIdentifierRepository interface {
+	FindIdentityByIdentifier(
 		ctx context.Context,
-		phoneNumber string,
+		identifier Identifier,
+	) (Identity, bool, error)
+
+	CreateIdentityWithIdentifier(
+		ctx context.Context,
+		identifier Identifier,
+		verifiedAt time.Time,
 	) (Identity, error)
+
+	LinkIdentifier(
+		ctx context.Context,
+		identityID string,
+		identifier Identifier,
+		verifiedAt time.Time,
+	) error
+}
+
+type IdentifierLinkCompletionInput struct {
+	ChallengeID string
+	IdentityID  string
+	Identifier  Identifier
+	VerifiedAt  time.Time
+}
+
+type IdentifierLinkCompletionStore interface {
+	Complete(
+		ctx context.Context,
+		input IdentifierLinkCompletionInput,
+	) error
+}
+
+type IdentifierUnlinkRequestInput struct {
+	Challenge        OTPChallenge
+	TargetIdentifier Identifier
+}
+
+type IdentifierUnlinkRequestStore interface {
+	Create(
+		ctx context.Context,
+		input IdentifierUnlinkRequestInput,
+	) error
+}
+
+type IdentifierUnlinkCompletionInput struct {
+	ChallengeID string
+	IdentityID  string
+	VerifiedAt  time.Time
+}
+
+type IdentifierUnlinkCompletionStore interface {
+	Complete(
+		ctx context.Context,
+		input IdentifierUnlinkCompletionInput,
+	) error
 }
 
 type OTPGenerator interface {
@@ -64,19 +165,31 @@ type OTPGenerator interface {
 }
 
 type OTPHasher interface {
-	Hash(code string) (string, error)
+	Hash(
+		challengeID string,
+		code string,
+	) (string, error)
 
 	Compare(
 		hash string,
+		challengeID string,
 		code string,
-	) error
+	) (bool, error)
+}
+
+type OTPDeliveryInput struct {
+	ChallengeID string
+	Identifier  Identifier
+	Code        string
+	Purpose     OTPPurpose
+	Channel     OTPDeliveryChannel
+	Locale      string
 }
 
 type OTPDelivery interface {
 	Send(
 		ctx context.Context,
-		phoneNumber string,
-		code string,
+		input OTPDeliveryInput,
 	) error
 }
 
@@ -86,10 +199,18 @@ type TokenPair struct {
 	AccessTokenExpiresInSeconds int32
 }
 
+type TokenIssueInput struct {
+	Identity        Identity
+	ChallengeID     string
+	VerifiedAt      time.Time
+	TenantHint      string
+	SessionMetadata SessionMetadata
+}
+
 type TokenIssuer interface {
 	Issue(
 		ctx context.Context,
-		identity Identity,
+		input TokenIssueInput,
 	) (TokenPair, error)
 }
 
@@ -101,16 +222,30 @@ type Clock interface {
 	Now() time.Time
 }
 
-type OTPRequestRateLimitPolicy struct {
-	Cooldown   time.Duration
-	Window     time.Duration
+type OTPRequestAbuseLimitPolicy struct {
+	Window      time.Duration
 	MaxRequests int
+}
+
+type OTPRequestRateLimitPolicy struct {
+	Cooldown    time.Duration
+	Window      time.Duration
+	MaxRequests int
+
+	Abuse OTPRequestAbuseLimitPolicy
+}
+
+type OTPRequestScope struct {
+	Identifier       Identifier
+	Purpose          OTPPurpose
+	TargetIdentityID *string
+	SourceIPAddress  string
 }
 
 type OTPRequestRateLimiter interface {
 	Allow(
 		ctx context.Context,
-		phoneNumber string,
+		scope OTPRequestScope,
 		now time.Time,
 		policy OTPRequestRateLimitPolicy,
 	) error
@@ -119,14 +254,15 @@ type OTPRequestRateLimiter interface {
 type RefreshTokenContext struct {
 	IdentityID       string
 	SessionID        string
+	TenantHint       string
 	SessionExpiresAt time.Time
 }
 
 type RefreshTokenRotationInput struct {
-	CurrentTokenHash      string
-	ReplacementTokenHash  string
-	RotatedAt             time.Time
-	ReplacementExpiresAt  time.Time
+	CurrentTokenHash     string
+	ReplacementTokenHash string
+	RotatedAt            time.Time
+	ReplacementExpiresAt time.Time
 }
 
 type RefreshTokenRotationStore interface {
@@ -151,9 +287,143 @@ type RefreshTokenHasher interface {
 }
 
 type AccessTokenSigner interface {
-	Issue(
+	IssueForSession(
 		identityID string,
 		sessionID string,
+		tenantHint string,
 		issuedAt time.Time,
+		sessionExpiresAt time.Time,
 	) (string, int32, error)
+}
+
+type SessionDetails struct {
+	ID         string
+	ClientID   *string
+	DeviceID   *string
+	DeviceName *string
+	Platform   *string
+	AppVersion *string
+	IPAddress  *string
+	UserAgent  *string
+
+	ExpiresAt  time.Time
+	LastSeenAt *time.Time
+	CreatedAt  time.Time
+}
+
+type SessionReader interface {
+	ListActiveByIdentity(
+		ctx context.Context,
+		identityID string,
+		now time.Time,
+	) ([]SessionDetails, error)
+}
+
+type SessionRevocationTarget struct {
+	SessionID        string
+	SessionExpiresAt time.Time
+}
+
+type SessionRevocationTargetStore interface {
+	FindRevocationTargetByRefreshTokenHash(
+		ctx context.Context,
+		refreshTokenHash string,
+	) (SessionRevocationTarget, bool, error)
+}
+
+type PersistentSessionRevocationStore interface {
+	RevokeSessionByRefreshTokenHash(
+		ctx context.Context,
+		refreshTokenHash string,
+		revokedAt time.Time,
+	) error
+}
+
+type SessionManagementRevocationTargetStore interface {
+	FindRevocationTargetByIdentityAndSessionID(
+		ctx context.Context,
+		identityID string,
+		sessionID string,
+	) (SessionRevocationTarget, bool, error)
+}
+
+type SessionManagementRevocationStore interface {
+	RevokeSession(
+		ctx context.Context,
+		identityID string,
+		sessionID string,
+		revokedAt time.Time,
+	) error
+}
+
+type SessionAccessRevocationStore interface {
+	MarkRevoked(
+		ctx context.Context,
+		sessionID string,
+		ttl time.Duration,
+	) error
+
+	IsRevoked(
+		ctx context.Context,
+		sessionID string,
+	) (bool, error)
+}
+
+type SessionAccessState struct {
+	SessionExpiresAt time.Time
+	Revoked          bool
+}
+
+type SessionAccessStateStore interface {
+	FindSessionAccessState(
+		ctx context.Context,
+		sessionID string,
+	) (SessionAccessState, bool, error)
+}
+
+type SessionRevocationStore interface {
+	RevokeByRefreshTokenHash(
+		ctx context.Context,
+		refreshTokenHash string,
+		revokedAt time.Time,
+	) error
+}
+
+type AllSessionsRevocationTarget struct {
+	IdentityID string
+	Sessions   []SessionRevocationTarget
+}
+
+type AllSessionsRevocationTargetStore interface {
+	FindAllSessionRevocationTargetsByRefreshTokenHash(
+		ctx context.Context,
+		refreshTokenHash string,
+		now time.Time,
+	) (AllSessionsRevocationTarget, bool, error)
+}
+
+type SingleSessionPersistentRevocationStore interface {
+	RevokeSession(
+		ctx context.Context,
+		identityID string,
+		sessionID string,
+		revokedAt time.Time,
+	) error
+}
+
+type AllSessionsPersistentRevocationStore interface {
+	RevokeSessions(
+		ctx context.Context,
+		identityID string,
+		sessionIDs []string,
+		revokedAt time.Time,
+	) error
+}
+
+type AllSessionsRevocationStore interface {
+	RevokeAllByRefreshTokenHash(
+		ctx context.Context,
+		refreshTokenHash string,
+		revokedAt time.Time,
+	) error
 }

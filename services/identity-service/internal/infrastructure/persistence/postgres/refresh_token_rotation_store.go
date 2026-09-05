@@ -20,6 +20,10 @@ var _ auth.RefreshTokenRotationStore = (*RefreshTokenRotationStore)(nil)
 func NewRefreshTokenRotationStore(
 	pool *pgxpool.Pool,
 ) *RefreshTokenRotationStore {
+	if pool == nil {
+		panic("PostgreSQL pool is required")
+	}
+
 	return &RefreshTokenRotationStore{
 		pool: pool,
 	}
@@ -35,6 +39,13 @@ func (s *RefreshTokenRotationStore) Inspect(
 			auth.ErrInvalidRefreshToken
 	}
 
+	if now.IsZero() {
+		return auth.RefreshTokenContext{},
+			errors.New(
+				"refresh token inspection time cannot be zero",
+			)
+	}
+
 	now = now.UTC()
 
 	const query = `
@@ -42,6 +53,7 @@ func (s *RefreshTokenRotationStore) Inspect(
 			i.id::text,
 			i.status,
 			s.id::text,
+			s.tenant_hint,
 			s.expires_at,
 			s.revoked_at,
 			rt.expires_at,
@@ -57,6 +69,7 @@ func (s *RefreshTokenRotationStore) Inspect(
 
 	var refreshContext auth.RefreshTokenContext
 	var identityStatus string
+	var tenantHint *string
 	var sessionRevokedAt *time.Time
 	var refreshTokenExpiresAt time.Time
 	var refreshTokenUsedAt *time.Time
@@ -70,6 +83,7 @@ func (s *RefreshTokenRotationStore) Inspect(
 		&refreshContext.IdentityID,
 		&identityStatus,
 		&refreshContext.SessionID,
+		&tenantHint,
 		&refreshContext.SessionExpiresAt,
 		&sessionRevokedAt,
 		&refreshTokenExpiresAt,
@@ -87,6 +101,19 @@ func (s *RefreshTokenRotationStore) Inspect(
 			"query refresh token context: %w",
 			err,
 		)
+	}
+
+	if tenantHint != nil {
+		normalizedTenantHint, err :=
+			auth.NormalizeTenantHint(*tenantHint)
+		if err != nil {
+			return auth.RefreshTokenContext{}, fmt.Errorf(
+				"restore refresh token tenant hint: %w",
+				err,
+			)
+		}
+
+		refreshContext.TenantHint = normalizedTenantHint
 	}
 
 	if sessionRevokedAt != nil {
@@ -115,13 +142,13 @@ func (s *RefreshTokenRotationStore) Inspect(
 	}
 
 	if refreshTokenUsedAt != nil {
-		if err := s.revokeSession(
+		if err := s.handleRefreshTokenReuse(
 			ctx,
-			refreshContext.SessionID,
+			currentTokenHash,
 			now,
 		); err != nil {
 			return auth.RefreshTokenContext{}, fmt.Errorf(
-				"revoke session after refresh token reuse: %w",
+				"handle refresh token reuse: %w",
 				err,
 			)
 		}
@@ -151,6 +178,18 @@ func (s *RefreshTokenRotationStore) Rotate(
 		input.ReplacementTokenHash {
 		return errors.New(
 			"replacement refresh token hash must differ from current token hash",
+		)
+	}
+
+	if input.RotatedAt.IsZero() {
+		return errors.New(
+			"refresh token rotation time cannot be zero",
+		)
+	}
+
+	if input.ReplacementExpiresAt.IsZero() {
+		return errors.New(
+			"replacement refresh token expiration cannot be zero",
 		)
 	}
 
@@ -190,6 +229,7 @@ func (s *RefreshTokenRotationStore) Rotate(
 			rt.revoked_at,
 			s.expires_at,
 			s.revoked_at,
+			i.id::text,
 			i.status
 		FROM refresh_tokens AS rt
 		INNER JOIN auth_sessions AS s
@@ -207,6 +247,7 @@ func (s *RefreshTokenRotationStore) Rotate(
 	var refreshTokenRevokedAt *time.Time
 	var sessionExpiresAt time.Time
 	var sessionRevokedAt *time.Time
+	var identityID string
 	var identityStatus string
 
 	err = tx.QueryRow(
@@ -221,6 +262,7 @@ func (s *RefreshTokenRotationStore) Rotate(
 		&refreshTokenRevokedAt,
 		&sessionExpiresAt,
 		&sessionRevokedAt,
+		&identityID,
 		&identityStatus,
 	)
 
@@ -258,21 +300,23 @@ func (s *RefreshTokenRotationStore) Rotate(
 	}
 
 	if refreshTokenUsedAt != nil {
-		if err := revokeSessionInTransaction(
+		if err := handleRefreshTokenReuseInTransaction(
 			ctx,
 			tx,
+			currentRefreshTokenID,
+			identityID,
 			sessionID,
 			input.RotatedAt,
 		); err != nil {
 			return fmt.Errorf(
-				"revoke session after refresh token reuse: %w",
+				"handle refresh token reuse: %w",
 				err,
 			)
 		}
 
 		if err := tx.Commit(ctx); err != nil {
 			return fmt.Errorf(
-				"commit session revocation after refresh token reuse: %w",
+				"commit refresh token reuse handling: %w",
 				err,
 			)
 		}
@@ -363,10 +407,10 @@ func (s *RefreshTokenRotationStore) Rotate(
 	return nil
 }
 
-func (s *RefreshTokenRotationStore) revokeSession(
+func (s *RefreshTokenRotationStore) handleRefreshTokenReuse(
 	ctx context.Context,
-	sessionID string,
-	revokedAt time.Time,
+	currentTokenHash string,
+	detectedAt time.Time,
 ) error {
 	tx, err := s.pool.BeginTx(
 		ctx,
@@ -374,7 +418,7 @@ func (s *RefreshTokenRotationStore) revokeSession(
 	)
 	if err != nil {
 		return fmt.Errorf(
-			"begin session revocation transaction: %w",
+			"begin refresh token reuse transaction: %w",
 			err,
 		)
 	}
@@ -383,20 +427,143 @@ func (s *RefreshTokenRotationStore) revokeSession(
 		_ = tx.Rollback(ctx)
 	}()
 
-	if err := revokeSessionInTransaction(
+	const selectQuery = `
+		SELECT
+			rt.id::text,
+			i.id::text,
+			s.id::text,
+			rt.used_at
+		FROM refresh_tokens AS rt
+		INNER JOIN auth_sessions AS s
+			ON s.id = rt.session_id
+		INNER JOIN identities AS i
+			ON i.id = s.identity_id
+		WHERE rt.token_hash = $1
+		FOR UPDATE OF rt, s
+	`
+
+	var refreshTokenID string
+	var identityID string
+	var sessionID string
+	var usedAt *time.Time
+
+	err = tx.QueryRow(
+		ctx,
+		selectQuery,
+		currentTokenHash,
+	).Scan(
+		&refreshTokenID,
+		&identityID,
+		&sessionID,
+		&usedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return auth.ErrInvalidRefreshToken
+	}
+
+	if err != nil {
+		return fmt.Errorf(
+			"lock reused refresh token: %w",
+			err,
+		)
+	}
+
+	if usedAt == nil {
+		return errors.New(
+			"refresh token is not marked used during reuse handling",
+		)
+	}
+
+	if err := handleRefreshTokenReuseInTransaction(
 		ctx,
 		tx,
+		refreshTokenID,
+		identityID,
 		sessionID,
-		revokedAt,
+		detectedAt,
 	); err != nil {
 		return err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf(
-			"commit session revocation: %w",
+			"commit refresh token reuse transaction: %w",
 			err,
 		)
+	}
+
+	return nil
+}
+
+func handleRefreshTokenReuseInTransaction(
+	ctx context.Context,
+	tx pgx.Tx,
+	refreshTokenID string,
+	identityID string,
+	sessionID string,
+	detectedAt time.Time,
+) error {
+	const markReuseDetectedQuery = `
+		UPDATE refresh_tokens
+		SET reuse_detected_at = $1
+		WHERE id = $2::uuid
+		  AND used_at IS NOT NULL
+		  AND reuse_detected_at IS NULL
+	`
+
+	commandTag, err := tx.Exec(
+		ctx,
+		markReuseDetectedQuery,
+		detectedAt,
+		refreshTokenID,
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"mark refresh token reuse detected: %w",
+			err,
+		)
+	}
+
+	firstDetection :=
+		commandTag.RowsAffected() == 1
+
+	if err := revokeSessionInTransaction(
+		ctx,
+		tx,
+		sessionID,
+		detectedAt,
+	); err != nil {
+		return fmt.Errorf(
+			"revoke session after refresh token reuse: %w",
+			err,
+		)
+	}
+
+	if firstDetection {
+		event, err :=
+			auth.NewIdentityRefreshTokenReuseDetectedDomainEvent(
+				identityID,
+				sessionID,
+				detectedAt,
+			)
+		if err != nil {
+			return fmt.Errorf(
+				"build identity refresh token reuse detected domain event: %w",
+				err,
+			)
+		}
+
+		if err :=
+			insertIdentityRefreshTokenReuseDetectedOutboxEventInTransaction(
+				ctx,
+				tx,
+				event,
+			); err != nil {
+			return fmt.Errorf(
+				"persist identity refresh token reuse detected domain event: %w",
+				err,
+			)
+		}
 	}
 
 	return nil
