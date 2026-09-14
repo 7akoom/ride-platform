@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+package ride.notification.v1;
+
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/notification/v1;notificationv1";
+
+service NotificationService {
+  rpc Send(SendRequest) returns (SendResponse);
+  rpc RegisterDevice(RegisterDeviceRequest) returns (RegisterDeviceResponse);
+  rpc UnregisterDevice(UnregisterDeviceRequest) returns (UnregisterDeviceResponse);
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc MarkAsRead(MarkAsReadRequest) returns (MarkAsReadResponse);
+  rpc UpsertTemplate(UpsertTemplateRequest) returns (UpsertTemplateResponse);
+}
+
+enum RecipientType {
+  RECIPIENT_TYPE_UNSPECIFIED = 0;
+  RECIPIENT_TYPE_RIDER = 1;
+  RECIPIENT_TYPE_DRIVER = 2;
+}
+
+enum Channel {
+  CHANNEL_UNSPECIFIED = 0;
+  CHANNEL_IN_APP = 1;
+  CHANNEL_PUSH = 2;
+  CHANNEL_SMS = 3;
+}
+
+enum DeliveryStatus {
+  DELIVERY_STATUS_UNSPECIFIED = 0;
+  DELIVERY_STATUS_PENDING = 1;
+  DELIVERY_STATUS_SENT = 2;
+  DELIVERY_STATUS_FAILED = 3;
+  DELIVERY_STATUS_SKIPPED = 4;
+}
+
+enum Platform {
+  PLATFORM_UNSPECIFIED = 0;
+  PLATFORM_ANDROID = 1;
+  PLATFORM_IOS = 2;
+  PLATFORM_WEB = 3;
+}
+
+message Notification {
+  string id = 1;
+  RecipientType recipient_type = 2;
+  string recipient_id = 3;
+  string event_key = 4;
+  string title = 5;
+  string body = 6;
+  string locale = 7;
+  map<string, string> data = 8;
+  bool read = 9;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+message Delivery {
+  Channel channel = 1;
+  DeliveryStatus status = 2;
+  string detail = 3;
+}
+
+message SendRequest {
+  RecipientType recipient_type = 1;
+  string recipient_id = 2;
+  // Template key, e.g. "trip.driver_assigned". Resolved against the
+  // recipient's locale.
+  string event_key = 3;
+  // Values substituted into the template, e.g. {"driver_name": "Ali"}.
+  map<string, string> variables = 4;
+  // Opaque payload passed through to the client app (deep links etc).
+  map<string, string> data = 5;
+  // Overrides the recipient's stored locale when set.
+  string locale = 6;
+  // When empty, the service uses the template's default channels.
+  repeated Channel channels = 7;
+  // Caller-supplied key so a retried send doesn't notify twice.
+  string idempotency_key = 8;
+}
+
+message SendResponse {
+  Notification notification = 1;
+  repeated Delivery deliveries = 2;
+}
+
+message RegisterDeviceRequest {
+  RecipientType recipient_type = 1;
+  string recipient_id = 2;
+  string device_token = 3;
+  Platform platform = 4;
+  string locale = 5;
+}
+
+message RegisterDeviceResponse {
+  string device_id = 1;
+}
+
+message UnregisterDeviceRequest {
+  string device_token = 1;
+}
+
+message UnregisterDeviceResponse {
+  bool removed = 1;
+}
+
+message ListNotificationsRequest {
+  RecipientType recipient_type = 1;
+  string recipient_id = 2;
+  int32 limit = 3;
+  bool unread_only = 4;
+}
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1;
+  int32 unread_count = 2;
+}
+
+message MarkAsReadRequest {
+  RecipientType recipient_type = 1;
+  string recipient_id = 2;
+  // When empty, marks every unread notification for this recipient.
+  repeated string notification_ids = 3;
+}
+
+message MarkAsReadResponse {
+  int32 marked_count = 1;
+}
+
+message TemplateTranslation {
+  string locale = 1;
+  string title = 2;
+  string body = 3;
+}
+
+message UpsertTemplateRequest {
+  string event_key = 1;
+  repeated Channel default_channels = 2;
+  repeated TemplateTranslation translations = 3;
+}
+
+message UpsertTemplateResponse {
+  string event_key = 1;
+  int32 translation_count = 2;
+}

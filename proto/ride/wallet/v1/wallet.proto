@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+package ride.wallet.v1;
+
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1;walletv1";
+
+service WalletService {
+  rpc GetWallet(GetWalletRequest) returns (GetWalletResponse);
+  rpc TopUp(TopUpRequest) returns (TopUpResponse);
+  rpc SettleTrip(SettleTripRequest) returns (SettleTripResponse);
+  rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse);
+  rpc CheckDriverStanding(CheckDriverStandingRequest) returns (CheckDriverStandingResponse);
+  rpc RequestPayout(RequestPayoutRequest) returns (RequestPayoutResponse);
+}
+
+enum OwnerType {
+  OWNER_TYPE_UNSPECIFIED = 0;
+  OWNER_TYPE_RIDER = 1;
+  OWNER_TYPE_DRIVER = 2;
+}
+
+enum PaymentMethod {
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  PAYMENT_METHOD_CASH = 1;
+  PAYMENT_METHOD_WALLET = 2;
+  PAYMENT_METHOD_CARD = 3;
+}
+
+enum TransactionType {
+  TRANSACTION_TYPE_UNSPECIFIED = 0;
+  TRANSACTION_TYPE_TOP_UP = 1;
+  TRANSACTION_TYPE_TRIP_PAYMENT = 2;
+  TRANSACTION_TYPE_TRIP_EARNING = 3;
+  TRANSACTION_TYPE_COMMISSION = 4;
+  TRANSACTION_TYPE_PAYOUT = 5;
+  TRANSACTION_TYPE_ADJUSTMENT = 6;
+}
+
+message Wallet {
+  string id = 1;
+  OwnerType owner_type = 2;
+  string owner_id = 3;
+  string currency_code = 4;
+  // Decimal string (e.g. "2451.6") — never a float, to avoid any
+  // precision loss crossing the wire.
+  string balance = 5;
+  bool blocked = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message Transaction {
+  string id = 1;
+  string wallet_id = 2;
+  TransactionType type = 3;
+  // Signed decimal string: negative means money left the wallet.
+  string amount = 4;
+  string balance_after = 5;
+  string trip_id = 6;
+  string description = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+message GetWalletRequest {
+  OwnerType owner_type = 1;
+  string owner_id = 2;
+}
+
+message GetWalletResponse {
+  Wallet wallet = 1;
+}
+
+message TopUpRequest {
+  OwnerType owner_type = 1;
+  string owner_id = 2;
+  string amount = 3;
+  // Caller-supplied unique key so a retried top-up can't double-credit.
+  string idempotency_key = 4;
+  string description = 5;
+}
+
+message TopUpResponse {
+  Wallet wallet = 1;
+  Transaction transaction = 2;
+}
+
+message SettleTripRequest {
+  string trip_id = 1;
+  string rider_id = 2;
+  string driver_id = 3;
+  string fare_amount = 4;
+  PaymentMethod payment_method = 5;
+}
+
+message SettleTripResponse {
+  string trip_id = 1;
+  string fare_amount = 2;
+  string commission_amount = 3;
+  string driver_earning = 4;
+  string rider_balance = 5;
+  string driver_balance = 6;
+}
+
+message ListTransactionsRequest {
+  OwnerType owner_type = 1;
+  string owner_id = 2;
+  int32 limit = 3;
+}
+
+message ListTransactionsResponse {
+  repeated Transaction transactions = 1;
+}
+
+message CheckDriverStandingRequest {
+  string driver_id = 1;
+}
+
+// A driver works on a prepaid commission balance: they deposit money up
+// front, commission is drawn from it, and once the balance falls to the
+// suspension threshold their account stops receiving trips entirely
+// until they top up again.
+message CheckDriverStandingResponse {
+  // False means: assign no trips to this driver at all.
+  bool can_take_trips = 1;
+  bool suspended = 2;
+  string current_balance = 3;
+  // Balance at or below which the account is suspended (negative or zero).
+  string suspension_threshold = 4;
+  // How much the driver must deposit to get back above the threshold.
+  // Zero when they are in good standing.
+  string amount_due = 5;
+  string reason = 6;
+}
+
+message RequestPayoutRequest {
+  string driver_id = 1;
+  string amount = 2;
+  string idempotency_key = 3;
+}
+
+message RequestPayoutResponse {
+  Wallet wallet = 1;
+  Transaction transaction = 2;
+}

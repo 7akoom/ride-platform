@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package ride.trip.v1;
+
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/trip/v1;tripv1";
+
+service TripService {
+  rpc RequestTrip(RequestTripRequest) returns (RequestTripResponse);
+  rpc AcceptTrip(AcceptTripRequest) returns (AcceptTripResponse);
+  rpc StartTrip(StartTripRequest) returns (StartTripResponse);
+  rpc CompleteTrip(CompleteTripRequest) returns (CompleteTripResponse);
+  rpc CancelTrip(CancelTripRequest) returns (CancelTripResponse);
+  rpc GetTrip(GetTripRequest) returns (GetTripResponse);
+}
+
+enum TripStatus {
+  TRIP_STATUS_UNSPECIFIED = 0;
+  TRIP_STATUS_REQUESTED = 1;
+  TRIP_STATUS_ACCEPTED = 2;
+  TRIP_STATUS_IN_PROGRESS = 3;
+  TRIP_STATUS_COMPLETED = 4;
+  TRIP_STATUS_CANCELLED = 5;
+}
+
+message Coordinates {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+message Trip {
+  string id = 1;
+  string rider_id = 2;
+  string driver_id = 3;
+  TripStatus status = 4;
+  Coordinates pickup = 5;
+  Coordinates dropoff = 6;
+  string cancellation_reason = 7;
+  google.protobuf.Timestamp requested_at = 8;
+  google.protobuf.Timestamp accepted_at = 9;
+  google.protobuf.Timestamp started_at = 10;
+  google.protobuf.Timestamp completed_at = 11;
+  google.protobuf.Timestamp cancelled_at = 12;
+}
+
+message RequestTripRequest {
+  string rider_id = 1;
+  Coordinates pickup = 2;
+  Coordinates dropoff = 3;
+}
+
+message RequestTripResponse {
+  Trip trip = 1;
+}
+
+message AcceptTripRequest {
+  string trip_id = 1;
+  string driver_id = 2;
+}
+
+message AcceptTripResponse {
+  Trip trip = 1;
+}
+
+message StartTripRequest {
+  string trip_id = 1;
+}
+
+message StartTripResponse {
+  Trip trip = 1;
+}
+
+message CompleteTripRequest {
+  string trip_id = 1;
+}
+
+message CompleteTripResponse {
+  Trip trip = 1;
+}
+
+message CancelTripRequest {
+  string trip_id = 1;
+  string reason = 2;
+}
+
+message CancelTripResponse {
+  Trip trip = 1;
+}
+
+message GetTripRequest {
+  string trip_id = 1;
+}
+
+message GetTripResponse {
+  Trip trip = 1;
+}

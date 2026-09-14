@@ -3,6 +3,14 @@ go 1.26.0
 toolchain go1.26.8
 
 use (
-    ./gen/go
-    ./services/identity-service
+	./gen/go
+	./services/dispatch-service
+	./services/driver-service
+	./services/identity-service
+	./services/location-service
+	./services/notification-service
+	./services/pricing-service
+	./services/rider-service
+	./services/trip-service
+	./services/wallet-service
 )

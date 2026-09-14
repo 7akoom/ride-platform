@@ -27,6 +27,203 @@ services:
 
     restart: unless-stopped
 
+  rider-postgres:
+    image: postgres:17-alpine3.24
+    container_name: ride-rider-postgres
+
+    environment:
+      POSTGRES_DB: ${RIDER_DB_NAME:?RIDER_DB_NAME is required}
+      POSTGRES_USER: ${RIDER_DB_USER:?RIDER_DB_USER is required}
+      POSTGRES_PASSWORD: ${RIDER_DB_PASSWORD:?RIDER_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:5434:5432"
+
+    volumes:
+      - rider-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${RIDER_DB_USER} -d ${RIDER_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+  driver-postgres:
+    image: postgres:17-alpine3.24
+    container_name: ride-driver-postgres
+
+    environment:
+      POSTGRES_DB: ${DRIVER_DB_NAME:?DRIVER_DB_NAME is required}
+      POSTGRES_USER: ${DRIVER_DB_USER:?DRIVER_DB_USER is required}
+      POSTGRES_PASSWORD: ${DRIVER_DB_PASSWORD:?DRIVER_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:5435:5432"
+
+    volumes:
+      - driver-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DRIVER_DB_USER} -d ${DRIVER_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+  trip-postgres:
+    image: postgres:17-alpine3.24
+    container_name: ride-trip-postgres
+
+    environment:
+      POSTGRES_DB: ${TRIP_DB_NAME:?TRIP_DB_NAME is required}
+      POSTGRES_USER: ${TRIP_DB_USER:?TRIP_DB_USER is required}
+      POSTGRES_PASSWORD: ${TRIP_DB_PASSWORD:?TRIP_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:5436:5432"
+
+    volumes:
+      - trip-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${TRIP_DB_USER} -d ${TRIP_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+  pricing-postgres:
+    image: postgres:17-alpine3.24
+    container_name: ride-pricing-postgres
+
+    environment:
+      POSTGRES_DB: ${PRICING_DB_NAME:?PRICING_DB_NAME is required}
+      POSTGRES_USER: ${PRICING_DB_USER:?PRICING_DB_USER is required}
+      POSTGRES_PASSWORD: ${PRICING_DB_PASSWORD:?PRICING_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:5437:5432"
+
+    volumes:
+      - pricing-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${PRICING_DB_USER} -d ${PRICING_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+  wallet-postgres:
+    image: postgres:17-alpine3.24
+    container_name: ride-wallet-postgres
+
+    environment:
+      POSTGRES_DB: ${WALLET_DB_NAME:?WALLET_DB_NAME is required}
+      POSTGRES_USER: ${WALLET_DB_USER:?WALLET_DB_USER is required}
+      POSTGRES_PASSWORD: ${WALLET_DB_PASSWORD:?WALLET_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:5438:5432"
+
+    volumes:
+      - wallet-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${WALLET_DB_USER} -d ${WALLET_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+  notification-postgres:
+    image: postgres:17-alpine3.24
+    container_name: ride-notification-postgres
+
+    environment:
+      POSTGRES_DB: ${NOTIFICATION_DB_NAME:?NOTIFICATION_DB_NAME is required}
+      POSTGRES_USER: ${NOTIFICATION_DB_USER:?NOTIFICATION_DB_USER is required}
+      POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD:?NOTIFICATION_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:5439:5432"
+
+    volumes:
+      - notification-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${NOTIFICATION_DB_USER} -d ${NOTIFICATION_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+  # Road routing for pricing-service. Requires a one-time dataset build:
+  # see infrastructure/osrm/README.md. Starts only once that's done.
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend:v5.27.1
+    container_name: ride-osrm
+
+    command: >
+      osrm-routed --algorithm mld
+      /data/${OSRM_DATASET_NAME:?OSRM_DATASET_NAME is required - run infrastructure/osrm/prepare-osrm-data.sh first}.osrm
+
+    ports:
+      - "127.0.0.1:5000:5000"
+
+    volumes:
+      - ../osrm/data:/data:ro
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- 'http://127.0.0.1:5000/route/v1/driving/0,0;0,0' >/dev/null 2>&1 || exit 0",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    restart: unless-stopped
+
   identity-valkey:
     image: valkey/valkey:9.1.1-alpine3.24
     container_name: ride-identity-valkey
@@ -50,6 +247,37 @@ services:
         [
           "CMD-SHELL",
           'valkey-cli -a "$$VALKEY_PASSWORD" ping | grep -q PONG',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+  location-valkey:
+    image: valkey/valkey:9.1.1-alpine3.24
+    container_name: ride-location-valkey
+
+    environment:
+      LOCATION_VALKEY_PASSWORD: ${LOCATION_VALKEY_PASSWORD:?LOCATION_VALKEY_PASSWORD is required}
+
+    command:
+      - sh
+      - -c
+      - exec valkey-server --appendonly yes --requirepass "$$LOCATION_VALKEY_PASSWORD"
+
+    ports:
+      - "127.0.0.1:6381:6379"
+
+    volumes:
+      - location-valkey-data:/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'valkey-cli -a "$$LOCATION_VALKEY_PASSWORD" ping | grep -q PONG',
         ]
       interval: 5s
       timeout: 5s
@@ -114,5 +342,12 @@ services:
 
 volumes:
   identity-postgres-data:
+  rider-postgres-data:
+  driver-postgres-data:
+  trip-postgres-data:
+  pricing-postgres-data:
+  wallet-postgres-data:
+  notification-postgres-data:
   identity-valkey-data:
+  location-valkey-data:
   nats-jetstream-data:

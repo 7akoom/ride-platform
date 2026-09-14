@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package ride.rider.v1;
+
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/rider/v1;riderv1";
+
+service RiderService {
+  rpc CreateRider(CreateRiderRequest) returns (CreateRiderResponse);
+  rpc GetRider(GetRiderRequest) returns (GetRiderResponse);
+  rpc GetRiderByIdentity(GetRiderByIdentityRequest) returns (GetRiderResponse);
+  rpc UpdateRiderProfile(UpdateRiderProfileRequest) returns (UpdateRiderProfileResponse);
+}
+
+enum RiderStatus {
+  RIDER_STATUS_UNSPECIFIED = 0;
+  RIDER_STATUS_ACTIVE = 1;
+  RIDER_STATUS_SUSPENDED = 2;
+}
+
+message Rider {
+  string id = 1;
+  string identity_id = 2;
+  string display_name = 3;
+  RiderStatus status = 4;
+  double rating_average = 5;
+  int32 rating_count = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message CreateRiderRequest {
+  string identity_id = 1;
+  string display_name = 2;
+}
+
+message CreateRiderResponse {
+  Rider rider = 1;
+}
+
+message GetRiderRequest {
+  string rider_id = 1;
+}
+
+message GetRiderByIdentityRequest {
+  string identity_id = 1;
+}
+
+message GetRiderResponse {
+  Rider rider = 1;
+}
+
+message UpdateRiderProfileRequest {
+  string rider_id = 1;
+  string display_name = 2;
+}
+
+message UpdateRiderProfileResponse {
+  Rider rider = 1;
+}

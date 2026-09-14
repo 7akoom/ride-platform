@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package ride.driver.v1;
+
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/driver/v1;driverv1";
+
+service DriverService {
+  rpc CreateDriver(CreateDriverRequest) returns (CreateDriverResponse);
+  rpc GetDriver(GetDriverRequest) returns (GetDriverResponse);
+  rpc GetDriverByIdentity(GetDriverByIdentityRequest) returns (GetDriverResponse);
+  rpc UpdateDriverProfile(UpdateDriverProfileRequest) returns (UpdateDriverProfileResponse);
+  rpc UpdateAvailability(UpdateAvailabilityRequest) returns (UpdateAvailabilityResponse);
+}
+
+enum DriverStatus {
+  DRIVER_STATUS_UNSPECIFIED = 0;
+  DRIVER_STATUS_ACTIVE = 1;
+  DRIVER_STATUS_SUSPENDED = 2;
+}
+
+enum AvailabilityStatus {
+  AVAILABILITY_STATUS_UNSPECIFIED = 0;
+  AVAILABILITY_STATUS_OFFLINE = 1;
+  AVAILABILITY_STATUS_AVAILABLE = 2;
+  AVAILABILITY_STATUS_BUSY = 3;
+}
+
+message Vehicle {
+  string make = 1;
+  string model = 2;
+  string color = 3;
+  string plate_number = 4;
+}
+
+message Driver {
+  string id = 1;
+  string identity_id = 2;
+  string display_name = 3;
+  DriverStatus status = 4;
+  AvailabilityStatus availability_status = 5;
+  Vehicle vehicle = 6;
+  double rating_average = 7;
+  int32 rating_count = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message CreateDriverRequest {
+  string identity_id = 1;
+  string display_name = 2;
+  Vehicle vehicle = 3;
+}
+
+message CreateDriverResponse {
+  Driver driver = 1;
+}
+
+message GetDriverRequest {
+  string driver_id = 1;
+}
+
+message GetDriverByIdentityRequest {
+  string identity_id = 1;
+}
+
+message GetDriverResponse {
+  Driver driver = 1;
+}
+
+message UpdateDriverProfileRequest {
+  string driver_id = 1;
+  string display_name = 2;
+  Vehicle vehicle = 3;
+}
+
+message UpdateDriverProfileResponse {
+  Driver driver = 1;
+}
+
+message UpdateAvailabilityRequest {
+  string driver_id = 1;
+  AvailabilityStatus availability_status = 2;
+}
+
+message UpdateAvailabilityResponse {
+  Driver driver = 1;
+}

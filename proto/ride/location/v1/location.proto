@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package ride.location.v1;
+
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/location/v1;locationv1";
+
+service LocationService {
+  rpc UpdateLocation(UpdateLocationRequest) returns (UpdateLocationResponse);
+  rpc GetLocation(GetLocationRequest) returns (GetLocationResponse);
+  rpc FindNearby(FindNearbyRequest) returns (FindNearbyResponse);
+}
+
+enum EntityType {
+  ENTITY_TYPE_UNSPECIFIED = 0;
+  ENTITY_TYPE_DRIVER = 1;
+  ENTITY_TYPE_RIDER = 2;
+}
+
+message Coordinates {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+message UpdateLocationRequest {
+  EntityType entity_type = 1;
+  string entity_id = 2;
+  Coordinates coordinates = 3;
+}
+
+message UpdateLocationResponse {
+  google.protobuf.Timestamp updated_at = 1;
+}
+
+message GetLocationRequest {
+  EntityType entity_type = 1;
+  string entity_id = 2;
+}
+
+message GetLocationResponse {
+  Coordinates coordinates = 1;
+  google.protobuf.Timestamp updated_at = 2;
+}
+
+message NearbyEntity {
+  string entity_id = 1;
+  Coordinates coordinates = 2;
+  double distance_meters = 3;
+}
+
+message FindNearbyRequest {
+  EntityType entity_type = 1;
+  Coordinates coordinates = 2;
+  double radius_meters = 3;
+  int32 limit = 4;
+}
+
+message FindNearbyResponse {
+  repeated NearbyEntity entities = 1;
+}

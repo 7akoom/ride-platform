@@ -1,0 +1,66 @@
+package pricing
+
+import "math"
+
+const earthRadiusKm = 6371.0
+
+// Route is the distance and duration between two points. When OSRM is
+// reachable these are real road-network values; when it isn't, they're
+// the Haversine fallback below (flagged via Estimated so callers and
+// logs can tell the difference).
+type Route struct {
+	DistanceKm      float64
+	DurationMinutes float64
+	Estimated       bool
+}
+
+// haversineDistanceKm is the straight-line ("as the crow flies")
+// distance between two points. Only used as a fallback when the routing
+// engine is unreachable — see routeOrFallback.
+func haversineDistanceKm(lat1, lng1, lat2, lng2 float64) float64 {
+	lat1Rad := lat1 * math.Pi / 180
+	lat2Rad := lat2 * math.Pi / 180
+	deltaLat := (lat2 - lat1) * math.Pi / 180
+	deltaLng := (lng2 - lng1) * math.Pi / 180
+
+	a := math.Sin(deltaLat/2)*math.Sin(deltaLat/2) +
+		math.Cos(lat1Rad)*math.Cos(lat2Rad)*
+			math.Sin(deltaLng/2)*math.Sin(deltaLng/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+
+	return earthRadiusKm * c
+}
+
+// fallbackRoute approximates a road route without a routing engine:
+// straight-line distance inflated by a correction factor, with duration
+// derived from an assumed average speed. Deliberately conservative —
+// it's better to be roughly right than to refuse to quote a price.
+func fallbackRoute(config Config, pickupLat, pickupLng, dropoffLat, dropoffLng float64) Route {
+	straightLineKm := haversineDistanceKm(pickupLat, pickupLng, dropoffLat, dropoffLng)
+	distanceKm := straightLineKm * config.DistanceCorrectionFactor
+
+	return Route{
+		DistanceKm:      distanceKm,
+		DurationMinutes: (distanceKm / config.AverageSpeedKmh) * 60,
+		Estimated:       true,
+	}
+}
+
+// baseFareBreakdown turns a route into the pre-surge, pre-discount
+// subtotal using the active rate card. Surge and discounts are applied
+// on top of this by the caller.
+func baseFareBreakdown(config Config, route Route) FareBreakdown {
+	distanceFare := route.DistanceKm * config.PerKmRate
+	durationFare := route.DurationMinutes * config.PerMinuteRate
+	subtotal := config.BaseFare + distanceFare + durationFare
+
+	return FareBreakdown{
+		CurrencyCode:    config.CurrencyCode,
+		BaseFare:        config.BaseFare,
+		DistanceKm:      route.DistanceKm,
+		DistanceFare:    distanceFare,
+		DurationMinutes: route.DurationMinutes,
+		DurationFare:    durationFare,
+		Subtotal:        subtotal,
+	}
+}

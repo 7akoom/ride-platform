@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package ride.dispatch.v1;
+
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/dispatch/v1;dispatchv1";
+
+service DispatchService {
+  rpc DispatchTrip(DispatchTripRequest) returns (DispatchTripResponse);
+}
+
+message DispatchTripRequest {
+  string trip_id = 1;
+  // Optional. If unset, the service applies a sensible default.
+  double search_radius_meters = 2;
+}
+
+message DispatchTripResponse {
+  string trip_id = 1;
+  string driver_id = 2;
+  double distance_meters = 3;
+}
