@@ -63,6 +63,17 @@ func (s *service) DispatchTrip(
 			continue
 		}
 
+		standing, err := s.walletClient.CheckDriverStanding(ctx, candidate.DriverID)
+		if err != nil {
+			// Can't verify standing — skip rather than risk assigning a
+			// trip to a driver who may be suspended.
+			continue
+		}
+
+		if !standing.CanTakeTrips {
+			continue
+		}
+
 		if err := s.tripClient.AcceptTrip(ctx, trimmedID, driverInfo.ID); err != nil {
 			// Someone else (a concurrent dispatch, or a manual accept)
 			// may have taken this trip or this driver already — move on.

@@ -10,6 +10,7 @@ type Config struct {
 	TripServiceAddress     string
 	LocationServiceAddress string
 	DriverServiceAddress   string
+	WalletServiceAddress   string
 }
 
 func Load() Config {
@@ -21,6 +22,7 @@ func Load() Config {
 		TripServiceAddress:     getEnv("TRIP_SERVICE_ADDRESS", "localhost:50055"),
 		LocationServiceAddress: getEnv("LOCATION_SERVICE_ADDRESS", "localhost:50054"),
 		DriverServiceAddress:   getEnv("DRIVER_SERVICE_ADDRESS", "localhost:50053"),
+		WalletServiceAddress:   getEnv("WALLET_SERVICE_ADDRESS", "localhost:50058"),
 	}
 }
 

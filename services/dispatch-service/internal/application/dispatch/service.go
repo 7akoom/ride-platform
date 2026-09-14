@@ -14,12 +14,14 @@ type service struct {
 	tripClient     TripClient
 	locationClient LocationClient
 	driverClient   DriverClient
+	walletClient   WalletClient
 }
 
 func NewService(
 	tripClient TripClient,
 	locationClient LocationClient,
 	driverClient DriverClient,
+	walletClient WalletClient,
 ) Service {
 	if tripClient == nil {
 		panic("trip client is required")
@@ -33,9 +35,14 @@ func NewService(
 		panic("driver client is required")
 	}
 
+	if walletClient == nil {
+		panic("wallet client is required")
+	}
+
 	return &service{
 		tripClient:     tripClient,
 		locationClient: locationClient,
 		driverClient:   driverClient,
+		walletClient:   walletClient,
 	}
 }

@@ -51,6 +51,21 @@ type DriverClient interface {
 	MarkBusy(ctx context.Context, driverID string) error
 }
 
+// DriverStanding is Dispatch's view of a driver's wallet standing — just
+// enough to decide whether they're eligible to be handed a new trip.
+type DriverStanding struct {
+	CanTakeTrips bool
+	Suspended    bool
+	Reason       string
+}
+
+// WalletClient is Dispatch's view of wallet-service. A suspended driver
+// (prepaid commission balance at or below the suspension threshold) must
+// never be assigned a new trip, cash or otherwise, until they top up.
+type WalletClient interface {
+	CheckDriverStanding(ctx context.Context, driverID string) (DriverStanding, error)
+}
+
 // Result is what a successful dispatch produces.
 type Result struct {
 	TripID         string

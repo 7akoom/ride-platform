@@ -60,10 +60,19 @@ func run() int {
 	}
 	defer driverConn.Close()
 
+	walletConn, err := dialService(cfg.WalletServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to wallet-service", "error", err)
+
+		return 1
+	}
+	defer walletConn.Close()
+
 	dispatchService := dispatch.NewService(
 		clients.NewTripClient(tripConn),
 		clients.NewLocationClient(locationConn),
 		clients.NewDriverClient(driverConn),
+		clients.NewWalletClient(walletConn),
 	)
 	dispatchHandler := grpcserver.NewDispatchHandler(dispatchService)
 
