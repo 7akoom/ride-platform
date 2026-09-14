@@ -8,6 +8,7 @@ require github.com/7akoom/ride-platform/gen/go v0.0.0
 
 require (
 	github.com/jackc/pgx/v5 v5.10.0
+	github.com/nats-io/nats.go v1.53.1
 	google.golang.org/grpc v1.83.0
 	google.golang.org/protobuf v1.36.11
 )

@@ -17,6 +17,16 @@ type Config struct {
 	// reports push as unconfigured rather than failing.
 	FCMCredentialsFile string
 	PushTimeout        time.Duration
+
+	// Peers this service calls to enrich events before rendering a
+	// notification (rider ID, driver name/vehicle, dropoff location).
+	TripServiceAddress   string
+	DriverServiceAddress string
+
+	NATSURL            string
+	NATSConnectTimeout string
+	NATSReconnectWait  string
+	NATSDrainTimeout   string
 }
 
 func Load() Config {
@@ -28,6 +38,14 @@ func Load() Config {
 		DatabaseURL:        getEnv("DATABASE_URL", ""),
 		FCMCredentialsFile: getEnv("FCM_CREDENTIALS_FILE", ""),
 		PushTimeout:        10 * time.Second,
+
+		TripServiceAddress:   getEnv("TRIP_SERVICE_ADDRESS", "localhost:50055"),
+		DriverServiceAddress: getEnv("DRIVER_SERVICE_ADDRESS", "localhost:50053"),
+
+		NATSURL:            getEnv("NATS_URL", "nats://localhost:4222"),
+		NATSConnectTimeout: getEnv("NATS_CONNECT_TIMEOUT", "5s"),
+		NATSReconnectWait:  getEnv("NATS_RECONNECT_WAIT", "2s"),
+		NATSDrainTimeout:   getEnv("NATS_DRAIN_TIMEOUT", "5s"),
 	}
 }
 

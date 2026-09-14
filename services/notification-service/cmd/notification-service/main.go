@@ -6,13 +6,26 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/7akoom/ride-platform/services/notification-service/internal/application/events"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/application/notification"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/config"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/channels"
+	"github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/clients"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/database"
+	natsinfra "github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/messaging/nats"
 	postgresrepo "github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/persistence/postgres"
 	grpcserver "github.com/7akoom/ride-platform/services/notification-service/internal/transport/grpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+// Durable consumer names — stable across restarts/redeploys so a durable
+// consumer's delivery position is preserved on the stream.
+const (
+	tripEventsDurable    = "notification-trip-events"
+	pricingEventsDurable = "notification-pricing-events"
 )
 
 func main() {
@@ -29,6 +42,13 @@ func run() int {
 		"environment", cfg.Environment,
 	)
 
+	natsConfig, err := config.ParseNATS(cfg)
+	if err != nil {
+		logger.Error("invalid NATS configuration", "error", err)
+
+		return 1
+	}
+
 	ctx, stop := signal.NotifyContext(
 		context.Background(),
 		os.Interrupt,
@@ -44,6 +64,44 @@ func run() int {
 	}
 	defer pool.Close()
 
+	tripConn, err := dialService(cfg.TripServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to trip-service", "error", err)
+
+		return 1
+	}
+	defer tripConn.Close()
+
+	driverConn, err := dialService(cfg.DriverServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to driver-service", "error", err)
+
+		return 1
+	}
+	defer driverConn.Close()
+
+	natsConnection, err := natsinfra.OpenConnection(
+		natsinfra.ConnectionConfig{
+			URL:            natsConfig.URL,
+			ClientName:     natsConfig.ClientName,
+			ConnectTimeout: natsConfig.ConnectTimeout,
+			ReconnectWait:  natsConfig.ReconnectWait,
+			DrainTimeout:   natsConfig.DrainTimeout,
+		},
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to configure NATS connection", "error", err)
+
+		return 1
+	}
+
+	defer func() {
+		if err := natsConnection.Drain(); err != nil {
+			logger.Warn("failed to drain NATS connection", "error", err)
+		}
+	}()
+
 	pushSender := buildPushSender(cfg, logger)
 
 	notificationService := notification.NewService(
@@ -55,12 +113,47 @@ func run() int {
 	)
 	notificationHandler := grpcserver.NewNotificationHandler(notificationService)
 
+	eventHandler := events.NewHandler(
+		notificationService,
+		clients.NewTripClient(tripConn),
+		clients.NewDriverClient(driverConn),
+		logger,
+	)
+
+	tripSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		"TRIP_EVENTS",
+		tripEventsDurable,
+		[]string{"trip.accepted", "trip.started", "trip.cancelled"},
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to trip events", "error", err)
+
+		return 1
+	}
+	defer tripSubscription.Stop()
+
+	pricingSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		"PRICING_EVENTS",
+		pricingEventsDurable,
+		[]string{"fare.calculated"},
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to pricing events", "error", err)
+
+		return 1
+	}
+	defer pricingSubscription.Stop()
+
 	server := grpcserver.NewServer(cfg.GRPCAddress, logger)
 	server.RegisterNotificationService(notificationHandler)
-
-	// TODO: subscribe to trip.*, fare.calculated and trip.settled events
-	// so notifications fire automatically instead of being sent
-	// explicitly. Part of the same deferred NATS pass as every service.
 
 	serverErrors := make(chan error, 1)
 
@@ -78,7 +171,22 @@ func run() int {
 
 	case <-ctx.Done():
 		logger.Info("shutdown signal received, stopping gRPC server")
-		server.GracefulStop()
+
+		const gracefulShutdownTimeout = 10 * time.Second
+
+		shutdownDone := make(chan struct{})
+
+		go func() {
+			defer close(shutdownDone)
+			server.GracefulStop()
+		}()
+
+		select {
+		case <-shutdownDone:
+		case <-time.After(gracefulShutdownTimeout):
+			logger.Warn("graceful shutdown timed out; forcing stop")
+			server.Stop()
+		}
 	}
 
 	return 0
@@ -119,4 +227,11 @@ func buildPushSender(cfg config.Config, logger *slog.Logger) notification.PushSe
 	logger.Info("FCM push sender configured", "project_id", account.ProjectID)
 
 	return sender
+}
+
+func dialService(address string) (*grpc.ClientConn, error) {
+	return grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 }
