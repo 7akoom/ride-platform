@@ -340,6 +340,29 @@ services:
 
     restart: "no"
 
+  rider-nats-bootstrap:
+    image: natsio/nats-box:0.19.7
+    container_name: ride-rider-nats-bootstrap
+
+    depends_on:
+      nats:
+        condition: service_healthy
+
+    environment:
+      NATS_URL: nats://nats:4222
+      STREAM_NAME: RIDER_EVENTS
+      STREAM_CONFIG: /streams/rider-events.json
+
+    volumes:
+      - ./nats/bootstrap.sh:/bootstrap.sh:ro
+      - ./nats/streams:/streams:ro
+
+    command:
+      - /bin/sh
+      - /bootstrap.sh
+
+    restart: "no"
+
 volumes:
   identity-postgres-data:
   rider-postgres-data:
