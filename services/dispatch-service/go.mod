@@ -6,7 +6,10 @@ toolchain go1.26.8
 
 require github.com/7akoom/ride-platform/gen/go v0.0.0
 
-require google.golang.org/grpc v1.83.0
+require (
+	github.com/golang-jwt/jwt/v5 v5.3.1
+	google.golang.org/grpc v1.83.0
+)
 
 require (
 	golang.org/x/net v0.55.0 // indirect

@@ -17,6 +17,7 @@ import (
 	natsinfra "github.com/7akoom/ride-platform/services/pricing-service/internal/infrastructure/messaging/nats"
 	postgresrepo "github.com/7akoom/ride-platform/services/pricing-service/internal/infrastructure/persistence/postgres"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/infrastructure/routing"
+	"github.com/7akoom/ride-platform/services/pricing-service/internal/infrastructure/token"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/infrastructure/weather"
 	grpcserver "github.com/7akoom/ride-platform/services/pricing-service/internal/transport/grpc"
 	"google.golang.org/grpc"
@@ -69,6 +70,9 @@ func run() int {
 	locationConn, err := grpc.NewClient(
 		cfg.LocationServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
 	)
 	if err != nil {
 		logger.Error("failed to connect to location-service", "error", err)
@@ -134,7 +138,23 @@ func run() int {
 	)
 	pricingHandler := grpcserver.NewPricingHandler(pricingService)
 
-	server := grpcserver.NewServer(cfg.GRPCAddress, logger)
+	accessTokenVerifier, err := token.NewAccessTokenVerifier(
+		cfg.AccessTokenPublicKeyPath,
+		cfg.AccessTokenIssuer,
+		cfg.AccessTokenAudience,
+		cfg.AccessTokenKeyID,
+	)
+	if err != nil {
+		logger.Error("invalid access token verifier configuration", "error", err)
+
+		return 1
+	}
+
+	server := grpcserver.NewServer(
+		cfg.GRPCAddress,
+		logger,
+		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
+	)
 	server.RegisterPricingService(pricingHandler)
 
 	outboxDone := make(chan struct{})

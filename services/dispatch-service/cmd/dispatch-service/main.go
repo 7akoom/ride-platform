@@ -10,6 +10,7 @@ import (
 	"github.com/7akoom/ride-platform/services/dispatch-service/internal/application/dispatch"
 	"github.com/7akoom/ride-platform/services/dispatch-service/internal/config"
 	"github.com/7akoom/ride-platform/services/dispatch-service/internal/infrastructure/clients"
+	"github.com/7akoom/ride-platform/services/dispatch-service/internal/infrastructure/token"
 	grpcserver "github.com/7akoom/ride-platform/services/dispatch-service/internal/transport/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -36,7 +37,7 @@ func run() int {
 	)
 	defer stop()
 
-	tripConn, err := dialService(cfg.TripServiceAddress)
+	tripConn, err := dialService(cfg.TripServiceAddress, cfg.InternalServiceToken)
 	if err != nil {
 		logger.Error("failed to connect to trip-service", "error", err)
 
@@ -44,7 +45,7 @@ func run() int {
 	}
 	defer tripConn.Close()
 
-	locationConn, err := dialService(cfg.LocationServiceAddress)
+	locationConn, err := dialService(cfg.LocationServiceAddress, cfg.InternalServiceToken)
 	if err != nil {
 		logger.Error("failed to connect to location-service", "error", err)
 
@@ -52,7 +53,7 @@ func run() int {
 	}
 	defer locationConn.Close()
 
-	driverConn, err := dialService(cfg.DriverServiceAddress)
+	driverConn, err := dialService(cfg.DriverServiceAddress, cfg.InternalServiceToken)
 	if err != nil {
 		logger.Error("failed to connect to driver-service", "error", err)
 
@@ -60,7 +61,7 @@ func run() int {
 	}
 	defer driverConn.Close()
 
-	walletConn, err := dialService(cfg.WalletServiceAddress)
+	walletConn, err := dialService(cfg.WalletServiceAddress, cfg.InternalServiceToken)
 	if err != nil {
 		logger.Error("failed to connect to wallet-service", "error", err)
 
@@ -76,7 +77,23 @@ func run() int {
 	)
 	dispatchHandler := grpcserver.NewDispatchHandler(dispatchService)
 
-	server := grpcserver.NewServer(cfg.GRPCAddress, logger)
+	accessTokenVerifier, err := token.NewAccessTokenVerifier(
+		cfg.AccessTokenPublicKeyPath,
+		cfg.AccessTokenIssuer,
+		cfg.AccessTokenAudience,
+		cfg.AccessTokenKeyID,
+	)
+	if err != nil {
+		logger.Error("invalid access token verifier configuration", "error", err)
+
+		return 1
+	}
+
+	server := grpcserver.NewServer(
+		cfg.GRPCAddress,
+		logger,
+		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
+	)
 	server.RegisterDispatchService(dispatchHandler)
 
 	serverErrors := make(chan error, 1)
@@ -101,9 +118,12 @@ func run() int {
 	return 0
 }
 
-func dialService(address string) (*grpc.ClientConn, error) {
+func dialService(address string, internalServiceToken string) (*grpc.ClientConn, error) {
 	return grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(internalServiceToken),
+		),
 	)
 }

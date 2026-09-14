@@ -15,6 +15,7 @@ import (
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/database"
 	natsinfra "github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/messaging/nats"
 	postgresrepo "github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/persistence/postgres"
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/token"
 	grpcserver "github.com/7akoom/ride-platform/services/wallet-service/internal/transport/grpc"
 )
 
@@ -113,7 +114,23 @@ func run() int {
 	walletService := wallet.NewService(postgresrepo.NewWalletRepository(pool))
 	walletHandler := grpcserver.NewWalletHandler(walletService)
 
-	server := grpcserver.NewServer(cfg.GRPCAddress, logger)
+	accessTokenVerifier, err := token.NewAccessTokenVerifier(
+		cfg.AccessTokenPublicKeyPath,
+		cfg.AccessTokenIssuer,
+		cfg.AccessTokenAudience,
+		cfg.AccessTokenKeyID,
+	)
+	if err != nil {
+		logger.Error("invalid access token verifier configuration", "error", err)
+
+		return 1
+	}
+
+	server := grpcserver.NewServer(
+		cfg.GRPCAddress,
+		logger,
+		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
+	)
 	server.RegisterWalletService(walletHandler)
 
 	outboxDone := make(chan struct{})

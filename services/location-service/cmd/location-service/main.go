@@ -11,6 +11,7 @@ import (
 	"github.com/7akoom/ride-platform/services/location-service/internal/config"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/database"
 	valkeystore "github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/persistence/valkey"
+	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/token"
 	grpcserver "github.com/7akoom/ride-platform/services/location-service/internal/transport/grpc"
 )
 
@@ -47,7 +48,23 @@ func run() int {
 	locationService := location.NewService(locationRepository)
 	locationHandler := grpcserver.NewLocationHandler(locationService)
 
-	server := grpcserver.NewServer(cfg.GRPCAddress, logger)
+	accessTokenVerifier, err := token.NewAccessTokenVerifier(
+		cfg.AccessTokenPublicKeyPath,
+		cfg.AccessTokenIssuer,
+		cfg.AccessTokenAudience,
+		cfg.AccessTokenKeyID,
+	)
+	if err != nil {
+		logger.Error("invalid access token verifier configuration", "error", err)
+
+		return 1
+	}
+
+	server := grpcserver.NewServer(
+		cfg.GRPCAddress,
+		logger,
+		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
+	)
 	server.RegisterLocationService(locationHandler)
 
 	serverErrors := make(chan error, 1)

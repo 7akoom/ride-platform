@@ -16,6 +16,7 @@ import (
 	"github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/database"
 	natsinfra "github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/messaging/nats"
 	postgresrepo "github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/persistence/postgres"
+	"github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/token"
 	grpcserver "github.com/7akoom/ride-platform/services/notification-service/internal/transport/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -64,7 +65,7 @@ func run() int {
 	}
 	defer pool.Close()
 
-	tripConn, err := dialService(cfg.TripServiceAddress)
+	tripConn, err := dialService(cfg.TripServiceAddress, cfg.InternalServiceToken)
 	if err != nil {
 		logger.Error("failed to connect to trip-service", "error", err)
 
@@ -72,7 +73,7 @@ func run() int {
 	}
 	defer tripConn.Close()
 
-	driverConn, err := dialService(cfg.DriverServiceAddress)
+	driverConn, err := dialService(cfg.DriverServiceAddress, cfg.InternalServiceToken)
 	if err != nil {
 		logger.Error("failed to connect to driver-service", "error", err)
 
@@ -152,7 +153,23 @@ func run() int {
 	}
 	defer pricingSubscription.Stop()
 
-	server := grpcserver.NewServer(cfg.GRPCAddress, logger)
+	accessTokenVerifier, err := token.NewAccessTokenVerifier(
+		cfg.AccessTokenPublicKeyPath,
+		cfg.AccessTokenIssuer,
+		cfg.AccessTokenAudience,
+		cfg.AccessTokenKeyID,
+	)
+	if err != nil {
+		logger.Error("invalid access token verifier configuration", "error", err)
+
+		return 1
+	}
+
+	server := grpcserver.NewServer(
+		cfg.GRPCAddress,
+		logger,
+		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
+	)
 	server.RegisterNotificationService(notificationHandler)
 
 	serverErrors := make(chan error, 1)
@@ -229,9 +246,12 @@ func buildPushSender(cfg config.Config, logger *slog.Logger) notification.PushSe
 	return sender
 }
 
-func dialService(address string) (*grpc.ClientConn, error) {
+func dialService(address string, internalServiceToken string) (*grpc.ClientConn, error) {
 	return grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(internalServiceToken),
+		),
 	)
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/7akoom/ride-platform/services/rider-service/internal/infrastructure/identifier"
 	natsinfra "github.com/7akoom/ride-platform/services/rider-service/internal/infrastructure/messaging/nats"
 	postgresrepo "github.com/7akoom/ride-platform/services/rider-service/internal/infrastructure/persistence/postgres"
+	"github.com/7akoom/ride-platform/services/rider-service/internal/infrastructure/token"
 	grpcserver "github.com/7akoom/ride-platform/services/rider-service/internal/transport/grpc"
 )
 
@@ -117,7 +118,23 @@ func run() int {
 	riderService := rider.NewService(riderRepository, idGenerator)
 	riderHandler := grpcserver.NewRiderHandler(riderService)
 
-	server := grpcserver.NewServer(cfg.GRPCAddress, logger)
+	accessTokenVerifier, err := token.NewAccessTokenVerifier(
+		cfg.AccessTokenPublicKeyPath,
+		cfg.AccessTokenIssuer,
+		cfg.AccessTokenAudience,
+		cfg.AccessTokenKeyID,
+	)
+	if err != nil {
+		logger.Error("invalid access token verifier configuration", "error", err)
+
+		return 1
+	}
+
+	server := grpcserver.NewServer(
+		cfg.GRPCAddress,
+		logger,
+		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
+	)
 	server.RegisterRiderService(riderHandler)
 
 	outboxDone := make(chan struct{})
