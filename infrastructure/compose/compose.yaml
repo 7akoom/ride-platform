@@ -409,6 +409,29 @@ services:
 
     restart: "no"
 
+  pricing-nats-bootstrap:
+    image: natsio/nats-box:0.19.7
+    container_name: ride-pricing-nats-bootstrap
+
+    depends_on:
+      nats:
+        condition: service_healthy
+
+    environment:
+      NATS_URL: nats://nats:4222
+      STREAM_NAME: PRICING_EVENTS
+      STREAM_CONFIG: /streams/pricing-events.json
+
+    volumes:
+      - ./nats/bootstrap.sh:/bootstrap.sh:ro
+      - ./nats/streams:/streams:ro
+
+    command:
+      - /bin/sh
+      - /bootstrap.sh
+
+    restart: "no"
+
 volumes:
   identity-postgres-data:
   rider-postgres-data:
