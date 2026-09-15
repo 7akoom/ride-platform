@@ -17,6 +17,7 @@ import (
 	natsinfra "github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/messaging/nats"
 	postgresrepo "github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/persistence/postgres"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/token"
+	"github.com/7akoom/ride-platform/services/notification-service/internal/observability"
 	grpcserver "github.com/7akoom/ride-platform/services/notification-service/internal/transport/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -46,6 +47,20 @@ func run() int {
 	natsConfig, err := config.ParseNATS(cfg)
 	if err != nil {
 		logger.Error("invalid NATS configuration", "error", err)
+
+		return 1
+	}
+
+	metricsRuntime, err := observability.NewMetricsRuntime(cfg.ServiceName, cfg.MetricsAddress)
+	if err != nil {
+		logger.Error("invalid metrics configuration", "error", err)
+
+		return 1
+	}
+
+	metricsInterceptor, err := metricsRuntime.UnaryServerInterceptor()
+	if err != nil {
+		logger.Error("failed to configure rpc metrics interceptor", "error", err)
 
 		return 1
 	}
@@ -168,6 +183,7 @@ func run() int {
 	server := grpcserver.NewServer(
 		cfg.GRPCAddress,
 		logger,
+		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
 	)
 	server.RegisterNotificationService(notificationHandler)
@@ -176,6 +192,16 @@ func run() int {
 
 	go func() {
 		serverErrors <- server.Run()
+	}()
+
+	go func() {
+		if err := metricsRuntime.Serve(); err != nil {
+			// Non-fatal by design: an MVP trade-off, so a metrics
+			// endpoint problem (e.g. port already in use) doesn't take
+			// down trip-serving traffic. Revisit if this ever needs to
+			// be a hard dependency.
+			logger.Error("metrics server exited with error", "error", err)
+		}
 	}()
 
 	select {
@@ -203,6 +229,13 @@ func run() int {
 		case <-time.After(gracefulShutdownTimeout):
 			logger.Warn("graceful shutdown timed out; forcing stop")
 			server.Stop()
+		}
+
+		metricsShutdownCtx, cancelMetricsShutdown := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
+		defer cancelMetricsShutdown()
+
+		if err := metricsRuntime.Shutdown(metricsShutdownCtx); err != nil {
+			logger.Warn("failed to shut down metrics runtime cleanly", "error", err)
 		}
 	}
 
