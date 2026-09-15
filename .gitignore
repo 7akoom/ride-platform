@@ -8,6 +8,9 @@ bin/
 coverage.out
 *.test
 
+# Local dev logs (scripts/run-all.sh)
+logs/
+
 # Flutter / Dart
 .dart_tool/
 .flutter-plugins
