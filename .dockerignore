@@ -1,0 +1,15 @@
+.git
+.github
+docs
+scripts
+logs
+
+# App source isn't needed for backend service builds; also keeps
+# their build artifacts out of the context once they exist.
+apps
+
+**/*.md
+
+# Never let a local secret leak into a build context/layer.
+services/*/.env
+services/*/.local/
