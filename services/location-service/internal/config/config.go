@@ -24,6 +24,13 @@ type Config struct {
 	// treat it like a password — the checked-in default is for local
 	// dev only.
 	InternalServiceToken string
+
+	// Per-caller token-bucket rate limit (see
+	// transport/grpc/rate_limit_interceptor.go). Defaults are generous
+	// for a single mobile-app client under normal use, tight enough to
+	// stop a runaway retry loop or a naive script.
+	RateLimitRequestsPerSecond string
+	RateLimitBurst             string
 }
 
 func Load() Config {
@@ -41,6 +48,9 @@ func Load() Config {
 		AccessTokenKeyID:         getEnv("ACCESS_TOKEN_KEY_ID", "identity-dev-1"),
 
 		InternalServiceToken: getEnv("INTERNAL_SERVICE_TOKEN", "dev-internal-service-token-change-me"),
+
+		RateLimitRequestsPerSecond: getEnv("RATE_LIMIT_REQUESTS_PER_SECOND", "20"),
+		RateLimitBurst:             getEnv("RATE_LIMIT_BURST", "40"),
 	}
 }
 
