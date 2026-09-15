@@ -171,11 +171,19 @@ func run() int {
 		return 1
 	}
 
+	rateLimitConfig, err := config.ParseRateLimit(cfg)
+	if err != nil {
+		logger.Error("invalid rate limit configuration", "error", err)
+
+		return 1
+	}
+
 	server := grpcserver.NewServer(
 		cfg.GRPCAddress,
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
+		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterPricingService(pricingHandler)
 
