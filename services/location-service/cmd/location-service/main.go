@@ -6,12 +6,14 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/location"
 	"github.com/7akoom/ride-platform/services/location-service/internal/config"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/database"
 	valkeystore "github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/persistence/valkey"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/token"
+	"github.com/7akoom/ride-platform/services/location-service/internal/observability"
 	grpcserver "github.com/7akoom/ride-platform/services/location-service/internal/transport/grpc"
 )
 
@@ -28,6 +30,20 @@ func run() int {
 		"service", cfg.ServiceName,
 		"environment", cfg.Environment,
 	)
+
+	metricsRuntime, err := observability.NewMetricsRuntime(cfg.ServiceName, cfg.MetricsAddress)
+	if err != nil {
+		logger.Error("invalid metrics configuration", "error", err)
+
+		return 1
+	}
+
+	metricsInterceptor, err := metricsRuntime.UnaryServerInterceptor()
+	if err != nil {
+		logger.Error("failed to configure rpc metrics interceptor", "error", err)
+
+		return 1
+	}
 
 	ctx, stop := signal.NotifyContext(
 		context.Background(),
@@ -63,6 +79,7 @@ func run() int {
 	server := grpcserver.NewServer(
 		cfg.GRPCAddress,
 		logger,
+		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
 	)
 	server.RegisterLocationService(locationHandler)
@@ -71,6 +88,16 @@ func run() int {
 
 	go func() {
 		serverErrors <- server.Run()
+	}()
+
+	go func() {
+		if err := metricsRuntime.Serve(); err != nil {
+			// Non-fatal by design: an MVP trade-off, so a metrics
+			// endpoint problem (e.g. port already in use) doesn't take
+			// down trip-serving traffic. Revisit if this ever needs to
+			// be a hard dependency.
+			logger.Error("metrics server exited with error", "error", err)
+		}
 	}()
 
 	select {
@@ -84,6 +111,13 @@ func run() int {
 	case <-ctx.Done():
 		logger.Info("shutdown signal received, stopping gRPC server")
 		server.GracefulStop()
+
+		metricsShutdownCtx, cancelMetricsShutdown := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancelMetricsShutdown()
+
+		if err := metricsRuntime.Shutdown(metricsShutdownCtx); err != nil {
+			logger.Warn("failed to shut down metrics runtime cleanly", "error", err)
+		}
 	}
 
 	return 0
