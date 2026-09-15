@@ -40,6 +40,20 @@ else
 	SERVICES=("${ALL_SERVICES[@]}")
 fi
 
+# Union of every env var name any service's .env.example sets. Unset
+# these in each service's subshell before sourcing its own .env, so a
+# variable left exported in this terminal by an earlier manual
+# `set -a && source .env` (e.g. testing another service by hand) can't
+# leak in and silently override this service's own default — as
+# happened when a leftover METRICS_ADDRESS from dispatch-service's
+# port leaked into identity-service, which has no METRICS_ADDRESS line
+# of its own to override it back.
+ALL_ENV_KEYS="$(
+	grep -hoE '^[A-Za-z_][A-Za-z0-9_]*=' "$REPO_ROOT"/services/*/.env.example 2>/dev/null |
+		sed 's/=$//' |
+		sort -u
+)"
+
 PIDS=()
 
 cleanup() {
@@ -70,6 +84,9 @@ for svc in "${SERVICES[@]}"; do
 
 	(
 		cd "$svc_dir" || exit 1
+		for key in $ALL_ENV_KEYS; do
+			unset "$key"
+		done
 		set -a
 		# shellcheck disable=SC1091
 		source .env
