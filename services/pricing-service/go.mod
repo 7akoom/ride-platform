@@ -10,6 +10,12 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/nats-io/nats.go v1.53.1
+	github.com/prometheus/client_golang v1.24.1
+	go.opentelemetry.io/otel v1.45.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.67.0
+	go.opentelemetry.io/otel/metric v1.45.0
+	go.opentelemetry.io/otel/sdk v1.45.0
+	go.opentelemetry.io/otel/sdk/metric v1.45.0
 	google.golang.org/grpc v1.83.0
 	google.golang.org/protobuf v1.36.11
 )
