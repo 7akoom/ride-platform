@@ -173,7 +173,10 @@ func mapTripError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	default:
-		return status.Error(codes.Internal, "failed to process trip request")
+		// TEMPORARY: exposing err.Error() here to debug the
+		// zone-check integration; revert to a generic message once
+		// the root cause is found.
+		return status.Error(codes.Internal, "failed to process trip request: "+err.Error())
 	}
 }
 
