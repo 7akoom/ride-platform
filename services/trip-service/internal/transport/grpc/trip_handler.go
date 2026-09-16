@@ -169,6 +169,9 @@ func mapTripError(err error) error {
 		errors.Is(err, trip.ErrInvalidLongitude):
 		return status.Error(codes.InvalidArgument, err.Error())
 
+	case errors.Is(err, trip.ErrPickupOutsideServiceZone):
+		return status.Error(codes.InvalidArgument, err.Error())
+
 	default:
 		return status.Error(codes.Internal, "failed to process trip request")
 	}
