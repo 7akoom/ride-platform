@@ -432,6 +432,324 @@ services:
 
     restart: "no"
 
+  # --- Application services -------------------------------------------
+  #
+  # Each reuses its own services/<name>/.env for everything that doesn't
+  # change between "go run on the host" and "container on this network"
+  # (tokens, rate limits, issuer/audience/key ID) — env_file loads that
+  # file first, then the environment: block below overrides only the
+  # handful of values that DO change: DATABASE_URL/VALKEY_ADDRESS/
+  # NATS_URL (container hostnames, not localhost) and peer
+  # *_SERVICE_ADDRESS vars (dispatch/pricing/notification calling their
+  # peers by container hostname too).
+  #
+  # The access-token public key is mounted read-only into every service
+  # from identity-service's own .local/keys — copy it there first the
+  # same way you already do for local (non-container) runs.
+
+  identity-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: identity-service
+    image: ride-platform/identity-service:dev
+    container_name: ride-identity-service
+
+    env_file:
+      - ../../services/identity-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50051"
+      METRICS_ADDRESS: ":9090"
+      DATABASE_URL: postgres://${IDENTITY_DB_USER}:${IDENTITY_DB_PASSWORD}@identity-postgres:5432/${IDENTITY_DB_NAME}?sslmode=disable
+      VALKEY_ADDRESS: identity-valkey:6379
+
+    volumes:
+      - ../../services/identity-service/.local/keys:/app/.local/keys:ro
+
+    depends_on:
+      identity-postgres:
+        condition: service_healthy
+      identity-valkey:
+        condition: service_healthy
+
+    ports:
+      - "127.0.0.1:50051:50051"
+      - "127.0.0.1:9090:9090"
+
+    restart: unless-stopped
+
+  rider-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: rider-service
+    image: ride-platform/rider-service:dev
+    container_name: ride-rider-service
+
+    env_file:
+      - ../../services/rider-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50052"
+      METRICS_ADDRESS: ":9092"
+      DATABASE_URL: postgres://${RIDER_DB_USER}:${RIDER_DB_PASSWORD}@rider-postgres:5432/${RIDER_DB_NAME}?sslmode=disable
+      NATS_URL: nats://nats:4222
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      rider-postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+
+    ports:
+      - "127.0.0.1:50052:50052"
+      - "127.0.0.1:9092:9092"
+
+    restart: unless-stopped
+
+  driver-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: driver-service
+    image: ride-platform/driver-service:dev
+    container_name: ride-driver-service
+
+    env_file:
+      - ../../services/driver-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50053"
+      METRICS_ADDRESS: ":9093"
+      DATABASE_URL: postgres://${DRIVER_DB_USER}:${DRIVER_DB_PASSWORD}@driver-postgres:5432/${DRIVER_DB_NAME}?sslmode=disable
+      NATS_URL: nats://nats:4222
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      driver-postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+
+    ports:
+      - "127.0.0.1:50053:50053"
+      - "127.0.0.1:9093:9093"
+
+    restart: unless-stopped
+
+  location-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: location-service
+    image: ride-platform/location-service:dev
+    container_name: ride-location-service
+
+    env_file:
+      - ../../services/location-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50054"
+      METRICS_ADDRESS: ":9094"
+      VALKEY_ADDRESS: location-valkey:6379
+      VALKEY_PASSWORD: ${LOCATION_VALKEY_PASSWORD}
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      location-valkey:
+        condition: service_healthy
+
+    ports:
+      - "127.0.0.1:50054:50054"
+      - "127.0.0.1:9094:9094"
+
+    restart: unless-stopped
+
+  trip-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: trip-service
+    image: ride-platform/trip-service:dev
+    container_name: ride-trip-service
+
+    env_file:
+      - ../../services/trip-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50055"
+      METRICS_ADDRESS: ":9095"
+      DATABASE_URL: postgres://${TRIP_DB_USER}:${TRIP_DB_PASSWORD}@trip-postgres:5432/${TRIP_DB_NAME}?sslmode=disable
+      NATS_URL: nats://nats:4222
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      trip-postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+
+    ports:
+      - "127.0.0.1:50055:50055"
+      - "127.0.0.1:9095:9095"
+
+    restart: unless-stopped
+
+  dispatch-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: dispatch-service
+    image: ride-platform/dispatch-service:dev
+    container_name: ride-dispatch-service
+
+    env_file:
+      - ../../services/dispatch-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50056"
+      METRICS_ADDRESS: ":9096"
+      TRIP_SERVICE_ADDRESS: trip-service:50055
+      LOCATION_SERVICE_ADDRESS: location-service:50054
+      DRIVER_SERVICE_ADDRESS: driver-service:50053
+      WALLET_SERVICE_ADDRESS: wallet-service:50058
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      - trip-service
+      - location-service
+      - driver-service
+      - wallet-service
+
+    ports:
+      - "127.0.0.1:50056:50056"
+      - "127.0.0.1:9096:9096"
+
+    restart: unless-stopped
+
+  pricing-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: pricing-service
+    image: ride-platform/pricing-service:dev
+    container_name: ride-pricing-service
+
+    env_file:
+      - ../../services/pricing-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50057"
+      METRICS_ADDRESS: ":9097"
+      DATABASE_URL: postgres://${PRICING_DB_USER}:${PRICING_DB_PASSWORD}@pricing-postgres:5432/${PRICING_DB_NAME}?sslmode=disable
+      NATS_URL: nats://nats:4222
+      LOCATION_SERVICE_ADDRESS: location-service:50054
+      OSRM_BASE_URL: http://osrm:5000
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      pricing-postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      location-service:
+        condition: service_started
+
+    ports:
+      - "127.0.0.1:50057:50057"
+      - "127.0.0.1:9097:9097"
+
+    restart: unless-stopped
+
+  wallet-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: wallet-service
+    image: ride-platform/wallet-service:dev
+    container_name: ride-wallet-service
+
+    env_file:
+      - ../../services/wallet-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50058"
+      METRICS_ADDRESS: ":9098"
+      DATABASE_URL: postgres://${WALLET_DB_USER}:${WALLET_DB_PASSWORD}@wallet-postgres:5432/${WALLET_DB_NAME}?sslmode=disable
+      NATS_URL: nats://nats:4222
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      wallet-postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+
+    ports:
+      - "127.0.0.1:50058:50058"
+      - "127.0.0.1:9098:9098"
+
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: notification-service
+    image: ride-platform/notification-service:dev
+    container_name: ride-notification-service
+
+    env_file:
+      - ../../services/notification-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50059"
+      METRICS_ADDRESS: ":9099"
+      DATABASE_URL: postgres://${NOTIFICATION_DB_USER}:${NOTIFICATION_DB_PASSWORD}@notification-postgres:5432/${NOTIFICATION_DB_NAME}?sslmode=disable
+      NATS_URL: nats://nats:4222
+      TRIP_SERVICE_ADDRESS: trip-service:50055
+      DRIVER_SERVICE_ADDRESS: driver-service:50053
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      notification-postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+
+    ports:
+      - "127.0.0.1:50059:50059"
+      - "127.0.0.1:9099:9099"
+
+    restart: unless-stopped
+
 volumes:
   identity-postgres-data:
   rider-postgres-data:
