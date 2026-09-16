@@ -19,9 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LocationService_UpdateLocation_FullMethodName = "/ride.location.v1.LocationService/UpdateLocation"
-	LocationService_GetLocation_FullMethodName    = "/ride.location.v1.LocationService/GetLocation"
-	LocationService_FindNearby_FullMethodName     = "/ride.location.v1.LocationService/FindNearby"
+	LocationService_UpdateLocation_FullMethodName   = "/ride.location.v1.LocationService/UpdateLocation"
+	LocationService_GetLocation_FullMethodName      = "/ride.location.v1.LocationService/GetLocation"
+	LocationService_FindNearby_FullMethodName       = "/ride.location.v1.LocationService/FindNearby"
+	LocationService_CreateZone_FullMethodName       = "/ride.location.v1.LocationService/CreateZone"
+	LocationService_UpdateZone_FullMethodName       = "/ride.location.v1.LocationService/UpdateZone"
+	LocationService_SetZoneActive_FullMethodName    = "/ride.location.v1.LocationService/SetZoneActive"
+	LocationService_GetZone_FullMethodName          = "/ride.location.v1.LocationService/GetZone"
+	LocationService_ListZones_FullMethodName        = "/ride.location.v1.LocationService/ListZones"
+	LocationService_CheckServiceZone_FullMethodName = "/ride.location.v1.LocationService/CheckServiceZone"
 )
 
 // LocationServiceClient is the client API for LocationService service.
@@ -31,6 +37,15 @@ type LocationServiceClient interface {
 	UpdateLocation(ctx context.Context, in *UpdateLocationRequest, opts ...grpc.CallOption) (*UpdateLocationResponse, error)
 	GetLocation(ctx context.Context, in *GetLocationRequest, opts ...grpc.CallOption) (*GetLocationResponse, error)
 	FindNearby(ctx context.Context, in *FindNearbyRequest, opts ...grpc.CallOption) (*FindNearbyResponse, error)
+	// Service zones — the geographic areas the platform actually serves,
+	// down to arbitrary polygons (not just a city name). See
+	// CheckServiceZone for the query every trip request must pass.
+	CreateZone(ctx context.Context, in *CreateZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
+	UpdateZone(ctx context.Context, in *UpdateZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
+	SetZoneActive(ctx context.Context, in *SetZoneActiveRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
+	GetZone(ctx context.Context, in *GetZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
+	ListZones(ctx context.Context, in *ListZonesRequest, opts ...grpc.CallOption) (*ListZonesResponse, error)
+	CheckServiceZone(ctx context.Context, in *CheckServiceZoneRequest, opts ...grpc.CallOption) (*CheckServiceZoneResponse, error)
 }
 
 type locationServiceClient struct {
@@ -71,6 +86,66 @@ func (c *locationServiceClient) FindNearby(ctx context.Context, in *FindNearbyRe
 	return out, nil
 }
 
+func (c *locationServiceClient) CreateZone(ctx context.Context, in *CreateZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ZoneResponse)
+	err := c.cc.Invoke(ctx, LocationService_CreateZone_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) UpdateZone(ctx context.Context, in *UpdateZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ZoneResponse)
+	err := c.cc.Invoke(ctx, LocationService_UpdateZone_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) SetZoneActive(ctx context.Context, in *SetZoneActiveRequest, opts ...grpc.CallOption) (*ZoneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ZoneResponse)
+	err := c.cc.Invoke(ctx, LocationService_SetZoneActive_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) GetZone(ctx context.Context, in *GetZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ZoneResponse)
+	err := c.cc.Invoke(ctx, LocationService_GetZone_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) ListZones(ctx context.Context, in *ListZonesRequest, opts ...grpc.CallOption) (*ListZonesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListZonesResponse)
+	err := c.cc.Invoke(ctx, LocationService_ListZones_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) CheckServiceZone(ctx context.Context, in *CheckServiceZoneRequest, opts ...grpc.CallOption) (*CheckServiceZoneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckServiceZoneResponse)
+	err := c.cc.Invoke(ctx, LocationService_CheckServiceZone_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LocationServiceServer is the server API for LocationService service.
 // All implementations must embed UnimplementedLocationServiceServer
 // for forward compatibility.
@@ -78,6 +153,15 @@ type LocationServiceServer interface {
 	UpdateLocation(context.Context, *UpdateLocationRequest) (*UpdateLocationResponse, error)
 	GetLocation(context.Context, *GetLocationRequest) (*GetLocationResponse, error)
 	FindNearby(context.Context, *FindNearbyRequest) (*FindNearbyResponse, error)
+	// Service zones — the geographic areas the platform actually serves,
+	// down to arbitrary polygons (not just a city name). See
+	// CheckServiceZone for the query every trip request must pass.
+	CreateZone(context.Context, *CreateZoneRequest) (*ZoneResponse, error)
+	UpdateZone(context.Context, *UpdateZoneRequest) (*ZoneResponse, error)
+	SetZoneActive(context.Context, *SetZoneActiveRequest) (*ZoneResponse, error)
+	GetZone(context.Context, *GetZoneRequest) (*ZoneResponse, error)
+	ListZones(context.Context, *ListZonesRequest) (*ListZonesResponse, error)
+	CheckServiceZone(context.Context, *CheckServiceZoneRequest) (*CheckServiceZoneResponse, error)
 	mustEmbedUnimplementedLocationServiceServer()
 }
 
@@ -96,6 +180,24 @@ func (UnimplementedLocationServiceServer) GetLocation(context.Context, *GetLocat
 }
 func (UnimplementedLocationServiceServer) FindNearby(context.Context, *FindNearbyRequest) (*FindNearbyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method FindNearby not implemented")
+}
+func (UnimplementedLocationServiceServer) CreateZone(context.Context, *CreateZoneRequest) (*ZoneResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateZone not implemented")
+}
+func (UnimplementedLocationServiceServer) UpdateZone(context.Context, *UpdateZoneRequest) (*ZoneResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateZone not implemented")
+}
+func (UnimplementedLocationServiceServer) SetZoneActive(context.Context, *SetZoneActiveRequest) (*ZoneResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetZoneActive not implemented")
+}
+func (UnimplementedLocationServiceServer) GetZone(context.Context, *GetZoneRequest) (*ZoneResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetZone not implemented")
+}
+func (UnimplementedLocationServiceServer) ListZones(context.Context, *ListZonesRequest) (*ListZonesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListZones not implemented")
+}
+func (UnimplementedLocationServiceServer) CheckServiceZone(context.Context, *CheckServiceZoneRequest) (*CheckServiceZoneResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckServiceZone not implemented")
 }
 func (UnimplementedLocationServiceServer) mustEmbedUnimplementedLocationServiceServer() {}
 func (UnimplementedLocationServiceServer) testEmbeddedByValue()                         {}
@@ -172,6 +274,114 @@ func _LocationService_FindNearby_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LocationService_CreateZone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateZoneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).CreateZone(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_CreateZone_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).CreateZone(ctx, req.(*CreateZoneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_UpdateZone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateZoneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).UpdateZone(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_UpdateZone_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).UpdateZone(ctx, req.(*UpdateZoneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_SetZoneActive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetZoneActiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).SetZoneActive(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_SetZoneActive_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).SetZoneActive(ctx, req.(*SetZoneActiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_GetZone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetZoneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).GetZone(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_GetZone_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).GetZone(ctx, req.(*GetZoneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_ListZones_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListZonesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).ListZones(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_ListZones_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).ListZones(ctx, req.(*ListZonesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_CheckServiceZone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckServiceZoneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).CheckServiceZone(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_CheckServiceZone_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).CheckServiceZone(ctx, req.(*CheckServiceZoneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LocationService_ServiceDesc is the grpc.ServiceDesc for LocationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +400,30 @@ var LocationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindNearby",
 			Handler:    _LocationService_FindNearby_Handler,
+		},
+		{
+			MethodName: "CreateZone",
+			Handler:    _LocationService_CreateZone_Handler,
+		},
+		{
+			MethodName: "UpdateZone",
+			Handler:    _LocationService_UpdateZone_Handler,
+		},
+		{
+			MethodName: "SetZoneActive",
+			Handler:    _LocationService_SetZoneActive_Handler,
+		},
+		{
+			MethodName: "GetZone",
+			Handler:    _LocationService_GetZone_Handler,
+		},
+		{
+			MethodName: "ListZones",
+			Handler:    _LocationService_ListZones_Handler,
+		},
+		{
+			MethodName: "CheckServiceZone",
+			Handler:    _LocationService_CheckServiceZone_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -503,6 +503,552 @@ func (x *FindNearbyResponse) GetEntities() []*NearbyEntity {
 	return nil
 }
 
+type Zone struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	City          string                 `protobuf:"bytes,2,opt,name=city,proto3" json:"city,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Boundary      []*Coordinates         `protobuf:"bytes,4,rep,name=boundary,proto3" json:"boundary,omitempty"`
+	Active        bool                   `protobuf:"varint,5,opt,name=active,proto3" json:"active,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Zone) Reset() {
+	*x = Zone{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Zone) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Zone) ProtoMessage() {}
+
+func (x *Zone) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Zone.ProtoReflect.Descriptor instead.
+func (*Zone) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *Zone) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Zone) GetCity() string {
+	if x != nil {
+		return x.City
+	}
+	return ""
+}
+
+func (x *Zone) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Zone) GetBoundary() []*Coordinates {
+	if x != nil {
+		return x.Boundary
+	}
+	return nil
+}
+
+func (x *Zone) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
+func (x *Zone) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *Zone) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type CreateZoneRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	City          string                 `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Boundary      []*Coordinates         `protobuf:"bytes,3,rep,name=boundary,proto3" json:"boundary,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateZoneRequest) Reset() {
+	*x = CreateZoneRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateZoneRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateZoneRequest) ProtoMessage() {}
+
+func (x *CreateZoneRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateZoneRequest.ProtoReflect.Descriptor instead.
+func (*CreateZoneRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CreateZoneRequest) GetCity() string {
+	if x != nil {
+		return x.City
+	}
+	return ""
+}
+
+func (x *CreateZoneRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateZoneRequest) GetBoundary() []*Coordinates {
+	if x != nil {
+		return x.Boundary
+	}
+	return nil
+}
+
+type UpdateZoneRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ZoneId        string                 `protobuf:"bytes,1,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Boundary      []*Coordinates         `protobuf:"bytes,3,rep,name=boundary,proto3" json:"boundary,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateZoneRequest) Reset() {
+	*x = UpdateZoneRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateZoneRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateZoneRequest) ProtoMessage() {}
+
+func (x *UpdateZoneRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateZoneRequest.ProtoReflect.Descriptor instead.
+func (*UpdateZoneRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *UpdateZoneRequest) GetZoneId() string {
+	if x != nil {
+		return x.ZoneId
+	}
+	return ""
+}
+
+func (x *UpdateZoneRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateZoneRequest) GetBoundary() []*Coordinates {
+	if x != nil {
+		return x.Boundary
+	}
+	return nil
+}
+
+type SetZoneActiveRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ZoneId        string                 `protobuf:"bytes,1,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	Active        bool                   `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetZoneActiveRequest) Reset() {
+	*x = SetZoneActiveRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetZoneActiveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetZoneActiveRequest) ProtoMessage() {}
+
+func (x *SetZoneActiveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetZoneActiveRequest.ProtoReflect.Descriptor instead.
+func (*SetZoneActiveRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *SetZoneActiveRequest) GetZoneId() string {
+	if x != nil {
+		return x.ZoneId
+	}
+	return ""
+}
+
+func (x *SetZoneActiveRequest) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
+type ZoneResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Zone          *Zone                  `protobuf:"bytes,1,opt,name=zone,proto3" json:"zone,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ZoneResponse) Reset() {
+	*x = ZoneResponse{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ZoneResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ZoneResponse) ProtoMessage() {}
+
+func (x *ZoneResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ZoneResponse.ProtoReflect.Descriptor instead.
+func (*ZoneResponse) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ZoneResponse) GetZone() *Zone {
+	if x != nil {
+		return x.Zone
+	}
+	return nil
+}
+
+type GetZoneRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ZoneId        string                 `protobuf:"bytes,1,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetZoneRequest) Reset() {
+	*x = GetZoneRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetZoneRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetZoneRequest) ProtoMessage() {}
+
+func (x *GetZoneRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetZoneRequest.ProtoReflect.Descriptor instead.
+func (*GetZoneRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetZoneRequest) GetZoneId() string {
+	if x != nil {
+		return x.ZoneId
+	}
+	return ""
+}
+
+type ListZonesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional. Empty returns zones for every city.
+	City          string `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListZonesRequest) Reset() {
+	*x = ListZonesRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListZonesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListZonesRequest) ProtoMessage() {}
+
+func (x *ListZonesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListZonesRequest.ProtoReflect.Descriptor instead.
+func (*ListZonesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ListZonesRequest) GetCity() string {
+	if x != nil {
+		return x.City
+	}
+	return ""
+}
+
+type ListZonesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Zones         []*Zone                `protobuf:"bytes,1,rep,name=zones,proto3" json:"zones,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListZonesResponse) Reset() {
+	*x = ListZonesResponse{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListZonesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListZonesResponse) ProtoMessage() {}
+
+func (x *ListZonesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListZonesResponse.ProtoReflect.Descriptor instead.
+func (*ListZonesResponse) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ListZonesResponse) GetZones() []*Zone {
+	if x != nil {
+		return x.Zones
+	}
+	return nil
+}
+
+type CheckServiceZoneRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Coordinates   *Coordinates           `protobuf:"bytes,1,opt,name=coordinates,proto3" json:"coordinates,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckServiceZoneRequest) Reset() {
+	*x = CheckServiceZoneRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckServiceZoneRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckServiceZoneRequest) ProtoMessage() {}
+
+func (x *CheckServiceZoneRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckServiceZoneRequest.ProtoReflect.Descriptor instead.
+func (*CheckServiceZoneRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *CheckServiceZoneRequest) GetCoordinates() *Coordinates {
+	if x != nil {
+		return x.Coordinates
+	}
+	return nil
+}
+
+type CheckServiceZoneResponse struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Served bool                   `protobuf:"varint,1,opt,name=served,proto3" json:"served,omitempty"`
+	// zone_id/city are only set when served is true.
+	ZoneId        string `protobuf:"bytes,2,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	City          string `protobuf:"bytes,3,opt,name=city,proto3" json:"city,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckServiceZoneResponse) Reset() {
+	*x = CheckServiceZoneResponse{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckServiceZoneResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckServiceZoneResponse) ProtoMessage() {}
+
+func (x *CheckServiceZoneResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckServiceZoneResponse.ProtoReflect.Descriptor instead.
+func (*CheckServiceZoneResponse) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *CheckServiceZoneResponse) GetServed() bool {
+	if x != nil {
+		return x.Served
+	}
+	return false
+}
+
+func (x *CheckServiceZoneResponse) GetZoneId() string {
+	if x != nil {
+		return x.ZoneId
+	}
+	return ""
+}
+
+func (x *CheckServiceZoneResponse) GetCity() string {
+	if x != nil {
+		return x.City
+	}
+	return ""
+}
+
 var File_ride_location_v1_location_proto protoreflect.FileDescriptor
 
 const file_ride_location_v1_location_proto_rawDesc = "" +
@@ -538,17 +1084,60 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"\rradius_meters\x18\x03 \x01(\x01R\fradiusMeters\x12\x14\n" +
 	"\x05limit\x18\x04 \x01(\x05R\x05limit\"P\n" +
 	"\x12FindNearbyResponse\x12:\n" +
-	"\bentities\x18\x01 \x03(\v2\x1e.ride.location.v1.NearbyEntityR\bentities*X\n" +
+	"\bentities\x18\x01 \x03(\v2\x1e.ride.location.v1.NearbyEntityR\bentities\"\x87\x02\n" +
+	"\x04Zone\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04city\x18\x02 \x01(\tR\x04city\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x129\n" +
+	"\bboundary\x18\x04 \x03(\v2\x1d.ride.location.v1.CoordinatesR\bboundary\x12\x16\n" +
+	"\x06active\x18\x05 \x01(\bR\x06active\x129\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"v\n" +
+	"\x11CreateZoneRequest\x12\x12\n" +
+	"\x04city\x18\x01 \x01(\tR\x04city\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
+	"\bboundary\x18\x03 \x03(\v2\x1d.ride.location.v1.CoordinatesR\bboundary\"{\n" +
+	"\x11UpdateZoneRequest\x12\x17\n" +
+	"\azone_id\x18\x01 \x01(\tR\x06zoneId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
+	"\bboundary\x18\x03 \x03(\v2\x1d.ride.location.v1.CoordinatesR\bboundary\"G\n" +
+	"\x14SetZoneActiveRequest\x12\x17\n" +
+	"\azone_id\x18\x01 \x01(\tR\x06zoneId\x12\x16\n" +
+	"\x06active\x18\x02 \x01(\bR\x06active\":\n" +
+	"\fZoneResponse\x12*\n" +
+	"\x04zone\x18\x01 \x01(\v2\x16.ride.location.v1.ZoneR\x04zone\")\n" +
+	"\x0eGetZoneRequest\x12\x17\n" +
+	"\azone_id\x18\x01 \x01(\tR\x06zoneId\"&\n" +
+	"\x10ListZonesRequest\x12\x12\n" +
+	"\x04city\x18\x01 \x01(\tR\x04city\"A\n" +
+	"\x11ListZonesResponse\x12,\n" +
+	"\x05zones\x18\x01 \x03(\v2\x16.ride.location.v1.ZoneR\x05zones\"Z\n" +
+	"\x17CheckServiceZoneRequest\x12?\n" +
+	"\vcoordinates\x18\x01 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vcoordinates\"_\n" +
+	"\x18CheckServiceZoneResponse\x12\x16\n" +
+	"\x06served\x18\x01 \x01(\bR\x06served\x12\x17\n" +
+	"\azone_id\x18\x02 \x01(\tR\x06zoneId\x12\x12\n" +
+	"\x04city\x18\x03 \x01(\tR\x04city*X\n" +
 	"\n" +
 	"EntityType\x12\x1b\n" +
 	"\x17ENTITY_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ENTITY_TYPE_DRIVER\x10\x01\x12\x15\n" +
-	"\x11ENTITY_TYPE_RIDER\x10\x022\xab\x02\n" +
+	"\x11ENTITY_TYPE_RIDER\x10\x022\xb8\x06\n" +
 	"\x0fLocationService\x12c\n" +
 	"\x0eUpdateLocation\x12'.ride.location.v1.UpdateLocationRequest\x1a(.ride.location.v1.UpdateLocationResponse\x12Z\n" +
 	"\vGetLocation\x12$.ride.location.v1.GetLocationRequest\x1a%.ride.location.v1.GetLocationResponse\x12W\n" +
 	"\n" +
-	"FindNearby\x12#.ride.location.v1.FindNearbyRequest\x1a$.ride.location.v1.FindNearbyResponseBDZBgithub.com/7akoom/ride-platform/gen/go/ride/location/v1;locationv1b\x06proto3"
+	"FindNearby\x12#.ride.location.v1.FindNearbyRequest\x1a$.ride.location.v1.FindNearbyResponse\x12Q\n" +
+	"\n" +
+	"CreateZone\x12#.ride.location.v1.CreateZoneRequest\x1a\x1e.ride.location.v1.ZoneResponse\x12Q\n" +
+	"\n" +
+	"UpdateZone\x12#.ride.location.v1.UpdateZoneRequest\x1a\x1e.ride.location.v1.ZoneResponse\x12W\n" +
+	"\rSetZoneActive\x12&.ride.location.v1.SetZoneActiveRequest\x1a\x1e.ride.location.v1.ZoneResponse\x12K\n" +
+	"\aGetZone\x12 .ride.location.v1.GetZoneRequest\x1a\x1e.ride.location.v1.ZoneResponse\x12T\n" +
+	"\tListZones\x12\".ride.location.v1.ListZonesRequest\x1a#.ride.location.v1.ListZonesResponse\x12i\n" +
+	"\x10CheckServiceZone\x12).ride.location.v1.CheckServiceZoneRequest\x1a*.ride.location.v1.CheckServiceZoneResponseBDZBgithub.com/7akoom/ride-platform/gen/go/ride/location/v1;locationv1b\x06proto3"
 
 var (
 	file_ride_location_v1_location_proto_rawDescOnce sync.Once
@@ -563,41 +1152,71 @@ func file_ride_location_v1_location_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_location_v1_location_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ride_location_v1_location_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_ride_location_v1_location_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_ride_location_v1_location_proto_goTypes = []any{
-	(EntityType)(0),                // 0: ride.location.v1.EntityType
-	(*Coordinates)(nil),            // 1: ride.location.v1.Coordinates
-	(*UpdateLocationRequest)(nil),  // 2: ride.location.v1.UpdateLocationRequest
-	(*UpdateLocationResponse)(nil), // 3: ride.location.v1.UpdateLocationResponse
-	(*GetLocationRequest)(nil),     // 4: ride.location.v1.GetLocationRequest
-	(*GetLocationResponse)(nil),    // 5: ride.location.v1.GetLocationResponse
-	(*NearbyEntity)(nil),           // 6: ride.location.v1.NearbyEntity
-	(*FindNearbyRequest)(nil),      // 7: ride.location.v1.FindNearbyRequest
-	(*FindNearbyResponse)(nil),     // 8: ride.location.v1.FindNearbyResponse
-	(*timestamppb.Timestamp)(nil),  // 9: google.protobuf.Timestamp
+	(EntityType)(0),                  // 0: ride.location.v1.EntityType
+	(*Coordinates)(nil),              // 1: ride.location.v1.Coordinates
+	(*UpdateLocationRequest)(nil),    // 2: ride.location.v1.UpdateLocationRequest
+	(*UpdateLocationResponse)(nil),   // 3: ride.location.v1.UpdateLocationResponse
+	(*GetLocationRequest)(nil),       // 4: ride.location.v1.GetLocationRequest
+	(*GetLocationResponse)(nil),      // 5: ride.location.v1.GetLocationResponse
+	(*NearbyEntity)(nil),             // 6: ride.location.v1.NearbyEntity
+	(*FindNearbyRequest)(nil),        // 7: ride.location.v1.FindNearbyRequest
+	(*FindNearbyResponse)(nil),       // 8: ride.location.v1.FindNearbyResponse
+	(*Zone)(nil),                     // 9: ride.location.v1.Zone
+	(*CreateZoneRequest)(nil),        // 10: ride.location.v1.CreateZoneRequest
+	(*UpdateZoneRequest)(nil),        // 11: ride.location.v1.UpdateZoneRequest
+	(*SetZoneActiveRequest)(nil),     // 12: ride.location.v1.SetZoneActiveRequest
+	(*ZoneResponse)(nil),             // 13: ride.location.v1.ZoneResponse
+	(*GetZoneRequest)(nil),           // 14: ride.location.v1.GetZoneRequest
+	(*ListZonesRequest)(nil),         // 15: ride.location.v1.ListZonesRequest
+	(*ListZonesResponse)(nil),        // 16: ride.location.v1.ListZonesResponse
+	(*CheckServiceZoneRequest)(nil),  // 17: ride.location.v1.CheckServiceZoneRequest
+	(*CheckServiceZoneResponse)(nil), // 18: ride.location.v1.CheckServiceZoneResponse
+	(*timestamppb.Timestamp)(nil),    // 19: google.protobuf.Timestamp
 }
 var file_ride_location_v1_location_proto_depIdxs = []int32{
 	0,  // 0: ride.location.v1.UpdateLocationRequest.entity_type:type_name -> ride.location.v1.EntityType
 	1,  // 1: ride.location.v1.UpdateLocationRequest.coordinates:type_name -> ride.location.v1.Coordinates
-	9,  // 2: ride.location.v1.UpdateLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
+	19, // 2: ride.location.v1.UpdateLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: ride.location.v1.GetLocationRequest.entity_type:type_name -> ride.location.v1.EntityType
 	1,  // 4: ride.location.v1.GetLocationResponse.coordinates:type_name -> ride.location.v1.Coordinates
-	9,  // 5: ride.location.v1.GetLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
+	19, // 5: ride.location.v1.GetLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
 	1,  // 6: ride.location.v1.NearbyEntity.coordinates:type_name -> ride.location.v1.Coordinates
 	0,  // 7: ride.location.v1.FindNearbyRequest.entity_type:type_name -> ride.location.v1.EntityType
 	1,  // 8: ride.location.v1.FindNearbyRequest.coordinates:type_name -> ride.location.v1.Coordinates
 	6,  // 9: ride.location.v1.FindNearbyResponse.entities:type_name -> ride.location.v1.NearbyEntity
-	2,  // 10: ride.location.v1.LocationService.UpdateLocation:input_type -> ride.location.v1.UpdateLocationRequest
-	4,  // 11: ride.location.v1.LocationService.GetLocation:input_type -> ride.location.v1.GetLocationRequest
-	7,  // 12: ride.location.v1.LocationService.FindNearby:input_type -> ride.location.v1.FindNearbyRequest
-	3,  // 13: ride.location.v1.LocationService.UpdateLocation:output_type -> ride.location.v1.UpdateLocationResponse
-	5,  // 14: ride.location.v1.LocationService.GetLocation:output_type -> ride.location.v1.GetLocationResponse
-	8,  // 15: ride.location.v1.LocationService.FindNearby:output_type -> ride.location.v1.FindNearbyResponse
-	13, // [13:16] is the sub-list for method output_type
-	10, // [10:13] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	1,  // 10: ride.location.v1.Zone.boundary:type_name -> ride.location.v1.Coordinates
+	19, // 11: ride.location.v1.Zone.created_at:type_name -> google.protobuf.Timestamp
+	19, // 12: ride.location.v1.Zone.updated_at:type_name -> google.protobuf.Timestamp
+	1,  // 13: ride.location.v1.CreateZoneRequest.boundary:type_name -> ride.location.v1.Coordinates
+	1,  // 14: ride.location.v1.UpdateZoneRequest.boundary:type_name -> ride.location.v1.Coordinates
+	9,  // 15: ride.location.v1.ZoneResponse.zone:type_name -> ride.location.v1.Zone
+	9,  // 16: ride.location.v1.ListZonesResponse.zones:type_name -> ride.location.v1.Zone
+	1,  // 17: ride.location.v1.CheckServiceZoneRequest.coordinates:type_name -> ride.location.v1.Coordinates
+	2,  // 18: ride.location.v1.LocationService.UpdateLocation:input_type -> ride.location.v1.UpdateLocationRequest
+	4,  // 19: ride.location.v1.LocationService.GetLocation:input_type -> ride.location.v1.GetLocationRequest
+	7,  // 20: ride.location.v1.LocationService.FindNearby:input_type -> ride.location.v1.FindNearbyRequest
+	10, // 21: ride.location.v1.LocationService.CreateZone:input_type -> ride.location.v1.CreateZoneRequest
+	11, // 22: ride.location.v1.LocationService.UpdateZone:input_type -> ride.location.v1.UpdateZoneRequest
+	12, // 23: ride.location.v1.LocationService.SetZoneActive:input_type -> ride.location.v1.SetZoneActiveRequest
+	14, // 24: ride.location.v1.LocationService.GetZone:input_type -> ride.location.v1.GetZoneRequest
+	15, // 25: ride.location.v1.LocationService.ListZones:input_type -> ride.location.v1.ListZonesRequest
+	17, // 26: ride.location.v1.LocationService.CheckServiceZone:input_type -> ride.location.v1.CheckServiceZoneRequest
+	3,  // 27: ride.location.v1.LocationService.UpdateLocation:output_type -> ride.location.v1.UpdateLocationResponse
+	5,  // 28: ride.location.v1.LocationService.GetLocation:output_type -> ride.location.v1.GetLocationResponse
+	8,  // 29: ride.location.v1.LocationService.FindNearby:output_type -> ride.location.v1.FindNearbyResponse
+	13, // 30: ride.location.v1.LocationService.CreateZone:output_type -> ride.location.v1.ZoneResponse
+	13, // 31: ride.location.v1.LocationService.UpdateZone:output_type -> ride.location.v1.ZoneResponse
+	13, // 32: ride.location.v1.LocationService.SetZoneActive:output_type -> ride.location.v1.ZoneResponse
+	13, // 33: ride.location.v1.LocationService.GetZone:output_type -> ride.location.v1.ZoneResponse
+	16, // 34: ride.location.v1.LocationService.ListZones:output_type -> ride.location.v1.ListZonesResponse
+	18, // 35: ride.location.v1.LocationService.CheckServiceZone:output_type -> ride.location.v1.CheckServiceZoneResponse
+	27, // [27:36] is the sub-list for method output_type
+	18, // [18:27] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_ride_location_v1_location_proto_init() }
@@ -611,7 +1230,7 @@ func file_ride_location_v1_location_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_location_v1_location_proto_rawDesc), len(file_ride_location_v1_location_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   8,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
