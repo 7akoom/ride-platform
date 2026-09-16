@@ -6,6 +6,7 @@ import (
 
 	locationv1 "github.com/7akoom/ride-platform/gen/go/ride/location/v1"
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/location"
+	"github.com/7akoom/ride-platform/services/location-service/internal/application/zone"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -15,17 +16,24 @@ type LocationHandler struct {
 	locationv1.UnimplementedLocationServiceServer
 
 	locationService location.Service
+	zoneService     zone.Service
 }
 
 func NewLocationHandler(
 	locationService location.Service,
+	zoneService zone.Service,
 ) *LocationHandler {
 	if locationService == nil {
 		panic("location service is required")
 	}
 
+	if zoneService == nil {
+		panic("zone service is required")
+	}
+
 	return &LocationHandler{
 		locationService: locationService,
+		zoneService:     zoneService,
 	}
 }
 

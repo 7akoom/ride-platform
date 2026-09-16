@@ -10,6 +10,11 @@ type Config struct {
 	ValkeyAddress  string
 	ValkeyPassword string
 
+	// Persistent store for service zones (see internal/application/zone).
+	// Everything else this service does is ephemeral, Valkey-only — this
+	// is its first durable data.
+	DatabaseURL string
+
 	// Verifies access tokens issued by identity-service. The public key
 	// must be copied from identity-service's own .local/keys directory —
 	// it is never committed to the repo.
@@ -41,6 +46,8 @@ func Load() Config {
 		MetricsAddress: getEnv("METRICS_ADDRESS", ":9094"),
 		ValkeyAddress:  getEnv("VALKEY_ADDRESS", ""),
 		ValkeyPassword: getEnv("VALKEY_PASSWORD", ""),
+
+		DatabaseURL: getEnv("DATABASE_URL", ""),
 
 		AccessTokenPublicKeyPath: getEnv("ACCESS_TOKEN_PUBLIC_KEY_PATH", ".local/keys/access_token_public.pem"),
 		AccessTokenIssuer:        getEnv("ACCESS_TOKEN_ISSUER", "ride-identity"),

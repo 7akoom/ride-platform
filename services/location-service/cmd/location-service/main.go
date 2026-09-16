@@ -9,8 +9,11 @@ import (
 	"time"
 
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/location"
+	"github.com/7akoom/ride-platform/services/location-service/internal/application/zone"
 	"github.com/7akoom/ride-platform/services/location-service/internal/config"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/database"
+	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/identifier"
+	postgresrepo "github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/persistence/postgres"
 	valkeystore "github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/persistence/valkey"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/token"
 	"github.com/7akoom/ride-platform/services/location-service/internal/observability"
@@ -62,7 +65,19 @@ func run() int {
 
 	locationRepository := valkeystore.NewLocationStore(valkeyClient)
 	locationService := location.NewService(locationRepository)
-	locationHandler := grpcserver.NewLocationHandler(locationService)
+
+	pool, err := database.NewPostgresPool(ctx, cfg.DatabaseURL)
+	if err != nil {
+		logger.Error("failed to connect to PostgreSQL", "error", err)
+
+		return 1
+	}
+	defer pool.Close()
+
+	zoneRepository := postgresrepo.NewZoneStore(pool)
+	zoneService := zone.NewService(zoneRepository, identifier.NewUUIDGenerator())
+
+	locationHandler := grpcserver.NewLocationHandler(locationService, zoneService)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,
