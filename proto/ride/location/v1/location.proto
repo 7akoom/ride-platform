@@ -9,6 +9,16 @@ service LocationService {
   rpc UpdateLocation(UpdateLocationRequest) returns (UpdateLocationResponse);
   rpc GetLocation(GetLocationRequest) returns (GetLocationResponse);
   rpc FindNearby(FindNearbyRequest) returns (FindNearbyResponse);
+
+  // Service zones — the geographic areas the platform actually serves,
+  // down to arbitrary polygons (not just a city name). See
+  // CheckServiceZone for the query every trip request must pass.
+  rpc CreateZone(CreateZoneRequest) returns (ZoneResponse);
+  rpc UpdateZone(UpdateZoneRequest) returns (ZoneResponse);
+  rpc SetZoneActive(SetZoneActiveRequest) returns (ZoneResponse);
+  rpc GetZone(GetZoneRequest) returns (ZoneResponse);
+  rpc ListZones(ListZonesRequest) returns (ListZonesResponse);
+  rpc CheckServiceZone(CheckServiceZoneRequest) returns (CheckServiceZoneResponse);
 }
 
 enum EntityType {
@@ -57,4 +67,66 @@ message FindNearbyRequest {
 
 message FindNearbyResponse {
   repeated NearbyEntity entities = 1;
+}
+
+// --- Service zones ---------------------------------------------------
+//
+// A zone is an arbitrary polygon within a city, not the city itself —
+// two zones can share a city name (e.g. distinct approved areas within
+// Erbil). boundary is an ordered list of vertices forming a simple
+// polygon (first point is not repeated at the end).
+
+message Zone {
+  string id = 1;
+  string city = 2;
+  string name = 3;
+  repeated Coordinates boundary = 4;
+  bool active = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message CreateZoneRequest {
+  string city = 1;
+  string name = 2;
+  repeated Coordinates boundary = 3;
+}
+
+message UpdateZoneRequest {
+  string zone_id = 1;
+  string name = 2;
+  repeated Coordinates boundary = 3;
+}
+
+message SetZoneActiveRequest {
+  string zone_id = 1;
+  bool active = 2;
+}
+
+message ZoneResponse {
+  Zone zone = 1;
+}
+
+message GetZoneRequest {
+  string zone_id = 1;
+}
+
+message ListZonesRequest {
+  // Optional. Empty returns zones for every city.
+  string city = 1;
+}
+
+message ListZonesResponse {
+  repeated Zone zones = 1;
+}
+
+message CheckServiceZoneRequest {
+  Coordinates coordinates = 1;
+}
+
+message CheckServiceZoneResponse {
+  bool served = 1;
+  // zone_id/city are only set when served is true.
+  string zone_id = 2;
+  string city = 3;
 }
