@@ -195,6 +195,36 @@ services:
 
     restart: unless-stopped
 
+  # PostGIS-enabled — this is location-service's first durable store
+  # (service zones), everything else it does stays in Valkey.
+  location-postgres:
+    image: postgis/postgis:17-3.5-alpine
+    container_name: ride-location-postgres
+
+    environment:
+      POSTGRES_DB: ${LOCATION_DB_NAME:?LOCATION_DB_NAME is required}
+      POSTGRES_USER: ${LOCATION_DB_USER:?LOCATION_DB_USER is required}
+      POSTGRES_PASSWORD: ${LOCATION_DB_PASSWORD:?LOCATION_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:5440:5432"
+
+    volumes:
+      - location-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${LOCATION_DB_USER} -d ${LOCATION_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
   # Road routing for pricing-service. Requires a one-time dataset build:
   # see infrastructure/osrm/README.md. Starts only once that's done.
   osrm:
@@ -563,12 +593,15 @@ services:
       METRICS_ADDRESS: ":9094"
       VALKEY_ADDRESS: location-valkey:6379
       VALKEY_PASSWORD: ${LOCATION_VALKEY_PASSWORD}
+      DATABASE_URL: postgres://${LOCATION_DB_USER}:${LOCATION_DB_PASSWORD}@location-postgres:5432/${LOCATION_DB_NAME}?sslmode=disable
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
 
     depends_on:
       location-valkey:
+        condition: service_healthy
+      location-postgres:
         condition: service_healthy
 
     ports:
@@ -594,6 +627,7 @@ services:
       METRICS_ADDRESS: ":9095"
       DATABASE_URL: postgres://${TRIP_DB_USER}:${TRIP_DB_PASSWORD}@trip-postgres:5432/${TRIP_DB_NAME}?sslmode=disable
       NATS_URL: nats://nats:4222
+      LOCATION_SERVICE_ADDRESS: location-service:50054
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -603,6 +637,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
+      location-service:
+        condition: service_started
 
     ports:
       - "127.0.0.1:50055:50055"
@@ -758,6 +794,7 @@ volumes:
   pricing-postgres-data:
   wallet-postgres-data:
   notification-postgres-data:
+  location-postgres-data:
   identity-valkey-data:
   location-valkey-data:
   nats-jetstream-data:
