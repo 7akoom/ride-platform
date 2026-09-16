@@ -69,3 +69,13 @@ type Repository interface {
 type IDGenerator interface {
 	NewID() string
 }
+
+// ZoneChecker is trip-service's first outbound peer dependency — it
+// calls location-service to enforce that a trip can only be requested
+// with a pickup point inside an active service zone.
+type ZoneChecker interface {
+	CheckServiceZone(
+		ctx context.Context,
+		latitude, longitude float64,
+	) (served bool, err error)
+}

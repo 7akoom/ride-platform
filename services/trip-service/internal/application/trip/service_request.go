@@ -26,6 +26,15 @@ func (s *service) RequestTrip(
 		return Trip{}, err
 	}
 
+	served, err := s.zoneChecker.CheckServiceZone(ctx, pickup.Latitude, pickup.Longitude)
+	if err != nil {
+		return Trip{}, fmt.Errorf("check pickup service zone: %w", err)
+	}
+
+	if !served {
+		return Trip{}, ErrPickupOutsideServiceZone
+	}
+
 	_, err = s.repository.FindActiveByRiderID(ctx, riderID)
 	switch {
 	case err == nil:

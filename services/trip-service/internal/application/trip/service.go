@@ -47,11 +47,13 @@ type Service interface {
 type service struct {
 	repository  Repository
 	idGenerator IDGenerator
+	zoneChecker ZoneChecker
 }
 
 func NewService(
 	repository Repository,
 	idGenerator IDGenerator,
+	zoneChecker ZoneChecker,
 ) Service {
 	if repository == nil {
 		panic("trip repository is required")
@@ -61,8 +63,13 @@ func NewService(
 		panic("trip id generator is required")
 	}
 
+	if zoneChecker == nil {
+		panic("trip zone checker is required")
+	}
+
 	return &service{
 		repository:  repository,
 		idGenerator: idGenerator,
+		zoneChecker: zoneChecker,
 	}
 }

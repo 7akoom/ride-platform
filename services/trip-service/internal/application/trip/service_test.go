@@ -102,8 +102,26 @@ type fakeIDGenerator struct{ id string }
 
 func (g *fakeIDGenerator) NewID() string { return g.id }
 
+type fakeZoneChecker struct {
+	served bool
+	err    error
+	calls  []struct{ lat, lng float64 }
+}
+
+func (c *fakeZoneChecker) CheckServiceZone(_ context.Context, lat, lng float64) (bool, error) {
+	c.calls = append(c.calls, struct{ lat, lng float64 }{lat, lng})
+	if c.err != nil {
+		return false, c.err
+	}
+	return c.served, nil
+}
+
 func newService(repo *fakeRepository) trip.Service {
-	return trip.NewService(repo, &fakeIDGenerator{id: "new-trip-id"})
+	return trip.NewService(repo, &fakeIDGenerator{id: "new-trip-id"}, &fakeZoneChecker{served: true})
+}
+
+func newServiceWithZoneChecker(repo *fakeRepository, zoneChecker *fakeZoneChecker) trip.Service {
+	return trip.NewService(repo, &fakeIDGenerator{id: "new-trip-id"}, zoneChecker)
 }
 
 func validRequestInput() trip.RequestTripInput {
@@ -121,12 +139,17 @@ func validRequestInput() trip.RequestTripInput {
 func TestNewService_PanicsOnMissingDependencies(t *testing.T) {
 	t.Run("nil repository", func(t *testing.T) {
 		defer expectPanic(t)
-		trip.NewService(nil, &fakeIDGenerator{id: "x"})
+		trip.NewService(nil, &fakeIDGenerator{id: "x"}, &fakeZoneChecker{served: true})
 	})
 
 	t.Run("nil id generator", func(t *testing.T) {
 		defer expectPanic(t)
-		trip.NewService(&fakeRepository{}, nil)
+		trip.NewService(&fakeRepository{}, nil, &fakeZoneChecker{served: true})
+	})
+
+	t.Run("nil zone checker", func(t *testing.T) {
+		defer expectPanic(t)
+		trip.NewService(&fakeRepository{}, &fakeIDGenerator{id: "x"}, nil)
 	})
 }
 
@@ -207,6 +230,54 @@ func TestNewCoordinates(t *testing.T) {
 }
 
 // --- RequestTrip ------------------------------------------------------------
+
+func TestService_RequestTrip_RejectsPickupOutsideServiceZone(t *testing.T) {
+	repo := &fakeRepository{findActiveByRiderIDErr: trip.ErrTripNotFound}
+	zoneChecker := &fakeZoneChecker{served: false}
+	svc := newServiceWithZoneChecker(repo, zoneChecker)
+
+	_, err := svc.RequestTrip(context.Background(), validRequestInput())
+	if !errors.Is(err, trip.ErrPickupOutsideServiceZone) {
+		t.Fatalf("got %v, want ErrPickupOutsideServiceZone", err)
+	}
+
+	if len(repo.createCalls) != 0 {
+		t.Fatal("expected Create not to be called for an out-of-zone pickup")
+	}
+}
+
+func TestService_RequestTrip_WrapsZoneCheckerError(t *testing.T) {
+	zoneErr := errors.New("location-service unreachable")
+	repo := &fakeRepository{}
+	zoneChecker := &fakeZoneChecker{err: zoneErr}
+	svc := newServiceWithZoneChecker(repo, zoneChecker)
+
+	_, err := svc.RequestTrip(context.Background(), validRequestInput())
+	if !errors.Is(err, zoneErr) {
+		t.Fatalf("got %v, want wrapped %v", err, zoneErr)
+	}
+}
+
+func TestService_RequestTrip_ChecksThePickupPointNotTheDropoff(t *testing.T) {
+	repo := &fakeRepository{findActiveByRiderIDErr: trip.ErrTripNotFound, createResult: trip.Trip{ID: "new-trip-id"}}
+	zoneChecker := &fakeZoneChecker{served: true}
+	svc := newServiceWithZoneChecker(repo, zoneChecker)
+
+	input := validRequestInput()
+
+	if _, err := svc.RequestTrip(context.Background(), input); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(zoneChecker.calls) != 1 {
+		t.Fatalf("expected 1 zone check call, got %d", len(zoneChecker.calls))
+	}
+
+	call := zoneChecker.calls[0]
+	if call.lat != input.PickupLat || call.lng != input.PickupLng {
+		t.Fatalf("got zone check for (%v, %v), want pickup (%v, %v)", call.lat, call.lng, input.PickupLat, input.PickupLng)
+	}
+}
 
 func TestService_RequestTrip_ValidationErrors(t *testing.T) {
 	cases := []struct {

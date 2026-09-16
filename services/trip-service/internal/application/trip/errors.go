@@ -13,4 +13,6 @@ var (
 	ErrInvalidTransition   = errors.New("trip cannot transition to the requested status from its current status")
 	ErrRiderHasActiveTrip  = errors.New("rider already has an active trip")
 	ErrDriverHasActiveTrip = errors.New("driver already has an active trip")
+
+	ErrPickupOutsideServiceZone = errors.New("pickup location is outside every service zone")
 )

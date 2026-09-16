@@ -11,6 +11,7 @@ import (
 	outboxapp "github.com/7akoom/ride-platform/services/trip-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/config"
+	"github.com/7akoom/ride-platform/services/trip-service/internal/infrastructure/clients"
 	clockinfra "github.com/7akoom/ride-platform/services/trip-service/internal/infrastructure/clock"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/infrastructure/database"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/infrastructure/identifier"
@@ -19,6 +20,8 @@ import (
 	"github.com/7akoom/ride-platform/services/trip-service/internal/infrastructure/token"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/observability"
 	grpcserver "github.com/7akoom/ride-platform/services/trip-service/internal/transport/grpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -133,10 +136,20 @@ func run() int {
 		},
 	)
 
+	locationConn, err := dialService(cfg.LocationServiceAddress, cfg.InternalServiceToken)
+	if err != nil {
+		logger.Error("failed to configure location-service connection", "error", err)
+
+		return 1
+	}
+	defer locationConn.Close()
+
+	locationClient := clients.NewLocationClient(locationConn)
+
 	tripRepository := postgresrepo.NewTripRepository(pool)
 	idGenerator := identifier.NewUUIDGenerator()
 
-	tripService := trip.NewService(tripRepository, idGenerator)
+	tripService := trip.NewService(tripRepository, idGenerator, locationClient)
 	tripHandler := grpcserver.NewTripHandler(tripService)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
@@ -233,4 +246,14 @@ func run() int {
 	<-outboxDone
 
 	return 0
+}
+
+func dialService(address string, internalServiceToken string) (*grpc.ClientConn, error) {
+	return grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(internalServiceToken),
+		),
+	)
 }
