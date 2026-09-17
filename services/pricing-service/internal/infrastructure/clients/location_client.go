@@ -44,3 +44,25 @@ func (c *LocationClient) CountNearbyAvailableDrivers(
 
 	return len(response.GetEntities()), nil
 }
+
+// CheckServiceZone reports whether a pickup point is served and, if
+// so, which zone it resolved to — the same check trip-service runs
+// before accepting a trip request. Used here to pick the right rate
+// card and to refuse a quote for a location that could never become a
+// real trip.
+func (c *LocationClient) CheckServiceZone(
+	ctx context.Context,
+	latitude, longitude float64,
+) (bool, string, error) {
+	response, err := c.client.CheckServiceZone(ctx, &locationv1.CheckServiceZoneRequest{
+		Coordinates: &locationv1.Coordinates{
+			Latitude:  latitude,
+			Longitude: longitude,
+		},
+	})
+	if err != nil {
+		return false, "", fmt.Errorf("call location-service CheckServiceZone: %w", err)
+	}
+
+	return response.GetServed(), response.GetZoneId(), nil
+}

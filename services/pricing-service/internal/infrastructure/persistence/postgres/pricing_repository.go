@@ -31,22 +31,57 @@ func NewPricingRepository(pool *pgxpool.Pool) *PricingRepository {
 	return &PricingRepository{pool: pool}
 }
 
+const activeConfigSelectSQL = `SELECT id, COALESCE(zone_id::text, ''), currency_code, base_fare,
+	per_km_rate, per_minute_rate, average_speed_kmh, distance_correction_factor, created_at
+	FROM pricing_configs`
+
+// GetActiveConfig returns the newest rate card scoped to zoneID if one
+// exists, otherwise the newest global-default rate card (zone_id
+// NULL). zoneID is always a real zone id here — the caller only
+// reaches this after location-service's CheckServiceZone has confirmed
+// the pickup is served.
 func (r *PricingRepository) GetActiveConfig(
 	ctx context.Context,
+	zoneID string,
 ) (pricing.Config, error) {
-	row := r.pool.QueryRow(
-		ctx,
-		`SELECT id, currency_code, base_fare, per_km_rate, per_minute_rate,
-		        average_speed_kmh, distance_correction_factor, created_at
-		 FROM pricing_configs
-		 ORDER BY created_at DESC
-		 LIMIT 1`,
-	)
+	config, err := r.activeConfigForZone(ctx, zoneID)
+	if err == nil {
+		return config, nil
+	}
+
+	if !errors.Is(err, pricing.ErrNoActiveConfig) {
+		return pricing.Config{}, err
+	}
+
+	return r.activeConfigForZone(ctx, "")
+}
+
+// activeConfigForZone looks up the newest row for zoneID, or the
+// newest global-default row (zone_id IS NULL) when zoneID is empty.
+func (r *PricingRepository) activeConfigForZone(
+	ctx context.Context,
+	zoneID string,
+) (pricing.Config, error) {
+	var row pgx.Row
+
+	if zoneID == "" {
+		row = r.pool.QueryRow(
+			ctx,
+			activeConfigSelectSQL+` WHERE zone_id IS NULL ORDER BY created_at DESC LIMIT 1`,
+		)
+	} else {
+		row = r.pool.QueryRow(
+			ctx,
+			activeConfigSelectSQL+` WHERE zone_id = $1 ORDER BY created_at DESC LIMIT 1`,
+			zoneID,
+		)
+	}
 
 	var config pricing.Config
 
 	err := row.Scan(
 		&config.ID,
+		&config.ZoneID,
 		&config.CurrencyCode,
 		&config.BaseFare,
 		&config.PerKmRate,
@@ -64,6 +99,16 @@ func (r *PricingRepository) GetActiveConfig(
 	}
 
 	return config, nil
+}
+
+// nullableUUID converts an empty string to a real SQL NULL for a UUID
+// column — passing "" directly would fail to parse as a UUID.
+func nullableUUID(id string) any {
+	if id == "" {
+		return nil
+	}
+
+	return id
 }
 
 func (r *PricingRepository) ListActiveSurgeTimeRules(
@@ -236,7 +281,7 @@ func (r *PricingRepository) FindFareByTripID(
 		        surge_time_percent, surge_demand_percent, surge_weather_percent,
 		        surge_total_percent, surge_amount,
 		        applied_discount_type, applied_discount_label, discount_amount,
-		        total, created_at
+		        total, COALESCE(zone_id::text, ''), created_at
 		 FROM fares
 		 WHERE trip_id = $1`,
 		tripID,
@@ -287,16 +332,16 @@ func (r *PricingRepository) PersistFare(
 		     surge_time_percent, surge_demand_percent, surge_weather_percent,
 		     surge_total_percent, surge_amount,
 		     applied_discount_type, applied_discount_label, discount_amount,
-		     total)
+		     total, zone_id)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
-		         $10, $11, $12, $13, $14, $15, $16, $17, $18)
+		         $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
 		 RETURNING id, trip_id, rider_id, currency_code,
 		           base_fare, distance_km, distance_fare,
 		           duration_minutes, duration_fare, subtotal,
 		           surge_time_percent, surge_demand_percent, surge_weather_percent,
 		           surge_total_percent, surge_amount,
 		           applied_discount_type, applied_discount_label, discount_amount,
-		           total, created_at`,
+		           total, COALESCE(zone_id::text, ''), created_at`,
 		input.TripID,
 		input.RiderID,
 		b.CurrencyCode,
@@ -315,6 +360,7 @@ func (r *PricingRepository) PersistFare(
 		discountLabel,
 		b.DiscountAmount,
 		b.Total,
+		nullableUUID(b.ZoneID),
 	)
 
 	fare, err := scanFare(row)
@@ -458,6 +504,7 @@ func scanFare(row pgx.Row) (pricing.Fare, error) {
 		&discountLabel,
 		&b.DiscountAmount,
 		&b.Total,
+		&b.ZoneID,
 		&fare.CreatedAt,
 	)
 	if err != nil {

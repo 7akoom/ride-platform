@@ -39,7 +39,11 @@ type PersistFareInput struct {
 // rider stats increment + coupon redemption), the same "one repository,
 // one transaction boundary" reasoning trip-service uses.
 type Repository interface {
-	GetActiveConfig(ctx context.Context) (Config, error)
+	// GetActiveConfig returns the newest config row for zoneID if one
+	// exists, otherwise the newest global-default row (zone_id NULL).
+	// zoneID is always a real zone id here — callers only reach this
+	// after CheckServiceZone has confirmed the pickup is served.
+	GetActiveConfig(ctx context.Context, zoneID string) (Config, error)
 
 	ListActiveSurgeTimeRules(ctx context.Context) ([]SurgeTimeRule, error)
 
@@ -72,6 +76,16 @@ type LocationClient interface {
 		ctx context.Context,
 		latitude, longitude, radiusMeters float64,
 	) (int, error)
+
+	// CheckServiceZone reports whether a point falls inside any active
+	// service zone and, if so, which one — the same check trip-service
+	// runs before accepting a trip request, reused here to pick the
+	// right rate card and to refuse a quote for a location that could
+	// never become a real trip.
+	CheckServiceZone(
+		ctx context.Context,
+		latitude, longitude float64,
+	) (served bool, zoneID string, err error)
 }
 
 // RoutingClient is a thin abstraction over OSRM (self-hosted,

@@ -18,6 +18,12 @@ type fakeRepository struct {
 	config    Config
 	configErr error
 
+	// configsByZone lets a test give one specific zone its own rate
+	// card; GetActiveConfig falls back to config (the global default)
+	// for any zone not present here — mirrors the real repository's
+	// zone-then-global lookup.
+	configsByZone map[string]Config
+
 	surgeRules []SurgeTimeRule
 
 	couponsByCode map[string]Coupon
@@ -40,13 +46,21 @@ func newFakeRepository() *fakeRepository {
 	return &fakeRepository{
 		couponsByCode:    map[string]Coupon{},
 		riderRedemptions: map[string]int{},
+		configsByZone:    map[string]Config{},
 	}
 }
 
-func (r *fakeRepository) GetActiveConfig(_ context.Context) (Config, error) {
+func (r *fakeRepository) GetActiveConfig(_ context.Context, zoneID string) (Config, error) {
 	if r.configErr != nil {
 		return Config{}, r.configErr
 	}
+
+	if zoneID != "" {
+		if cfg, ok := r.configsByZone[zoneID]; ok {
+			return cfg, nil
+		}
+	}
+
 	return r.config, nil
 }
 
@@ -97,6 +111,13 @@ func (r *fakeRepository) PersistFare(_ context.Context, input PersistFareInput) 
 type fakeLocationClient struct {
 	count int
 	err   error
+
+	// served/zoneID/zoneErr back CheckServiceZone — kept separate from
+	// count/err (CountNearbyAvailableDrivers) so a test can fail one
+	// call without affecting the other.
+	served  bool
+	zoneID  string
+	zoneErr error
 }
 
 func (c *fakeLocationClient) CountNearbyAvailableDrivers(_ context.Context, _, _, _ float64) (int, error) {
@@ -104,6 +125,13 @@ func (c *fakeLocationClient) CountNearbyAvailableDrivers(_ context.Context, _, _
 		return 0, c.err
 	}
 	return c.count, nil
+}
+
+func (c *fakeLocationClient) CheckServiceZone(_ context.Context, _, _ float64) (bool, string, error) {
+	if c.zoneErr != nil {
+		return false, "", c.zoneErr
+	}
+	return c.served, c.zoneID, nil
 }
 
 type fakeRoutingClient struct {
@@ -140,7 +168,7 @@ type harness struct {
 func newHarness() *harness {
 	h := &harness{
 		repo:     newFakeRepository(),
-		location: &fakeLocationClient{count: 10}, // plenty of drivers -> no demand surge by default
+		location: &fakeLocationClient{count: 10, served: true, zoneID: "zone-1"}, // plenty of drivers -> no demand surge by default; pickup served by default
 		routing:  &fakeRoutingClient{route: Route{DistanceKm: 10, DurationMinutes: 20}},
 		weather:  &fakeWeatherClient{},
 	}
@@ -260,6 +288,62 @@ func TestService_EstimateFare_FallsBackWhenRoutingClientFails(t *testing.T) {
 
 	if !got.Subtotal.IsPositive() {
 		t.Fatalf("expected a positive fallback fare, got %v", got)
+	}
+}
+
+// --- Service zones: gate quotes and select the right rate card -------------
+
+func TestService_EstimateFare_RejectsPickupOutsideServiceZone(t *testing.T) {
+	h := newHarness()
+	h.location.served = false
+	svc := h.service()
+
+	_, err := svc.EstimateFare(context.Background(), validEstimateInput())
+	if !errors.Is(err, ErrPickupOutsideServiceZone) {
+		t.Fatalf("got %v, want ErrPickupOutsideServiceZone", err)
+	}
+}
+
+func TestService_EstimateFare_UsesZoneSpecificRateCardWhenPresent(t *testing.T) {
+	h := newHarness()
+	h.location.zoneID = "zone-erbil-center"
+	h.repo.configsByZone["zone-erbil-center"] = Config{
+		CurrencyCode:  "IQD",
+		BaseFare:      decimal.NewFromInt(5000), // deliberately different from the global default (1000)
+		PerKmRate:     decimal.NewFromInt(250),
+		PerMinuteRate: decimal.NewFromInt(100),
+	}
+	svc := h.service()
+
+	got, err := svc.EstimateFare(context.Background(), validEstimateInput())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !got.BaseFare.Equal(decimal.NewFromInt(5000)) {
+		t.Fatalf("got base fare %v, want the zone-specific 5000, not the global default", got.BaseFare)
+	}
+	if got.ZoneID != "zone-erbil-center" {
+		t.Fatalf("got zone id %q, want zone-erbil-center", got.ZoneID)
+	}
+}
+
+func TestService_EstimateFare_FallsBackToGlobalConfigForAZoneWithoutItsOwnRateCard(t *testing.T) {
+	h := newHarness()
+	h.location.zoneID = "zone-with-no-rate-card"
+	svc := h.service()
+
+	got, err := svc.EstimateFare(context.Background(), validEstimateInput())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// harness's default global config has BaseFare 1000.
+	if !got.BaseFare.Equal(decimal.NewFromInt(1000)) {
+		t.Fatalf("got base fare %v, want the global default 1000", got.BaseFare)
+	}
+	if got.ZoneID != "zone-with-no-rate-card" {
+		t.Fatalf("got zone id %q, want the resolved zone id even though it used the global rate card", got.ZoneID)
 	}
 }
 

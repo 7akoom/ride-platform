@@ -77,7 +77,16 @@ func (s *service) buildFare(
 		return FareBreakdown{}, nil, err
 	}
 
-	config, err := s.repository.GetActiveConfig(ctx)
+	served, zoneID, err := s.locationClient.CheckServiceZone(ctx, request.PickupLat, request.PickupLng)
+	if err != nil {
+		return FareBreakdown{}, nil, fmt.Errorf("check service zone: %w", err)
+	}
+
+	if !served {
+		return FareBreakdown{}, nil, ErrPickupOutsideServiceZone
+	}
+
+	config, err := s.repository.GetActiveConfig(ctx, zoneID)
 	if err != nil {
 		return FareBreakdown{}, nil, fmt.Errorf("get active pricing config: %w", err)
 	}
@@ -92,6 +101,7 @@ func (s *service) buildFare(
 	)
 
 	breakdown := baseFareBreakdown(config, route)
+	breakdown.ZoneID = zoneID
 
 	rules, err := s.repository.ListActiveSurgeTimeRules(ctx)
 	if err != nil {

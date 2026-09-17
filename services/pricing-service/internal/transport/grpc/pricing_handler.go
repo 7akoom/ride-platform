@@ -171,6 +171,9 @@ func (h *PricingHandler) mapPricingError(err error) error {
 	case errors.Is(err, pricing.ErrNoActiveConfig):
 		return status.Error(codes.FailedPrecondition, err.Error())
 
+	case errors.Is(err, pricing.ErrPickupOutsideServiceZone):
+		return status.Error(codes.InvalidArgument, err.Error())
+
 	case errors.Is(err, pricing.ErrRiderIDRequired),
 		errors.Is(err, pricing.ErrTripIDRequired),
 		errors.Is(err, pricing.ErrInvalidLatitude),
@@ -226,6 +229,7 @@ func parseMoney(value string) (decimal.Decimal, error) {
 func toProtoFareBreakdown(b pricing.FareBreakdown) *pricingv1.FareBreakdown {
 	return &pricingv1.FareBreakdown{
 		CurrencyCode:    b.CurrencyCode,
+		ZoneId:          b.ZoneID,
 		BaseFare:        b.BaseFare.String(),
 		DistanceKm:      b.DistanceKm,
 		DistanceFare:    b.DistanceFare.String(),

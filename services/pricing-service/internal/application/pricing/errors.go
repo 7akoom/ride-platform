@@ -10,6 +10,9 @@ var (
 
 	ErrNoActiveConfig = errors.New("no active pricing configuration found")
 
+	// ErrPickupOutsideServiceZone mirrors trip-service's own check —
+	ErrPickupOutsideServiceZone = errors.New("pickup location is outside every service zone")
+
 	ErrCouponCodeRequired    = errors.New("coupon code is required")
 	ErrCouponNotFound        = errors.New("coupon not found")
 	ErrCouponAlreadyExists   = errors.New("a coupon with this code already exists")

@@ -212,20 +212,24 @@ func (x *SurgeBreakdown) GetMultiplier() string {
 // wallet.proto). distance_km/duration_minutes stay double: physical
 // measurements from OSRM, not currency.
 type FareBreakdown struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	CurrencyCode         string                 `protobuf:"bytes,1,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
-	BaseFare             string                 `protobuf:"bytes,2,opt,name=base_fare,json=baseFare,proto3" json:"base_fare,omitempty"`
-	DistanceKm           float64                `protobuf:"fixed64,3,opt,name=distance_km,json=distanceKm,proto3" json:"distance_km,omitempty"`
-	DistanceFare         string                 `protobuf:"bytes,4,opt,name=distance_fare,json=distanceFare,proto3" json:"distance_fare,omitempty"`
-	DurationMinutes      float64                `protobuf:"fixed64,5,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
-	DurationFare         string                 `protobuf:"bytes,6,opt,name=duration_fare,json=durationFare,proto3" json:"duration_fare,omitempty"`
-	Subtotal             string                 `protobuf:"bytes,7,opt,name=subtotal,proto3" json:"subtotal,omitempty"`
-	Surge                *SurgeBreakdown        `protobuf:"bytes,8,opt,name=surge,proto3" json:"surge,omitempty"`
-	SurgeAmount          string                 `protobuf:"bytes,9,opt,name=surge_amount,json=surgeAmount,proto3" json:"surge_amount,omitempty"`
-	AppliedDiscountType  DiscountType           `protobuf:"varint,10,opt,name=applied_discount_type,json=appliedDiscountType,proto3,enum=ride.pricing.v1.DiscountType" json:"applied_discount_type,omitempty"`
-	AppliedDiscountLabel string                 `protobuf:"bytes,11,opt,name=applied_discount_label,json=appliedDiscountLabel,proto3" json:"applied_discount_label,omitempty"`
-	DiscountAmount       string                 `protobuf:"bytes,12,opt,name=discount_amount,json=discountAmount,proto3" json:"discount_amount,omitempty"`
-	Total                string                 `protobuf:"bytes,13,opt,name=total,proto3" json:"total,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	CurrencyCode string                 `protobuf:"bytes,1,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	// The service zone the pickup resolved to — set even when that
+	// zone has no rate card of its own and pricing fell back to the
+	// deployment's global default.
+	ZoneId               string          `protobuf:"bytes,14,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	BaseFare             string          `protobuf:"bytes,2,opt,name=base_fare,json=baseFare,proto3" json:"base_fare,omitempty"`
+	DistanceKm           float64         `protobuf:"fixed64,3,opt,name=distance_km,json=distanceKm,proto3" json:"distance_km,omitempty"`
+	DistanceFare         string          `protobuf:"bytes,4,opt,name=distance_fare,json=distanceFare,proto3" json:"distance_fare,omitempty"`
+	DurationMinutes      float64         `protobuf:"fixed64,5,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
+	DurationFare         string          `protobuf:"bytes,6,opt,name=duration_fare,json=durationFare,proto3" json:"duration_fare,omitempty"`
+	Subtotal             string          `protobuf:"bytes,7,opt,name=subtotal,proto3" json:"subtotal,omitempty"`
+	Surge                *SurgeBreakdown `protobuf:"bytes,8,opt,name=surge,proto3" json:"surge,omitempty"`
+	SurgeAmount          string          `protobuf:"bytes,9,opt,name=surge_amount,json=surgeAmount,proto3" json:"surge_amount,omitempty"`
+	AppliedDiscountType  DiscountType    `protobuf:"varint,10,opt,name=applied_discount_type,json=appliedDiscountType,proto3,enum=ride.pricing.v1.DiscountType" json:"applied_discount_type,omitempty"`
+	AppliedDiscountLabel string          `protobuf:"bytes,11,opt,name=applied_discount_label,json=appliedDiscountLabel,proto3" json:"applied_discount_label,omitempty"`
+	DiscountAmount       string          `protobuf:"bytes,12,opt,name=discount_amount,json=discountAmount,proto3" json:"discount_amount,omitempty"`
+	Total                string          `protobuf:"bytes,13,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -263,6 +267,13 @@ func (*FareBreakdown) Descriptor() ([]byte, []int) {
 func (x *FareBreakdown) GetCurrencyCode() string {
 	if x != nil {
 		return x.CurrencyCode
+	}
+	return ""
+}
+
+func (x *FareBreakdown) GetZoneId() string {
+	if x != nil {
+		return x.ZoneId
 	}
 	return ""
 }
@@ -946,9 +957,10 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\rtotal_percent\x18\x04 \x01(\tR\ftotalPercent\x12\x1e\n" +
 	"\n" +
 	"multiplier\x18\x05 \x01(\tR\n" +
-	"multiplier\"\xa5\x04\n" +
+	"multiplier\"\xbe\x04\n" +
 	"\rFareBreakdown\x12#\n" +
-	"\rcurrency_code\x18\x01 \x01(\tR\fcurrencyCode\x12\x1b\n" +
+	"\rcurrency_code\x18\x01 \x01(\tR\fcurrencyCode\x12\x17\n" +
+	"\azone_id\x18\x0e \x01(\tR\x06zoneId\x12\x1b\n" +
 	"\tbase_fare\x18\x02 \x01(\tR\bbaseFare\x12\x1f\n" +
 	"\vdistance_km\x18\x03 \x01(\x01R\n" +
 	"distanceKm\x12#\n" +

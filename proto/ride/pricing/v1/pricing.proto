@@ -45,6 +45,10 @@ message SurgeBreakdown {
 // measurements from OSRM, not currency.
 message FareBreakdown {
   string currency_code = 1;
+  // The service zone the pickup resolved to — set even when that
+  // zone has no rate card of its own and pricing fell back to the
+  // deployment's global default.
+  string zone_id = 14;
   string base_fare = 2;
   double distance_km = 3;
   string distance_fare = 4;
