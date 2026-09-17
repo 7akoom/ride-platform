@@ -9,6 +9,7 @@ import (
 	"time"
 
 	outboxapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/outbox"
+	topupapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/wallet"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/config"
 	clockinfra "github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/clock"
@@ -16,6 +17,7 @@ import (
 	natsinfra "github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/messaging/nats"
 	postgresrepo "github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/persistence/postgres"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/token"
+	zaincashinfra "github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/zaincash"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/observability"
 	grpcserver "github.com/7akoom/ride-platform/services/wallet-service/internal/transport/grpc"
 )
@@ -133,7 +135,25 @@ func run() int {
 	)
 
 	walletService := wallet.NewService(postgresrepo.NewWalletRepository(pool))
-	walletHandler := grpcserver.NewWalletHandler(walletService)
+
+	zainCashClient := zaincashinfra.NewClient(zaincashinfra.Config{
+		BaseURL:       cfg.ZainCashBaseURL,
+		ClientID:      cfg.ZainCashClientID,
+		ClientSecret:  cfg.ZainCashClientSecret,
+		Scope:         cfg.ZainCashScope,
+		WebhookSecret: cfg.ZainCashWebhookSecret,
+	})
+	zainCashAdapter := zaincashinfra.NewAdapter(zainCashClient)
+
+	topupService := topupapp.NewService(
+		postgresrepo.NewTopUpRepository(pool),
+		zainCashAdapter,
+		walletService,
+		cfg.ZainCashSuccessURL,
+		cfg.ZainCashFailureURL,
+	)
+
+	walletHandler := grpcserver.NewWalletHandler(walletService, topupService)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

@@ -7,6 +7,7 @@
 package tripv1
 
 import (
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -828,7 +829,7 @@ var File_ride_trip_v1_trip_proto protoreflect.FileDescriptor
 
 const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\n" +
-	"\x17ride/trip/v1/trip.proto\x12\fride.trip.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"G\n" +
+	"\x17ride/trip/v1/trip.proto\x12\fride.trip.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\"G\n" +
 	"\vCoordinates\x12\x1a\n" +
 	"\blatitude\x18\x01 \x01(\x01R\blatitude\x12\x1c\n" +
 	"\tlongitude\x18\x02 \x01(\x01R\tlongitude\"\xce\x04\n" +
@@ -883,9 +884,9 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x14TRIP_STATUS_ACCEPTED\x10\x02\x12\x1b\n" +
 	"\x17TRIP_STATUS_IN_PROGRESS\x10\x03\x12\x19\n" +
 	"\x15TRIP_STATUS_COMPLETED\x10\x04\x12\x19\n" +
-	"\x15TRIP_STATUS_CANCELLED\x10\x052\xf0\x03\n" +
-	"\vTripService\x12R\n" +
-	"\vRequestTrip\x12 .ride.trip.v1.RequestTripRequest\x1a!.ride.trip.v1.RequestTripResponse\x12O\n" +
+	"\x15TRIP_STATUS_CANCELLED\x10\x052\x86\x04\n" +
+	"\vTripService\x12h\n" +
+	"\vRequestTrip\x12 .ride.trip.v1.RequestTripRequest\x1a!.ride.trip.v1.RequestTripResponse\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/trips\x12O\n" +
 	"\n" +
 	"AcceptTrip\x12\x1f.ride.trip.v1.AcceptTripRequest\x1a .ride.trip.v1.AcceptTripResponse\x12L\n" +
 	"\tStartTrip\x12\x1e.ride.trip.v1.StartTripRequest\x1a\x1f.ride.trip.v1.StartTripResponse\x12U\n" +

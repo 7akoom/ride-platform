@@ -19,12 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WalletService_GetWallet_FullMethodName           = "/ride.wallet.v1.WalletService/GetWallet"
-	WalletService_TopUp_FullMethodName               = "/ride.wallet.v1.WalletService/TopUp"
-	WalletService_SettleTrip_FullMethodName          = "/ride.wallet.v1.WalletService/SettleTrip"
-	WalletService_ListTransactions_FullMethodName    = "/ride.wallet.v1.WalletService/ListTransactions"
-	WalletService_CheckDriverStanding_FullMethodName = "/ride.wallet.v1.WalletService/CheckDriverStanding"
-	WalletService_RequestPayout_FullMethodName       = "/ride.wallet.v1.WalletService/RequestPayout"
+	WalletService_GetWallet_FullMethodName              = "/ride.wallet.v1.WalletService/GetWallet"
+	WalletService_TopUp_FullMethodName                  = "/ride.wallet.v1.WalletService/TopUp"
+	WalletService_SettleTrip_FullMethodName             = "/ride.wallet.v1.WalletService/SettleTrip"
+	WalletService_ListTransactions_FullMethodName       = "/ride.wallet.v1.WalletService/ListTransactions"
+	WalletService_CheckDriverStanding_FullMethodName    = "/ride.wallet.v1.WalletService/CheckDriverStanding"
+	WalletService_RequestPayout_FullMethodName          = "/ride.wallet.v1.WalletService/RequestPayout"
+	WalletService_InitiateTopUp_FullMethodName          = "/ride.wallet.v1.WalletService/InitiateTopUp"
+	WalletService_ProcessZainCashWebhook_FullMethodName = "/ride.wallet.v1.WalletService/ProcessZainCashWebhook"
 )
 
 // WalletServiceClient is the client API for WalletService service.
@@ -37,6 +39,15 @@ type WalletServiceClient interface {
 	ListTransactions(ctx context.Context, in *ListTransactionsRequest, opts ...grpc.CallOption) (*ListTransactionsResponse, error)
 	CheckDriverStanding(ctx context.Context, in *CheckDriverStandingRequest, opts ...grpc.CallOption) (*CheckDriverStandingResponse, error)
 	RequestPayout(ctx context.Context, in *RequestPayoutRequest, opts ...grpc.CallOption) (*RequestPayoutResponse, error)
+	// InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
+	// a pending record and opens a ZainCash payment session, returning
+	// the URL the driver's browser/webview should be sent to.
+	InitiateTopUp(ctx context.Context, in *InitiateTopUpRequest, opts ...grpc.CallOption) (*InitiateTopUpResponse, error)
+	// ProcessZainCashWebhook receives ZainCash's server-to-server payment
+	// notification. Called directly by ZainCash, not by an authenticated
+	// platform client — exempted from the auth interceptor same as the
+	// health check (see authentication_interceptor.go).
+	ProcessZainCashWebhook(ctx context.Context, in *ProcessZainCashWebhookRequest, opts ...grpc.CallOption) (*ProcessZainCashWebhookResponse, error)
 }
 
 type walletServiceClient struct {
@@ -107,6 +118,26 @@ func (c *walletServiceClient) RequestPayout(ctx context.Context, in *RequestPayo
 	return out, nil
 }
 
+func (c *walletServiceClient) InitiateTopUp(ctx context.Context, in *InitiateTopUpRequest, opts ...grpc.CallOption) (*InitiateTopUpResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InitiateTopUpResponse)
+	err := c.cc.Invoke(ctx, WalletService_InitiateTopUp_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ProcessZainCashWebhook(ctx context.Context, in *ProcessZainCashWebhookRequest, opts ...grpc.CallOption) (*ProcessZainCashWebhookResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProcessZainCashWebhookResponse)
+	err := c.cc.Invoke(ctx, WalletService_ProcessZainCashWebhook_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WalletServiceServer is the server API for WalletService service.
 // All implementations must embed UnimplementedWalletServiceServer
 // for forward compatibility.
@@ -117,6 +148,15 @@ type WalletServiceServer interface {
 	ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error)
 	CheckDriverStanding(context.Context, *CheckDriverStandingRequest) (*CheckDriverStandingResponse, error)
 	RequestPayout(context.Context, *RequestPayoutRequest) (*RequestPayoutResponse, error)
+	// InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
+	// a pending record and opens a ZainCash payment session, returning
+	// the URL the driver's browser/webview should be sent to.
+	InitiateTopUp(context.Context, *InitiateTopUpRequest) (*InitiateTopUpResponse, error)
+	// ProcessZainCashWebhook receives ZainCash's server-to-server payment
+	// notification. Called directly by ZainCash, not by an authenticated
+	// platform client — exempted from the auth interceptor same as the
+	// health check (see authentication_interceptor.go).
+	ProcessZainCashWebhook(context.Context, *ProcessZainCashWebhookRequest) (*ProcessZainCashWebhookResponse, error)
 	mustEmbedUnimplementedWalletServiceServer()
 }
 
@@ -144,6 +184,12 @@ func (UnimplementedWalletServiceServer) CheckDriverStanding(context.Context, *Ch
 }
 func (UnimplementedWalletServiceServer) RequestPayout(context.Context, *RequestPayoutRequest) (*RequestPayoutResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RequestPayout not implemented")
+}
+func (UnimplementedWalletServiceServer) InitiateTopUp(context.Context, *InitiateTopUpRequest) (*InitiateTopUpResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InitiateTopUp not implemented")
+}
+func (UnimplementedWalletServiceServer) ProcessZainCashWebhook(context.Context, *ProcessZainCashWebhookRequest) (*ProcessZainCashWebhookResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ProcessZainCashWebhook not implemented")
 }
 func (UnimplementedWalletServiceServer) mustEmbedUnimplementedWalletServiceServer() {}
 func (UnimplementedWalletServiceServer) testEmbeddedByValue()                       {}
@@ -274,6 +320,42 @@ func _WalletService_RequestPayout_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WalletService_InitiateTopUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InitiateTopUpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).InitiateTopUp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_InitiateTopUp_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).InitiateTopUp(ctx, req.(*InitiateTopUpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ProcessZainCashWebhook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessZainCashWebhookRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ProcessZainCashWebhook(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ProcessZainCashWebhook_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ProcessZainCashWebhook(ctx, req.(*ProcessZainCashWebhookRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WalletService_ServiceDesc is the grpc.ServiceDesc for WalletService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +386,14 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestPayout",
 			Handler:    _WalletService_RequestPayout_Handler,
+		},
+		{
+			MethodName: "InitiateTopUp",
+			Handler:    _WalletService_InitiateTopUp_Handler,
+		},
+		{
+			MethodName: "ProcessZainCashWebhook",
+			Handler:    _WalletService_ProcessZainCashWebhook_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

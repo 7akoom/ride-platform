@@ -3,10 +3,16 @@ syntax = "proto3";
 package ride.trip.v1;
 
 import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/trip/v1;tripv1";
 
 service TripService {
-  rpc RequestTrip(RequestTripRequest) returns (RequestTripResponse);
+  rpc RequestTrip(RequestTripRequest) returns (RequestTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips"
+      body: "*"
+    };
+  }
   rpc AcceptTrip(AcceptTripRequest) returns (AcceptTripResponse);
   rpc StartTrip(StartTripRequest) returns (StartTripResponse);
   rpc CompleteTrip(CompleteTripRequest) returns (CompleteTripResponse);

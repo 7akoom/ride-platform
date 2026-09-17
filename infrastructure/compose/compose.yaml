@@ -786,6 +786,27 @@ services:
 
     restart: unless-stopped
 
+  gateway:
+    build:
+      context: ../..
+      dockerfile: infrastructure/gateway/Dockerfile
+    image: ride-platform/gateway:dev
+    container_name: ride-gateway
+
+    environment:
+      HTTP_ADDRESS: ":8080"
+      TRIP_SERVICE_ADDRESS: trip-service:50055
+      ALLOWED_ORIGINS: http://localhost:3000
+
+    depends_on:
+      trip-service:
+        condition: service_started
+
+    ports:
+      - "127.0.0.1:8080:8080"
+
+    restart: unless-stopped
+
 volumes:
   identity-postgres-data:
   rider-postgres-data:

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	walletv1 "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1"
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/wallet"
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc/codes"
@@ -16,14 +17,19 @@ type WalletHandler struct {
 	walletv1.UnimplementedWalletServiceServer
 
 	walletService wallet.Service
+	topupService  topup.Service
 }
 
-func NewWalletHandler(walletService wallet.Service) *WalletHandler {
+func NewWalletHandler(walletService wallet.Service, topupService topup.Service) *WalletHandler {
 	if walletService == nil {
 		panic("wallet service is required")
 	}
 
-	return &WalletHandler{walletService: walletService}
+	if topupService == nil {
+		panic("topup service is required")
+	}
+
+	return &WalletHandler{walletService: walletService, topupService: topupService}
 }
 
 func (h *WalletHandler) GetWallet(
@@ -188,6 +194,59 @@ func (h *WalletHandler) RequestPayout(
 	}, nil
 }
 
+// InitiateTopUp starts a ZainCash-funded top-up: creates a pending
+// record and opens a ZainCash payment session, returning the URL the
+// driver's browser/webview should be sent to. Exposed over REST via
+// the API Gateway (POST /v1/wallet/topups/zaincash) — a normal
+// authenticated driver call, unlike ProcessZainCashWebhook below.
+func (h *WalletHandler) InitiateTopUp(
+	ctx context.Context,
+	request *walletv1.InitiateTopUpRequest,
+) (*walletv1.InitiateTopUpResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	amount, err := parseMoney(request.GetAmount())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "amount must be a valid decimal value")
+	}
+
+	created, redirectURL, err := h.topupService.Initiate(ctx, topup.InitiateInput{
+		DriverID: request.GetDriverId(),
+		Amount:   amount,
+	})
+	if err != nil {
+		return nil, mapTopUpError(err)
+	}
+
+	return &walletv1.InitiateTopUpResponse{
+		TopUpId:     created.ID,
+		Status:      string(created.Status),
+		RedirectUrl: redirectURL,
+	}, nil
+}
+
+// ProcessZainCashWebhook receives ZainCash's server-to-server payment
+// notification. Exempted from the auth interceptor (see
+// authentication_interceptor.go) — the JWT signature check inside
+// topup.Service.ProcessWebhookToken is this endpoint's only credential
+// check.
+func (h *WalletHandler) ProcessZainCashWebhook(
+	ctx context.Context,
+	request *walletv1.ProcessZainCashWebhookRequest,
+) (*walletv1.ProcessZainCashWebhookResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	if err := h.topupService.ProcessWebhookToken(ctx, request.GetToken()); err != nil {
+		return nil, mapTopUpError(err)
+	}
+
+	return &walletv1.ProcessZainCashWebhookResponse{}, nil
+}
+
 // parseMoney converts the wire's decimal string into exact decimal.
 // Money crosses the wire as a string, never a float — a float64 field
 // in protobuf would reintroduce exactly the precision problem the
@@ -227,6 +286,23 @@ func mapWalletError(err error) error {
 
 	default:
 		return status.Error(codes.Internal, "failed to process wallet request")
+	}
+}
+
+// mapTopUpError mirrors mapWalletError's approach but for the
+// topup package's own error set.
+func mapTopUpError(err error) error {
+	switch {
+	case errors.Is(err, topup.ErrTopUpNotFound):
+		return status.Error(codes.NotFound, "top-up not found")
+
+	case errors.Is(err, topup.ErrDriverIDRequired),
+		errors.Is(err, topup.ErrInvalidAmount),
+		errors.Is(err, topup.ErrInvalidWebhookToken):
+		return status.Error(codes.InvalidArgument, err.Error())
+
+	default:
+		return status.Error(codes.Internal, "failed to process top-up request")
 	}
 }
 

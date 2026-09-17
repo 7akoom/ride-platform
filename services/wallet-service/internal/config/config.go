@@ -42,6 +42,22 @@ type Config struct {
 	// stop a runaway retry loop or a naive script.
 	RateLimitRequestsPerSecond string
 	RateLimitBurst             string
+
+	// ZainCash Payment Gateway v2 (driver wallet top-ups). BaseURL/
+	// ClientID/ClientSecret/Scope come from ZainCash onboarding.
+	// WebhookSecret verifies the HS256 JWT ZainCash sends on both the
+	// webhook and the redirect callback — confirm at onboarding whether
+	// it's the same value as ClientSecret or a separate one.
+	ZainCashBaseURL      string
+	ZainCashClientID     string
+	ZainCashClientSecret string
+	ZainCashScope        string
+	ZainCashWebhookSecret string
+
+	// Where ZainCash redirects the driver's browser after payment.
+	// Placeholder pages until the driver app exists.
+	ZainCashSuccessURL string
+	ZainCashFailureURL string
 }
 
 func Load() Config {
@@ -135,6 +151,32 @@ func Load() Config {
 		RateLimitBurst: getEnv(
 			"RATE_LIMIT_BURST",
 			"40",
+		),
+
+		ZainCashBaseURL: getEnv(
+			"ZAINCASH_BASE_URL",
+			"https://test.zaincash.iq",
+		),
+
+		ZainCashClientID: getEnv("ZAINCASH_CLIENT_ID", ""),
+
+		ZainCashClientSecret: getEnv("ZAINCASH_CLIENT_SECRET", ""),
+
+		ZainCashScope: getEnv(
+			"ZAINCASH_SCOPE",
+			"payment:read payment:write",
+		),
+
+		ZainCashWebhookSecret: getEnv("ZAINCASH_WEBHOOK_SECRET", ""),
+
+		ZainCashSuccessURL: getEnv(
+			"ZAINCASH_SUCCESS_URL",
+			"https://example.com/wallet/topup/success",
+		),
+
+		ZainCashFailureURL: getEnv(
+			"ZAINCASH_FAILURE_URL",
+			"https://example.com/wallet/topup/failure",
 		),
 	}
 }

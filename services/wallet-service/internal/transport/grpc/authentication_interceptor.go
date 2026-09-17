@@ -20,15 +20,23 @@ import (
 // token from) or another service acting on its own behalf.
 const internalServicePrincipalID = "internal-service"
 
+// zainCashWebhookFullMethod is exempted from auth same as the health
+// check: ZainCash calls this endpoint directly (via the API Gateway's
+// REST facade) with no platform access token or internal-service
+// token — its own HS256 JWT (verified inside the handler via
+// topup.Service.ProcessWebhookToken) is the only credential it can
+// present.
+const zainCashWebhookFullMethod = "/ride.wallet.v1.WalletService/ProcessZainCashWebhook"
+
 // NewAuthenticationUnaryInterceptor rejects any request without a valid
-// credential, except the health check. It accepts two kinds of
-// credential in the same Authorization header: an end-user access token
-// issued by identity-service, OR the shared internal-service token used
-// for service-to-service calls (see internal/config's
-// AccessToken*/InternalServiceToken fields). This is authentication only
-// (verifying WHO/WHAT is calling), not authorization (deciding WHAT
-// they're allowed to do) — a handler that needs to restrict a call to
-// its own resource owner reads the principal via
+// credential, except the health check and the ZainCash webhook. It
+// accepts two kinds of credential in the same Authorization header: an
+// end-user access token issued by identity-service, OR the shared
+// internal-service token used for service-to-service calls (see
+// internal/config's AccessToken*/InternalServiceToken fields). This is
+// authentication only (verifying WHO/WHAT is calling), not authorization
+// (deciding WHAT they're allowed to do) — a handler that needs to
+// restrict a call to its own resource owner reads the principal via
 // authenticatedPrincipalFromContext and checks it itself.
 func NewAuthenticationUnaryInterceptor(
 	verifier *token.AccessTokenVerifier,
@@ -56,7 +64,8 @@ func NewAuthenticationUnaryInterceptor(
 			)
 		}
 
-		if info.FullMethod == healthv1.Health_Check_FullMethodName {
+		if info.FullMethod == healthv1.Health_Check_FullMethodName ||
+			info.FullMethod == zainCashWebhookFullMethod {
 			return handler(ctx, request)
 		}
 

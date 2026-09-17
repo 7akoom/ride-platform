@@ -4,6 +4,7 @@ toolchain go1.26.8
 
 use (
 	./gen/go
+	./infrastructure/gateway
 	./services/dispatch-service
 	./services/driver-service
 	./services/identity-service

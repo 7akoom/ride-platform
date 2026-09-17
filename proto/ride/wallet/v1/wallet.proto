@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package ride.wallet.v1;
 
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1;walletv1";
 
@@ -12,6 +13,27 @@ service WalletService {
   rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse);
   rpc CheckDriverStanding(CheckDriverStandingRequest) returns (CheckDriverStandingResponse);
   rpc RequestPayout(RequestPayoutRequest) returns (RequestPayoutResponse);
+
+  // InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
+  // a pending record and opens a ZainCash payment session, returning
+  // the URL the driver's browser/webview should be sent to.
+  rpc InitiateTopUp(InitiateTopUpRequest) returns (InitiateTopUpResponse) {
+    option (google.api.http) = {
+      post: "/v1/wallet/topups/zaincash"
+      body: "*"
+    };
+  }
+
+  // ProcessZainCashWebhook receives ZainCash's server-to-server payment
+  // notification. Called directly by ZainCash, not by an authenticated
+  // platform client — exempted from the auth interceptor same as the
+  // health check (see authentication_interceptor.go).
+  rpc ProcessZainCashWebhook(ProcessZainCashWebhookRequest) returns (ProcessZainCashWebhookResponse) {
+    option (google.api.http) = {
+      post: "/v1/wallet/zaincash/webhook"
+      body: "*"
+    };
+  }
 }
 
 enum OwnerType {
@@ -143,3 +165,23 @@ message RequestPayoutResponse {
   Wallet wallet = 1;
   Transaction transaction = 2;
 }
+
+message InitiateTopUpRequest {
+  string driver_id = 1;
+  // Decimal string, e.g. "25000".
+  string amount = 2;
+}
+
+message InitiateTopUpResponse {
+  string top_up_id = 1;
+  // pending | succeeded | failed
+  string status = 2;
+  string redirect_url = 3;
+}
+
+message ProcessZainCashWebhookRequest {
+  // The raw JWT ZainCash sends (their "token" field).
+  string token = 1;
+}
+
+message ProcessZainCashWebhookResponse {}
