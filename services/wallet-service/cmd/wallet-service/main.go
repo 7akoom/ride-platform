@@ -153,7 +153,7 @@ func run() int {
 		cfg.ZainCashFailureURL,
 	)
 
-	walletHandler := grpcserver.NewWalletHandler(walletService, topupService)
+	walletHandler := grpcserver.NewWalletHandler(walletService, topupService, logger)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

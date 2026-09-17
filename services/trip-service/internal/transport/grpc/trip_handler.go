@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	tripv1 "github.com/7akoom/ride-platform/gen/go/ride/trip/v1"
@@ -16,17 +17,24 @@ type TripHandler struct {
 	tripv1.UnimplementedTripServiceServer
 
 	tripService trip.Service
+	logger      *slog.Logger
 }
 
 func NewTripHandler(
 	tripService trip.Service,
+	logger *slog.Logger,
 ) *TripHandler {
 	if tripService == nil {
 		panic("trip service is required")
 	}
 
+	if logger == nil {
+		panic("logger is required")
+	}
+
 	return &TripHandler{
 		tripService: tripService,
+		logger:      logger,
 	}
 }
 
@@ -52,7 +60,7 @@ func (h *TripHandler) RequestTrip(
 		},
 	)
 	if err != nil {
-		return nil, mapTripError(err)
+		return nil, h.mapTripError(err)
 	}
 
 	return &tripv1.RequestTripResponse{
@@ -70,7 +78,7 @@ func (h *TripHandler) AcceptTrip(
 
 	accepted, err := h.tripService.AcceptTrip(ctx, request.GetTripId(), request.GetDriverId())
 	if err != nil {
-		return nil, mapTripError(err)
+		return nil, h.mapTripError(err)
 	}
 
 	return &tripv1.AcceptTripResponse{
@@ -88,7 +96,7 @@ func (h *TripHandler) StartTrip(
 
 	started, err := h.tripService.StartTrip(ctx, request.GetTripId())
 	if err != nil {
-		return nil, mapTripError(err)
+		return nil, h.mapTripError(err)
 	}
 
 	return &tripv1.StartTripResponse{
@@ -106,7 +114,7 @@ func (h *TripHandler) CompleteTrip(
 
 	completed, err := h.tripService.CompleteTrip(ctx, request.GetTripId())
 	if err != nil {
-		return nil, mapTripError(err)
+		return nil, h.mapTripError(err)
 	}
 
 	return &tripv1.CompleteTripResponse{
@@ -124,7 +132,7 @@ func (h *TripHandler) CancelTrip(
 
 	cancelled, err := h.tripService.CancelTrip(ctx, request.GetTripId(), request.GetReason())
 	if err != nil {
-		return nil, mapTripError(err)
+		return nil, h.mapTripError(err)
 	}
 
 	return &tripv1.CancelTripResponse{
@@ -142,7 +150,7 @@ func (h *TripHandler) GetTrip(
 
 	found, err := h.tripService.GetTrip(ctx, request.GetTripId())
 	if err != nil {
-		return nil, mapTripError(err)
+		return nil, h.mapTripError(err)
 	}
 
 	return &tripv1.GetTripResponse{
@@ -150,7 +158,7 @@ func (h *TripHandler) GetTrip(
 	}, nil
 }
 
-func mapTripError(err error) error {
+func (h *TripHandler) mapTripError(err error) error {
 	switch {
 	case errors.Is(err, trip.ErrTripNotFound):
 		return status.Error(codes.NotFound, "trip not found")
@@ -173,6 +181,8 @@ func mapTripError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	default:
+		h.logger.Error("unclassified trip request failure", "error", err)
+
 		return status.Error(codes.Internal, "failed to process trip request")
 	}
 }

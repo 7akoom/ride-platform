@@ -25,7 +25,7 @@ func (h *LocationHandler) CreateZone(
 		Boundary: toDomainBoundary(request.GetBoundary()),
 	})
 	if err != nil {
-		return nil, mapZoneError(err)
+		return nil, h.mapZoneError(err)
 	}
 
 	return &locationv1.ZoneResponse{Zone: toProtoZone(created)}, nil
@@ -45,7 +45,7 @@ func (h *LocationHandler) UpdateZone(
 		Boundary: toDomainBoundary(request.GetBoundary()),
 	})
 	if err != nil {
-		return nil, mapZoneError(err)
+		return nil, h.mapZoneError(err)
 	}
 
 	return &locationv1.ZoneResponse{Zone: toProtoZone(updated)}, nil
@@ -61,7 +61,7 @@ func (h *LocationHandler) SetZoneActive(
 
 	updated, err := h.zoneService.SetZoneActive(ctx, request.GetZoneId(), request.GetActive())
 	if err != nil {
-		return nil, mapZoneError(err)
+		return nil, h.mapZoneError(err)
 	}
 
 	return &locationv1.ZoneResponse{Zone: toProtoZone(updated)}, nil
@@ -77,7 +77,7 @@ func (h *LocationHandler) GetZone(
 
 	found, err := h.zoneService.GetZone(ctx, request.GetZoneId())
 	if err != nil {
-		return nil, mapZoneError(err)
+		return nil, h.mapZoneError(err)
 	}
 
 	return &locationv1.ZoneResponse{Zone: toProtoZone(found)}, nil
@@ -93,7 +93,7 @@ func (h *LocationHandler) ListZones(
 
 	results, err := h.zoneService.ListZones(ctx, request.GetCity())
 	if err != nil {
-		return nil, mapZoneError(err)
+		return nil, h.mapZoneError(err)
 	}
 
 	protoZones := make([]*locationv1.Zone, len(results))
@@ -120,7 +120,7 @@ func (h *LocationHandler) CheckServiceZone(
 		coordinates.GetLongitude(),
 	)
 	if err != nil {
-		return nil, mapZoneError(err)
+		return nil, h.mapZoneError(err)
 	}
 
 	return &locationv1.CheckServiceZoneResponse{
@@ -164,7 +164,7 @@ func toProtoZone(z zone.Zone) *locationv1.Zone {
 	}
 }
 
-func mapZoneError(err error) error {
+func (h *LocationHandler) mapZoneError(err error) error {
 	switch {
 	case errors.Is(err, zone.ErrZoneNotFound):
 		return status.Error(codes.NotFound, "zone not found")
@@ -178,6 +178,8 @@ func mapZoneError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	default:
+		h.logger.Error("unclassified zone request failure", "error", err)
+
 		return status.Error(codes.Internal, "failed to process zone request")
 	}
 }

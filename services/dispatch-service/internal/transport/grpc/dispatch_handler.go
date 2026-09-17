@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	dispatchv1 "github.com/7akoom/ride-platform/gen/go/ride/dispatch/v1"
 	"github.com/7akoom/ride-platform/services/dispatch-service/internal/application/dispatch"
@@ -14,17 +15,24 @@ type DispatchHandler struct {
 	dispatchv1.UnimplementedDispatchServiceServer
 
 	dispatchService dispatch.Service
+	logger          *slog.Logger
 }
 
 func NewDispatchHandler(
 	dispatchService dispatch.Service,
+	logger *slog.Logger,
 ) *DispatchHandler {
 	if dispatchService == nil {
 		panic("dispatch service is required")
 	}
 
+	if logger == nil {
+		panic("logger is required")
+	}
+
 	return &DispatchHandler{
 		dispatchService: dispatchService,
+		logger:          logger,
 	}
 }
 
@@ -42,7 +50,7 @@ func (h *DispatchHandler) DispatchTrip(
 		request.GetSearchRadiusMeters(),
 	)
 	if err != nil {
-		return nil, mapDispatchError(err)
+		return nil, h.mapDispatchError(err)
 	}
 
 	return &dispatchv1.DispatchTripResponse{
@@ -52,7 +60,7 @@ func (h *DispatchHandler) DispatchTrip(
 	}, nil
 }
 
-func mapDispatchError(err error) error {
+func (h *DispatchHandler) mapDispatchError(err error) error {
 	switch {
 	case errors.Is(err, dispatch.ErrTripIDRequired):
 		return status.Error(codes.InvalidArgument, err.Error())
@@ -65,6 +73,8 @@ func mapDispatchError(err error) error {
 		return status.Error(codes.NotFound, err.Error())
 
 	default:
+		h.logger.Error("unclassified dispatch request failure", "error", err)
+
 		return status.Error(codes.Internal, "failed to process dispatch request")
 	}
 }

@@ -77,7 +77,7 @@ func run() int {
 	zoneRepository := postgresrepo.NewZoneStore(pool)
 	zoneService := zone.NewService(zoneRepository, identifier.NewUUIDGenerator())
 
-	locationHandler := grpcserver.NewLocationHandler(locationService, zoneService)
+	locationHandler := grpcserver.NewLocationHandler(locationService, zoneService, logger)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

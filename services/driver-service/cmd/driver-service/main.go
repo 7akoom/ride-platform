@@ -137,7 +137,7 @@ func run() int {
 	idGenerator := identifier.NewUUIDGenerator()
 
 	driverService := driver.NewService(driverRepository, idGenerator)
-	driverHandler := grpcserver.NewDriverHandler(driverService)
+	driverHandler := grpcserver.NewDriverHandler(driverService, logger)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

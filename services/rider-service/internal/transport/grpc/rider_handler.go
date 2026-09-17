@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	riderv1 "github.com/7akoom/ride-platform/gen/go/ride/rider/v1"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/application/rider"
@@ -15,17 +16,24 @@ type RiderHandler struct {
 	riderv1.UnimplementedRiderServiceServer
 
 	riderService rider.Service
+	logger       *slog.Logger
 }
 
 func NewRiderHandler(
 	riderService rider.Service,
+	logger *slog.Logger,
 ) *RiderHandler {
 	if riderService == nil {
 		panic("rider service is required")
 	}
 
+	if logger == nil {
+		panic("logger is required")
+	}
+
 	return &RiderHandler{
 		riderService: riderService,
+		logger:       logger,
 	}
 }
 
@@ -45,7 +53,7 @@ func (h *RiderHandler) CreateRider(
 		},
 	)
 	if err != nil {
-		return nil, mapRiderError(err)
+		return nil, h.mapRiderError(err)
 	}
 
 	return &riderv1.CreateRiderResponse{
@@ -63,7 +71,7 @@ func (h *RiderHandler) GetRider(
 
 	found, err := h.riderService.GetRider(ctx, request.GetRiderId())
 	if err != nil {
-		return nil, mapRiderError(err)
+		return nil, h.mapRiderError(err)
 	}
 
 	return &riderv1.GetRiderResponse{
@@ -81,7 +89,7 @@ func (h *RiderHandler) GetRiderByIdentity(
 
 	found, err := h.riderService.GetRiderByIdentityID(ctx, request.GetIdentityId())
 	if err != nil {
-		return nil, mapRiderError(err)
+		return nil, h.mapRiderError(err)
 	}
 
 	return &riderv1.GetRiderResponse{
@@ -105,7 +113,7 @@ func (h *RiderHandler) UpdateRiderProfile(
 		},
 	)
 	if err != nil {
-		return nil, mapRiderError(err)
+		return nil, h.mapRiderError(err)
 	}
 
 	return &riderv1.UpdateRiderProfileResponse{
@@ -113,7 +121,7 @@ func (h *RiderHandler) UpdateRiderProfile(
 	}, nil
 }
 
-func mapRiderError(err error) error {
+func (h *RiderHandler) mapRiderError(err error) error {
 	switch {
 	case errors.Is(err, rider.ErrRiderNotFound):
 		return status.Error(codes.NotFound, "rider not found")
@@ -128,6 +136,8 @@ func mapRiderError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	default:
+		h.logger.Error("unclassified rider request failure", "error", err)
+
 		return status.Error(codes.Internal, "failed to process rider request")
 	}
 }

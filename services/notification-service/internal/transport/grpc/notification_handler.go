@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	notificationv1 "github.com/7akoom/ride-platform/gen/go/ride/notification/v1"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/application/notification"
@@ -15,14 +16,19 @@ type NotificationHandler struct {
 	notificationv1.UnimplementedNotificationServiceServer
 
 	notificationService notification.Service
+	logger              *slog.Logger
 }
 
-func NewNotificationHandler(notificationService notification.Service) *NotificationHandler {
+func NewNotificationHandler(notificationService notification.Service, logger *slog.Logger) *NotificationHandler {
 	if notificationService == nil {
 		panic("notification service is required")
 	}
 
-	return &NotificationHandler{notificationService: notificationService}
+	if logger == nil {
+		panic("logger is required")
+	}
+
+	return &NotificationHandler{notificationService: notificationService, logger: logger}
 }
 
 func (h *NotificationHandler) Send(
@@ -50,7 +56,7 @@ func (h *NotificationHandler) Send(
 		IdempotencyKey: request.GetIdempotencyKey(),
 	})
 	if err != nil {
-		return nil, mapNotificationError(err)
+		return nil, h.mapNotificationError(err)
 	}
 
 	return &notificationv1.SendResponse{
@@ -75,7 +81,7 @@ func (h *NotificationHandler) RegisterDevice(
 		Locale:        request.GetLocale(),
 	})
 	if err != nil {
-		return nil, mapNotificationError(err)
+		return nil, h.mapNotificationError(err)
 	}
 
 	return &notificationv1.RegisterDeviceResponse{DeviceId: deviceID}, nil
@@ -91,7 +97,7 @@ func (h *NotificationHandler) UnregisterDevice(
 
 	removed, err := h.notificationService.UnregisterDevice(ctx, request.GetDeviceToken())
 	if err != nil {
-		return nil, mapNotificationError(err)
+		return nil, h.mapNotificationError(err)
 	}
 
 	return &notificationv1.UnregisterDeviceResponse{Removed: removed}, nil
@@ -112,7 +118,7 @@ func (h *NotificationHandler) ListNotifications(
 		UnreadOnly:    request.GetUnreadOnly(),
 	})
 	if err != nil {
-		return nil, mapNotificationError(err)
+		return nil, h.mapNotificationError(err)
 	}
 
 	protoNotifications := make([]*notificationv1.Notification, len(result.Notifications))
@@ -142,7 +148,7 @@ func (h *NotificationHandler) MarkAsRead(
 		request.GetNotificationIds(),
 	)
 	if err != nil {
-		return nil, mapNotificationError(err)
+		return nil, h.mapNotificationError(err)
 	}
 
 	return &notificationv1.MarkAsReadResponse{MarkedCount: int32(marked)}, nil
@@ -179,7 +185,7 @@ func (h *NotificationHandler) UpsertTemplate(
 		Translations:    translations,
 	})
 	if err != nil {
-		return nil, mapNotificationError(err)
+		return nil, h.mapNotificationError(err)
 	}
 
 	return &notificationv1.UpsertTemplateResponse{
@@ -188,7 +194,7 @@ func (h *NotificationHandler) UpsertTemplate(
 	}, nil
 }
 
-func mapNotificationError(err error) error {
+func (h *NotificationHandler) mapNotificationError(err error) error {
 	switch {
 	case errors.Is(err, notification.ErrTemplateNotFound),
 		errors.Is(err, notification.ErrTranslationNotFound):
@@ -204,6 +210,8 @@ func mapNotificationError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	default:
+		h.logger.Error("unclassified notification request failure", "error", err)
+
 		return status.Error(codes.Internal, "failed to process notification request")
 	}
 }

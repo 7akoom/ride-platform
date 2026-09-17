@@ -150,7 +150,7 @@ func run() int {
 	idGenerator := identifier.NewUUIDGenerator()
 
 	tripService := trip.NewService(tripRepository, idGenerator, locationClient)
-	tripHandler := grpcserver.NewTripHandler(tripService)
+	tripHandler := grpcserver.NewTripHandler(tripService, logger)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

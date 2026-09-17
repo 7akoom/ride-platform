@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	walletv1 "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
@@ -18,15 +19,20 @@ type WalletHandler struct {
 
 	walletService wallet.Service
 	topupService  topup.Service
+	logger        *slog.Logger
 }
 
-func NewWalletHandler(walletService wallet.Service, topupService topup.Service) *WalletHandler {
+func NewWalletHandler(walletService wallet.Service, topupService topup.Service, logger *slog.Logger) *WalletHandler {
 	if walletService == nil {
 		panic("wallet service is required")
 	}
 
 	if topupService == nil {
 		panic("topup service is required")
+	}
+
+	if logger == nil {
+		panic("logger is required")
 	}
 
 	return &WalletHandler{walletService: walletService, topupService: topupService}
@@ -46,7 +52,7 @@ func (h *WalletHandler) GetWallet(
 		request.GetOwnerId(),
 	)
 	if err != nil {
-		return nil, mapWalletError(err)
+		return nil, h.mapWalletError(err)
 	}
 
 	return &walletv1.GetWalletResponse{Wallet: toProtoWallet(found)}, nil
@@ -73,7 +79,7 @@ func (h *WalletHandler) TopUp(
 		Description:    request.GetDescription(),
 	})
 	if err != nil {
-		return nil, mapWalletError(err)
+		return nil, h.mapWalletError(err)
 	}
 
 	return &walletv1.TopUpResponse{
@@ -103,7 +109,7 @@ func (h *WalletHandler) SettleTrip(
 		PaymentMethod: toDomainPaymentMethod(request.GetPaymentMethod()),
 	})
 	if err != nil {
-		return nil, mapWalletError(err)
+		return nil, h.mapWalletError(err)
 	}
 
 	return &walletv1.SettleTripResponse{
@@ -131,7 +137,7 @@ func (h *WalletHandler) ListTransactions(
 		int(request.GetLimit()),
 	)
 	if err != nil {
-		return nil, mapWalletError(err)
+		return nil, h.mapWalletError(err)
 	}
 
 	protoTransactions := make([]*walletv1.Transaction, len(transactions))
@@ -153,7 +159,7 @@ func (h *WalletHandler) CheckDriverStanding(
 
 	standing, err := h.walletService.CheckDriverStanding(ctx, request.GetDriverId())
 	if err != nil {
-		return nil, mapWalletError(err)
+		return nil, h.mapWalletError(err)
 	}
 
 	return &walletv1.CheckDriverStandingResponse{
@@ -185,7 +191,7 @@ func (h *WalletHandler) RequestPayout(
 		IdempotencyKey: request.GetIdempotencyKey(),
 	})
 	if err != nil {
-		return nil, mapWalletError(err)
+		return nil, h.mapWalletError(err)
 	}
 
 	return &walletv1.RequestPayoutResponse{
@@ -217,7 +223,7 @@ func (h *WalletHandler) InitiateTopUp(
 		Amount:   amount,
 	})
 	if err != nil {
-		return nil, mapTopUpError(err)
+		return nil, h.mapTopUpError(err)
 	}
 
 	return &walletv1.InitiateTopUpResponse{
@@ -241,7 +247,7 @@ func (h *WalletHandler) ProcessZainCashWebhook(
 	}
 
 	if err := h.topupService.ProcessWebhookToken(ctx, request.GetToken()); err != nil {
-		return nil, mapTopUpError(err)
+		return nil, h.mapTopUpError(err)
 	}
 
 	return &walletv1.ProcessZainCashWebhookResponse{}, nil
@@ -259,7 +265,7 @@ func parseMoney(value string) (wallet.Money, error) {
 	return decimal.NewFromString(value)
 }
 
-func mapWalletError(err error) error {
+func (h *WalletHandler) mapWalletError(err error) error {
 	switch {
 	case errors.Is(err, wallet.ErrWalletNotFound):
 		return status.Error(codes.NotFound, "wallet not found")
@@ -285,13 +291,15 @@ func mapWalletError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	default:
+		h.logger.Error("unclassified wallet request failure", "error", err)
+
 		return status.Error(codes.Internal, "failed to process wallet request")
 	}
 }
 
 // mapTopUpError mirrors mapWalletError's approach but for the
 // topup package's own error set.
-func mapTopUpError(err error) error {
+func (h *WalletHandler) mapTopUpError(err error) error {
 	switch {
 	case errors.Is(err, topup.ErrTopUpNotFound):
 		return status.Error(codes.NotFound, "top-up not found")
@@ -302,6 +310,8 @@ func mapTopUpError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	default:
+		h.logger.Error("unclassified top-up request failure", "error", err)
+
 		return status.Error(codes.Internal, "failed to process top-up request")
 	}
 }

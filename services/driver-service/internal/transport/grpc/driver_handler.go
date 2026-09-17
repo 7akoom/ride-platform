@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	driverv1 "github.com/7akoom/ride-platform/gen/go/ride/driver/v1"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
@@ -15,17 +16,24 @@ type DriverHandler struct {
 	driverv1.UnimplementedDriverServiceServer
 
 	driverService driver.Service
+	logger        *slog.Logger
 }
 
 func NewDriverHandler(
 	driverService driver.Service,
+	logger *slog.Logger,
 ) *DriverHandler {
 	if driverService == nil {
 		panic("driver service is required")
 	}
 
+	if logger == nil {
+		panic("logger is required")
+	}
+
 	return &DriverHandler{
 		driverService: driverService,
+		logger:        logger,
 	}
 }
 
@@ -51,7 +59,7 @@ func (h *DriverHandler) CreateDriver(
 		},
 	)
 	if err != nil {
-		return nil, mapDriverError(err)
+		return nil, h.mapDriverError(err)
 	}
 
 	return &driverv1.CreateDriverResponse{
@@ -69,7 +77,7 @@ func (h *DriverHandler) GetDriver(
 
 	found, err := h.driverService.GetDriver(ctx, request.GetDriverId())
 	if err != nil {
-		return nil, mapDriverError(err)
+		return nil, h.mapDriverError(err)
 	}
 
 	return &driverv1.GetDriverResponse{
@@ -87,7 +95,7 @@ func (h *DriverHandler) GetDriverByIdentity(
 
 	found, err := h.driverService.GetDriverByIdentityID(ctx, request.GetIdentityId())
 	if err != nil {
-		return nil, mapDriverError(err)
+		return nil, h.mapDriverError(err)
 	}
 
 	return &driverv1.GetDriverResponse{
@@ -117,7 +125,7 @@ func (h *DriverHandler) UpdateDriverProfile(
 		},
 	)
 	if err != nil {
-		return nil, mapDriverError(err)
+		return nil, h.mapDriverError(err)
 	}
 
 	return &driverv1.UpdateDriverProfileResponse{
@@ -141,7 +149,7 @@ func (h *DriverHandler) UpdateAvailability(
 		},
 	)
 	if err != nil {
-		return nil, mapDriverError(err)
+		return nil, h.mapDriverError(err)
 	}
 
 	return &driverv1.UpdateAvailabilityResponse{
@@ -149,7 +157,7 @@ func (h *DriverHandler) UpdateAvailability(
 	}, nil
 }
 
-func mapDriverError(err error) error {
+func (h *DriverHandler) mapDriverError(err error) error {
 	switch {
 	case errors.Is(err, driver.ErrDriverNotFound):
 		return status.Error(codes.NotFound, "driver not found")
@@ -169,6 +177,8 @@ func mapDriverError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	default:
+		h.logger.Error("unclassified driver request failure", "error", err)
+
 		return status.Error(codes.Internal, "failed to process driver request")
 	}
 }

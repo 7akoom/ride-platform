@@ -137,7 +137,7 @@ func run() int {
 	idGenerator := identifier.NewUUIDGenerator()
 
 	riderService := rider.NewService(riderRepository, idGenerator)
-	riderHandler := grpcserver.NewRiderHandler(riderService)
+	riderHandler := grpcserver.NewRiderHandler(riderService, logger)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

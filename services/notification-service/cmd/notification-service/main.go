@@ -127,7 +127,7 @@ func run() int {
 		// the deployment has one.
 		channels.NewNoopSMSSender(),
 	)
-	notificationHandler := grpcserver.NewNotificationHandler(notificationService)
+	notificationHandler := grpcserver.NewNotificationHandler(notificationService, logger)
 
 	eventHandler := events.NewHandler(
 		notificationService,

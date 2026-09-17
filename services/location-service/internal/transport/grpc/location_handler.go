@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	locationv1 "github.com/7akoom/ride-platform/gen/go/ride/location/v1"
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/location"
@@ -17,14 +18,20 @@ type LocationHandler struct {
 
 	locationService location.Service
 	zoneService     zone.Service
+	logger          *slog.Logger
 }
 
 func NewLocationHandler(
 	locationService location.Service,
 	zoneService zone.Service,
+	logger *slog.Logger,
 ) *LocationHandler {
 	if locationService == nil {
 		panic("location service is required")
+	}
+
+	if logger == nil {
+		panic("logger is required")
 	}
 
 	if zoneService == nil {
@@ -57,7 +64,7 @@ func (h *LocationHandler) UpdateLocation(
 		},
 	)
 	if err != nil {
-		return nil, mapLocationError(err)
+		return nil, h.mapLocationError(err)
 	}
 
 	return &locationv1.UpdateLocationResponse{
@@ -79,7 +86,7 @@ func (h *LocationHandler) GetLocation(
 		request.GetEntityId(),
 	)
 	if err != nil {
-		return nil, mapLocationError(err)
+		return nil, h.mapLocationError(err)
 	}
 
 	return &locationv1.GetLocationResponse{
@@ -112,7 +119,7 @@ func (h *LocationHandler) FindNearby(
 		},
 	)
 	if err != nil {
-		return nil, mapLocationError(err)
+		return nil, h.mapLocationError(err)
 	}
 
 	protoEntities := make([]*locationv1.NearbyEntity, len(results))
@@ -133,7 +140,7 @@ func (h *LocationHandler) FindNearby(
 	}, nil
 }
 
-func mapLocationError(err error) error {
+func (h *LocationHandler) mapLocationError(err error) error {
 	switch {
 	case errors.Is(err, location.ErrLocationNotFound):
 		return status.Error(codes.NotFound, "location not found or stale")
@@ -146,6 +153,8 @@ func mapLocationError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	default:
+		h.logger.Error("unclassified location request failure", "error", err)
+
 		return status.Error(codes.Internal, "failed to process location request")
 	}
 }

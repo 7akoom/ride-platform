@@ -91,7 +91,7 @@ func run() int {
 		clients.NewDriverClient(driverConn),
 		clients.NewWalletClient(walletConn),
 	)
-	dispatchHandler := grpcserver.NewDispatchHandler(dispatchService)
+	dispatchHandler := grpcserver.NewDispatchHandler(dispatchService, logger)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,
