@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Starts all 9 ride-platform backend services locally via `go run`, each
+# Starts all 10 ride-platform backend services locally via `go run`, each
 # loading its own services/<name>/.env. Logs go to logs/<service>.log;
 # Ctrl+C stops every service cleanly.
 #
@@ -29,6 +29,7 @@ ALL_SERVICES=(
 	pricing-service
 	dispatch-service
 	notification-service
+	analytics
 )
 
 if [ "$#" -gt 0 ]; then

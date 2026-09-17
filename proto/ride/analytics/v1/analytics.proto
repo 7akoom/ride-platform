@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package ride.analytics.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/analytics/v1;analyticsv1";
+
+service AnalyticsService {
+  rpc GetTripFunnel(GetTripFunnelRequest) returns (GetTripFunnelResponse) {
+    option (google.api.http) = { get: "/v1/analytics/trip-funnel" };
+  }
+  rpc GetCancellationBreakdown(GetCancellationBreakdownRequest) returns (GetCancellationBreakdownResponse) {
+    option (google.api.http) = { get: "/v1/analytics/cancellations" };
+  }
+  rpc GetRevenueSummary(GetRevenueSummaryRequest) returns (GetRevenueSummaryResponse) {
+    option (google.api.http) = { get: "/v1/analytics/revenue" };
+  }
+  rpc GetRiderRetention(GetRetentionRequest) returns (GetRetentionResponse) {
+    option (google.api.http) = { get: "/v1/analytics/retention/riders" };
+  }
+  rpc GetDriverRetention(GetRetentionRequest) returns (GetRetentionResponse) {
+    option (google.api.http) = { get: "/v1/analytics/retention/drivers" };
+  }
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message HealthCheckRequest {}
+message HealthCheckResponse {
+  string status = 1;
+}
+
+message DateRange {
+  google.protobuf.Timestamp start_date = 1;
+  google.protobuf.Timestamp end_date = 2;
+}
+
+// --- Trip funnel ---
+
+message GetTripFunnelRequest {
+  DateRange range = 1;
+}
+
+message FunnelDayPoint {
+  string date = 1; // YYYY-MM-DD
+  int64 requested_count = 2;
+  int64 accepted_count = 3;
+  int64 started_count = 4;
+  int64 completed_count = 5;
+  int64 cancelled_count = 6;
+}
+
+message GetTripFunnelResponse {
+  repeated FunnelDayPoint days = 1;
+  FunnelDayPoint totals = 2;
+}
+
+// --- Cancellations ---
+
+message GetCancellationBreakdownRequest {
+  DateRange range = 1;
+}
+
+message CancellationStageCount {
+  string stage = 1; // requested | accepted | started
+  int64 count = 2;
+}
+
+message GetCancellationBreakdownResponse {
+  repeated CancellationStageCount by_stage = 1;
+  int64 total_cancellations = 2;
+  int64 total_trips = 3;
+  string cancellation_rate_percent = 4; // decimal string
+}
+
+// --- Revenue ---
+
+message GetRevenueSummaryRequest {
+  DateRange range = 1;
+}
+
+message RevenueDayPoint {
+  string date = 1;
+  string currency = 2;
+  string gross_fare_total = 3;   // decimal string
+  string commission_total = 4;   // decimal string
+  int64 trip_count = 5;
+}
+
+message GetRevenueSummaryResponse {
+  repeated RevenueDayPoint days = 1;
+  string gross_fare_total = 2;
+  string commission_total = 3;
+  int64 total_trips = 4;
+}
+
+// --- Retention / cohorts ---
+
+message GetRetentionRequest {
+  int32 cohort_weeks = 1; // how many weeks back to include
+}
+
+message RetentionCohort {
+  string cohort_week = 1; // YYYY-MM-DD of the cohort's week-start Monday
+  int64 cohort_size = 2;
+  repeated string retention_percent_by_week = 3; // decimal strings, week 0..N
+}
+
+message GetRetentionResponse {
+  repeated RetentionCohort cohorts = 1;
+}

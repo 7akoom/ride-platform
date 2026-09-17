@@ -25,6 +25,7 @@ ALL_SERVICES=(
 	pricing-service
 	dispatch-service
 	notification-service
+	analytics
 )
 
 if [ "$#" -gt 0 ]; then

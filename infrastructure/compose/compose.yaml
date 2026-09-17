@@ -225,6 +225,34 @@ services:
 
     restart: unless-stopped
 
+  analytics-postgres:
+    image: postgres:17-alpine3.24
+    container_name: ride-analytics-postgres
+
+    environment:
+      POSTGRES_DB: ${ANALYTICS_DB_NAME:?ANALYTICS_DB_NAME is required}
+      POSTGRES_USER: ${ANALYTICS_DB_USER:?ANALYTICS_DB_USER is required}
+      POSTGRES_PASSWORD: ${ANALYTICS_DB_PASSWORD:?ANALYTICS_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:5441:5432"
+
+    volumes:
+      - analytics-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${ANALYTICS_DB_USER} -d ${ANALYTICS_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
   # Road routing for pricing-service. Requires a one-time dataset build:
   # see infrastructure/osrm/README.md. Starts only once that's done.
   osrm:
@@ -786,6 +814,39 @@ services:
 
     restart: unless-stopped
 
+  analytics-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: analytics
+    image: ride-platform/analytics-service:dev
+    container_name: ride-analytics-service
+
+    env_file:
+      - ../../services/analytics/.env
+
+    environment:
+      GRPC_ADDRESS: ":50060"
+      METRICS_ADDRESS: ":9100"
+      DATABASE_URL: postgres://${ANALYTICS_DB_USER}:${ANALYTICS_DB_PASSWORD}@analytics-postgres:5432/${ANALYTICS_DB_NAME}?sslmode=disable
+      NATS_URL: nats://nats:4222
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      analytics-postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+
+    ports:
+      - "127.0.0.1:50060:50060"
+      - "127.0.0.1:9100:9100"
+
+    restart: unless-stopped
+
   gateway:
     build:
       context: ../..
@@ -816,6 +877,7 @@ volumes:
   wallet-postgres-data:
   notification-postgres-data:
   location-postgres-data:
+  analytics-postgres-data:
   identity-valkey-data:
   location-valkey-data:
   nats-jetstream-data:

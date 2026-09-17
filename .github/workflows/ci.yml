@@ -73,6 +73,7 @@ jobs:
           - services/location-service
           - services/wallet-service
           - services/notification-service
+          - services/analytics
     steps:
       - uses: actions/checkout@v4
 
@@ -121,6 +122,7 @@ jobs:
           - location-service
           - wallet-service
           - notification-service
+          - analytics
     steps:
       - uses: actions/checkout@v4
 
