@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Catches exactly the mistake made twice in one session locally:
+  # editing a .proto without regenerating, or regenerating without
+  # committing the result.
+  proto:
+    name: Verify gen/ is in sync with proto/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: bufbuild/buf-setup-action@v1
+
+      - name: buf generate
+        run: buf generate
+
+      - name: Fail if gen/ or the OpenAPI doc changed
+        run: |
+          if ! git diff --exit-code -- gen/ gen/openapiv2/; then
+            echo "::error::gen/ is out of date with proto/. Run 'buf generate' locally and commit the result."
+            exit 1
+          fi
+
+  # One job per module (every service + gen/go + the gateway), matching
+  # go.work's own module list. go.mod/go.sum drift (the other mistake
+  # made twice locally today — a service's go.sum missing entries after
+  # gen/go's deps shifted) fails the job before build/test even run.
+  build-test:
+    name: build & test (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    needs: proto
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - gen/go
+          - infrastructure/gateway
+          - services/identity-service
+          - services/rider-service
+          - services/driver-service
+          - services/trip-service
+          - services/dispatch-service
+          - services/pricing-service
+          - services/location-service
+          - services/wallet-service
+          - services/notification-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.8'
+
+      - name: go mod tidy check
+        working-directory: ${{ matrix.module }}
+        run: |
+          go mod tidy
+          if ! git diff --exit-code -- go.mod go.sum; then
+            echo "::error::go.mod/go.sum for ${{ matrix.module }} is out of date. Run 'go mod tidy' in that directory locally and commit the result."
+            exit 1
+          fi
+
+      - name: go build
+        working-directory: ${{ matrix.module }}
+        run: go build ./...
+
+      - name: go vet
+        working-directory: ${{ matrix.module }}
+        run: go vet ./...
+
+      - name: go test
+        working-directory: ${{ matrix.module }}
+        run: go test ./... -count=1
+
+  # Confirms every service's Docker image still builds via the shared
+  # Dockerfile (gen/go's own go.mod deps drifting is exactly what broke
+  # this locally today, twice, for different services each time).
+  docker-build:
+    name: docker build (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: build-test
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - identity-service
+          - rider-service
+          - driver-service
+          - trip-service
+          - dispatch-service
+          - pricing-service
+          - location-service
+          - wallet-service
+          - notification-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.service }} image
+        run: |
+          docker build \
+            -f infrastructure/docker/Dockerfile \
+            --build-arg SERVICE_NAME=${{ matrix.service }} \
+            -t ride-platform/${{ matrix.service }}:ci \
+            .
+
+  docker-build-gateway:
+    name: docker build (gateway)
+    runs-on: ubuntu-latest
+    needs: build-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build gateway image
+        run: |
+          docker build \
+            -f infrastructure/gateway/Dockerfile \
+            -t ride-platform/gateway:ci \
+            .
