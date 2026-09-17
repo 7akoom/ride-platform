@@ -37,10 +37,16 @@ jobs:
       - name: buf generate
         run: buf generate
 
-      - name: Fail if gen/ or the OpenAPI doc changed
+      # gen/openapiv2's merged swagger.json is deliberately excluded:
+      # protoc-gen-openapiv2's allow_merge doesn't guarantee a stable
+      # top-level title/tags order across environments (Go map
+      # iteration order), so it can differ from a local run even when
+      # nothing meaningful changed. gen/go is the part that actually
+      # affects the build, and its diff IS deterministic.
+      - name: Fail if gen/go changed
         run: |
-          if ! git diff --exit-code -- gen/ gen/openapiv2/; then
-            echo "::error::gen/ is out of date with proto/. Run 'buf generate' locally and commit the result."
+          if ! git diff --exit-code -- gen/go/; then
+            echo "::error::gen/go is out of date with proto/. Run 'buf generate' locally and commit the result."
             exit 1
           fi
 
