@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "ride/rider/v1/rider.proto",
+    "title": "ride/location/v1/location.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "RiderService"
+      "name": "LocationService"
     }
   ],
   "consumes": [

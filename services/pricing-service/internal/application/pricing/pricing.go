@@ -1,13 +1,10 @@
 package pricing
 
-import "time"
+import (
+	"time"
 
-// NOTE on money representation: fields below use float64, matching the
-// float64 convention already used elsewhere in this codebase (ratings,
-// coordinates). For a payments-critical system you'd normally want a
-// fixed-point/integer-minor-units type to avoid floating-point rounding
-// drift — that's a deliberate v1 simplification, flagged here and in
-// the README, not an oversight.
+	"github.com/shopspring/decimal"
+)
 
 type DiscountType string
 
@@ -23,9 +20,9 @@ const (
 type Config struct {
 	ID                       string
 	CurrencyCode             string
-	BaseFare                 float64
-	PerKmRate                float64
-	PerMinuteRate            float64
+	BaseFare                 decimal.Decimal
+	PerKmRate                decimal.Decimal
+	PerMinuteRate            decimal.Decimal
 	AverageSpeedKmh          float64
 	DistanceCorrectionFactor float64
 	CreatedAt                time.Time
@@ -40,31 +37,34 @@ type SurgeTimeRule struct {
 	DayOfWeek    *int
 	StartTime    string // "HH:MM:SS", kept as string — no calendar date involved
 	EndTime      string
-	SurgePercent float64
+	SurgePercent decimal.Decimal
 	Active       bool
 }
 
 // SurgeBreakdown lets each contributing factor stay visible instead of
-// collapsing straight to a multiplier.
+// collapsing straight to a multiplier. Kept as decimal, not float64,
+// same as every other value that feeds directly into money math below
+// (see FareBreakdown) — a percentage that multiplies a fare is exactly
+// as precision-sensitive as the fare itself.
 type SurgeBreakdown struct {
-	TimeOfDayPercent float64
-	DemandPercent    float64
-	WeatherPercent   float64
-	TotalPercent     float64
-	Multiplier       float64
+	TimeOfDayPercent decimal.Decimal
+	DemandPercent    decimal.Decimal
+	WeatherPercent   decimal.Decimal
+	TotalPercent     decimal.Decimal
+	Multiplier       decimal.Decimal
 }
 
 type Coupon struct {
 	ID                string
 	Code              string
 	DiscountType      DiscountType
-	DiscountValue     float64
+	DiscountValue     decimal.Decimal
 	ValidFrom         time.Time
 	ValidUntil        time.Time
 	MaxRedemptions    *int
 	RedemptionCount   int
 	PerRiderLimit     int
-	MinimumFareAmount float64
+	MinimumFareAmount decimal.Decimal
 	Active            bool
 }
 
@@ -86,20 +86,25 @@ func (c Coupon) IsCurrentlyValid(now time.Time) bool {
 	return true
 }
 
+// FareBreakdown's money fields are decimal.Decimal, crossing the wire
+// as decimal strings (see the grpc handler) — never float64/double,
+// which would reintroduce exactly the rounding drift a payments-facing
+// fare calculation can't afford. DistanceKm/DurationMinutes stay
+// float64: they're physical measurements from OSRM, not currency.
 type FareBreakdown struct {
 	CurrencyCode         string
-	BaseFare             float64
+	BaseFare             decimal.Decimal
 	DistanceKm           float64
-	DistanceFare         float64
+	DistanceFare         decimal.Decimal
 	DurationMinutes      float64
-	DurationFare         float64
-	Subtotal             float64
+	DurationFare         decimal.Decimal
+	Subtotal             decimal.Decimal
 	Surge                SurgeBreakdown
-	SurgeAmount          float64
+	SurgeAmount          decimal.Decimal
 	AppliedDiscountType  DiscountType
 	AppliedDiscountLabel string
-	DiscountAmount       float64
-	Total                float64
+	DiscountAmount       decimal.Decimal
+	Total                decimal.Decimal
 }
 
 // Fare is the durable record of a calculated (not estimated) fare —

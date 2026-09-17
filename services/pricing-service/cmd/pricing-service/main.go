@@ -157,7 +157,7 @@ func run() int {
 		routing.NewOSRMClient(cfg.OSRMBaseURL, cfg.RoutingTimeout),
 		weather.NewClient(cfg.WeatherTimeout),
 	)
-	pricingHandler := grpcserver.NewPricingHandler(pricingService)
+	pricingHandler := grpcserver.NewPricingHandler(pricingService, logger)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

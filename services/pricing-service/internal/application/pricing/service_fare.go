@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 // nowFunc is a package-level indirection so tests can freeze time when
@@ -103,12 +105,12 @@ func (s *service) buildFare(
 		request.PickupLng,
 		nowFunc(),
 	)
-	breakdown.SurgeAmount = breakdown.Subtotal * (breakdown.Surge.Multiplier - 1)
+	breakdown.SurgeAmount = breakdown.Subtotal.Mul(breakdown.Surge.Multiplier.Sub(decimal.NewFromInt(1)))
 
 	// Discounts apply to the surged amount, not the pre-surge subtotal —
 	// otherwise a percentage coupon would be worth less exactly when the
 	// rider is paying the most.
-	chargeable := breakdown.Subtotal + breakdown.SurgeAmount
+	chargeable := breakdown.Subtotal.Add(breakdown.SurgeAmount)
 
 	discount, err := s.selectBestDiscount(ctx, riderID, request.CouponCode, chargeable)
 	if err != nil {
@@ -119,16 +121,16 @@ func (s *service) buildFare(
 			return FareBreakdown{}, nil, fmt.Errorf("select discount: %w", err)
 		}
 
-		discount = selectedDiscount{Type: DiscountNone}
+		discount = selectedDiscount{Type: DiscountNone, Amount: decimal.Zero}
 	}
 
 	breakdown.AppliedDiscountType = discount.Type
 	breakdown.AppliedDiscountLabel = discount.Label
 	breakdown.DiscountAmount = discount.Amount
 
-	total := chargeable - discount.Amount
-	if total < 0 {
-		total = 0
+	total := chargeable.Sub(discount.Amount)
+	if total.IsNegative() {
+		total = decimal.Zero
 	}
 
 	breakdown.Total = total

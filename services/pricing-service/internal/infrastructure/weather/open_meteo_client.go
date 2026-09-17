@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
+	"github.com/shopspring/decimal"
 )
 
 // Open-Meteo is free for non-commercial use with no API key and no
@@ -101,10 +102,10 @@ func (c *Client) GetConditions(
 	}
 
 	conditions := pricing.WeatherConditions{
-		SurgePercent: surgePercentFor(
+		SurgePercent: decimal.NewFromFloat(surgePercentFor(
 			decoded.Current.WeatherCode,
 			decoded.Current.WindSpeed10m,
-		),
+		)),
 	}
 
 	c.store(key, conditions)

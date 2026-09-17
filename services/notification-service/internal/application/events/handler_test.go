@@ -295,7 +295,7 @@ func TestHandler_Dispatch_FareCalculated_FormatsTotalToTwoDecimals(t *testing.T)
 	h := newHarness()
 	handler := h.handler()
 
-	payload := envelopeWithPayload("evt-4", `{"trip_id":"trip-1","rider_id":"rider-1","currency_code":"IQD","total":4250.5}`)
+	payload := envelopeWithPayload("evt-4", `{"trip_id":"trip-1","rider_id":"rider-1","currency_code":"IQD","total":"4250.5"}`)
 	if err := handler.Dispatch(context.Background(), "fare.calculated", payload); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

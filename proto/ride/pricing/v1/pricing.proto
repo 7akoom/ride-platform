@@ -26,28 +26,37 @@ message Coordinates {
 // SurgeBreakdown makes each contributing factor visible instead of just a
 // final multiplier — useful for support/debugging ("why was my fare
 // higher") and for the rider-facing app to show "+20% due to demand".
+// Percent/multiplier fields are decimal strings, not double — they feed
+// directly into fare math (see FareBreakdown below) and float64 would
+// reintroduce the same rounding drift the decimal fare fields exist to
+// avoid.
 message SurgeBreakdown {
-  double time_of_day_percent = 1;
-  double demand_percent = 2;
-  double weather_percent = 3;
-  double total_percent = 4;
-  double multiplier = 5;
+  string time_of_day_percent = 1;
+  string demand_percent = 2;
+  string weather_percent = 3;
+  string total_percent = 4;
+  string multiplier = 5;
 }
 
+// Money fields are decimal strings (e.g. "2451.6"), never double —
+// float64 in protobuf would reintroduce exactly the precision problem
+// the underlying NUMERIC columns exist to avoid (same convention as
+// wallet.proto). distance_km/duration_minutes stay double: physical
+// measurements from OSRM, not currency.
 message FareBreakdown {
   string currency_code = 1;
-  double base_fare = 2;
+  string base_fare = 2;
   double distance_km = 3;
-  double distance_fare = 4;
+  string distance_fare = 4;
   double duration_minutes = 5;
-  double duration_fare = 6;
-  double subtotal = 7;
+  string duration_fare = 6;
+  string subtotal = 7;
   SurgeBreakdown surge = 8;
-  double surge_amount = 9;
+  string surge_amount = 9;
   DiscountType applied_discount_type = 10;
   string applied_discount_label = 11;
-  double discount_amount = 12;
-  double total = 13;
+  string discount_amount = 12;
+  string total = 13;
 }
 
 message EstimateFareRequest {
@@ -76,24 +85,24 @@ message CalculateFareResponse {
 message CreateCouponRequest {
   string code = 1;
   DiscountType discount_type = 2;
-  double discount_value = 3;
+  string discount_value = 3;
   google.protobuf.Timestamp valid_from = 4;
   google.protobuf.Timestamp valid_until = 5;
   int32 max_redemptions = 6;
   int32 per_rider_limit = 7;
-  double minimum_fare_amount = 8;
+  string minimum_fare_amount = 8;
 }
 
 message Coupon {
   string code = 1;
   DiscountType discount_type = 2;
-  double discount_value = 3;
+  string discount_value = 3;
   google.protobuf.Timestamp valid_from = 4;
   google.protobuf.Timestamp valid_until = 5;
   int32 max_redemptions = 6;
   int32 redemption_count = 7;
   int32 per_rider_limit = 8;
-  double minimum_fare_amount = 9;
+  string minimum_fare_amount = 9;
   bool active = 10;
 }
 

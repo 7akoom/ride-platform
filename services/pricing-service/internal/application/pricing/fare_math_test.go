@@ -7,6 +7,8 @@ import (
 	"math"
 	"testing"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 func almostEqual(a, b, tolerance float64) bool {
@@ -17,7 +19,7 @@ func almostEqual(a, b, tolerance float64) bool {
 
 func TestHaversineDistanceKm(t *testing.T) {
 	cases := []struct {
-		name string
+		name                    string
 		lat1, lng1, lat2, lng2 float64
 		want                   float64
 		tolerance              float64
@@ -65,21 +67,21 @@ func TestFallbackRoute_AppliesCorrectionFactorAndAverageSpeed(t *testing.T) {
 func TestBaseFareBreakdown(t *testing.T) {
 	config := Config{
 		CurrencyCode:  "IQD",
-		BaseFare:      1000,
-		PerKmRate:     250,
-		PerMinuteRate: 100,
+		BaseFare:      decimal.NewFromInt(1000),
+		PerKmRate:     decimal.NewFromInt(250),
+		PerMinuteRate: decimal.NewFromInt(100),
 	}
 	route := Route{DistanceKm: 10, DurationMinutes: 20}
 
 	got := baseFareBreakdown(config, route)
 
-	if got.DistanceFare != 2500 {
+	if !got.DistanceFare.Equal(decimal.NewFromInt(2500)) {
 		t.Fatalf("got distance fare %v, want 2500", got.DistanceFare)
 	}
-	if got.DurationFare != 2000 {
+	if !got.DurationFare.Equal(decimal.NewFromInt(2000)) {
 		t.Fatalf("got duration fare %v, want 2000", got.DurationFare)
 	}
-	if got.Subtotal != 5500 { // 1000 + 2500 + 2000
+	if !got.Subtotal.Equal(decimal.NewFromInt(5500)) { // 1000 + 2500 + 2000
 		t.Fatalf("got subtotal %v, want 5500", got.Subtotal)
 	}
 	if got.CurrencyCode != "IQD" {
@@ -124,14 +126,14 @@ func TestTimeOfDaySurgePercent_TakesHighestMatchingRule(t *testing.T) {
 	tuesday := 2
 
 	rules := []SurgeTimeRule{
-		{StartTime: "07:00:00", EndTime: "09:00:00", SurgePercent: 30, Active: true},                          // every day, matches
-		{DayOfWeek: &tuesday, StartTime: "07:00:00", EndTime: "09:00:00", SurgePercent: 60, Active: true},      // matches, higher
-		{DayOfWeek: intPtr(3), StartTime: "07:00:00", EndTime: "09:00:00", SurgePercent: 90, Active: true},     // wrong day
-		{StartTime: "12:00:00", EndTime: "13:00:00", SurgePercent: 200, Active: true},                          // wrong time
+		{StartTime: "07:00:00", EndTime: "09:00:00", SurgePercent: decimal.NewFromInt(30), Active: true},                     // every day, matches
+		{DayOfWeek: &tuesday, StartTime: "07:00:00", EndTime: "09:00:00", SurgePercent: decimal.NewFromInt(60), Active: true}, // matches, higher
+		{DayOfWeek: intPtr(3), StartTime: "07:00:00", EndTime: "09:00:00", SurgePercent: decimal.NewFromInt(90), Active: true}, // wrong day
+		{StartTime: "12:00:00", EndTime: "13:00:00", SurgePercent: decimal.NewFromInt(200), Active: true},                     // wrong time
 	}
 
 	got := timeOfDaySurgePercent(rules, now)
-	if got != 60 {
+	if !got.Equal(decimal.NewFromInt(60)) {
 		t.Fatalf("got %v, want 60 (the highest matching rule)", got)
 	}
 }
@@ -140,10 +142,10 @@ func TestTimeOfDaySurgePercent_NoMatchingRuleIsZero(t *testing.T) {
 	now := time.Date(2026, 9, 15, 3, 0, 0, 0, time.UTC)
 
 	rules := []SurgeTimeRule{
-		{StartTime: "07:00:00", EndTime: "09:00:00", SurgePercent: 30, Active: true},
+		{StartTime: "07:00:00", EndTime: "09:00:00", SurgePercent: decimal.NewFromInt(30), Active: true},
 	}
 
-	if got := timeOfDaySurgePercent(rules, now); got != 0 {
+	if got := timeOfDaySurgePercent(rules, now); !got.IsZero() {
 		t.Fatalf("got %v, want 0", got)
 	}
 }

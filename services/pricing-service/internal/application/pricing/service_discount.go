@@ -3,22 +3,25 @@ package pricing
 import (
 	"context"
 	"strings"
+
+	"github.com/shopspring/decimal"
 )
 
 // These are simple fixed policies for v1 — a real system would likely
 // make them configurable per deployment the same way pricing_configs
 // is, but that's more surface area than this milestone needs. Easy to
 // find and adjust here, or promote to a config table later.
-const (
-	firstRideDiscountPercent = 50.0
-	loyaltyRideInterval      = 10 // every 10th completed ride
-	loyaltyDiscountPercent   = 20.0
+var (
+	firstRideDiscountPercent = decimal.NewFromInt(50)
+	loyaltyDiscountPercent   = decimal.NewFromInt(20)
 )
+
+const loyaltyRideInterval = 10 // every 10th completed ride
 
 type selectedDiscount struct {
 	Type   DiscountType
 	Label  string
-	Amount float64
+	Amount decimal.Decimal
 	Coupon *AppliedCoupon // set only when a coupon was the winning discount
 }
 
@@ -31,9 +34,9 @@ func (s *service) selectBestDiscount(
 	ctx context.Context,
 	riderID string,
 	couponCode string,
-	chargeableAmount float64,
+	chargeableAmount decimal.Decimal,
 ) (selectedDiscount, error) {
-	best := selectedDiscount{Type: DiscountNone}
+	best := selectedDiscount{Type: DiscountNone, Amount: decimal.Zero}
 
 	if trimmed := strings.TrimSpace(couponCode); trimmed != "" {
 		candidate, err := s.evaluateCoupon(ctx, trimmed, riderID, chargeableAmount)
@@ -41,7 +44,7 @@ func (s *service) selectBestDiscount(
 			return selectedDiscount{}, err
 		}
 
-		if candidate.Amount > best.Amount {
+		if candidate.Amount.GreaterThan(best.Amount) {
 			best = candidate
 		}
 	}
@@ -52,9 +55,9 @@ func (s *service) selectBestDiscount(
 	}
 
 	if completedTrips == 0 {
-		amount := chargeableAmount * firstRideDiscountPercent / 100
+		amount := chargeableAmount.Mul(firstRideDiscountPercent).Div(decimal.NewFromInt(100))
 
-		if amount > best.Amount {
+		if amount.GreaterThan(best.Amount) {
 			best = selectedDiscount{
 				Type:   DiscountPercentage,
 				Label:  "First ride discount",
@@ -65,9 +68,9 @@ func (s *service) selectBestDiscount(
 		// +1 because this fare is for the trip currently being
 		// completed, which isn't counted yet — this check is "is the
 		// trip about to complete the Nth one".
-		amount := chargeableAmount * loyaltyDiscountPercent / 100
+		amount := chargeableAmount.Mul(loyaltyDiscountPercent).Div(decimal.NewFromInt(100))
 
-		if amount > best.Amount {
+		if amount.GreaterThan(best.Amount) {
 			best = selectedDiscount{
 				Type:   DiscountPercentage,
 				Label:  "Loyalty discount",
@@ -83,7 +86,7 @@ func (s *service) evaluateCoupon(
 	ctx context.Context,
 	code string,
 	riderID string,
-	chargeableAmount float64,
+	chargeableAmount decimal.Decimal,
 ) (selectedDiscount, error) {
 	coupon, err := s.repository.FindCouponByCode(ctx, code)
 	if err != nil {
@@ -94,7 +97,7 @@ func (s *service) evaluateCoupon(
 		return selectedDiscount{}, nil
 	}
 
-	if chargeableAmount < coupon.MinimumFareAmount {
+	if chargeableAmount.LessThan(coupon.MinimumFareAmount) {
 		return selectedDiscount{}, nil
 	}
 
@@ -107,16 +110,16 @@ func (s *service) evaluateCoupon(
 		return selectedDiscount{}, nil
 	}
 
-	var amount float64
+	amount := decimal.Zero
 
 	switch coupon.DiscountType {
 	case DiscountPercentage:
-		amount = chargeableAmount * coupon.DiscountValue / 100
+		amount = chargeableAmount.Mul(coupon.DiscountValue).Div(decimal.NewFromInt(100))
 	case DiscountFixed:
 		amount = coupon.DiscountValue
 	}
 
-	if amount > chargeableAmount {
+	if amount.GreaterThan(chargeableAmount) {
 		amount = chargeableAmount
 	}
 

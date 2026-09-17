@@ -1,13 +1,18 @@
 package pricing
 
-import "math"
+import (
+	"math"
+
+	"github.com/shopspring/decimal"
+)
 
 const earthRadiusKm = 6371.0
 
 // Route is the distance and duration between two points. When OSRM is
 // reachable these are real road-network values; when it isn't, they're
 // the Haversine fallback below (flagged via Estimated so callers and
-// logs can tell the difference).
+// logs can tell the difference). Kept as float64 — a physical
+// measurement, not money.
 type Route struct {
 	DistanceKm      float64
 	DurationMinutes float64
@@ -48,11 +53,14 @@ func fallbackRoute(config Config, pickupLat, pickupLng, dropoffLat, dropoffLng f
 
 // baseFareBreakdown turns a route into the pre-surge, pre-discount
 // subtotal using the active rate card. Surge and discounts are applied
-// on top of this by the caller.
+// on top of this by the caller. Route's distance/duration are float64
+// (physical measurements); they're converted to decimal only at the
+// point they're multiplied against a decimal rate, exactly like
+// wallet-service converts a wire decimal string at its own boundary.
 func baseFareBreakdown(config Config, route Route) FareBreakdown {
-	distanceFare := route.DistanceKm * config.PerKmRate
-	durationFare := route.DurationMinutes * config.PerMinuteRate
-	subtotal := config.BaseFare + distanceFare + durationFare
+	distanceFare := decimal.NewFromFloat(route.DistanceKm).Mul(config.PerKmRate)
+	durationFare := decimal.NewFromFloat(route.DurationMinutes).Mul(config.PerMinuteRate)
+	subtotal := config.BaseFare.Add(distanceFare).Add(durationFare)
 
 	return FareBreakdown{
 		CurrencyCode:    config.CurrencyCode,

@@ -3,24 +3,26 @@ package pricing
 import (
 	"context"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 type CreateCouponInput struct {
 	Code              string
 	DiscountType      DiscountType
-	DiscountValue     float64
+	DiscountValue     decimal.Decimal
 	ValidFrom         time.Time
 	ValidUntil        time.Time
 	MaxRedemptions    *int
 	PerRiderLimit     int
-	MinimumFareAmount float64
+	MinimumFareAmount decimal.Decimal
 }
 
 // AppliedCoupon carries what CalculateFare needs to record a redemption,
 // if a coupon was actually used.
 type AppliedCoupon struct {
 	CouponID       string
-	DiscountAmount float64
+	DiscountAmount decimal.Decimal
 }
 
 type PersistFareInput struct {
@@ -85,9 +87,11 @@ type RoutingClient interface {
 }
 
 // WeatherConditions is deliberately minimal — just enough to drive the
-// weather-surge tiers, not a general-purpose weather model.
+// weather-surge tiers, not a general-purpose weather model. SurgePercent
+// is decimal since it feeds directly into fare math (see
+// service_surge.go's weatherSurgePercent).
 type WeatherConditions struct {
-	SurgePercent float64
+	SurgePercent decimal.Decimal
 }
 
 // WeatherClient is a thin abstraction over Open-Meteo (free, no API key,

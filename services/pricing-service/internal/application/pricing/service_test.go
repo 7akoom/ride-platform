@@ -8,6 +8,8 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 // --- test doubles -----------------------------------------------------
@@ -36,8 +38,8 @@ type fakeRepository struct {
 
 func newFakeRepository() *fakeRepository {
 	return &fakeRepository{
-		couponsByCode:     map[string]Coupon{},
-		riderRedemptions:  map[string]int{},
+		couponsByCode:    map[string]Coupon{},
+		riderRedemptions: map[string]int{},
 	}
 }
 
@@ -149,9 +151,9 @@ func newHarness() *harness {
 	// later full-struct overwrite silently discarding the tweak.
 	h.repo.config = Config{
 		CurrencyCode:  "IQD",
-		BaseFare:      1000,
-		PerKmRate:     250,
-		PerMinuteRate: 100,
+		BaseFare:      decimal.NewFromInt(1000),
+		PerKmRate:     decimal.NewFromInt(250),
+		PerMinuteRate: decimal.NewFromInt(100),
 	}
 
 	return h
@@ -239,7 +241,7 @@ func TestService_EstimateFare_UsesRoutingClientWhenAvailable(t *testing.T) {
 	}
 
 	// subtotal = base(1000) + 5*250 + 10*100 = 1000+1250+1000 = 3250
-	if got.Subtotal != 3250 {
+	if !got.Subtotal.Equal(decimal.NewFromInt(3250)) {
 		t.Fatalf("got subtotal %v, want 3250", got.Subtotal)
 	}
 }
@@ -256,7 +258,7 @@ func TestService_EstimateFare_FallsBackWhenRoutingClientFails(t *testing.T) {
 		t.Fatalf("expected the routing failure to be absorbed, got: %v", err)
 	}
 
-	if got.Subtotal <= 0 {
+	if !got.Subtotal.IsPositive() {
 		t.Fatalf("expected a positive fallback fare, got %v", got)
 	}
 }
@@ -273,7 +275,7 @@ func TestService_EstimateFare_SurgeFailsOpenOnLocationError(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if got.Surge.DemandPercent != 0 {
+	if !got.Surge.DemandPercent.IsZero() {
 		t.Fatalf("expected demand surge to fail open to 0, got %v", got.Surge.DemandPercent)
 	}
 }
@@ -288,7 +290,7 @@ func TestService_EstimateFare_SurgeFailsOpenOnWeatherError(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if got.Surge.WeatherPercent != 0 {
+	if !got.Surge.WeatherPercent.IsZero() {
 		t.Fatalf("expected weather surge to fail open to 0, got %v", got.Surge.WeatherPercent)
 	}
 }
@@ -296,10 +298,10 @@ func TestService_EstimateFare_SurgeFailsOpenOnWeatherError(t *testing.T) {
 func TestService_EstimateFare_SurgeIsCappedAtMax(t *testing.T) {
 	h := newHarness()
 	h.location.count = 0 // demand: 100%
-	h.weather.conditions = WeatherConditions{SurgePercent: 100}
+	h.weather.conditions = WeatherConditions{SurgePercent: decimal.NewFromInt(100)}
 	now := time.Date(2026, 9, 15, 8, 0, 0, 0, time.UTC)
 	h.repo.surgeRules = []SurgeTimeRule{
-		{StartTime: "00:00:00", EndTime: "23:59:59", SurgePercent: 100, Active: true},
+		{StartTime: "00:00:00", EndTime: "23:59:59", SurgePercent: decimal.NewFromInt(100), Active: true},
 	}
 	withFrozenTime(t, now)
 	svc := h.service()
@@ -309,10 +311,11 @@ func TestService_EstimateFare_SurgeIsCappedAtMax(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if got.Surge.TotalPercent != maxSurgePercent {
+	if !got.Surge.TotalPercent.Equal(maxSurgePercent) {
 		t.Fatalf("got total surge %v, want capped at %v", got.Surge.TotalPercent, maxSurgePercent)
 	}
-	if got.Surge.Multiplier != 1+maxSurgePercent/100 {
+	wantMultiplier := decimal.NewFromInt(1).Add(maxSurgePercent.Div(decimal.NewFromInt(100)))
+	if !got.Surge.Multiplier.Equal(wantMultiplier) {
 		t.Fatalf("got multiplier %v", got.Surge.Multiplier)
 	}
 }
@@ -333,9 +336,9 @@ func TestService_EstimateFare_AppliesFirstRideDiscountWhenNoTripsYet(t *testing.
 		t.Fatalf("got %+v", got)
 	}
 
-	chargeable := got.Subtotal + got.SurgeAmount
-	wantDiscount := chargeable * firstRideDiscountPercent / 100
-	if got.DiscountAmount != wantDiscount {
+	chargeable := got.Subtotal.Add(got.SurgeAmount)
+	wantDiscount := chargeable.Mul(firstRideDiscountPercent).Div(decimal.NewFromInt(100))
+	if !got.DiscountAmount.Equal(wantDiscount) {
 		t.Fatalf("got discount %v, want %v", got.DiscountAmount, wantDiscount)
 	}
 }
@@ -365,7 +368,7 @@ func TestService_EstimateFare_NoAutomaticDiscountOnOrdinaryRide(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if got.AppliedDiscountType != DiscountNone || got.DiscountAmount != 0 {
+	if got.AppliedDiscountType != DiscountNone || !got.DiscountAmount.IsZero() {
 		t.Fatalf("got %+v", got)
 	}
 }
@@ -377,7 +380,7 @@ func TestService_EstimateFare_CouponWinsOverFirstRideDiscountWhenLarger(t *testi
 		ID:            "coupon-1",
 		Code:          "BIG70",
 		DiscountType:  DiscountPercentage,
-		DiscountValue: 70,
+		DiscountValue: decimal.NewFromInt(70),
 		Active:        true,
 		ValidFrom:     time.Now().Add(-time.Hour),
 		ValidUntil:    time.Now().Add(time.Hour),
@@ -408,7 +411,7 @@ func TestService_EstimateFare_FirstRideDiscountWinsOverSmallerCoupon(t *testing.
 		ID:            "coupon-1",
 		Code:          "SMALL5",
 		DiscountType:  DiscountPercentage,
-		DiscountValue: 5,
+		DiscountValue: decimal.NewFromInt(5),
 		Active:        true,
 		ValidFrom:     time.Now().Add(-time.Hour),
 		ValidUntil:    time.Now().Add(time.Hour),
@@ -454,7 +457,7 @@ func TestService_EstimateFare_ExpiredCouponIsIgnored(t *testing.T) {
 		ID:            "coupon-1",
 		Code:          "EXPIRED",
 		DiscountType:  DiscountFixed,
-		DiscountValue: 500,
+		DiscountValue: decimal.NewFromInt(500),
 		Active:        true,
 		ValidFrom:     time.Now().Add(-48 * time.Hour),
 		ValidUntil:    time.Now().Add(-24 * time.Hour),
@@ -482,12 +485,12 @@ func TestService_EstimateFare_CouponBelowMinimumFareIsIgnored(t *testing.T) {
 		ID:                "coupon-1",
 		Code:              "BIGTRIPSONLY",
 		DiscountType:      DiscountFixed,
-		DiscountValue:     500,
+		DiscountValue:     decimal.NewFromInt(500),
 		Active:            true,
 		ValidFrom:         time.Now().Add(-time.Hour),
 		ValidUntil:        time.Now().Add(time.Hour),
 		PerRiderLimit:     5,
-		MinimumFareAmount: 1_000_000, // far above what this trip will cost
+		MinimumFareAmount: decimal.NewFromInt(1_000_000), // far above what this trip will cost
 	}
 	svc := h.service()
 
@@ -511,7 +514,7 @@ func TestService_EstimateFare_CouponAtPerRiderLimitIsIgnored(t *testing.T) {
 		ID:            "coupon-1",
 		Code:          "USEDUP",
 		DiscountType:  DiscountFixed,
-		DiscountValue: 500,
+		DiscountValue: decimal.NewFromInt(500),
 		Active:        true,
 		ValidFrom:     time.Now().Add(-time.Hour),
 		ValidUntil:    time.Now().Add(time.Hour),
@@ -540,7 +543,7 @@ func TestService_EstimateFare_FixedDiscountNeverExceedsChargeableAmount(t *testi
 		ID:            "coupon-1",
 		Code:          "HUGE",
 		DiscountType:  DiscountFixed,
-		DiscountValue: 1_000_000, // far more than the fare
+		DiscountValue: decimal.NewFromInt(1_000_000), // far more than the fare
 		Active:        true,
 		ValidFrom:     time.Now().Add(-time.Hour),
 		ValidUntil:    time.Now().Add(time.Hour),
@@ -556,10 +559,10 @@ func TestService_EstimateFare_FixedDiscountNeverExceedsChargeableAmount(t *testi
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if got.Total != 0 {
+	if !got.Total.IsZero() {
 		t.Fatalf("expected the fare to floor at 0, got total %v", got.Total)
 	}
-	if got.DiscountAmount != got.Subtotal+got.SurgeAmount {
+	if !got.DiscountAmount.Equal(got.Subtotal.Add(got.SurgeAmount)) {
 		t.Fatalf("expected the discount to be capped at the chargeable amount, got %+v", got)
 	}
 }
@@ -578,7 +581,7 @@ func TestService_CalculateFare_RequiresTripID(t *testing.T) {
 
 func TestService_CalculateFare_IsIdempotent(t *testing.T) {
 	h := newHarness()
-	existing := Fare{TripID: "trip-1", RiderID: "rider-1", Breakdown: FareBreakdown{Total: 4242}}
+	existing := Fare{TripID: "trip-1", RiderID: "rider-1", Breakdown: FareBreakdown{Total: decimal.NewFromInt(4242)}}
 	h.repo.existingFare = existing
 	h.repo.fareFound = true
 	svc := h.service()
@@ -595,7 +598,7 @@ func TestService_CalculateFare_IsIdempotent(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if got != existing {
+	if got.TripID != existing.TripID || got.RiderID != existing.RiderID || !got.Breakdown.Total.Equal(existing.Breakdown.Total) {
 		t.Fatalf("got %+v, want the existing fare unchanged", got)
 	}
 
@@ -639,12 +642,12 @@ func TestService_CreateCoupon_ValidationErrors(t *testing.T) {
 		input   CreateCouponInput
 		wantErr error
 	}{
-		{"empty code", CreateCouponInput{Code: " ", DiscountType: DiscountFixed, DiscountValue: 100, ValidFrom: validFrom, ValidUntil: validUntil}, ErrCouponCodeRequired},
-		{"invalid discount type", CreateCouponInput{Code: "X", DiscountType: "bogus", DiscountValue: 100, ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountType},
-		{"percentage over 100", CreateCouponInput{Code: "X", DiscountType: DiscountPercentage, DiscountValue: 101, ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountValue},
-		{"percentage zero", CreateCouponInput{Code: "X", DiscountType: DiscountPercentage, DiscountValue: 0, ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountValue},
-		{"fixed amount zero", CreateCouponInput{Code: "X", DiscountType: DiscountFixed, DiscountValue: 0, ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountValue},
-		{"validity window backwards", CreateCouponInput{Code: "X", DiscountType: DiscountFixed, DiscountValue: 100, ValidFrom: validUntil, ValidUntil: validFrom}, ErrInvalidValidityWindow},
+		{"empty code", CreateCouponInput{Code: " ", DiscountType: DiscountFixed, DiscountValue: decimal.NewFromInt(100), ValidFrom: validFrom, ValidUntil: validUntil}, ErrCouponCodeRequired},
+		{"invalid discount type", CreateCouponInput{Code: "X", DiscountType: "bogus", DiscountValue: decimal.NewFromInt(100), ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountType},
+		{"percentage over 100", CreateCouponInput{Code: "X", DiscountType: DiscountPercentage, DiscountValue: decimal.NewFromInt(101), ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountValue},
+		{"percentage zero", CreateCouponInput{Code: "X", DiscountType: DiscountPercentage, DiscountValue: decimal.Zero, ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountValue},
+		{"fixed amount zero", CreateCouponInput{Code: "X", DiscountType: DiscountFixed, DiscountValue: decimal.Zero, ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountValue},
+		{"validity window backwards", CreateCouponInput{Code: "X", DiscountType: DiscountFixed, DiscountValue: decimal.NewFromInt(100), ValidFrom: validUntil, ValidUntil: validFrom}, ErrInvalidValidityWindow},
 	}
 
 	for _, tc := range cases {
@@ -668,7 +671,7 @@ func TestService_CreateCoupon_NormalizesCodeAndDefaultsPerRiderLimit(t *testing.
 	_, err := svc.CreateCoupon(context.Background(), CreateCouponInput{
 		Code:          "  save10  ",
 		DiscountType:  DiscountPercentage,
-		DiscountValue: 10,
+		DiscountValue: decimal.NewFromInt(10),
 		ValidFrom:     validFrom,
 		ValidUntil:    validFrom.Add(time.Hour),
 		PerRiderLimit: 0, // should default to 1

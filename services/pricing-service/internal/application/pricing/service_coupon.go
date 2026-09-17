@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/shopspring/decimal"
 )
 
 func (s *service) CreateCoupon(
@@ -17,11 +19,12 @@ func (s *service) CreateCoupon(
 
 	switch input.DiscountType {
 	case DiscountPercentage:
-		if input.DiscountValue <= 0 || input.DiscountValue > 100 {
+		if input.DiscountValue.LessThanOrEqual(decimal.Zero) ||
+			input.DiscountValue.GreaterThan(decimal.NewFromInt(100)) {
 			return Coupon{}, ErrInvalidDiscountValue
 		}
 	case DiscountFixed:
-		if input.DiscountValue <= 0 {
+		if input.DiscountValue.LessThanOrEqual(decimal.Zero) {
 			return Coupon{}, ErrInvalidDiscountValue
 		}
 	default:

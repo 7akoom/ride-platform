@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/shopspring/decimal"
 
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
 )
@@ -463,7 +464,7 @@ func scanFare(row pgx.Row) (pricing.Fare, error) {
 		return pricing.Fare{}, err
 	}
 
-	b.Surge.Multiplier = 1 + b.Surge.TotalPercent/100
+	b.Surge.Multiplier = decimal.NewFromInt(1).Add(b.Surge.TotalPercent.Div(decimal.NewFromInt(100)))
 
 	if discountType != nil {
 		b.AppliedDiscountType = pricing.DiscountType(*discountType)

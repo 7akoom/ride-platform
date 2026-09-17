@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"strconv"
 
 	"github.com/7akoom/ride-platform/services/notification-service/internal/application/notification"
+	"github.com/shopspring/decimal"
 )
 
 // Handler turns domain events published by other services into
@@ -192,11 +192,15 @@ func (h *Handler) handleTripCancelled(ctx context.Context, envelope Envelope) er
 	return nil
 }
 
+// Total crosses as a decimal string, never a float — matching the
+// "money crosses the wire as a string" convention pricing-service and
+// wallet-service both follow, so this consumer can't quietly lose the
+// precision the publisher went out of its way to preserve.
 type fareCalculatedPayload struct {
-	TripID       string  `json:"trip_id"`
-	RiderID      string  `json:"rider_id"`
-	CurrencyCode string  `json:"currency_code"`
-	Total        float64 `json:"total"`
+	TripID       string `json:"trip_id"`
+	RiderID      string `json:"rider_id"`
+	CurrencyCode string `json:"currency_code"`
+	Total        string `json:"total"`
 }
 
 // handleFareCalculated fires the "trip.completed" notification. It
@@ -212,12 +216,17 @@ func (h *Handler) handleFareCalculated(ctx context.Context, envelope Envelope) e
 		return fmt.Errorf("decode fare.calculated payload: %w", err)
 	}
 
-	_, err := h.notificationService.Send(ctx, notification.SendInput{
+	total, err := decimal.NewFromString(payload.Total)
+	if err != nil {
+		return fmt.Errorf("parse fare.calculated total %q: %w", payload.Total, err)
+	}
+
+	_, err = h.notificationService.Send(ctx, notification.SendInput{
 		RecipientType: notification.RecipientRider,
 		RecipientID:   payload.RiderID,
 		EventKey:      "trip.completed",
 		Variables: map[string]string{
-			"total":    strconv.FormatFloat(payload.Total, 'f', 2, 64),
+			"total":    total.StringFixed(2),
 			"currency": payload.CurrencyCode,
 		},
 		IdempotencyKey: envelope.EventID,

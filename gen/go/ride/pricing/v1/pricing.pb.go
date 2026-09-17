@@ -126,13 +126,17 @@ func (x *Coordinates) GetLongitude() float64 {
 // SurgeBreakdown makes each contributing factor visible instead of just a
 // final multiplier — useful for support/debugging ("why was my fare
 // higher") and for the rider-facing app to show "+20% due to demand".
+// Percent/multiplier fields are decimal strings, not double — they feed
+// directly into fare math (see FareBreakdown below) and float64 would
+// reintroduce the same rounding drift the decimal fare fields exist to
+// avoid.
 type SurgeBreakdown struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	TimeOfDayPercent float64                `protobuf:"fixed64,1,opt,name=time_of_day_percent,json=timeOfDayPercent,proto3" json:"time_of_day_percent,omitempty"`
-	DemandPercent    float64                `protobuf:"fixed64,2,opt,name=demand_percent,json=demandPercent,proto3" json:"demand_percent,omitempty"`
-	WeatherPercent   float64                `protobuf:"fixed64,3,opt,name=weather_percent,json=weatherPercent,proto3" json:"weather_percent,omitempty"`
-	TotalPercent     float64                `protobuf:"fixed64,4,opt,name=total_percent,json=totalPercent,proto3" json:"total_percent,omitempty"`
-	Multiplier       float64                `protobuf:"fixed64,5,opt,name=multiplier,proto3" json:"multiplier,omitempty"`
+	TimeOfDayPercent string                 `protobuf:"bytes,1,opt,name=time_of_day_percent,json=timeOfDayPercent,proto3" json:"time_of_day_percent,omitempty"`
+	DemandPercent    string                 `protobuf:"bytes,2,opt,name=demand_percent,json=demandPercent,proto3" json:"demand_percent,omitempty"`
+	WeatherPercent   string                 `protobuf:"bytes,3,opt,name=weather_percent,json=weatherPercent,proto3" json:"weather_percent,omitempty"`
+	TotalPercent     string                 `protobuf:"bytes,4,opt,name=total_percent,json=totalPercent,proto3" json:"total_percent,omitempty"`
+	Multiplier       string                 `protobuf:"bytes,5,opt,name=multiplier,proto3" json:"multiplier,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -167,56 +171,61 @@ func (*SurgeBreakdown) Descriptor() ([]byte, []int) {
 	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SurgeBreakdown) GetTimeOfDayPercent() float64 {
+func (x *SurgeBreakdown) GetTimeOfDayPercent() string {
 	if x != nil {
 		return x.TimeOfDayPercent
 	}
-	return 0
+	return ""
 }
 
-func (x *SurgeBreakdown) GetDemandPercent() float64 {
+func (x *SurgeBreakdown) GetDemandPercent() string {
 	if x != nil {
 		return x.DemandPercent
 	}
-	return 0
+	return ""
 }
 
-func (x *SurgeBreakdown) GetWeatherPercent() float64 {
+func (x *SurgeBreakdown) GetWeatherPercent() string {
 	if x != nil {
 		return x.WeatherPercent
 	}
-	return 0
+	return ""
 }
 
-func (x *SurgeBreakdown) GetTotalPercent() float64 {
+func (x *SurgeBreakdown) GetTotalPercent() string {
 	if x != nil {
 		return x.TotalPercent
 	}
-	return 0
+	return ""
 }
 
-func (x *SurgeBreakdown) GetMultiplier() float64 {
+func (x *SurgeBreakdown) GetMultiplier() string {
 	if x != nil {
 		return x.Multiplier
 	}
-	return 0
+	return ""
 }
 
+// Money fields are decimal strings (e.g. "2451.6"), never double —
+// float64 in protobuf would reintroduce exactly the precision problem
+// the underlying NUMERIC columns exist to avoid (same convention as
+// wallet.proto). distance_km/duration_minutes stay double: physical
+// measurements from OSRM, not currency.
 type FareBreakdown struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	CurrencyCode         string                 `protobuf:"bytes,1,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
-	BaseFare             float64                `protobuf:"fixed64,2,opt,name=base_fare,json=baseFare,proto3" json:"base_fare,omitempty"`
+	BaseFare             string                 `protobuf:"bytes,2,opt,name=base_fare,json=baseFare,proto3" json:"base_fare,omitempty"`
 	DistanceKm           float64                `protobuf:"fixed64,3,opt,name=distance_km,json=distanceKm,proto3" json:"distance_km,omitempty"`
-	DistanceFare         float64                `protobuf:"fixed64,4,opt,name=distance_fare,json=distanceFare,proto3" json:"distance_fare,omitempty"`
+	DistanceFare         string                 `protobuf:"bytes,4,opt,name=distance_fare,json=distanceFare,proto3" json:"distance_fare,omitempty"`
 	DurationMinutes      float64                `protobuf:"fixed64,5,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
-	DurationFare         float64                `protobuf:"fixed64,6,opt,name=duration_fare,json=durationFare,proto3" json:"duration_fare,omitempty"`
-	Subtotal             float64                `protobuf:"fixed64,7,opt,name=subtotal,proto3" json:"subtotal,omitempty"`
+	DurationFare         string                 `protobuf:"bytes,6,opt,name=duration_fare,json=durationFare,proto3" json:"duration_fare,omitempty"`
+	Subtotal             string                 `protobuf:"bytes,7,opt,name=subtotal,proto3" json:"subtotal,omitempty"`
 	Surge                *SurgeBreakdown        `protobuf:"bytes,8,opt,name=surge,proto3" json:"surge,omitempty"`
-	SurgeAmount          float64                `protobuf:"fixed64,9,opt,name=surge_amount,json=surgeAmount,proto3" json:"surge_amount,omitempty"`
+	SurgeAmount          string                 `protobuf:"bytes,9,opt,name=surge_amount,json=surgeAmount,proto3" json:"surge_amount,omitempty"`
 	AppliedDiscountType  DiscountType           `protobuf:"varint,10,opt,name=applied_discount_type,json=appliedDiscountType,proto3,enum=ride.pricing.v1.DiscountType" json:"applied_discount_type,omitempty"`
 	AppliedDiscountLabel string                 `protobuf:"bytes,11,opt,name=applied_discount_label,json=appliedDiscountLabel,proto3" json:"applied_discount_label,omitempty"`
-	DiscountAmount       float64                `protobuf:"fixed64,12,opt,name=discount_amount,json=discountAmount,proto3" json:"discount_amount,omitempty"`
-	Total                float64                `protobuf:"fixed64,13,opt,name=total,proto3" json:"total,omitempty"`
+	DiscountAmount       string                 `protobuf:"bytes,12,opt,name=discount_amount,json=discountAmount,proto3" json:"discount_amount,omitempty"`
+	Total                string                 `protobuf:"bytes,13,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -258,11 +267,11 @@ func (x *FareBreakdown) GetCurrencyCode() string {
 	return ""
 }
 
-func (x *FareBreakdown) GetBaseFare() float64 {
+func (x *FareBreakdown) GetBaseFare() string {
 	if x != nil {
 		return x.BaseFare
 	}
-	return 0
+	return ""
 }
 
 func (x *FareBreakdown) GetDistanceKm() float64 {
@@ -272,11 +281,11 @@ func (x *FareBreakdown) GetDistanceKm() float64 {
 	return 0
 }
 
-func (x *FareBreakdown) GetDistanceFare() float64 {
+func (x *FareBreakdown) GetDistanceFare() string {
 	if x != nil {
 		return x.DistanceFare
 	}
-	return 0
+	return ""
 }
 
 func (x *FareBreakdown) GetDurationMinutes() float64 {
@@ -286,18 +295,18 @@ func (x *FareBreakdown) GetDurationMinutes() float64 {
 	return 0
 }
 
-func (x *FareBreakdown) GetDurationFare() float64 {
+func (x *FareBreakdown) GetDurationFare() string {
 	if x != nil {
 		return x.DurationFare
 	}
-	return 0
+	return ""
 }
 
-func (x *FareBreakdown) GetSubtotal() float64 {
+func (x *FareBreakdown) GetSubtotal() string {
 	if x != nil {
 		return x.Subtotal
 	}
-	return 0
+	return ""
 }
 
 func (x *FareBreakdown) GetSurge() *SurgeBreakdown {
@@ -307,11 +316,11 @@ func (x *FareBreakdown) GetSurge() *SurgeBreakdown {
 	return nil
 }
 
-func (x *FareBreakdown) GetSurgeAmount() float64 {
+func (x *FareBreakdown) GetSurgeAmount() string {
 	if x != nil {
 		return x.SurgeAmount
 	}
-	return 0
+	return ""
 }
 
 func (x *FareBreakdown) GetAppliedDiscountType() DiscountType {
@@ -328,18 +337,18 @@ func (x *FareBreakdown) GetAppliedDiscountLabel() string {
 	return ""
 }
 
-func (x *FareBreakdown) GetDiscountAmount() float64 {
+func (x *FareBreakdown) GetDiscountAmount() string {
 	if x != nil {
 		return x.DiscountAmount
 	}
-	return 0
+	return ""
 }
 
-func (x *FareBreakdown) GetTotal() float64 {
+func (x *FareBreakdown) GetTotal() string {
 	if x != nil {
 		return x.Total
 	}
-	return 0
+	return ""
 }
 
 type EstimateFareRequest struct {
@@ -578,12 +587,12 @@ type CreateCouponRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Code              string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
 	DiscountType      DiscountType           `protobuf:"varint,2,opt,name=discount_type,json=discountType,proto3,enum=ride.pricing.v1.DiscountType" json:"discount_type,omitempty"`
-	DiscountValue     float64                `protobuf:"fixed64,3,opt,name=discount_value,json=discountValue,proto3" json:"discount_value,omitempty"`
+	DiscountValue     string                 `protobuf:"bytes,3,opt,name=discount_value,json=discountValue,proto3" json:"discount_value,omitempty"`
 	ValidFrom         *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=valid_from,json=validFrom,proto3" json:"valid_from,omitempty"`
 	ValidUntil        *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
 	MaxRedemptions    int32                  `protobuf:"varint,6,opt,name=max_redemptions,json=maxRedemptions,proto3" json:"max_redemptions,omitempty"`
 	PerRiderLimit     int32                  `protobuf:"varint,7,opt,name=per_rider_limit,json=perRiderLimit,proto3" json:"per_rider_limit,omitempty"`
-	MinimumFareAmount float64                `protobuf:"fixed64,8,opt,name=minimum_fare_amount,json=minimumFareAmount,proto3" json:"minimum_fare_amount,omitempty"`
+	MinimumFareAmount string                 `protobuf:"bytes,8,opt,name=minimum_fare_amount,json=minimumFareAmount,proto3" json:"minimum_fare_amount,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -632,11 +641,11 @@ func (x *CreateCouponRequest) GetDiscountType() DiscountType {
 	return DiscountType_DISCOUNT_TYPE_UNSPECIFIED
 }
 
-func (x *CreateCouponRequest) GetDiscountValue() float64 {
+func (x *CreateCouponRequest) GetDiscountValue() string {
 	if x != nil {
 		return x.DiscountValue
 	}
-	return 0
+	return ""
 }
 
 func (x *CreateCouponRequest) GetValidFrom() *timestamppb.Timestamp {
@@ -667,24 +676,24 @@ func (x *CreateCouponRequest) GetPerRiderLimit() int32 {
 	return 0
 }
 
-func (x *CreateCouponRequest) GetMinimumFareAmount() float64 {
+func (x *CreateCouponRequest) GetMinimumFareAmount() string {
 	if x != nil {
 		return x.MinimumFareAmount
 	}
-	return 0
+	return ""
 }
 
 type Coupon struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Code              string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
 	DiscountType      DiscountType           `protobuf:"varint,2,opt,name=discount_type,json=discountType,proto3,enum=ride.pricing.v1.DiscountType" json:"discount_type,omitempty"`
-	DiscountValue     float64                `protobuf:"fixed64,3,opt,name=discount_value,json=discountValue,proto3" json:"discount_value,omitempty"`
+	DiscountValue     string                 `protobuf:"bytes,3,opt,name=discount_value,json=discountValue,proto3" json:"discount_value,omitempty"`
 	ValidFrom         *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=valid_from,json=validFrom,proto3" json:"valid_from,omitempty"`
 	ValidUntil        *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
 	MaxRedemptions    int32                  `protobuf:"varint,6,opt,name=max_redemptions,json=maxRedemptions,proto3" json:"max_redemptions,omitempty"`
 	RedemptionCount   int32                  `protobuf:"varint,7,opt,name=redemption_count,json=redemptionCount,proto3" json:"redemption_count,omitempty"`
 	PerRiderLimit     int32                  `protobuf:"varint,8,opt,name=per_rider_limit,json=perRiderLimit,proto3" json:"per_rider_limit,omitempty"`
-	MinimumFareAmount float64                `protobuf:"fixed64,9,opt,name=minimum_fare_amount,json=minimumFareAmount,proto3" json:"minimum_fare_amount,omitempty"`
+	MinimumFareAmount string                 `protobuf:"bytes,9,opt,name=minimum_fare_amount,json=minimumFareAmount,proto3" json:"minimum_fare_amount,omitempty"`
 	Active            bool                   `protobuf:"varint,10,opt,name=active,proto3" json:"active,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
@@ -734,11 +743,11 @@ func (x *Coupon) GetDiscountType() DiscountType {
 	return DiscountType_DISCOUNT_TYPE_UNSPECIFIED
 }
 
-func (x *Coupon) GetDiscountValue() float64 {
+func (x *Coupon) GetDiscountValue() string {
 	if x != nil {
 		return x.DiscountValue
 	}
-	return 0
+	return ""
 }
 
 func (x *Coupon) GetValidFrom() *timestamppb.Timestamp {
@@ -776,11 +785,11 @@ func (x *Coupon) GetPerRiderLimit() int32 {
 	return 0
 }
 
-func (x *Coupon) GetMinimumFareAmount() float64 {
+func (x *Coupon) GetMinimumFareAmount() string {
 	if x != nil {
 		return x.MinimumFareAmount
 	}
-	return 0
+	return ""
 }
 
 func (x *Coupon) GetActive() bool {
@@ -931,29 +940,29 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\blatitude\x18\x01 \x01(\x01R\blatitude\x12\x1c\n" +
 	"\tlongitude\x18\x02 \x01(\x01R\tlongitude\"\xd4\x01\n" +
 	"\x0eSurgeBreakdown\x12-\n" +
-	"\x13time_of_day_percent\x18\x01 \x01(\x01R\x10timeOfDayPercent\x12%\n" +
-	"\x0edemand_percent\x18\x02 \x01(\x01R\rdemandPercent\x12'\n" +
-	"\x0fweather_percent\x18\x03 \x01(\x01R\x0eweatherPercent\x12#\n" +
-	"\rtotal_percent\x18\x04 \x01(\x01R\ftotalPercent\x12\x1e\n" +
+	"\x13time_of_day_percent\x18\x01 \x01(\tR\x10timeOfDayPercent\x12%\n" +
+	"\x0edemand_percent\x18\x02 \x01(\tR\rdemandPercent\x12'\n" +
+	"\x0fweather_percent\x18\x03 \x01(\tR\x0eweatherPercent\x12#\n" +
+	"\rtotal_percent\x18\x04 \x01(\tR\ftotalPercent\x12\x1e\n" +
 	"\n" +
-	"multiplier\x18\x05 \x01(\x01R\n" +
+	"multiplier\x18\x05 \x01(\tR\n" +
 	"multiplier\"\xa5\x04\n" +
 	"\rFareBreakdown\x12#\n" +
 	"\rcurrency_code\x18\x01 \x01(\tR\fcurrencyCode\x12\x1b\n" +
-	"\tbase_fare\x18\x02 \x01(\x01R\bbaseFare\x12\x1f\n" +
+	"\tbase_fare\x18\x02 \x01(\tR\bbaseFare\x12\x1f\n" +
 	"\vdistance_km\x18\x03 \x01(\x01R\n" +
 	"distanceKm\x12#\n" +
-	"\rdistance_fare\x18\x04 \x01(\x01R\fdistanceFare\x12)\n" +
+	"\rdistance_fare\x18\x04 \x01(\tR\fdistanceFare\x12)\n" +
 	"\x10duration_minutes\x18\x05 \x01(\x01R\x0fdurationMinutes\x12#\n" +
-	"\rduration_fare\x18\x06 \x01(\x01R\fdurationFare\x12\x1a\n" +
-	"\bsubtotal\x18\a \x01(\x01R\bsubtotal\x125\n" +
+	"\rduration_fare\x18\x06 \x01(\tR\fdurationFare\x12\x1a\n" +
+	"\bsubtotal\x18\a \x01(\tR\bsubtotal\x125\n" +
 	"\x05surge\x18\b \x01(\v2\x1f.ride.pricing.v1.SurgeBreakdownR\x05surge\x12!\n" +
-	"\fsurge_amount\x18\t \x01(\x01R\vsurgeAmount\x12Q\n" +
+	"\fsurge_amount\x18\t \x01(\tR\vsurgeAmount\x12Q\n" +
 	"\x15applied_discount_type\x18\n" +
 	" \x01(\x0e2\x1d.ride.pricing.v1.DiscountTypeR\x13appliedDiscountType\x124\n" +
 	"\x16applied_discount_label\x18\v \x01(\tR\x14appliedDiscountLabel\x12'\n" +
-	"\x0fdiscount_amount\x18\f \x01(\x01R\x0ediscountAmount\x12\x14\n" +
-	"\x05total\x18\r \x01(\x01R\x05total\"\xbf\x01\n" +
+	"\x0fdiscount_amount\x18\f \x01(\tR\x0ediscountAmount\x12\x14\n" +
+	"\x05total\x18\r \x01(\tR\x05total\"\xbf\x01\n" +
 	"\x13EstimateFareRequest\x12\x19\n" +
 	"\brider_id\x18\x01 \x01(\tR\ariderId\x124\n" +
 	"\x06pickup\x18\x02 \x01(\v2\x1c.ride.pricing.v1.CoordinatesR\x06pickup\x126\n" +
@@ -974,18 +983,18 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\x13CreateCouponRequest\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12B\n" +
 	"\rdiscount_type\x18\x02 \x01(\x0e2\x1d.ride.pricing.v1.DiscountTypeR\fdiscountType\x12%\n" +
-	"\x0ediscount_value\x18\x03 \x01(\x01R\rdiscountValue\x129\n" +
+	"\x0ediscount_value\x18\x03 \x01(\tR\rdiscountValue\x129\n" +
 	"\n" +
 	"valid_from\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tvalidFrom\x12;\n" +
 	"\vvalid_until\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"validUntil\x12'\n" +
 	"\x0fmax_redemptions\x18\x06 \x01(\x05R\x0emaxRedemptions\x12&\n" +
 	"\x0fper_rider_limit\x18\a \x01(\x05R\rperRiderLimit\x12.\n" +
-	"\x13minimum_fare_amount\x18\b \x01(\x01R\x11minimumFareAmount\"\xc3\x03\n" +
+	"\x13minimum_fare_amount\x18\b \x01(\tR\x11minimumFareAmount\"\xc3\x03\n" +
 	"\x06Coupon\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12B\n" +
 	"\rdiscount_type\x18\x02 \x01(\x0e2\x1d.ride.pricing.v1.DiscountTypeR\fdiscountType\x12%\n" +
-	"\x0ediscount_value\x18\x03 \x01(\x01R\rdiscountValue\x129\n" +
+	"\x0ediscount_value\x18\x03 \x01(\tR\rdiscountValue\x129\n" +
 	"\n" +
 	"valid_from\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tvalidFrom\x12;\n" +
 	"\vvalid_until\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
@@ -993,7 +1002,7 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\x0fmax_redemptions\x18\x06 \x01(\x05R\x0emaxRedemptions\x12)\n" +
 	"\x10redemption_count\x18\a \x01(\x05R\x0fredemptionCount\x12&\n" +
 	"\x0fper_rider_limit\x18\b \x01(\x05R\rperRiderLimit\x12.\n" +
-	"\x13minimum_fare_amount\x18\t \x01(\x01R\x11minimumFareAmount\x12\x16\n" +
+	"\x13minimum_fare_amount\x18\t \x01(\tR\x11minimumFareAmount\x12\x16\n" +
 	"\x06active\x18\n" +
 	" \x01(\bR\x06active\"G\n" +
 	"\x14CreateCouponResponse\x12/\n" +
