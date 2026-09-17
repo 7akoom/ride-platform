@@ -20,10 +20,15 @@ The repository uses a monorepo structure, while each backend service remains log
 - Important operations must support idempotency.
 - Cross-service workflows must not depend on distributed database transactions.
 
+## Deployment Model
+
+Ride Platform is single-tenant per deployment, not a shared multi-tenant SaaS: the platform is built once and each investor or client licenses their own independently deployed copy, run as its own set of Docker containers under their own branding and configuration. There is no tenant-isolation layer inside a running deployment, and no Tenant Service — a single deployment serves exactly one operator.
+
+A single deployment can still operate across more than one city or service area at once (see Service Zones below); that is about one deployment's own reach, not about serving multiple tenants from shared infrastructure.
+
 ## Initial Microservices
 
 - Identity Service
-- Tenant Service
 - Rider Service
 - Driver Service
 - Trip Service
@@ -64,6 +69,7 @@ Examples:
 - TripStarted
 - TripCompleted
 - TripCancelled
+- FareCalculated
 - PaymentRecorded
 - RatingSubmitted
 
@@ -73,22 +79,9 @@ Each microservice owns its own data model.
 
 A service may reference identifiers owned by another service, but it must never directly modify another service's database.
 
-## Multi-Tenancy
+## Service Zones
 
-The platform is designed as a white-label multi-tenant system.
-
-Tenant-specific configuration may include:
-
-- Branding
-- Languages
-- Cities
-- Service types
-- Vehicle classes
-- Pricing policies
-- Dispatch policies
-- Enabled modules
-- Domains
-- Operational settings
+A deployment's operator defines the geographic areas it actually serves as explicit, admin-editable service zones — geofenced polygons within a city, not just a city name, so a deployment can cover as little as one street or as much as an entire metro area. A trip request outside every active service zone is rejected. A single deployment may have zones across more than one city.
 
 ## Mobility Services
 
@@ -100,9 +93,9 @@ Cargo and moving capabilities are designed as expandable paid modules.
 
 ## Future Dynamic Pricing
 
-Dynamic pricing will be implemented in a later phase.
+Per-zone pricing (a distinct rate card per service zone, rather than one global rate card for the whole deployment) is a planned near-term addition.
 
-The initial platform must still collect the operational data required for future pricing models, including:
+Beyond that, dynamic pricing will be implemented in a later phase. The initial platform must still collect the operational data required for future pricing models, including:
 
 - Demand
 - Available driver supply
@@ -119,7 +112,7 @@ The initial platform must still collect the operational data required for future
 
 ## Future Customer Behavior Analytics
 
-Customer behavior analytics will be implemented in a later phase.
+Customer behavior analytics will be implemented in a later phase, consuming the domain events already published over NATS JetStream.
 
 The event architecture must support analysis of:
 
