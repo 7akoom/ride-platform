@@ -2,12 +2,22 @@ syntax = "proto3";
 
 package ride.location.v1;
 
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/location/v1;locationv1";
 
 service LocationService {
   rpc UpdateLocation(UpdateLocationRequest) returns (UpdateLocationResponse);
-  rpc GetLocation(GetLocationRequest) returns (GetLocationResponse);
+  // GetLocation is the rider app's poll target for a driver's live
+  // position during an active trip (entity_type=ENTITY_TYPE_DRIVER).
+  // entity_type isn't in the path because grpc-gateway can't bind an
+  // enum's string value there reliably — it comes through as a normal
+  // query param (?entity_type=ENTITY_TYPE_DRIVER) instead.
+  rpc GetLocation(GetLocationRequest) returns (GetLocationResponse) {
+    option (google.api.http) = {
+      get: "/v1/locations/{entity_id}"
+    };
+  }
   rpc FindNearby(FindNearbyRequest) returns (FindNearbyResponse);
 
   // Service zones — the geographic areas the platform actually serves,

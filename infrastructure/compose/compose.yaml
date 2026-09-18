@@ -857,10 +857,16 @@ services:
     environment:
       HTTP_ADDRESS: ":8080"
       TRIP_SERVICE_ADDRESS: trip-service:50055
+      WALLET_SERVICE_ADDRESS: wallet-service:50058
+      LOCATION_SERVICE_ADDRESS: location-service:50054
       ALLOWED_ORIGINS: http://localhost:3000
 
     depends_on:
       trip-service:
+        condition: service_started
+      wallet-service:
+        condition: service_started
+      location-service:
         condition: service_started
 
     ports:

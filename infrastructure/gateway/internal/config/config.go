@@ -16,8 +16,9 @@ type Config struct {
 	// Backend gRPC targets this gateway proxies to. One field per
 	// service, added as its client-facing RPCs get `google.api.http`
 	// annotations.
-	TripServiceAddress   string
-	WalletServiceAddress string
+	TripServiceAddress     string
+	WalletServiceAddress   string
+	LocationServiceAddress string
 
 	// Comma-separated browser origins allowed to call this gateway
 	// (the Admin web app). Mobile apps don't send an Origin header and
@@ -35,6 +36,10 @@ func Load() Config {
 		WalletServiceAddress: getEnv(
 			"WALLET_SERVICE_ADDRESS",
 			"localhost:50058",
+		),
+		LocationServiceAddress: getEnv(
+			"LOCATION_SERVICE_ADDRESS",
+			"localhost:50054",
 		),
 
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:3000"),

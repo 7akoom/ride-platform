@@ -13,11 +13,37 @@ service TripService {
       body: "*"
     };
   }
-  rpc AcceptTrip(AcceptTripRequest) returns (AcceptTripResponse);
-  rpc StartTrip(StartTripRequest) returns (StartTripResponse);
-  rpc CompleteTrip(CompleteTripRequest) returns (CompleteTripResponse);
-  rpc CancelTrip(CancelTripRequest) returns (CancelTripResponse);
-  rpc GetTrip(GetTripRequest) returns (GetTripResponse);
+  rpc AcceptTrip(AcceptTripRequest) returns (AcceptTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}:accept"
+      body: "*"
+    };
+  }
+  rpc StartTrip(StartTripRequest) returns (StartTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}:start"
+    };
+  }
+  rpc CompleteTrip(CompleteTripRequest) returns (CompleteTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}:complete"
+    };
+  }
+  rpc CancelTrip(CancelTripRequest) returns (CancelTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}:cancel"
+      body: "*"
+    };
+  }
+  // GetTrip is the rider/driver app's poll target for live trip status —
+  // both the Rider app's tracking screen and the Driver app's active-trip
+  // screen call this every few seconds until they see the status they're
+  // waiting for (ACCEPTED, then IN_PROGRESS, then COMPLETED).
+  rpc GetTrip(GetTripRequest) returns (GetTripResponse) {
+    option (google.api.http) = {
+      get: "/v1/trips/{trip_id}"
+    };
+  }
 }
 
 enum TripStatus {

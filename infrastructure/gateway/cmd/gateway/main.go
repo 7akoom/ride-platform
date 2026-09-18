@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	locationv1 "github.com/7akoom/ride-platform/gen/go/ride/location/v1"
 	tripv1 "github.com/7akoom/ride-platform/gen/go/ride/trip/v1"
 	walletv1 "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1"
 	"github.com/7akoom/ride-platform/infrastructure/gateway/internal/config"
@@ -66,6 +67,20 @@ func run() int {
 
 	if err := walletv1.RegisterWalletServiceHandler(ctx, mux, walletConn); err != nil {
 		logger.Error("failed to register wallet-service gateway handler", "error", err)
+
+		return 1
+	}
+
+	locationConn, err := dialBackend(cfg.LocationServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to location-service", "error", err)
+
+		return 1
+	}
+	defer locationConn.Close()
+
+	if err := locationv1.RegisterLocationServiceHandler(ctx, mux, locationConn); err != nil {
+		logger.Error("failed to register location-service gateway handler", "error", err)
 
 		return 1
 	}
