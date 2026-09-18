@@ -19,12 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TripService_RequestTrip_FullMethodName  = "/ride.trip.v1.TripService/RequestTrip"
-	TripService_AcceptTrip_FullMethodName   = "/ride.trip.v1.TripService/AcceptTrip"
-	TripService_StartTrip_FullMethodName    = "/ride.trip.v1.TripService/StartTrip"
-	TripService_CompleteTrip_FullMethodName = "/ride.trip.v1.TripService/CompleteTrip"
-	TripService_CancelTrip_FullMethodName   = "/ride.trip.v1.TripService/CancelTrip"
-	TripService_GetTrip_FullMethodName      = "/ride.trip.v1.TripService/GetTrip"
+	TripService_RequestTrip_FullMethodName    = "/ride.trip.v1.TripService/RequestTrip"
+	TripService_AcceptTrip_FullMethodName     = "/ride.trip.v1.TripService/AcceptTrip"
+	TripService_StartTrip_FullMethodName      = "/ride.trip.v1.TripService/StartTrip"
+	TripService_CompleteTrip_FullMethodName   = "/ride.trip.v1.TripService/CompleteTrip"
+	TripService_CancelTrip_FullMethodName     = "/ride.trip.v1.TripService/CancelTrip"
+	TripService_GetTrip_FullMethodName        = "/ride.trip.v1.TripService/GetTrip"
+	TripService_TriggerSOS_FullMethodName     = "/ride.trip.v1.TripService/TriggerSOS"
+	TripService_RecordWaypoint_FullMethodName = "/ride.trip.v1.TripService/RecordWaypoint"
+	TripService_GetTripPath_FullMethodName    = "/ride.trip.v1.TripService/GetTripPath"
 )
 
 // TripServiceClient is the client API for TripService service.
@@ -41,6 +44,25 @@ type TripServiceClient interface {
 	// screen call this every few seconds until they see the status they're
 	// waiting for (ACCEPTED, then IN_PROGRESS, then COMPLETED).
 	GetTrip(ctx context.Context, in *GetTripRequest, opts ...grpc.CallOption) (*GetTripResponse, error)
+	// TriggerSOS records a safety alert during an active trip — it does
+	// NOT replace calling emergency services directly (the app's SOS
+	// button dials the local emergency number itself); this is the
+	// platform-side record: what trip, who pressed it, and where, so the
+	// safety team can pull up the trip (and its path, via GetTripPath)
+	// immediately and a notification goes out to the configured safety
+	// contact.
+	TriggerSOS(ctx context.Context, in *TriggerSOSRequest, opts ...grpc.CallOption) (*TriggerSOSResponse, error)
+	// RecordWaypoint appends one point to the trip's path. Called by the
+	// driver app on a timer (every ~15-30s) alongside — not instead of —
+	// its regular LocationService.UpdateLocation ping; the two are
+	// independent so a failure in one never blocks the other. Duplicate
+	// calls inside the throttle window are silently absorbed, so the
+	// caller doesn't need its own client-side timing logic.
+	RecordWaypoint(ctx context.Context, in *RecordWaypointRequest, opts ...grpc.CallOption) (*RecordWaypointResponse, error)
+	// GetTripPath returns every waypoint recorded for a trip, oldest
+	// first — the reconstructed route for a completed trip, or the route
+	// so far for one still in progress (e.g. right after an SOS alert).
+	GetTripPath(ctx context.Context, in *GetTripPathRequest, opts ...grpc.CallOption) (*GetTripPathResponse, error)
 }
 
 type tripServiceClient struct {
@@ -111,6 +133,36 @@ func (c *tripServiceClient) GetTrip(ctx context.Context, in *GetTripRequest, opt
 	return out, nil
 }
 
+func (c *tripServiceClient) TriggerSOS(ctx context.Context, in *TriggerSOSRequest, opts ...grpc.CallOption) (*TriggerSOSResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TriggerSOSResponse)
+	err := c.cc.Invoke(ctx, TripService_TriggerSOS_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) RecordWaypoint(ctx context.Context, in *RecordWaypointRequest, opts ...grpc.CallOption) (*RecordWaypointResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecordWaypointResponse)
+	err := c.cc.Invoke(ctx, TripService_RecordWaypoint_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) GetTripPath(ctx context.Context, in *GetTripPathRequest, opts ...grpc.CallOption) (*GetTripPathResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTripPathResponse)
+	err := c.cc.Invoke(ctx, TripService_GetTripPath_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TripServiceServer is the server API for TripService service.
 // All implementations must embed UnimplementedTripServiceServer
 // for forward compatibility.
@@ -125,6 +177,25 @@ type TripServiceServer interface {
 	// screen call this every few seconds until they see the status they're
 	// waiting for (ACCEPTED, then IN_PROGRESS, then COMPLETED).
 	GetTrip(context.Context, *GetTripRequest) (*GetTripResponse, error)
+	// TriggerSOS records a safety alert during an active trip — it does
+	// NOT replace calling emergency services directly (the app's SOS
+	// button dials the local emergency number itself); this is the
+	// platform-side record: what trip, who pressed it, and where, so the
+	// safety team can pull up the trip (and its path, via GetTripPath)
+	// immediately and a notification goes out to the configured safety
+	// contact.
+	TriggerSOS(context.Context, *TriggerSOSRequest) (*TriggerSOSResponse, error)
+	// RecordWaypoint appends one point to the trip's path. Called by the
+	// driver app on a timer (every ~15-30s) alongside — not instead of —
+	// its regular LocationService.UpdateLocation ping; the two are
+	// independent so a failure in one never blocks the other. Duplicate
+	// calls inside the throttle window are silently absorbed, so the
+	// caller doesn't need its own client-side timing logic.
+	RecordWaypoint(context.Context, *RecordWaypointRequest) (*RecordWaypointResponse, error)
+	// GetTripPath returns every waypoint recorded for a trip, oldest
+	// first — the reconstructed route for a completed trip, or the route
+	// so far for one still in progress (e.g. right after an SOS alert).
+	GetTripPath(context.Context, *GetTripPathRequest) (*GetTripPathResponse, error)
 	mustEmbedUnimplementedTripServiceServer()
 }
 
@@ -152,6 +223,15 @@ func (UnimplementedTripServiceServer) CancelTrip(context.Context, *CancelTripReq
 }
 func (UnimplementedTripServiceServer) GetTrip(context.Context, *GetTripRequest) (*GetTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTrip not implemented")
+}
+func (UnimplementedTripServiceServer) TriggerSOS(context.Context, *TriggerSOSRequest) (*TriggerSOSResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TriggerSOS not implemented")
+}
+func (UnimplementedTripServiceServer) RecordWaypoint(context.Context, *RecordWaypointRequest) (*RecordWaypointResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RecordWaypoint not implemented")
+}
+func (UnimplementedTripServiceServer) GetTripPath(context.Context, *GetTripPathRequest) (*GetTripPathResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTripPath not implemented")
 }
 func (UnimplementedTripServiceServer) mustEmbedUnimplementedTripServiceServer() {}
 func (UnimplementedTripServiceServer) testEmbeddedByValue()                     {}
@@ -282,6 +362,60 @@ func _TripService_GetTrip_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_TriggerSOS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TriggerSOSRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).TriggerSOS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_TriggerSOS_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).TriggerSOS(ctx, req.(*TriggerSOSRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_RecordWaypoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecordWaypointRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).RecordWaypoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_RecordWaypoint_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).RecordWaypoint(ctx, req.(*RecordWaypointRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_GetTripPath_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTripPathRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetTripPath(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetTripPath_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetTripPath(ctx, req.(*GetTripPathRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TripService_ServiceDesc is the grpc.ServiceDesc for TripService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -312,6 +446,18 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTrip",
 			Handler:    _TripService_GetTrip_Handler,
+		},
+		{
+			MethodName: "TriggerSOS",
+			Handler:    _TripService_TriggerSOS_Handler,
+		},
+		{
+			MethodName: "RecordWaypoint",
+			Handler:    _TripService_RecordWaypoint_Handler,
+		},
+		{
+			MethodName: "GetTripPath",
+			Handler:    _TripService_GetTripPath_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

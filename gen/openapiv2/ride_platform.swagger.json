@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "ride/driver/v1/driver.proto",
+    "title": "ride/notification/v1/notification.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "DriverService"
+      "name": "NotificationService"
     }
   ],
   "consumes": [
