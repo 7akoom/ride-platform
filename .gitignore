@@ -48,3 +48,6 @@ tmp/
 *.pem
 *.key
 *.crt
+# Local backups and downloaded patch files — never committed
+backups/
+*.patch
