@@ -1,6 +1,9 @@
 package trip
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type RequestTripInput struct {
 	RiderID    string
@@ -42,6 +45,26 @@ type Service interface {
 		ctx context.Context,
 		tripID string,
 	) (Trip, error)
+
+	// TriggerSOS is a safety action, not a lifecycle transition — see
+	// Repository.TriggerSOS for why it doesn't touch trip status.
+	TriggerSOS(
+		ctx context.Context,
+		tripID string,
+		triggeredBy SosTriggeredBy,
+		latitude, longitude float64,
+	) (alertID string, triggeredAt time.Time, err error)
+
+	RecordWaypoint(
+		ctx context.Context,
+		tripID string,
+		latitude, longitude float64,
+	) error
+
+	GetTripPath(
+		ctx context.Context,
+		tripID string,
+	) ([]Waypoint, error)
 }
 
 type service struct {

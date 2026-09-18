@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
 )
@@ -37,6 +38,15 @@ type fakeRepository struct {
 	cancelResult trip.Trip
 	cancelErr    error
 	cancelReason string
+
+	triggerSOSAlertID string
+	triggerSOSAt      time.Time
+	triggerSOSErr     error
+
+	recordWaypointErr error
+
+	listWaypointsResult []trip.Waypoint
+	listWaypointsErr    error
 }
 
 func (r *fakeRepository) Create(_ context.Context, input trip.CreateInput) (trip.Trip, error) {
@@ -96,6 +106,38 @@ func (r *fakeRepository) Cancel(_ context.Context, _ string, reason string) (tri
 		return trip.Trip{}, r.cancelErr
 	}
 	return r.cancelResult, nil
+}
+
+func (r *fakeRepository) TriggerSOS(
+	_ context.Context,
+	_ string,
+	_ trip.SosTriggeredBy,
+	_ trip.Coordinates,
+) (string, time.Time, error) {
+	if r.triggerSOSErr != nil {
+		return "", time.Time{}, r.triggerSOSErr
+	}
+	return r.triggerSOSAlertID, r.triggerSOSAt, nil
+}
+
+func (r *fakeRepository) RecordWaypointIfDue(
+	_ context.Context,
+	_ string,
+	_ trip.Coordinates,
+	_ time.Time,
+	_ time.Duration,
+) error {
+	return r.recordWaypointErr
+}
+
+func (r *fakeRepository) ListWaypoints(
+	_ context.Context,
+	_ string,
+) ([]trip.Waypoint, error) {
+	if r.listWaypointsErr != nil {
+		return nil, r.listWaypointsErr
+	}
+	return r.listWaypointsResult, nil
 }
 
 type fakeIDGenerator struct{ id string }

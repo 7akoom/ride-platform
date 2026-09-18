@@ -15,4 +15,6 @@ var (
 	ErrDriverHasActiveTrip = errors.New("driver already has an active trip")
 
 	ErrPickupOutsideServiceZone = errors.New("pickup location is outside every service zone")
+
+	ErrInvalidSosTriggeredBy = errors.New("triggered_by must be rider or driver")
 )

@@ -1,6 +1,9 @@
 package trip
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type CreateInput struct {
 	ID      string
@@ -64,6 +67,38 @@ type Repository interface {
 		tripID string,
 		reason string,
 	) (Trip, error)
+
+	// TriggerSOS records a safety alert against a trip and returns its
+	// generated ID and timestamp. Unlike Accept/Start/Complete/Cancel
+	// it is NOT a status transition — an SOS alert doesn't change what
+	// state the trip is in, it's a side record alongside it, so it
+	// requires only that the trip exist, not any particular status.
+	TriggerSOS(
+		ctx context.Context,
+		tripID string,
+		triggeredBy SosTriggeredBy,
+		location Coordinates,
+	) (alertID string, triggeredAt time.Time, err error)
+
+	// RecordWaypointIfDue appends one path point for tripID, unless the
+	// most recently recorded point for that trip is younger than
+	// minInterval — in which case it does nothing and returns nil, not
+	// an error. The throttling lives here (at the write) rather than
+	// on the caller, so every caller gets the same behavior for free.
+	RecordWaypointIfDue(
+		ctx context.Context,
+		tripID string,
+		location Coordinates,
+		recordedAt time.Time,
+		minInterval time.Duration,
+	) error
+
+	// ListWaypoints returns every recorded point for tripID, oldest
+	// first.
+	ListWaypoints(
+		ctx context.Context,
+		tripID string,
+	) ([]Waypoint, error)
 }
 
 type IDGenerator interface {

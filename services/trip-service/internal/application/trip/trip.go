@@ -73,3 +73,27 @@ type Trip struct {
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 }
+
+// SosTriggeredBy is who pressed the SOS button — the rider or the
+// driver both can, and the safety team needs to know which.
+type SosTriggeredBy string
+
+const (
+	SosTriggeredByRider  SosTriggeredBy = "rider"
+	SosTriggeredByDriver SosTriggeredBy = "driver"
+)
+
+func (t SosTriggeredBy) Valid() bool {
+	switch t {
+	case SosTriggeredByRider, SosTriggeredByDriver:
+		return true
+	default:
+		return false
+	}
+}
+
+// Waypoint is one recorded point along a trip's path.
+type Waypoint struct {
+	Coordinates Coordinates
+	RecordedAt  time.Time
+}

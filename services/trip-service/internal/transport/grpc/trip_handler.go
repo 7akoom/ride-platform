@@ -158,6 +158,97 @@ func (h *TripHandler) GetTrip(
 	}, nil
 }
 
+func (h *TripHandler) TriggerSOS(
+	ctx context.Context,
+	request *tripv1.TriggerSOSRequest,
+) (*tripv1.TriggerSOSResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	location := request.GetLocation()
+
+	alertID, triggeredAt, err := h.tripService.TriggerSOS(
+		ctx,
+		request.GetTripId(),
+		toDomainSosTriggeredBy(request.GetTriggeredBy()),
+		location.GetLatitude(),
+		location.GetLongitude(),
+	)
+	if err != nil {
+		return nil, h.mapTripError(err)
+	}
+
+	return &tripv1.TriggerSOSResponse{
+		AlertId:     alertID,
+		TriggeredAt: timestamppb.New(triggeredAt),
+	}, nil
+}
+
+func (h *TripHandler) RecordWaypoint(
+	ctx context.Context,
+	request *tripv1.RecordWaypointRequest,
+) (*tripv1.RecordWaypointResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	location := request.GetLocation()
+
+	if err := h.tripService.RecordWaypoint(
+		ctx,
+		request.GetTripId(),
+		location.GetLatitude(),
+		location.GetLongitude(),
+	); err != nil {
+		return nil, h.mapTripError(err)
+	}
+
+	return &tripv1.RecordWaypointResponse{}, nil
+}
+
+func (h *TripHandler) GetTripPath(
+	ctx context.Context,
+	request *tripv1.GetTripPathRequest,
+) (*tripv1.GetTripPathResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	waypoints, err := h.tripService.GetTripPath(ctx, request.GetTripId())
+	if err != nil {
+		return nil, h.mapTripError(err)
+	}
+
+	protoWaypoints := make([]*tripv1.Waypoint, len(waypoints))
+
+	for i, w := range waypoints {
+		protoWaypoints[i] = &tripv1.Waypoint{
+			Location: &tripv1.Coordinates{
+				Latitude:  w.Coordinates.Latitude,
+				Longitude: w.Coordinates.Longitude,
+			},
+			RecordedAt: timestamppb.New(w.RecordedAt),
+		}
+	}
+
+	return &tripv1.GetTripPathResponse{
+		Waypoints: protoWaypoints,
+	}, nil
+}
+
+func toDomainSosTriggeredBy(t tripv1.SosTriggeredBy) trip.SosTriggeredBy {
+	switch t {
+	case tripv1.SosTriggeredBy_SOS_TRIGGERED_BY_RIDER:
+		return trip.SosTriggeredByRider
+	case tripv1.SosTriggeredBy_SOS_TRIGGERED_BY_DRIVER:
+		return trip.SosTriggeredByDriver
+	default:
+		return ""
+	}
+}
+
+
 func (h *TripHandler) mapTripError(err error) error {
 	switch {
 	case errors.Is(err, trip.ErrTripNotFound):
@@ -174,7 +265,8 @@ func (h *TripHandler) mapTripError(err error) error {
 		errors.Is(err, trip.ErrDriverIDRequired),
 		errors.Is(err, trip.ErrTripIDRequired),
 		errors.Is(err, trip.ErrInvalidLatitude),
-		errors.Is(err, trip.ErrInvalidLongitude):
+		errors.Is(err, trip.ErrInvalidLongitude),
+		errors.Is(err, trip.ErrInvalidSosTriggeredBy):
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	case errors.Is(err, trip.ErrPickupOutsideServiceZone):

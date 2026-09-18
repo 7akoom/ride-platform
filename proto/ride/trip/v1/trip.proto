@@ -44,6 +44,42 @@ service TripService {
       get: "/v1/trips/{trip_id}"
     };
   }
+
+  // TriggerSOS records a safety alert during an active trip — it does
+  // NOT replace calling emergency services directly (the app's SOS
+  // button dials the local emergency number itself); this is the
+  // platform-side record: what trip, who pressed it, and where, so the
+  // safety team can pull up the trip (and its path, via GetTripPath)
+  // immediately and a notification goes out to the configured safety
+  // contact.
+  rpc TriggerSOS(TriggerSOSRequest) returns (TriggerSOSResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}:sos"
+      body: "*"
+    };
+  }
+
+  // RecordWaypoint appends one point to the trip's path. Called by the
+  // driver app on a timer (every ~15-30s) alongside — not instead of —
+  // its regular LocationService.UpdateLocation ping; the two are
+  // independent so a failure in one never blocks the other. Duplicate
+  // calls inside the throttle window are silently absorbed, so the
+  // caller doesn't need its own client-side timing logic.
+  rpc RecordWaypoint(RecordWaypointRequest) returns (RecordWaypointResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}:waypoint"
+      body: "*"
+    };
+  }
+
+  // GetTripPath returns every waypoint recorded for a trip, oldest
+  // first — the reconstructed route for a completed trip, or the route
+  // so far for one still in progress (e.g. right after an SOS alert).
+  rpc GetTripPath(GetTripPathRequest) returns (GetTripPathResponse) {
+    option (google.api.http) = {
+      get: "/v1/trips/{trip_id}/path"
+    };
+  }
 }
 
 enum TripStatus {
@@ -126,3 +162,48 @@ message GetTripRequest {
 message GetTripResponse {
   Trip trip = 1;
 }
+
+// --- Safety: SOS alerts -----------------------------------------------
+
+enum SosTriggeredBy {
+  SOS_TRIGGERED_BY_UNSPECIFIED = 0;
+  SOS_TRIGGERED_BY_RIDER = 1;
+  SOS_TRIGGERED_BY_DRIVER = 2;
+}
+
+message TriggerSOSRequest {
+  string trip_id = 1;
+  SosTriggeredBy triggered_by = 2;
+  Coordinates location = 3;
+}
+
+message TriggerSOSResponse {
+  string alert_id = 1;
+  google.protobuf.Timestamp triggered_at = 2;
+}
+
+// --- Safety: trip path (waypoints) -------------------------------------
+
+message Waypoint {
+  Coordinates location = 1;
+  google.protobuf.Timestamp recorded_at = 2;
+}
+
+message RecordWaypointRequest {
+  string trip_id = 1;
+  Coordinates location = 2;
+}
+
+// Empty on purpose: a throttled-away duplicate and a freshly recorded
+// point both succeed identically — the caller doesn't need to
+// distinguish them, so there's nothing worth returning either way.
+message RecordWaypointResponse {}
+
+message GetTripPathRequest {
+  string trip_id = 1;
+}
+
+message GetTripPathResponse {
+  repeated Waypoint waypoints = 1;
+}
+
