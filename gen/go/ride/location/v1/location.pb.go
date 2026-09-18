@@ -7,6 +7,7 @@
 package locationv1
 
 import (
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -1053,7 +1054,7 @@ var File_ride_location_v1_location_proto protoreflect.FileDescriptor
 
 const file_ride_location_v1_location_proto_rawDesc = "" +
 	"\n" +
-	"\x1fride/location/v1/location.proto\x12\x10ride.location.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"G\n" +
+	"\x1fride/location/v1/location.proto\x12\x10ride.location.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"G\n" +
 	"\vCoordinates\x12\x1a\n" +
 	"\blatitude\x18\x01 \x01(\x01R\blatitude\x12\x1c\n" +
 	"\tlongitude\x18\x02 \x01(\x01R\tlongitude\"\xb4\x01\n" +
@@ -1124,10 +1125,10 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"EntityType\x12\x1b\n" +
 	"\x17ENTITY_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ENTITY_TYPE_DRIVER\x10\x01\x12\x15\n" +
-	"\x11ENTITY_TYPE_RIDER\x10\x022\xb8\x06\n" +
+	"\x11ENTITY_TYPE_RIDER\x10\x022\xdb\x06\n" +
 	"\x0fLocationService\x12c\n" +
-	"\x0eUpdateLocation\x12'.ride.location.v1.UpdateLocationRequest\x1a(.ride.location.v1.UpdateLocationResponse\x12Z\n" +
-	"\vGetLocation\x12$.ride.location.v1.GetLocationRequest\x1a%.ride.location.v1.GetLocationResponse\x12W\n" +
+	"\x0eUpdateLocation\x12'.ride.location.v1.UpdateLocationRequest\x1a(.ride.location.v1.UpdateLocationResponse\x12}\n" +
+	"\vGetLocation\x12$.ride.location.v1.GetLocationRequest\x1a%.ride.location.v1.GetLocationResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/locations/{entity_id}\x12W\n" +
 	"\n" +
 	"FindNearby\x12#.ride.location.v1.FindNearbyRequest\x1a$.ride.location.v1.FindNearbyResponse\x12Q\n" +
 	"\n" +

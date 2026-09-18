@@ -35,6 +35,11 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LocationServiceClient interface {
 	UpdateLocation(ctx context.Context, in *UpdateLocationRequest, opts ...grpc.CallOption) (*UpdateLocationResponse, error)
+	// GetLocation is the rider app's poll target for a driver's live
+	// position during an active trip (entity_type=ENTITY_TYPE_DRIVER).
+	// entity_type isn't in the path because grpc-gateway can't bind an
+	// enum's string value there reliably — it comes through as a normal
+	// query param (?entity_type=ENTITY_TYPE_DRIVER) instead.
 	GetLocation(ctx context.Context, in *GetLocationRequest, opts ...grpc.CallOption) (*GetLocationResponse, error)
 	FindNearby(ctx context.Context, in *FindNearbyRequest, opts ...grpc.CallOption) (*FindNearbyResponse, error)
 	// Service zones — the geographic areas the platform actually serves,
@@ -151,6 +156,11 @@ func (c *locationServiceClient) CheckServiceZone(ctx context.Context, in *CheckS
 // for forward compatibility.
 type LocationServiceServer interface {
 	UpdateLocation(context.Context, *UpdateLocationRequest) (*UpdateLocationResponse, error)
+	// GetLocation is the rider app's poll target for a driver's live
+	// position during an active trip (entity_type=ENTITY_TYPE_DRIVER).
+	// entity_type isn't in the path because grpc-gateway can't bind an
+	// enum's string value there reliably — it comes through as a normal
+	// query param (?entity_type=ENTITY_TYPE_DRIVER) instead.
 	GetLocation(context.Context, *GetLocationRequest) (*GetLocationResponse, error)
 	FindNearby(context.Context, *FindNearbyRequest) (*FindNearbyResponse, error)
 	// Service zones — the geographic areas the platform actually serves,

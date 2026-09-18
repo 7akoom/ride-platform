@@ -36,6 +36,10 @@ type TripServiceClient interface {
 	StartTrip(ctx context.Context, in *StartTripRequest, opts ...grpc.CallOption) (*StartTripResponse, error)
 	CompleteTrip(ctx context.Context, in *CompleteTripRequest, opts ...grpc.CallOption) (*CompleteTripResponse, error)
 	CancelTrip(ctx context.Context, in *CancelTripRequest, opts ...grpc.CallOption) (*CancelTripResponse, error)
+	// GetTrip is the rider/driver app's poll target for live trip status —
+	// both the Rider app's tracking screen and the Driver app's active-trip
+	// screen call this every few seconds until they see the status they're
+	// waiting for (ACCEPTED, then IN_PROGRESS, then COMPLETED).
 	GetTrip(ctx context.Context, in *GetTripRequest, opts ...grpc.CallOption) (*GetTripResponse, error)
 }
 
@@ -116,6 +120,10 @@ type TripServiceServer interface {
 	StartTrip(context.Context, *StartTripRequest) (*StartTripResponse, error)
 	CompleteTrip(context.Context, *CompleteTripRequest) (*CompleteTripResponse, error)
 	CancelTrip(context.Context, *CancelTripRequest) (*CancelTripResponse, error)
+	// GetTrip is the rider/driver app's poll target for live trip status —
+	// both the Rider app's tracking screen and the Driver app's active-trip
+	// screen call this every few seconds until they see the status they're
+	// waiting for (ACCEPTED, then IN_PROGRESS, then COMPLETED).
 	GetTrip(context.Context, *GetTripRequest) (*GetTripResponse, error)
 	mustEmbedUnimplementedTripServiceServer()
 }

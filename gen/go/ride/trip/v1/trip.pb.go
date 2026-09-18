@@ -884,16 +884,16 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x14TRIP_STATUS_ACCEPTED\x10\x02\x12\x1b\n" +
 	"\x17TRIP_STATUS_IN_PROGRESS\x10\x03\x12\x19\n" +
 	"\x15TRIP_STATUS_COMPLETED\x10\x04\x12\x19\n" +
-	"\x15TRIP_STATUS_CANCELLED\x10\x052\x86\x04\n" +
+	"\x15TRIP_STATUS_CANCELLED\x10\x052\xba\x05\n" +
 	"\vTripService\x12h\n" +
-	"\vRequestTrip\x12 .ride.trip.v1.RequestTripRequest\x1a!.ride.trip.v1.RequestTripResponse\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/trips\x12O\n" +
+	"\vRequestTrip\x12 .ride.trip.v1.RequestTripRequest\x1a!.ride.trip.v1.RequestTripResponse\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/trips\x12v\n" +
 	"\n" +
-	"AcceptTrip\x12\x1f.ride.trip.v1.AcceptTripRequest\x1a .ride.trip.v1.AcceptTripResponse\x12L\n" +
-	"\tStartTrip\x12\x1e.ride.trip.v1.StartTripRequest\x1a\x1f.ride.trip.v1.StartTripResponse\x12U\n" +
-	"\fCompleteTrip\x12!.ride.trip.v1.CompleteTripRequest\x1a\".ride.trip.v1.CompleteTripResponse\x12O\n" +
+	"AcceptTrip\x12\x1f.ride.trip.v1.AcceptTripRequest\x1a .ride.trip.v1.AcceptTripResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v1/trips/{trip_id}:accept\x12o\n" +
+	"\tStartTrip\x12\x1e.ride.trip.v1.StartTripRequest\x1a\x1f.ride.trip.v1.StartTripResponse\"!\x82\xd3\xe4\x93\x02\x1b\"\x19/v1/trips/{trip_id}:start\x12{\n" +
+	"\fCompleteTrip\x12!.ride.trip.v1.CompleteTripRequest\x1a\".ride.trip.v1.CompleteTripResponse\"$\x82\xd3\xe4\x93\x02\x1e\"\x1c/v1/trips/{trip_id}:complete\x12v\n" +
 	"\n" +
-	"CancelTrip\x12\x1f.ride.trip.v1.CancelTripRequest\x1a .ride.trip.v1.CancelTripResponse\x12F\n" +
-	"\aGetTrip\x12\x1c.ride.trip.v1.GetTripRequest\x1a\x1d.ride.trip.v1.GetTripResponseB<Z:github.com/7akoom/ride-platform/gen/go/ride/trip/v1;tripv1b\x06proto3"
+	"CancelTrip\x12\x1f.ride.trip.v1.CancelTripRequest\x1a .ride.trip.v1.CancelTripResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v1/trips/{trip_id}:cancel\x12c\n" +
+	"\aGetTrip\x12\x1c.ride.trip.v1.GetTripRequest\x1a\x1d.ride.trip.v1.GetTripResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/trips/{trip_id}B<Z:github.com/7akoom/ride-platform/gen/go/ride/trip/v1;tripv1b\x06proto3"
 
 var (
 	file_ride_trip_v1_trip_proto_rawDescOnce sync.Once
