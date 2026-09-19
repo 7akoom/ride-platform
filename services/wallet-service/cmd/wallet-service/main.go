@@ -8,10 +8,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/events"
 	outboxapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/outbox"
 	topupapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/wallet"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/config"
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/clients"
 	clockinfra "github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/clock"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/database"
 	natsinfra "github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/messaging/nats"
@@ -20,6 +22,18 @@ import (
 	zaincashinfra "github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/zaincash"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/observability"
 	grpcserver "github.com/7akoom/ride-platform/services/wallet-service/internal/transport/grpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+const (
+	// pricingEventsStream is created by the compose bootstrap container that
+	// belongs to pricing-service; this service only binds a consumer to it.
+	pricingEventsStream = "PRICING_EVENTS"
+
+	// fareCalculatedDurable is this service's own durable consumer name. It
+	// must stay stable across restarts so redelivery resumes where it left off.
+	fareCalculatedDurable = "wallet-fare-calculated"
 )
 
 func main() {
@@ -46,6 +60,13 @@ func run() int {
 	outboxConfig, err := config.ParseOutbox(cfg)
 	if err != nil {
 		logger.Error("invalid outbox configuration", "error", err)
+
+		return 1
+	}
+
+	autoSettleConfig, err := config.ParseAutoSettle(cfg)
+	if err != nil {
+		logger.Error("invalid auto-settlement configuration", "error", err)
 
 		return 1
 	}
@@ -78,6 +99,20 @@ func run() int {
 		return 1
 	}
 	defer pool.Close()
+
+	tripConn, err := grpc.NewClient(
+		cfg.TripServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to trip-service", "error", err)
+
+		return 1
+	}
+	defer tripConn.Close()
 
 	natsConnection, err := natsinfra.OpenConnection(
 		natsinfra.ConnectionConfig{
@@ -154,6 +189,31 @@ func run() int {
 	)
 
 	walletHandler := grpcserver.NewWalletHandler(walletService, topupService, logger)
+
+	eventHandler := events.NewHandler(
+		walletService,
+		clients.NewTripClient(tripConn),
+		wallet.PaymentMethod(autoSettleConfig.DefaultPaymentMethod),
+		autoSettleConfig.RetryInterval,
+		autoSettleConfig.GiveUpAfter,
+		logger,
+	)
+
+	fareSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		pricingEventsStream,
+		fareCalculatedDurable,
+		[]string{events.SubjectFareCalculated},
+		eventHandler.Handle,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to fare.calculated events", "error", err)
+
+		return 1
+	}
+	defer fareSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

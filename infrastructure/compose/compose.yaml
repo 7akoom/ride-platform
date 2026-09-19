@@ -773,6 +773,7 @@ services:
       METRICS_ADDRESS: ":9098"
       DATABASE_URL: postgres://${WALLET_DB_USER}:${WALLET_DB_PASSWORD}@wallet-postgres:5432/${WALLET_DB_NAME}?sslmode=disable
       NATS_URL: nats://nats:4222
+      TRIP_SERVICE_ADDRESS: trip-service:50055
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -782,6 +783,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
+      trip-service:
+        condition: service_started
 
     ports:
       - "127.0.0.1:50058:50058"

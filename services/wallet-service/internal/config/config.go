@@ -3,11 +3,12 @@ package config
 import "os"
 
 type Config struct {
-	ServiceName    string
-	Environment    string
-	GRPCAddress    string
-	MetricsAddress string
-	DatabaseURL    string
+	ServiceName        string
+	Environment        string
+	GRPCAddress        string
+	MetricsAddress     string
+	DatabaseURL        string
+	TripServiceAddress string
 
 	NATSURL            string
 	NATSPublishTimeout string
@@ -20,6 +21,12 @@ type Config struct {
 	OutboxBatchSize         string
 	OutboxInitialRetryDelay string
 	OutboxMaxRetryDelay     string
+
+	// Auto-settlement: this service consumes fare.calculated and settles
+	// the trip by itself (see config/auto_settle.go).
+	SettlementRetryInterval        string
+	SettlementGiveUpAfter          string
+	SettlementDefaultPaymentMethod string
 
 	// Verifies access tokens issued by identity-service. The public key
 	// must be copied from identity-service's own .local/keys directory —
@@ -48,10 +55,10 @@ type Config struct {
 	// WebhookSecret verifies the HS256 JWT ZainCash sends on both the
 	// webhook and the redirect callback — confirm at onboarding whether
 	// it's the same value as ClientSecret or a separate one.
-	ZainCashBaseURL      string
-	ZainCashClientID     string
-	ZainCashClientSecret string
-	ZainCashScope        string
+	ZainCashBaseURL       string
+	ZainCashClientID      string
+	ZainCashClientSecret  string
+	ZainCashScope         string
 	ZainCashWebhookSecret string
 
 	// Where ZainCash redirects the driver's browser after payment.
@@ -62,11 +69,12 @@ type Config struct {
 
 func Load() Config {
 	return Config{
-		ServiceName:    getEnv("SERVICE_NAME", "wallet-service"),
-		Environment:    getEnv("ENVIRONMENT", "development"),
-		GRPCAddress:    getEnv("GRPC_ADDRESS", ":50058"),
-		MetricsAddress: getEnv("METRICS_ADDRESS", ":9098"),
-		DatabaseURL:    getEnv("DATABASE_URL", ""),
+		ServiceName:        getEnv("SERVICE_NAME", "wallet-service"),
+		Environment:        getEnv("ENVIRONMENT", "development"),
+		GRPCAddress:        getEnv("GRPC_ADDRESS", ":50058"),
+		MetricsAddress:     getEnv("METRICS_ADDRESS", ":9098"),
+		DatabaseURL:        getEnv("DATABASE_URL", ""),
+		TripServiceAddress: getEnv("TRIP_SERVICE_ADDRESS", "localhost:50055"),
 
 		NATSURL: getEnv(
 			"NATS_URL",
@@ -116,6 +124,21 @@ func Load() Config {
 		OutboxMaxRetryDelay: getEnv(
 			"OUTBOX_MAX_RETRY_DELAY",
 			"1m",
+		),
+
+		SettlementRetryInterval: getEnv(
+			"SETTLEMENT_RETRY_INTERVAL",
+			"10s",
+		),
+
+		SettlementGiveUpAfter: getEnv(
+			"SETTLEMENT_GIVE_UP_AFTER",
+			"30m",
+		),
+
+		SettlementDefaultPaymentMethod: getEnv(
+			"SETTLEMENT_DEFAULT_PAYMENT_METHOD",
+			"cash",
 		),
 
 		AccessTokenPublicKeyPath: getEnv(
