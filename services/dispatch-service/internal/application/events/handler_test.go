@@ -36,9 +36,47 @@ func (f *fakeDispatcher) DispatchTrip(
 	return f.result, f.err
 }
 
-func newTestHandler(dispatcher dispatch.Service) *Handler {
+// fakeTrips defaults to a trip that is NOT waiting for a driver, so a test
+// that never expects a cancellation cannot trigger one by accident.
+type fakeTrips struct {
+	status    string
+	getErr    error
+	cancelErr error
+
+	getCalls    []string
+	cancelCalls []cancelCall
+}
+
+type cancelCall struct {
+	tripID string
+	reason string
+}
+
+func (f *fakeTrips) GetTrip(_ context.Context, tripID string) (dispatch.TripInfo, error) {
+	f.getCalls = append(f.getCalls, tripID)
+
+	if f.getErr != nil {
+		return dispatch.TripInfo{}, f.getErr
+	}
+
+	status := f.status
+	if status == "" {
+		status = "accepted"
+	}
+
+	return dispatch.TripInfo{ID: tripID, Status: status}, nil
+}
+
+func (f *fakeTrips) CancelTrip(_ context.Context, tripID string, reason string) error {
+	f.cancelCalls = append(f.cancelCalls, cancelCall{tripID: tripID, reason: reason})
+
+	return f.cancelErr
+}
+
+func newTestHandler(dispatcher dispatch.Service, trips TripCanceller) *Handler {
 	handler := NewHandler(
 		dispatcher,
+		trips,
 		testRetryInterval,
 		testSearchTimeout,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
@@ -77,9 +115,13 @@ func retryDelayOf(err error) (time.Duration, bool) {
 	return 0, false
 }
 
+func staleAt(extra time.Duration) time.Time {
+	return testNow.Add(-testSearchTimeout - extra)
+}
+
 func TestHandleIgnoresOtherSubjects(t *testing.T) {
 	fake := &fakeDispatcher{}
-	handler := newTestHandler(fake)
+	handler := newTestHandler(fake, &fakeTrips{})
 
 	err := handler.Handle(context.Background(), "trip.accepted", envelopeJSON(t, "trip-1", testNow, `{}`))
 	if err != nil {
@@ -95,7 +137,8 @@ func TestHandleDispatchesRequestedTrip(t *testing.T) {
 	fake := &fakeDispatcher{
 		result: dispatch.Result{TripID: "trip-1", DriverID: "driver-1", DistanceMeters: 420},
 	}
-	handler := newTestHandler(fake)
+	trips := &fakeTrips{}
+	handler := newTestHandler(fake, trips)
 
 	err := handler.Handle(
 		context.Background(),
@@ -109,11 +152,15 @@ func TestHandleDispatchesRequestedTrip(t *testing.T) {
 	if len(fake.calls) != 1 || fake.calls[0] != "trip-1" {
 		t.Fatalf("expected one dispatch of trip-1, got %v", fake.calls)
 	}
+
+	if len(trips.getCalls) != 0 || len(trips.cancelCalls) != 0 {
+		t.Fatalf("a successful dispatch must not touch the trip, got get=%v cancel=%v", trips.getCalls, trips.cancelCalls)
+	}
 }
 
 func TestHandleFallsBackToPayloadTripID(t *testing.T) {
 	fake := &fakeDispatcher{}
-	handler := newTestHandler(fake)
+	handler := newTestHandler(fake, &fakeTrips{})
 
 	err := handler.Handle(
 		context.Background(),
@@ -131,18 +178,24 @@ func TestHandleFallsBackToPayloadTripID(t *testing.T) {
 
 func TestHandleAcksWhenTripNoLongerDispatchable(t *testing.T) {
 	fake := &fakeDispatcher{err: fmt.Errorf("dispatch: %w", dispatch.ErrTripNotDispatchable)}
-	handler := newTestHandler(fake)
+	trips := &fakeTrips{}
+	handler := newTestHandler(fake, trips)
 
 	err := handler.Handle(context.Background(), SubjectTripRequested, envelopeJSON(t, "trip-1", testNow, `{}`))
 	if err != nil {
 		t.Fatalf("expected ack (nil), got %v", err)
+	}
+
+	if len(trips.cancelCalls) != 0 {
+		t.Fatalf("a trip that is no longer dispatchable must not be cancelled, got %v", trips.cancelCalls)
 	}
 }
 
 func TestHandleRetriesLaterWhenNoDriverAvailable(t *testing.T) {
 	for _, dispatchErr := range []error{dispatch.ErrNoDriversNearby, dispatch.ErrNoDriversAvailable} {
 		fake := &fakeDispatcher{err: dispatchErr}
-		handler := newTestHandler(fake)
+		trips := &fakeTrips{}
+		handler := newTestHandler(fake, trips)
 
 		err := handler.Handle(context.Background(), SubjectTripRequested, envelopeJSON(t, "trip-1", testNow, `{}`))
 		if err == nil {
@@ -157,12 +210,16 @@ func TestHandleRetriesLaterWhenNoDriverAvailable(t *testing.T) {
 		if !errors.Is(err, dispatchErr) {
 			t.Fatalf("%v: retry error must wrap the cause", dispatchErr)
 		}
+
+		if len(trips.cancelCalls) != 0 {
+			t.Fatalf("%v: no cancellation while the search window is still open", dispatchErr)
+		}
 	}
 }
 
 func TestHandleRetriesLaterOnTransientError(t *testing.T) {
 	fake := &fakeDispatcher{err: errors.New("get trip: connection refused")}
-	handler := newTestHandler(fake)
+	handler := newTestHandler(fake, &fakeTrips{})
 
 	err := handler.Handle(context.Background(), SubjectTripRequested, envelopeJSON(t, "trip-1", testNow, `{}`))
 
@@ -172,27 +229,107 @@ func TestHandleRetriesLaterOnTransientError(t *testing.T) {
 	}
 }
 
-func TestHandleSkipsStaleEventWithoutDispatching(t *testing.T) {
+func TestHandleCancelsATripThatIsStillWaitingOnceTheWindowPasses(t *testing.T) {
 	fake := &fakeDispatcher{}
-	handler := newTestHandler(fake)
+	trips := &fakeTrips{status: "requested"}
+	handler := newTestHandler(fake, trips)
 
 	err := handler.Handle(
 		context.Background(),
 		SubjectTripRequested,
-		envelopeJSON(t, "trip-1", testNow.Add(-testSearchTimeout-time.Second), `{}`),
+		envelopeJSON(t, "trip-1", staleAt(time.Second), `{}`),
 	)
 	if err != nil {
-		t.Fatalf("expected ack (nil) for a stale event, got %v", err)
+		t.Fatalf("expected ack (nil), got %v", err)
 	}
 
 	if len(fake.calls) != 0 {
-		t.Fatalf("stale event must not be dispatched, got %v", fake.calls)
+		t.Fatalf("no dispatch attempt once the window has passed, got %v", fake.calls)
+	}
+
+	want := []cancelCall{{tripID: "trip-1", reason: "no drivers available"}}
+	if len(trips.cancelCalls) != 1 || trips.cancelCalls[0] != want[0] {
+		t.Fatalf("expected exactly %v, got %v", want, trips.cancelCalls)
+	}
+}
+
+func TestHandleNeverCancelsATripThatHasADriver(t *testing.T) {
+	for _, status := range []string{"accepted", "in_progress", "completed", "cancelled"} {
+		trips := &fakeTrips{status: status}
+		handler := newTestHandler(&fakeDispatcher{}, trips)
+
+		err := handler.Handle(
+			context.Background(),
+			SubjectTripRequested,
+			envelopeJSON(t, "trip-1", staleAt(time.Minute), `{}`),
+		)
+		if err != nil {
+			t.Fatalf("%s: expected ack (nil), got %v", status, err)
+		}
+
+		if len(trips.cancelCalls) != 0 {
+			t.Fatalf("%s: a trip that is not waiting for a driver must never be cancelled, got %v", status, trips.cancelCalls)
+		}
+	}
+}
+
+func TestHandleRetriesTheCloseOutWhenTheTripCannotBeRead(t *testing.T) {
+	trips := &fakeTrips{getErr: errors.New("trip-service unavailable")}
+	handler := newTestHandler(&fakeDispatcher{}, trips)
+
+	err := handler.Handle(
+		context.Background(),
+		SubjectTripRequested,
+		envelopeJSON(t, "trip-1", staleAt(time.Second), `{}`),
+	)
+
+	delay, ok := retryDelayOf(err)
+	if !ok || delay != testRetryInterval {
+		t.Fatalf("expected delayed retry of %s, got delay=%s ok=%v (err=%v)", testRetryInterval, delay, ok, err)
+	}
+
+	if len(trips.cancelCalls) != 0 {
+		t.Fatalf("nothing to cancel when the trip could not be read")
+	}
+}
+
+func TestHandleRetriesTheCloseOutWhenCancellationFails(t *testing.T) {
+	trips := &fakeTrips{status: "requested", cancelErr: errors.New("trip-service unavailable")}
+	handler := newTestHandler(&fakeDispatcher{}, trips)
+
+	err := handler.Handle(
+		context.Background(),
+		SubjectTripRequested,
+		envelopeJSON(t, "trip-1", staleAt(time.Second), `{}`),
+	)
+
+	delay, ok := retryDelayOf(err)
+	if !ok || delay != testRetryInterval {
+		t.Fatalf("expected delayed retry of %s, got delay=%s ok=%v (err=%v)", testRetryInterval, delay, ok, err)
+	}
+
+	if !errors.Is(err, trips.cancelErr) {
+		t.Fatalf("retry error must wrap the cause")
+	}
+}
+
+func TestHandleStopsRetryingTheCloseOutAfterTheGraceWindow(t *testing.T) {
+	trips := &fakeTrips{status: "requested", cancelErr: errors.New("trip-service unavailable")}
+	handler := newTestHandler(&fakeDispatcher{}, trips)
+
+	err := handler.Handle(
+		context.Background(),
+		SubjectTripRequested,
+		envelopeJSON(t, "trip-1", staleAt(cancelRetryWindow+time.Second), `{}`),
+	)
+	if err != nil {
+		t.Fatalf("expected ack (nil) once the grace window has passed, got %v", err)
 	}
 }
 
 func TestHandleDropsUndecodableMessage(t *testing.T) {
 	fake := &fakeDispatcher{}
-	handler := newTestHandler(fake)
+	handler := newTestHandler(fake, &fakeTrips{})
 
 	if err := handler.Handle(context.Background(), SubjectTripRequested, []byte("not json")); err != nil {
 		t.Fatalf("expected ack (nil) for a poison message, got %v", err)
@@ -205,7 +342,7 @@ func TestHandleDropsUndecodableMessage(t *testing.T) {
 
 func TestHandleDropsEventWithoutTripID(t *testing.T) {
 	fake := &fakeDispatcher{}
-	handler := newTestHandler(fake)
+	handler := newTestHandler(fake, &fakeTrips{})
 
 	err := handler.Handle(context.Background(), SubjectTripRequested, envelopeJSON(t, "", testNow, `{}`))
 	if err != nil {

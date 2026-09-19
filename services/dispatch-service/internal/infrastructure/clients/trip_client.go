@@ -58,6 +58,25 @@ func (c *TripClient) AcceptTrip(
 	return nil
 }
 
+// CancelTrip cancels a trip on the rider's behalf with the given reason.
+// Callers are responsible for checking that the trip is still waiting for
+// a driver first; trip-service itself will cancel whatever it is asked to.
+func (c *TripClient) CancelTrip(
+	ctx context.Context,
+	tripID string,
+	reason string,
+) error {
+	_, err := c.client.CancelTrip(ctx, &tripv1.CancelTripRequest{
+		TripId: tripID,
+		Reason: reason,
+	})
+	if err != nil {
+		return fmt.Errorf("call trip-service CancelTrip: %w", err)
+	}
+
+	return nil
+}
+
 func tripStatusToString(s tripv1.TripStatus) string {
 	switch s {
 	case tripv1.TripStatus_TRIP_STATUS_REQUESTED:

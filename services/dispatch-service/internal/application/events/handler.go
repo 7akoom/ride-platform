@@ -16,6 +16,28 @@ import (
 // publishes when a rider asks for a trip.
 const SubjectTripRequested = "trip.requested"
 
+const (
+	// tripStatusRequested is the only status a trip can be auto-cancelled
+	// from: a trip that has already been accepted (or started) has a driver
+	// and must never be cancelled by a dispatch timeout.
+	tripStatusRequested = "requested"
+
+	// cancelReasonNoDrivers is recorded on the trip and shown to the rider.
+	cancelReasonNoDrivers = "no drivers available"
+
+	// cancelRetryWindow is how long past the search window a failing
+	// cancellation is retried before an error is logged and it stops, so a
+	// permanently failing trip cannot retry forever.
+	cancelRetryWindow = 10 * time.Minute
+)
+
+// TripCanceller is dispatch-service's view of trip-service for the one
+// job of closing out a trip nobody could be found for.
+type TripCanceller interface {
+	GetTrip(ctx context.Context, tripID string) (dispatch.TripInfo, error)
+	CancelTrip(ctx context.Context, tripID string, reason string) error
+}
+
 // Envelope mirrors the JSON shape every outbox publisher wraps its
 // message in (see each service's infrastructure/messaging/nats
 // jetstream_publisher.go).
@@ -61,9 +83,11 @@ func (e *retryLaterError) RetryDelay() time.Duration {
 	return e.delay
 }
 
-// Handler turns trip.requested events into dispatch attempts.
+// Handler turns trip.requested events into dispatch attempts, and closes
+// out trips that no driver could be found for.
 type Handler struct {
 	dispatcher    dispatch.Service
+	trips         TripCanceller
 	retryInterval time.Duration
 	searchTimeout time.Duration
 	now           func() time.Time
@@ -72,12 +96,17 @@ type Handler struct {
 
 func NewHandler(
 	dispatcher dispatch.Service,
+	trips TripCanceller,
 	retryInterval time.Duration,
 	searchTimeout time.Duration,
 	logger *slog.Logger,
 ) *Handler {
 	if dispatcher == nil {
 		panic("dispatcher is required")
+	}
+
+	if trips == nil {
+		panic("trip canceller is required")
 	}
 
 	if retryInterval <= 0 {
@@ -94,6 +123,7 @@ func NewHandler(
 
 	return &Handler{
 		dispatcher:    dispatcher,
+		trips:         trips,
 		retryInterval: retryInterval,
 		searchTimeout: searchTimeout,
 		now:           time.Now,
@@ -126,17 +156,12 @@ func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error
 		return nil
 	}
 
-	// Stale-event guard: past the search window we stop looking. This also
-	// protects a freshly created durable consumer, which replays the
-	// stream's history from the start, from dispatching long-abandoned
-	// trips that were never cancelled.
+	// Past the search window we stop looking — and, if the trip is still
+	// waiting for a driver, we close it out so the rider is not left stuck
+	// on a request nobody will ever serve. This also covers a freshly
+	// created durable consumer replaying the stream's history.
 	if !envelope.OccurredAt.IsZero() && h.now().Sub(envelope.OccurredAt) > h.searchTimeout {
-		h.logger.InfoContext(ctx, "trip.requested is past the search window; no longer dispatching",
-			"trip_id", tripID,
-			"requested_at", envelope.OccurredAt,
-		)
-
-		return nil
+		return h.giveUp(ctx, tripID, envelope.OccurredAt)
 	}
 
 	result, err := h.dispatcher.DispatchTrip(ctx, tripID, 0)
@@ -172,6 +197,59 @@ func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error
 	}
 
 	return &retryLaterError{delay: h.retryInterval, cause: err}
+}
+
+// giveUp runs once the search window has passed. It cancels the trip only
+// if the trip is STILL waiting for a driver: one that has been accepted,
+// started or finished is left completely alone.
+func (h *Handler) giveUp(ctx context.Context, tripID string, requestedAt time.Time) error {
+	trip, err := h.trips.GetTrip(ctx, tripID)
+	if err != nil {
+		return h.retryGiveUp(ctx, tripID, requestedAt, fmt.Errorf("get trip: %w", err))
+	}
+
+	if trip.Status != tripStatusRequested {
+		h.logger.InfoContext(ctx, "search window passed but the trip is no longer waiting for a driver; nothing to cancel",
+			"trip_id", tripID,
+			"status", trip.Status,
+		)
+
+		return nil
+	}
+
+	if err := h.trips.CancelTrip(ctx, tripID, cancelReasonNoDrivers); err != nil {
+		return h.retryGiveUp(ctx, tripID, requestedAt, fmt.Errorf("cancel trip: %w", err))
+	}
+
+	h.logger.InfoContext(ctx, "cancelled trip: no driver was found within the search window",
+		"trip_id", tripID,
+		"requested_at", requestedAt,
+		"search_timeout", h.searchTimeout,
+	)
+
+	return nil
+}
+
+// retryGiveUp retries a failed close-out on a timer, up to cancelRetryWindow
+// past the search window, and then stops with an error a human should see.
+func (h *Handler) retryGiveUp(ctx context.Context, tripID string, requestedAt time.Time, cause error) error {
+	if h.now().Sub(requestedAt) > h.searchTimeout+cancelRetryWindow {
+		h.logger.ErrorContext(ctx, "could not close out a trip that found no driver; giving up",
+			"trip_id", tripID,
+			"requested_at", requestedAt,
+			"error", cause,
+		)
+
+		return nil
+	}
+
+	h.logger.WarnContext(ctx, "closing out a trip that found no driver failed; will retry",
+		"trip_id", tripID,
+		"retry_in", h.retryInterval,
+		"error", cause,
+	)
+
+	return &retryLaterError{delay: h.retryInterval, cause: cause}
 }
 
 // tripIDFrom prefers the envelope's aggregate id (the trip itself) and

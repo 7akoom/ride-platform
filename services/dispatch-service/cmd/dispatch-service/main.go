@@ -144,6 +144,7 @@ func run() int {
 
 	eventHandler := events.NewHandler(
 		dispatchService,
+		clients.NewTripClient(tripConn),
 		autoDispatchConfig.RetryInterval,
 		autoDispatchConfig.SearchTimeout,
 		logger,
