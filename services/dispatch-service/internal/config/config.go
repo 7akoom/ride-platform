@@ -34,6 +34,18 @@ type Config struct {
 	// stop a runaway retry loop or a naive script.
 	RateLimitRequestsPerSecond string
 	RateLimitBurst             string
+
+	// NATS connection used to consume trip.requested and dispatch a
+	// driver automatically. This service only consumes; it never
+	// publishes, so there is no outbox here.
+	NATSURL            string
+	NATSConnectTimeout string
+	NATSReconnectWait  string
+	NATSDrainTimeout   string
+
+	// Auto-dispatch behaviour (see config/auto_dispatch.go).
+	DispatchRetryInterval string
+	DispatchSearchTimeout string
 }
 
 func Load() Config {
@@ -56,6 +68,14 @@ func Load() Config {
 
 		RateLimitRequestsPerSecond: getEnv("RATE_LIMIT_REQUESTS_PER_SECOND", "20"),
 		RateLimitBurst:             getEnv("RATE_LIMIT_BURST", "40"),
+
+		NATSURL:            getEnv("NATS_URL", "nats://localhost:4222"),
+		NATSConnectTimeout: getEnv("NATS_CONNECT_TIMEOUT", "5s"),
+		NATSReconnectWait:  getEnv("NATS_RECONNECT_WAIT", "2s"),
+		NATSDrainTimeout:   getEnv("NATS_DRAIN_TIMEOUT", "10s"),
+
+		DispatchRetryInterval: getEnv("DISPATCH_RETRY_INTERVAL", "5s"),
+		DispatchSearchTimeout: getEnv("DISPATCH_SEARCH_TIMEOUT", "2m"),
 	}
 }
 

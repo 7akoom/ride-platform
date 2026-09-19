@@ -693,15 +693,22 @@ services:
       LOCATION_SERVICE_ADDRESS: location-service:50054
       DRIVER_SERVICE_ADDRESS: driver-service:50053
       WALLET_SERVICE_ADDRESS: wallet-service:50058
+      NATS_URL: nats://nats:4222
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
 
     depends_on:
-      - trip-service
-      - location-service
-      - driver-service
-      - wallet-service
+      trip-service:
+        condition: service_started
+      location-service:
+        condition: service_started
+      driver-service:
+        condition: service_started
+      wallet-service:
+        condition: service_started
+      nats:
+        condition: service_healthy
 
     ports:
       - "127.0.0.1:50056:50056"

@@ -9,13 +9,25 @@ import (
 	"time"
 
 	"github.com/7akoom/ride-platform/services/dispatch-service/internal/application/dispatch"
+	"github.com/7akoom/ride-platform/services/dispatch-service/internal/application/events"
 	"github.com/7akoom/ride-platform/services/dispatch-service/internal/config"
 	"github.com/7akoom/ride-platform/services/dispatch-service/internal/infrastructure/clients"
+	natsinfra "github.com/7akoom/ride-platform/services/dispatch-service/internal/infrastructure/messaging/nats"
 	"github.com/7akoom/ride-platform/services/dispatch-service/internal/infrastructure/token"
 	"github.com/7akoom/ride-platform/services/dispatch-service/internal/observability"
 	grpcserver "github.com/7akoom/ride-platform/services/dispatch-service/internal/transport/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+)
+
+const (
+	// tripEventsStream is created by the compose bootstrap container that
+	// belongs to trip-service; this service only binds a consumer to it.
+	tripEventsStream = "TRIP_EVENTS"
+
+	// tripRequestedDurable is this service's own durable consumer name. It
+	// must stay stable across restarts so redelivery resumes where it left off.
+	tripRequestedDurable = "dispatch-trip-requested"
 )
 
 func main() {
@@ -42,6 +54,20 @@ func run() int {
 	metricsInterceptor, err := metricsRuntime.UnaryServerInterceptor()
 	if err != nil {
 		logger.Error("failed to configure rpc metrics interceptor", "error", err)
+
+		return 1
+	}
+
+	natsConfig, err := config.ParseNATS(cfg)
+	if err != nil {
+		logger.Error("invalid NATS configuration", "error", err)
+
+		return 1
+	}
+
+	autoDispatchConfig, err := config.ParseAutoDispatch(cfg)
+	if err != nil {
+		logger.Error("invalid auto-dispatch configuration", "error", err)
 
 		return 1
 	}
@@ -92,6 +118,51 @@ func run() int {
 		clients.NewWalletClient(walletConn),
 	)
 	dispatchHandler := grpcserver.NewDispatchHandler(dispatchService, logger)
+
+	natsConnection, err := natsinfra.OpenConnection(
+		natsinfra.ConnectionConfig{
+			URL:            natsConfig.URL,
+			ClientName:     natsConfig.ClientName,
+			ConnectTimeout: natsConfig.ConnectTimeout,
+			ReconnectWait:  natsConfig.ReconnectWait,
+			DrainTimeout:   natsConfig.DrainTimeout,
+		},
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to configure NATS connection", "error", err)
+
+		return 1
+	}
+
+	defer func() {
+		if err := natsConnection.Drain(); err != nil {
+			logger.Warn("failed to drain NATS connection", "error", err)
+		}
+	}()
+
+	eventHandler := events.NewHandler(
+		dispatchService,
+		autoDispatchConfig.RetryInterval,
+		autoDispatchConfig.SearchTimeout,
+		logger,
+	)
+
+	tripSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		tripEventsStream,
+		tripRequestedDurable,
+		[]string{events.SubjectTripRequested},
+		eventHandler.Handle,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to trip.requested events", "error", err)
+
+		return 1
+	}
+	defer tripSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,
