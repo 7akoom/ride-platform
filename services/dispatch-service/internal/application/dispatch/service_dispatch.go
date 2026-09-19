@@ -46,7 +46,22 @@ func (s *service) DispatchTrip(
 	}
 
 	if len(candidates) == 0 {
+		s.log().InfoContext(ctx, "dispatch attempt: no drivers found near the pickup point",
+			"trip_id", trimmedID,
+			"radius_meters", radius,
+		)
+
 		return Result{}, ErrNoDriversNearby
+	}
+
+	// Every skipped candidate is recorded with its reason. Skipping is
+	// deliberately not an error (the next-nearest candidate is tried), but
+	// when NOBODY can be assigned the reasons are the only way to tell a
+	// suspended wallet from a stale trip from a wrong vehicle class.
+	var skipped []string
+
+	skip := func(driverID string, format string, args ...any) {
+		skipped = append(skipped, driverID+": "+fmt.Sprintf(format, args...))
 	}
 
 	// Try candidates nearest-first. A candidate is skipped (not a hard
@@ -56,16 +71,26 @@ func (s *service) DispatchTrip(
 	for _, candidate := range candidates {
 		driverInfo, err := s.driverClient.GetDriver(ctx, candidate.DriverID)
 		if err != nil {
+			skip(candidate.DriverID, "could not load driver: %v", err)
+
 			continue
 		}
 
 		if driverInfo.Status != driverStatusActive || driverInfo.AvailabilityStatus != driverAvailable {
+			skip(candidate.DriverID, "not eligible (status=%s, availability=%s)",
+				driverInfo.Status, driverInfo.AvailabilityStatus)
+
 			continue
 		}
 
 		// A comfort trip is only offered to comfort drivers, and economy to
 		// economy: strict match, no cross-class fallback.
-		if effectiveVehicleClass(driverInfo.VehicleClass) != effectiveVehicleClass(tripInfo.VehicleClass) {
+		driverClass := effectiveVehicleClass(driverInfo.VehicleClass)
+		tripClass := effectiveVehicleClass(tripInfo.VehicleClass)
+
+		if driverClass != tripClass {
+			skip(candidate.DriverID, "vehicle class mismatch (driver=%s, trip=%s)", driverClass, tripClass)
+
 			continue
 		}
 
@@ -73,16 +98,23 @@ func (s *service) DispatchTrip(
 		if err != nil {
 			// Can't verify standing — skip rather than risk assigning a
 			// trip to a driver who may be suspended.
+			skip(candidate.DriverID, "could not verify wallet standing: %v", err)
+
 			continue
 		}
 
 		if !standing.CanTakeTrips {
+			skip(candidate.DriverID, "wallet does not allow trips (suspended=%t, reason=%q)",
+				standing.Suspended, standing.Reason)
+
 			continue
 		}
 
 		if err := s.tripClient.AcceptTrip(ctx, trimmedID, driverInfo.ID); err != nil {
 			// Someone else (a concurrent dispatch, or a manual accept)
 			// may have taken this trip or this driver already — move on.
+			skip(candidate.DriverID, "accept trip failed: %v", err)
+
 			continue
 		}
 
@@ -98,6 +130,12 @@ func (s *service) DispatchTrip(
 			DistanceMeters: candidate.DistanceMeters,
 		}, nil
 	}
+
+	s.log().InfoContext(ctx, "dispatch attempt: nearby drivers found but none could be assigned",
+		"trip_id", trimmedID,
+		"candidates", len(candidates),
+		"skipped", skipped,
+	)
 
 	return Result{}, ErrNoDriversAvailable
 }

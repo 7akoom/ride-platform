@@ -1,6 +1,10 @@
 package dispatch
 
-import "context"
+import (
+	"context"
+	"io"
+	"log/slog"
+)
 
 type Service interface {
 	DispatchTrip(
@@ -10,11 +14,30 @@ type Service interface {
 	) (Result, error)
 }
 
+// discardLogger is what a service without WithLogger uses, so callers and
+// tests that build a service directly never hit a nil logger.
+var discardLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
+
 type service struct {
 	tripClient     TripClient
 	locationClient LocationClient
 	driverClient   DriverClient
 	walletClient   WalletClient
+	logger         *slog.Logger
+}
+
+// Option customises a service at construction time.
+type Option func(*service)
+
+// WithLogger makes the service explain, at Info level, why a dispatch
+// attempt found nobody to assign. Without it the service stays silent,
+// which is what unit tests want.
+func WithLogger(logger *slog.Logger) Option {
+	return func(s *service) {
+		if logger != nil {
+			s.logger = logger
+		}
+	}
 }
 
 func NewService(
@@ -22,6 +45,7 @@ func NewService(
 	locationClient LocationClient,
 	driverClient DriverClient,
 	walletClient WalletClient,
+	options ...Option,
 ) Service {
 	if tripClient == nil {
 		panic("trip client is required")
@@ -39,10 +63,26 @@ func NewService(
 		panic("wallet client is required")
 	}
 
-	return &service{
+	s := &service{
 		tripClient:     tripClient,
 		locationClient: locationClient,
 		driverClient:   driverClient,
 		walletClient:   walletClient,
+		logger:         discardLogger,
 	}
+
+	for _, option := range options {
+		option(s)
+	}
+
+	return s
+}
+
+// log never returns nil.
+func (s *service) log() *slog.Logger {
+	if s.logger == nil {
+		return discardLogger
+	}
+
+	return s.logger
 }

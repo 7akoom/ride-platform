@@ -116,6 +116,7 @@ func run() int {
 		clients.NewLocationClient(locationConn),
 		clients.NewDriverClient(driverConn),
 		clients.NewWalletClient(walletConn),
+		dispatch.WithLogger(logger),
 	)
 	dispatchHandler := grpcserver.NewDispatchHandler(dispatchService, logger)
 
