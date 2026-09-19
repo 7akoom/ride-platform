@@ -197,7 +197,9 @@ type Trip struct {
 	CompletedAt        *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
 	CancelledAt        *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=cancelled_at,json=cancelledAt,proto3" json:"cancelled_at,omitempty"`
 	// economy or comfort.
-	VehicleClass  string `protobuf:"bytes,13,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	VehicleClass string `protobuf:"bytes,13,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	// cash or wallet.
+	PaymentMethod string `protobuf:"bytes,14,opt,name=payment_method,json=paymentMethod,proto3" json:"payment_method,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -323,13 +325,22 @@ func (x *Trip) GetVehicleClass() string {
 	return ""
 }
 
+func (x *Trip) GetPaymentMethod() string {
+	if x != nil {
+		return x.PaymentMethod
+	}
+	return ""
+}
+
 type RequestTripRequest struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	RiderId string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
 	Pickup  *Coordinates           `protobuf:"bytes,2,opt,name=pickup,proto3" json:"pickup,omitempty"`
 	Dropoff *Coordinates           `protobuf:"bytes,3,opt,name=dropoff,proto3" json:"dropoff,omitempty"`
 	// economy (default when empty) or comfort.
-	VehicleClass  string `protobuf:"bytes,4,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	VehicleClass string `protobuf:"bytes,4,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	// cash (default when empty) or wallet. card is not supported yet.
+	PaymentMethod string `protobuf:"bytes,5,opt,name=payment_method,json=paymentMethod,proto3" json:"payment_method,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -388,6 +399,13 @@ func (x *RequestTripRequest) GetDropoff() *Coordinates {
 func (x *RequestTripRequest) GetVehicleClass() string {
 	if x != nil {
 		return x.VehicleClass
+	}
+	return ""
+}
+
+func (x *RequestTripRequest) GetPaymentMethod() string {
+	if x != nil {
+		return x.PaymentMethod
 	}
 	return ""
 }
@@ -1242,7 +1260,7 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x17ride/trip/v1/trip.proto\x12\fride.trip.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\"G\n" +
 	"\vCoordinates\x12\x1a\n" +
 	"\blatitude\x18\x01 \x01(\x01R\blatitude\x12\x1c\n" +
-	"\tlongitude\x18\x02 \x01(\x01R\tlongitude\"\xf3\x04\n" +
+	"\tlongitude\x18\x02 \x01(\x01R\tlongitude\"\x9a\x05\n" +
 	"\x04Trip\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\brider_id\x18\x02 \x01(\tR\ariderId\x12\x1b\n" +
@@ -1259,12 +1277,14 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12=\n" +
 	"\fcompleted_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\vcompletedAt\x12=\n" +
 	"\fcancelled_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\vcancelledAt\x12#\n" +
-	"\rvehicle_class\x18\r \x01(\tR\fvehicleClass\"\xbc\x01\n" +
+	"\rvehicle_class\x18\r \x01(\tR\fvehicleClass\x12%\n" +
+	"\x0epayment_method\x18\x0e \x01(\tR\rpaymentMethod\"\xe3\x01\n" +
 	"\x12RequestTripRequest\x12\x19\n" +
 	"\brider_id\x18\x01 \x01(\tR\ariderId\x121\n" +
 	"\x06pickup\x18\x02 \x01(\v2\x19.ride.trip.v1.CoordinatesR\x06pickup\x123\n" +
 	"\adropoff\x18\x03 \x01(\v2\x19.ride.trip.v1.CoordinatesR\adropoff\x12#\n" +
-	"\rvehicle_class\x18\x04 \x01(\tR\fvehicleClass\"=\n" +
+	"\rvehicle_class\x18\x04 \x01(\tR\fvehicleClass\x12%\n" +
+	"\x0epayment_method\x18\x05 \x01(\tR\rpaymentMethod\"=\n" +
 	"\x13RequestTripResponse\x12&\n" +
 	"\x04trip\x18\x01 \x01(\v2\x12.ride.trip.v1.TripR\x04trip\"I\n" +
 	"\x11AcceptTripRequest\x12\x17\n" +

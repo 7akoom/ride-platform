@@ -6,11 +6,12 @@ import (
 )
 
 type CreateInput struct {
-	ID           string
-	RiderID      string
-	Pickup       Coordinates
-	Dropoff      Coordinates
-	VehicleClass string
+	ID            string
+	RiderID       string
+	Pickup        Coordinates
+	Dropoff       Coordinates
+	VehicleClass  string
+	PaymentMethod string
 }
 
 // Repository is the persistence port for the trip aggregate. Every

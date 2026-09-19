@@ -21,6 +21,11 @@ func (s *service) RequestTrip(
 		return Trip{}, err
 	}
 
+	paymentMethod, err := NormalizePaymentMethod(input.PaymentMethod)
+	if err != nil {
+		return Trip{}, err
+	}
+
 	pickup, err := NewCoordinates(input.PickupLat, input.PickupLng)
 	if err != nil {
 		return Trip{}, err
@@ -53,11 +58,12 @@ func (s *service) RequestTrip(
 	created, err := s.repository.Create(
 		ctx,
 		CreateInput{
-			ID:           s.idGenerator.NewID(),
-			RiderID:      riderID,
-			Pickup:       pickup,
-			Dropoff:      dropoff,
-			VehicleClass: vehicleClass,
+			ID:            s.idGenerator.NewID(),
+			RiderID:       riderID,
+			Pickup:        pickup,
+			Dropoff:       dropoff,
+			VehicleClass:  vehicleClass,
+			PaymentMethod: paymentMethod,
 		},
 	)
 	if err != nil {

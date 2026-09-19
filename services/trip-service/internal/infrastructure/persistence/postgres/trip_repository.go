@@ -47,13 +47,15 @@ func (r *TripRepository) Create(
 		ctx,
 		`INSERT INTO trips
 		    (id, rider_id, pickup_latitude, pickup_longitude,
-		     dropoff_latitude, dropoff_longitude, vehicle_class)
-		 VALUES ($1, $2, $3, $4, $5, $6, COALESCE(NULLIF($7::text, ''), 'economy'))
+		     dropoff_latitude, dropoff_longitude, vehicle_class, payment_method)
+		 VALUES ($1, $2, $3, $4, $5, $6, COALESCE(NULLIF($7::text, ''), 'economy'),
+                         COALESCE(NULLIF($8::text, ''), 'cash'))
 		 RETURNING id, rider_id, driver_id, status,
 		           pickup_latitude, pickup_longitude,
 		           dropoff_latitude, dropoff_longitude,
 		           cancellation_reason,
 		           vehicle_class,
+		           payment_method,
 		           requested_at, accepted_at, started_at, completed_at, cancelled_at,
 		           created_at, updated_at`,
 		input.ID,
@@ -63,6 +65,7 @@ func (r *TripRepository) Create(
 		input.Dropoff.Latitude,
 		input.Dropoff.Longitude,
 		input.VehicleClass,
+		input.PaymentMethod,
 	)
 
 	if err := scanTrip(row, &created); err != nil {
@@ -114,6 +117,7 @@ func (r *TripRepository) findOneWhere(
 	                 dropoff_latitude, dropoff_longitude,
 	                 cancellation_reason,
 	                 vehicle_class,
+	                 payment_method,
 	                 requested_at, accepted_at, started_at, completed_at, cancelled_at,
 	                 created_at, updated_at
 	          FROM trips
@@ -157,6 +161,7 @@ func (r *TripRepository) Accept(
 			           dropoff_latitude, dropoff_longitude,
 			           cancellation_reason,
 			           vehicle_class,
+			           payment_method,
 			           requested_at, accepted_at, started_at, completed_at, cancelled_at,
 			           created_at, updated_at`,
 			tripID,
@@ -193,6 +198,7 @@ func (r *TripRepository) Start(
 			           dropoff_latitude, dropoff_longitude,
 			           cancellation_reason,
 			           vehicle_class,
+			           payment_method,
 			           requested_at, accepted_at, started_at, completed_at, cancelled_at,
 			           created_at, updated_at`,
 			tripID,
@@ -227,6 +233,7 @@ func (r *TripRepository) Complete(
 			           dropoff_latitude, dropoff_longitude,
 			           cancellation_reason,
 			           vehicle_class,
+			           payment_method,
 			           requested_at, accepted_at, started_at, completed_at, cancelled_at,
 			           created_at, updated_at`,
 			tripID,
@@ -265,6 +272,7 @@ func (r *TripRepository) Cancel(
 			           dropoff_latitude, dropoff_longitude,
 			           cancellation_reason,
 			           vehicle_class,
+			           payment_method,
 			           requested_at, accepted_at, started_at, completed_at, cancelled_at,
 			           created_at, updated_at`,
 			tripID,
@@ -309,6 +317,7 @@ func (r *TripRepository) transition(
 		        dropoff_latitude, dropoff_longitude,
 		        cancellation_reason,
 		        vehicle_class,
+		        payment_method,
 		        requested_at, accepted_at, started_at, completed_at, cancelled_at,
 		        created_at, updated_at
 		 FROM trips
@@ -389,6 +398,7 @@ func scanTrip(row pgx.Row, dest *trip.Trip) error {
 		&dest.Dropoff.Longitude,
 		&cancellationReason,
 		&dest.VehicleClass,
+		&dest.PaymentMethod,
 		&dest.RequestedAt,
 		&dest.AcceptedAt,
 		&dest.StartedAt,

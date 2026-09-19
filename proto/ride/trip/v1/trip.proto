@@ -111,6 +111,8 @@ message Trip {
   google.protobuf.Timestamp cancelled_at = 12;
   // economy or comfort.
   string vehicle_class = 13;
+  // cash or wallet.
+  string payment_method = 14;
 }
 
 message RequestTripRequest {
@@ -119,6 +121,8 @@ message RequestTripRequest {
   Coordinates dropoff = 3;
   // economy (default when empty) or comfort.
   string vehicle_class = 4;
+  // cash (default when empty) or wallet. card is not supported yet.
+  string payment_method = 5;
 }
 
 message RequestTripResponse {

@@ -282,3 +282,57 @@ func TestHandleDropsUndecodableAndIncompleteMessages(t *testing.T) {
 		t.Fatalf("bad messages must never be settled, got %+v", settler.calls)
 	}
 }
+
+func TestHandleUsesThePaymentMethodRecordedOnTheTrip(t *testing.T) {
+	for raw, want := range map[string]wallet.PaymentMethod{
+		"wallet":   wallet.PaymentWallet,
+		" Wallet ": wallet.PaymentWallet,
+		"cash":     wallet.PaymentCash,
+		"card":     wallet.PaymentCard,
+	} {
+		settler := &fakeSettler{}
+		trip := sampleTrip()
+		trip.PaymentMethod = raw
+		handler := newTestHandler(settler, &fakeTrips{trip: trip})
+
+		if err := handler.Handle(context.Background(), SubjectFareCalculated, fareEvent(t, testNow, barePayload)); err != nil {
+			t.Fatalf("%q: expected ack (nil), got %v", raw, err)
+		}
+
+		if len(settler.calls) != 1 || settler.calls[0].PaymentMethod != want {
+			t.Fatalf("%q: expected payment method %q, got %+v", raw, want, settler.calls)
+		}
+	}
+}
+
+func TestHandleFallsBackToTheDefaultWhenTheTripHasNoPaymentMethod(t *testing.T) {
+	settler := &fakeSettler{}
+	trip := sampleTrip()
+	trip.PaymentMethod = ""
+	handler := newTestHandler(settler, &fakeTrips{trip: trip})
+
+	if err := handler.Handle(context.Background(), SubjectFareCalculated, fareEvent(t, testNow, barePayload)); err != nil {
+		t.Fatalf("expected ack (nil), got %v", err)
+	}
+
+	if len(settler.calls) != 1 || settler.calls[0].PaymentMethod != wallet.PaymentCash {
+		t.Fatalf("expected the default cash, got %+v", settler.calls)
+	}
+}
+
+func TestHandlePassesAnUnknownMethodThroughSoSettleTripCanRejectIt(t *testing.T) {
+	// The real SettleTrip validates the method and reports
+	// ErrInvalidPaymentMethod, which the handler treats as permanent.
+	settler := &fakeSettler{err: fmt.Errorf("settle: %w", wallet.ErrInvalidPaymentMethod)}
+	trip := sampleTrip()
+	trip.PaymentMethod = "bitcoin"
+	handler := newTestHandler(settler, &fakeTrips{trip: trip})
+
+	if err := handler.Handle(context.Background(), SubjectFareCalculated, fareEvent(t, testNow, barePayload)); err != nil {
+		t.Fatalf("expected ack (nil) for a permanent failure, got %v", err)
+	}
+
+	if len(settler.calls) != 1 || settler.calls[0].PaymentMethod != wallet.PaymentMethod("bitcoin") {
+		t.Fatalf("expected the raw method to reach SettleTrip, got %+v", settler.calls)
+	}
+}

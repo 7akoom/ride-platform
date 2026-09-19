@@ -18,12 +18,17 @@ import (
 const SubjectFareCalculated = "fare.calculated"
 
 // TripInfo is the slice of a trip settlement needs. fare.calculated
-// carries the rider and the total, but not the driver — that only lives
-// on the trip.
+// carries the rider and the total, but not the driver or how the rider
+// pays — those only live on the trip.
 type TripInfo struct {
 	ID       string
 	RiderID  string
 	DriverID string
+
+	// PaymentMethod is how the rider chose to pay (cash or wallet). Empty
+	// for a trip that predates the field, which falls back to the
+	// configured default.
+	PaymentMethod string
 }
 
 // TripReader is wallet-service's view of trip-service.
@@ -211,11 +216,19 @@ func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error
 		riderID = strings.TrimSpace(trip.RiderID)
 	}
 
+	// The method the rider chose when requesting the trip. A trip that
+	// predates the field (empty) uses the configured default. Anything
+	// unknown is rejected by SettleTrip as a permanent failure.
+	paymentMethod := h.defaultPaymentMethod
+	if raw := strings.ToLower(strings.TrimSpace(trip.PaymentMethod)); raw != "" {
+		paymentMethod = wallet.PaymentMethod(raw)
+	}
+
 	_, err = h.settler.SettleTrip(ctx, wallet.SettleTripInput{
 		TripID:        tripID,
 		RiderID:       riderID,
 		DriverID:      driverID,
-		PaymentMethod: h.defaultPaymentMethod,
+		PaymentMethod: paymentMethod,
 		FareAmount:    payload.Total,
 	})
 	if err == nil {
@@ -223,7 +236,7 @@ func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error
 			"trip_id", tripID,
 			"driver_id", driverID,
 			"fare_amount", payload.Total.String(),
-			"payment_method", string(h.defaultPaymentMethod),
+			"payment_method", string(paymentMethod),
 		)
 
 		return nil

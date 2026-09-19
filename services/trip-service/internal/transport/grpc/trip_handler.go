@@ -52,12 +52,13 @@ func (h *TripHandler) RequestTrip(
 	created, err := h.tripService.RequestTrip(
 		ctx,
 		trip.RequestTripInput{
-			RiderID:      request.GetRiderId(),
-			PickupLat:    pickup.GetLatitude(),
-			PickupLng:    pickup.GetLongitude(),
-			DropoffLat:   dropoff.GetLatitude(),
-			DropoffLng:   dropoff.GetLongitude(),
-			VehicleClass: request.GetVehicleClass(),
+			RiderID:       request.GetRiderId(),
+			PickupLat:     pickup.GetLatitude(),
+			PickupLng:     pickup.GetLongitude(),
+			DropoffLat:    dropoff.GetLatitude(),
+			DropoffLng:    dropoff.GetLongitude(),
+			VehicleClass:  request.GetVehicleClass(),
+			PaymentMethod: request.GetPaymentMethod(),
 		},
 	)
 	if err != nil {
@@ -267,7 +268,8 @@ func (h *TripHandler) mapTripError(err error) error {
 		errors.Is(err, trip.ErrInvalidLatitude),
 		errors.Is(err, trip.ErrInvalidLongitude),
 		errors.Is(err, trip.ErrInvalidSosTriggeredBy),
-		errors.Is(err, trip.ErrInvalidVehicleClass):
+		errors.Is(err, trip.ErrInvalidVehicleClass),
+		errors.Is(err, trip.ErrInvalidPaymentMethod):
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	case errors.Is(err, trip.ErrPickupOutsideServiceZone):
@@ -321,6 +323,7 @@ func toProtoTrip(t trip.Trip) *tripv1.Trip {
 		},
 		CancellationReason: t.CancellationReason,
 		VehicleClass:       t.VehicleClass,
+		PaymentMethod:      t.PaymentMethod,
 		RequestedAt:        timestamppb.New(t.RequestedAt),
 		AcceptedAt:         optionalTimestamp(t.AcceptedAt),
 		StartedAt:          optionalTimestamp(t.StartedAt),

@@ -10,7 +10,7 @@ import (
 )
 
 // TripClient is wallet-service's view of trip-service: just enough of a
-// trip to settle it — who drove it, and who rode.
+// trip to settle it — who drove it, who rode, and how they pay.
 type TripClient struct {
 	client tripv1.TripServiceClient
 }
@@ -35,8 +35,9 @@ func (c *TripClient) GetTrip(
 	trip := response.GetTrip()
 
 	return events.TripInfo{
-		ID:       trip.GetId(),
-		RiderID:  trip.GetRiderId(),
-		DriverID: trip.GetDriverId(),
+		ID:            trip.GetId(),
+		RiderID:       trip.GetRiderId(),
+		DriverID:      trip.GetDriverId(),
+		PaymentMethod: trip.GetPaymentMethod(),
 	}, nil
 }
