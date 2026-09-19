@@ -11,6 +11,7 @@ import (
 	"github.com/7akoom/ride-platform/services/notification-service/internal/application/events"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/application/notification"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/config"
+	"github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/alerts"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/channels"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/clients"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/infrastructure/database"
@@ -47,6 +48,13 @@ func run() int {
 	natsConfig, err := config.ParseNATS(cfg)
 	if err != nil {
 		logger.Error("invalid NATS configuration", "error", err)
+
+		return 1
+	}
+
+	sosConfig, err := config.ParseSOSAlerts(cfg)
+	if err != nil {
+		logger.Error("invalid SOS alert configuration", "error", err)
 
 		return 1
 	}
@@ -129,11 +137,25 @@ func run() int {
 	)
 	notificationHandler := grpcserver.NewNotificationHandler(notificationService, logger)
 
+	sosAlerter, err := alerts.New(sosConfig, logger)
+	if err != nil {
+		logger.Error("failed to configure SOS operator alerts", "error", err)
+
+		return 1
+	}
+
+	if sosAlerter == nil {
+		logger.Error("no SOS operator alert channel is configured (set SOS_OPERATOR_PHONES and/or SOS_WEBHOOK_URL); an SOS will NOT reach anyone at the company")
+	} else {
+		logger.Info("SOS operator alerts configured", "sms_phones", len(sosConfig.OperatorPhones), "webhook", sosConfig.WebhookEnabled())
+	}
+
 	eventHandler := events.NewHandler(
 		notificationService,
 		clients.NewTripClient(tripConn),
 		clients.NewDriverClient(driverConn),
 		logger,
+		events.WithOperatorAlerter(sosAlerter, sosConfig.RetryInterval, sosConfig.GiveUpAfter),
 	)
 
 	tripSubscription, err := natsinfra.SubscribeDurable(

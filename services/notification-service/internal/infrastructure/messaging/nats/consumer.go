@@ -2,6 +2,7 @@ package nats
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -11,9 +12,17 @@ import (
 
 // MessageHandler processes one event. Returning nil acks the message;
 // a non-nil error naks it, so JetStream redelivers it (the handler must
-// be safe to run more than once for the same event — callers use the
-// event's own ID as an idempotency key downstream).
+// be safe to run more than once for the same event).
+//
+// If the returned error implements RetryDelay() time.Duration, the
+// message is redelivered after that delay instead of immediately —
+// a failing SMS gateway is retried on a timer instead of in a hot loop.
 type MessageHandler func(ctx context.Context, subject string, data []byte) error
+
+// retryDelayer is satisfied by errors that ask for delayed redelivery.
+type retryDelayer interface {
+	RetryDelay() time.Duration
+}
 
 const consumerAckWait = 30 * time.Second
 
@@ -68,6 +77,23 @@ func SubscribeDurable(
 
 	consumeCtx, err := consumer.Consume(func(msg jetstream.Msg) {
 		if err := handler(ctx, msg.Subject(), msg.Data()); err != nil {
+			var delayed retryDelayer
+
+			if errors.As(err, &delayed) {
+				logger.DebugContext(
+					ctx,
+					"event handler asked for delayed redelivery",
+					"subject", msg.Subject(),
+					"delay", delayed.RetryDelay(),
+				)
+
+				if nakErr := msg.NakWithDelay(delayed.RetryDelay()); nakErr != nil {
+					logger.ErrorContext(ctx, "failed to nak message with delay", "error", nakErr)
+				}
+
+				return
+			}
+
 			logger.ErrorContext(
 				ctx,
 				"event handler failed; message will be redelivered",

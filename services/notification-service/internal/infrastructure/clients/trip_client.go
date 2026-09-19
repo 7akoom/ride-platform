@@ -36,6 +36,8 @@ func (c *TripClient) GetTrip(
 		ID:               trip.GetId(),
 		RiderID:          trip.GetRiderId(),
 		DriverID:         trip.GetDriverId(),
+		PickupLatitude:   trip.GetPickup().GetLatitude(),
+		PickupLongitude:  trip.GetPickup().GetLongitude(),
 		DropoffLatitude:  trip.GetDropoff().GetLatitude(),
 		DropoffLongitude: trip.GetDropoff().GetLongitude(),
 	}, nil

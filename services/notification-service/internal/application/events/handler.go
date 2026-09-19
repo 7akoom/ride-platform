@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/7akoom/ride-platform/services/notification-service/internal/application/notification"
 	"github.com/shopspring/decimal"
@@ -25,6 +26,34 @@ type Handler struct {
 	tripClient          TripClient
 	driverClient        DriverClient
 	logger              *slog.Logger
+	sos                 *sosDelivery
+}
+
+// Option customises a Handler at construction time.
+type Option func(*Handler)
+
+// WithOperatorAlerter makes an SOS reach a human at the operating company,
+// not only the person who pressed the button. A failed alert is retried
+// every retryInterval until giveUpAfter has passed since the SOS was
+// raised, after which an error is logged and it stops.
+func WithOperatorAlerter(alerter OperatorAlerter, retryInterval, giveUpAfter time.Duration) Option {
+	return func(h *Handler) {
+		if alerter == nil {
+			return
+		}
+
+		if retryInterval <= 0 {
+			panic("SOS retry interval must be positive")
+		}
+
+		if giveUpAfter <= 0 {
+			panic("SOS give-up window must be positive")
+		}
+
+		h.sos.alerter = alerter
+		h.sos.retryInterval = retryInterval
+		h.sos.giveUpAfter = giveUpAfter
+	}
 }
 
 func NewHandler(
@@ -32,6 +61,7 @@ func NewHandler(
 	tripClient TripClient,
 	driverClient DriverClient,
 	logger *slog.Logger,
+	options ...Option,
 ) *Handler {
 	if notificationService == nil {
 		panic("notification service is required")
@@ -49,12 +79,19 @@ func NewHandler(
 		panic("logger is required")
 	}
 
-	return &Handler{
+	handler := &Handler{
 		notificationService: notificationService,
 		tripClient:          tripClient,
 		driverClient:        driverClient,
 		logger:              logger,
+		sos:                 newSOSDelivery(logger),
 	}
+
+	for _, option := range options {
+		option(handler)
+	}
+
+	return handler
 }
 
 // Dispatch decodes the envelope and routes it to the matching handler by

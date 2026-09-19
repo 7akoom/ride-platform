@@ -28,6 +28,21 @@ type Config struct {
 	NATSReconnectWait  string
 	NATSDrainTimeout   string
 
+	// SOS operator alerts: when a rider or driver presses SOS, a human at the
+	// operating company is told out of band (see config/sos_alerts.go).
+	// SOSOperatorPhones is a comma-separated list of numbers that get an SMS
+	// through the BulkSMSIraq gateway (the same BULKSMSIRAQ_* settings
+	// identity-service uses); SOSWebhookURL, if set, gets a JSON POST too.
+	SOSOperatorPhones   string
+	BulkSMSIraqEndpoint string
+	BulkSMSIraqAPIKey   string
+	BulkSMSIraqSenderID string
+	SOSWebhookURL       string
+	SOSWebhookSecret    string
+	SOSAlertTimeout     string
+	SOSRetryInterval    string
+	SOSGiveUpAfter      string
+
 	// Verifies access tokens issued by identity-service. The public key
 	// must be copied from identity-service's own .local/keys directory —
 	// it is never committed to the repo.
@@ -69,6 +84,16 @@ func Load() Config {
 		NATSConnectTimeout: getEnv("NATS_CONNECT_TIMEOUT", "5s"),
 		NATSReconnectWait:  getEnv("NATS_RECONNECT_WAIT", "2s"),
 		NATSDrainTimeout:   getEnv("NATS_DRAIN_TIMEOUT", "5s"),
+
+		SOSOperatorPhones:   getEnv("SOS_OPERATOR_PHONES", ""),
+		BulkSMSIraqEndpoint: getEnv("BULKSMSIRAQ_ENDPOINT", ""),
+		BulkSMSIraqAPIKey:   getEnv("BULKSMSIRAQ_API_KEY", ""),
+		BulkSMSIraqSenderID: getEnv("BULKSMSIRAQ_SENDER_ID", ""),
+		SOSWebhookURL:       getEnv("SOS_WEBHOOK_URL", ""),
+		SOSWebhookSecret:    getEnv("SOS_WEBHOOK_SECRET", ""),
+		SOSAlertTimeout:     getEnv("SOS_ALERT_TIMEOUT", "10s"),
+		SOSRetryInterval:    getEnv("SOS_ALERT_RETRY_INTERVAL", "15s"),
+		SOSGiveUpAfter:      getEnv("SOS_ALERT_GIVE_UP_AFTER", "30m"),
 
 		AccessTokenPublicKeyPath: getEnv("ACCESS_TOKEN_PUBLIC_KEY_PATH", ".local/keys/access_token_public.pem"),
 		AccessTokenIssuer:        getEnv("ACCESS_TOKEN_ISSUER", "ride-identity"),

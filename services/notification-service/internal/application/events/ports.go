@@ -3,11 +3,14 @@ package events
 import "context"
 
 // TripInfo is the handler's view of a trip — just enough to resolve the
-// rider to notify and, for "trip started", where it's headed.
+// rider to notify and, for "trip started", where it's headed. The pickup
+// point is the fallback location for an SOS alert.
 type TripInfo struct {
 	ID               string
 	RiderID          string
 	DriverID         string
+	PickupLatitude   float64
+	PickupLongitude  float64
 	DropoffLatitude  float64
 	DropoffLongitude float64
 }
