@@ -47,12 +47,13 @@ func (h *PricingHandler) EstimateFare(
 	dropoff := request.GetDropoff()
 
 	breakdown, err := h.pricingService.EstimateFare(ctx, pricing.EstimateFareInput{
-		RiderID:    request.GetRiderId(),
-		PickupLat:  pickup.GetLatitude(),
-		PickupLng:  pickup.GetLongitude(),
-		DropoffLat: dropoff.GetLatitude(),
-		DropoffLng: dropoff.GetLongitude(),
-		CouponCode: request.GetCouponCode(),
+		RiderID:      request.GetRiderId(),
+		PickupLat:    pickup.GetLatitude(),
+		PickupLng:    pickup.GetLongitude(),
+		DropoffLat:   dropoff.GetLatitude(),
+		DropoffLng:   dropoff.GetLongitude(),
+		CouponCode:   request.GetCouponCode(),
+		VehicleClass: request.GetVehicleClass(),
 	})
 	if err != nil {
 		return nil, h.mapPricingError(err)
@@ -75,13 +76,14 @@ func (h *PricingHandler) CalculateFare(
 	dropoff := request.GetDropoff()
 
 	fare, err := h.pricingService.CalculateFare(ctx, pricing.CalculateFareInput{
-		TripID:     request.GetTripId(),
-		RiderID:    request.GetRiderId(),
-		PickupLat:  pickup.GetLatitude(),
-		PickupLng:  pickup.GetLongitude(),
-		DropoffLat: dropoff.GetLatitude(),
-		DropoffLng: dropoff.GetLongitude(),
-		CouponCode: request.GetCouponCode(),
+		TripID:       request.GetTripId(),
+		RiderID:      request.GetRiderId(),
+		PickupLat:    pickup.GetLatitude(),
+		PickupLng:    pickup.GetLongitude(),
+		DropoffLat:   dropoff.GetLatitude(),
+		DropoffLng:   dropoff.GetLongitude(),
+		CouponCode:   request.GetCouponCode(),
+		VehicleClass: request.GetVehicleClass(),
 	})
 	if err != nil {
 		return nil, h.mapPricingError(err)
@@ -181,7 +183,8 @@ func (h *PricingHandler) mapPricingError(err error) error {
 		errors.Is(err, pricing.ErrCouponCodeRequired),
 		errors.Is(err, pricing.ErrInvalidDiscountType),
 		errors.Is(err, pricing.ErrInvalidDiscountValue),
-		errors.Is(err, pricing.ErrInvalidValidityWindow):
+		errors.Is(err, pricing.ErrInvalidValidityWindow),
+		errors.Is(err, pricing.ErrInvalidVehicleClass):
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	default:
@@ -230,6 +233,7 @@ func toProtoFareBreakdown(b pricing.FareBreakdown) *pricingv1.FareBreakdown {
 	return &pricingv1.FareBreakdown{
 		CurrencyCode:    b.CurrencyCode,
 		ZoneId:          b.ZoneID,
+		VehicleClass:    b.VehicleClass,
 		BaseFare:        b.BaseFare.String(),
 		DistanceKm:      b.DistanceKm,
 		DistanceFare:    b.DistanceFare.String(),

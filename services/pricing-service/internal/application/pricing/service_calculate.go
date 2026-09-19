@@ -11,12 +11,13 @@ func (s *service) EstimateFare(
 	input EstimateFareInput,
 ) (FareBreakdown, error) {
 	breakdown, _, err := s.buildFare(ctx, fareRequest{
-		RiderID:    input.RiderID,
-		PickupLat:  input.PickupLat,
-		PickupLng:  input.PickupLng,
-		DropoffLat: input.DropoffLat,
-		DropoffLng: input.DropoffLng,
-		CouponCode: input.CouponCode,
+		RiderID:      input.RiderID,
+		PickupLat:    input.PickupLat,
+		PickupLng:    input.PickupLng,
+		DropoffLat:   input.DropoffLat,
+		DropoffLng:   input.DropoffLng,
+		CouponCode:   input.CouponCode,
+		VehicleClass: input.VehicleClass,
 	})
 	if err != nil {
 		return FareBreakdown{}, err
@@ -50,12 +51,13 @@ func (s *service) CalculateFare(
 	}
 
 	breakdown, appliedCoupon, err := s.buildFare(ctx, fareRequest{
-		RiderID:    input.RiderID,
-		PickupLat:  input.PickupLat,
-		PickupLng:  input.PickupLng,
-		DropoffLat: input.DropoffLat,
-		DropoffLng: input.DropoffLng,
-		CouponCode: input.CouponCode,
+		RiderID:      input.RiderID,
+		PickupLat:    input.PickupLat,
+		PickupLng:    input.PickupLng,
+		DropoffLat:   input.DropoffLat,
+		DropoffLng:   input.DropoffLng,
+		CouponCode:   input.CouponCode,
+		VehicleClass: input.VehicleClass,
 	})
 	if err != nil {
 		return Fare{}, err

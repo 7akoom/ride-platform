@@ -43,7 +43,10 @@ type Repository interface {
 	// exists, otherwise the newest global-default row (zone_id NULL).
 	// zoneID is always a real zone id here — callers only reach this
 	// after CheckServiceZone has confirmed the pickup is served.
-	GetActiveConfig(ctx context.Context, zoneID string) (Config, error)
+	// vehicleClass narrows the lookup further: a rate card for that class wins
+	// over one that applies to any class. Order, most specific first: (zone,
+	// class), (zone, any class), (no zone, class), the global default.
+	GetActiveConfig(ctx context.Context, zoneID, vehicleClass string) (Config, error)
 
 	ListActiveSurgeTimeRules(ctx context.Context) ([]SurgeTimeRule, error)
 

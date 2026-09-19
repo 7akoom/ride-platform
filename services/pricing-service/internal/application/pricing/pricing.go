@@ -18,10 +18,13 @@ const (
 // one currency (matches the "sell a separate instance per client"
 // business model — no need for multi-currency inside one instance).
 type Config struct {
-	ID           string
+	ID string
 	// Empty means this is the deployment's global default rate card,
 	// not tied to any specific service zone.
-	ZoneID                   string
+	ZoneID string
+	// Empty means this rate card applies to any vehicle class; otherwise it
+	// is specific to that class (economy, comfort).
+	VehicleClass             string
 	CurrencyCode             string
 	BaseFare                 decimal.Decimal
 	PerKmRate                decimal.Decimal
@@ -95,6 +98,8 @@ func (c Coupon) IsCurrentlyValid(now time.Time) bool {
 // fare calculation can't afford. DistanceKm/DurationMinutes stay
 // float64: they're physical measurements from OSRM, not currency.
 type FareBreakdown struct {
+	// The class this fare was priced for (economy when the request named none).
+	VehicleClass string
 	CurrencyCode string
 	// The service zone the pickup actually resolved to (see
 	// CheckServiceZone) — set even when that zone has no rate card of

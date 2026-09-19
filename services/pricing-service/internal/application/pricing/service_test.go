@@ -18,6 +18,9 @@ type fakeRepository struct {
 	config    Config
 	configErr error
 
+	// lastVehicleClass is the class GetActiveConfig was last asked for.
+	lastVehicleClass string
+
 	// configsByZone lets a test give one specific zone its own rate
 	// card; GetActiveConfig falls back to config (the global default)
 	// for any zone not present here — mirrors the real repository's
@@ -50,7 +53,9 @@ func newFakeRepository() *fakeRepository {
 	}
 }
 
-func (r *fakeRepository) GetActiveConfig(_ context.Context, zoneID string) (Config, error) {
+func (r *fakeRepository) GetActiveConfig(_ context.Context, zoneID, vehicleClass string) (Config, error) {
+	r.lastVehicleClass = vehicleClass
+
 	if r.configErr != nil {
 		return Config{}, r.configErr
 	}

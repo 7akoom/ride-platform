@@ -3,22 +3,24 @@ package pricing
 import "context"
 
 type EstimateFareInput struct {
-	RiderID    string
-	PickupLat  float64
-	PickupLng  float64
-	DropoffLat float64
-	DropoffLng float64
-	CouponCode string
+	RiderID      string
+	PickupLat    float64
+	PickupLng    float64
+	DropoffLat   float64
+	DropoffLng   float64
+	CouponCode   string
+	VehicleClass string
 }
 
 type CalculateFareInput struct {
-	TripID     string
-	RiderID    string
-	PickupLat  float64
-	PickupLng  float64
-	DropoffLat float64
-	DropoffLng float64
-	CouponCode string
+	TripID       string
+	RiderID      string
+	PickupLat    float64
+	PickupLng    float64
+	DropoffLat   float64
+	DropoffLng   float64
+	CouponCode   string
+	VehicleClass string
 }
 
 type Service interface {

@@ -61,6 +61,8 @@ message FareBreakdown {
   string applied_discount_label = 11;
   string discount_amount = 12;
   string total = 13;
+  // The vehicle class this fare was priced for.
+  string vehicle_class = 15;
 }
 
 message EstimateFareRequest {
@@ -68,6 +70,8 @@ message EstimateFareRequest {
   Coordinates pickup = 2;
   Coordinates dropoff = 3;
   string coupon_code = 4;
+  // economy (default when empty) or comfort.
+  string vehicle_class = 5;
 }
 
 message EstimateFareResponse {
@@ -80,6 +84,7 @@ message CalculateFareRequest {
   Coordinates pickup = 3;
   Coordinates dropoff = 4;
   string coupon_code = 5;
+  string vehicle_class = 6;
 }
 
 message CalculateFareResponse {

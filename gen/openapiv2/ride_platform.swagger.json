@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "ride/dispatch/v1/dispatch.proto",
+    "title": "ride/pricing/v1/pricing.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "DispatchService"
+      "name": "PricingService"
     }
   ],
   "consumes": [

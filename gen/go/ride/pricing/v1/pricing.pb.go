@@ -230,8 +230,10 @@ type FareBreakdown struct {
 	AppliedDiscountLabel string          `protobuf:"bytes,11,opt,name=applied_discount_label,json=appliedDiscountLabel,proto3" json:"applied_discount_label,omitempty"`
 	DiscountAmount       string          `protobuf:"bytes,12,opt,name=discount_amount,json=discountAmount,proto3" json:"discount_amount,omitempty"`
 	Total                string          `protobuf:"bytes,13,opt,name=total,proto3" json:"total,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// The vehicle class this fare was priced for.
+	VehicleClass  string `protobuf:"bytes,15,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FareBreakdown) Reset() {
@@ -362,12 +364,21 @@ func (x *FareBreakdown) GetTotal() string {
 	return ""
 }
 
+func (x *FareBreakdown) GetVehicleClass() string {
+	if x != nil {
+		return x.VehicleClass
+	}
+	return ""
+}
+
 type EstimateFareRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
-	Pickup        *Coordinates           `protobuf:"bytes,2,opt,name=pickup,proto3" json:"pickup,omitempty"`
-	Dropoff       *Coordinates           `protobuf:"bytes,3,opt,name=dropoff,proto3" json:"dropoff,omitempty"`
-	CouponCode    string                 `protobuf:"bytes,4,opt,name=coupon_code,json=couponCode,proto3" json:"coupon_code,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	RiderId    string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	Pickup     *Coordinates           `protobuf:"bytes,2,opt,name=pickup,proto3" json:"pickup,omitempty"`
+	Dropoff    *Coordinates           `protobuf:"bytes,3,opt,name=dropoff,proto3" json:"dropoff,omitempty"`
+	CouponCode string                 `protobuf:"bytes,4,opt,name=coupon_code,json=couponCode,proto3" json:"coupon_code,omitempty"`
+	// economy (default when empty) or comfort.
+	VehicleClass  string `protobuf:"bytes,5,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -430,6 +441,13 @@ func (x *EstimateFareRequest) GetCouponCode() string {
 	return ""
 }
 
+func (x *EstimateFareRequest) GetVehicleClass() string {
+	if x != nil {
+		return x.VehicleClass
+	}
+	return ""
+}
+
 type EstimateFareResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Fare          *FareBreakdown         `protobuf:"bytes,1,opt,name=fare,proto3" json:"fare,omitempty"`
@@ -481,6 +499,7 @@ type CalculateFareRequest struct {
 	Pickup        *Coordinates           `protobuf:"bytes,3,opt,name=pickup,proto3" json:"pickup,omitempty"`
 	Dropoff       *Coordinates           `protobuf:"bytes,4,opt,name=dropoff,proto3" json:"dropoff,omitempty"`
 	CouponCode    string                 `protobuf:"bytes,5,opt,name=coupon_code,json=couponCode,proto3" json:"coupon_code,omitempty"`
+	VehicleClass  string                 `protobuf:"bytes,6,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -546,6 +565,13 @@ func (x *CalculateFareRequest) GetDropoff() *Coordinates {
 func (x *CalculateFareRequest) GetCouponCode() string {
 	if x != nil {
 		return x.CouponCode
+	}
+	return ""
+}
+
+func (x *CalculateFareRequest) GetVehicleClass() string {
+	if x != nil {
+		return x.VehicleClass
 	}
 	return ""
 }
@@ -957,7 +983,7 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\rtotal_percent\x18\x04 \x01(\tR\ftotalPercent\x12\x1e\n" +
 	"\n" +
 	"multiplier\x18\x05 \x01(\tR\n" +
-	"multiplier\"\xbe\x04\n" +
+	"multiplier\"\xe3\x04\n" +
 	"\rFareBreakdown\x12#\n" +
 	"\rcurrency_code\x18\x01 \x01(\tR\fcurrencyCode\x12\x17\n" +
 	"\azone_id\x18\x0e \x01(\tR\x06zoneId\x12\x1b\n" +
@@ -974,22 +1000,25 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	" \x01(\x0e2\x1d.ride.pricing.v1.DiscountTypeR\x13appliedDiscountType\x124\n" +
 	"\x16applied_discount_label\x18\v \x01(\tR\x14appliedDiscountLabel\x12'\n" +
 	"\x0fdiscount_amount\x18\f \x01(\tR\x0ediscountAmount\x12\x14\n" +
-	"\x05total\x18\r \x01(\tR\x05total\"\xbf\x01\n" +
+	"\x05total\x18\r \x01(\tR\x05total\x12#\n" +
+	"\rvehicle_class\x18\x0f \x01(\tR\fvehicleClass\"\xe4\x01\n" +
 	"\x13EstimateFareRequest\x12\x19\n" +
 	"\brider_id\x18\x01 \x01(\tR\ariderId\x124\n" +
 	"\x06pickup\x18\x02 \x01(\v2\x1c.ride.pricing.v1.CoordinatesR\x06pickup\x126\n" +
 	"\adropoff\x18\x03 \x01(\v2\x1c.ride.pricing.v1.CoordinatesR\adropoff\x12\x1f\n" +
 	"\vcoupon_code\x18\x04 \x01(\tR\n" +
-	"couponCode\"J\n" +
+	"couponCode\x12#\n" +
+	"\rvehicle_class\x18\x05 \x01(\tR\fvehicleClass\"J\n" +
 	"\x14EstimateFareResponse\x122\n" +
-	"\x04fare\x18\x01 \x01(\v2\x1e.ride.pricing.v1.FareBreakdownR\x04fare\"\xd9\x01\n" +
+	"\x04fare\x18\x01 \x01(\v2\x1e.ride.pricing.v1.FareBreakdownR\x04fare\"\xfe\x01\n" +
 	"\x14CalculateFareRequest\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12\x19\n" +
 	"\brider_id\x18\x02 \x01(\tR\ariderId\x124\n" +
 	"\x06pickup\x18\x03 \x01(\v2\x1c.ride.pricing.v1.CoordinatesR\x06pickup\x126\n" +
 	"\adropoff\x18\x04 \x01(\v2\x1c.ride.pricing.v1.CoordinatesR\adropoff\x12\x1f\n" +
 	"\vcoupon_code\x18\x05 \x01(\tR\n" +
-	"couponCode\"K\n" +
+	"couponCode\x12#\n" +
+	"\rvehicle_class\x18\x06 \x01(\tR\fvehicleClass\"K\n" +
 	"\x15CalculateFareResponse\x122\n" +
 	"\x04fare\x18\x01 \x01(\v2\x1e.ride.pricing.v1.FareBreakdownR\x04fare\"\x8d\x03\n" +
 	"\x13CreateCouponRequest\x12\x12\n" +

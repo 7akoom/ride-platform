@@ -48,12 +48,13 @@ func (s *service) routeOrFallback(
 }
 
 type fareRequest struct {
-	RiderID    string
-	PickupLat  float64
-	PickupLng  float64
-	DropoffLat float64
-	DropoffLng float64
-	CouponCode string
+	RiderID      string
+	PickupLat    float64
+	PickupLng    float64
+	DropoffLat   float64
+	DropoffLng   float64
+	CouponCode   string
+	VehicleClass string
 }
 
 // buildFare is the one place the full pricing pipeline lives, shared by
@@ -77,6 +78,11 @@ func (s *service) buildFare(
 		return FareBreakdown{}, nil, err
 	}
 
+	vehicleClass, err := NormalizeVehicleClass(request.VehicleClass)
+	if err != nil {
+		return FareBreakdown{}, nil, err
+	}
+
 	served, zoneID, err := s.locationClient.CheckServiceZone(ctx, request.PickupLat, request.PickupLng)
 	if err != nil {
 		return FareBreakdown{}, nil, fmt.Errorf("check service zone: %w", err)
@@ -86,7 +92,7 @@ func (s *service) buildFare(
 		return FareBreakdown{}, nil, ErrPickupOutsideServiceZone
 	}
 
-	config, err := s.repository.GetActiveConfig(ctx, zoneID)
+	config, err := s.repository.GetActiveConfig(ctx, zoneID, vehicleClass)
 	if err != nil {
 		return FareBreakdown{}, nil, fmt.Errorf("get active pricing config: %w", err)
 	}
@@ -102,6 +108,7 @@ func (s *service) buildFare(
 
 	breakdown := baseFareBreakdown(config, route)
 	breakdown.ZoneID = zoneID
+	breakdown.VehicleClass = vehicleClass
 
 	rules, err := s.repository.ListActiveSurgeTimeRules(ctx)
 	if err != nil {
