@@ -239,6 +239,7 @@ func run() int {
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
+		grpcserver.NewAuthorizationUnaryInterceptor(),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterWalletService(walletHandler)
