@@ -50,10 +50,13 @@ func (r *DriverRepository) Create(
 		ctx,
 		`INSERT INTO drivers
 		    (id, identity_id, display_name,
-		     vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		     vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
+		     vehicle_class)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7,
+		         COALESCE(NULLIF($8::text, ''), 'economy'))
 		 RETURNING id, identity_id, display_name, status, availability_status,
 		           vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
+		           vehicle_class,
 		           rating_average, rating_count, created_at, updated_at`,
 		input.ID,
 		input.IdentityID,
@@ -62,6 +65,7 @@ func (r *DriverRepository) Create(
 		input.Vehicle.Model,
 		input.Vehicle.Color,
 		input.Vehicle.PlateNumber,
+		string(input.Vehicle.Class),
 	)
 
 	if err := scanDriver(row, &created); err != nil {
@@ -120,6 +124,7 @@ func (r *DriverRepository) FindByID(
 		ctx,
 		`SELECT id, identity_id, display_name, status, availability_status,
 		        vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
+		        vehicle_class,
 		        rating_average, rating_count, created_at, updated_at
 		 FROM drivers
 		 WHERE id = $1`,
@@ -147,6 +152,7 @@ func (r *DriverRepository) FindByIdentityID(
 		ctx,
 		`SELECT id, identity_id, display_name, status, availability_status,
 		        vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
+		        vehicle_class,
 		        rating_average, rating_count, created_at, updated_at
 		 FROM drivers
 		 WHERE identity_id = $1`,
@@ -166,6 +172,8 @@ func (r *DriverRepository) FindByIdentityID(
 	return found, nil
 }
 
+// UpdateProfile treats an empty vehicle class as "leave it unchanged", so
+// editing a name or plate can never silently downgrade a comfort driver.
 func (r *DriverRepository) UpdateProfile(
 	ctx context.Context,
 	input driver.UpdateProfileInput,
@@ -178,10 +186,12 @@ func (r *DriverRepository) UpdateProfile(
 		     vehicle_model = $4,
 		     vehicle_color = $5,
 		     vehicle_plate_number = $6,
+		     vehicle_class = COALESCE(NULLIF($7::text, ''), vehicle_class),
 		     updated_at = CURRENT_TIMESTAMP
 		 WHERE id = $1
 		 RETURNING id, identity_id, display_name, status, availability_status,
 		           vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
+		           vehicle_class,
 		           rating_average, rating_count, created_at, updated_at`,
 		input.DriverID,
 		input.DisplayName,
@@ -189,6 +199,7 @@ func (r *DriverRepository) UpdateProfile(
 		input.Vehicle.Model,
 		input.Vehicle.Color,
 		input.Vehicle.PlateNumber,
+		string(input.Vehicle.Class),
 	)
 
 	var updated driver.Driver
@@ -222,6 +233,7 @@ func (r *DriverRepository) UpdateAvailability(
 		 WHERE id = $1
 		 RETURNING id, identity_id, display_name, status, availability_status,
 		           vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
+		           vehicle_class,
 		           rating_average, rating_count, created_at, updated_at`,
 		input.DriverID,
 		string(input.AvailabilityStatus),
@@ -241,7 +253,7 @@ func (r *DriverRepository) UpdateAvailability(
 }
 
 func scanDriver(row pgx.Row, dest *driver.Driver) error {
-	var status, availability string
+	var status, availability, vehicleClass string
 
 	err := row.Scan(
 		&dest.ID,
@@ -253,6 +265,7 @@ func scanDriver(row pgx.Row, dest *driver.Driver) error {
 		&dest.Vehicle.Model,
 		&dest.Vehicle.Color,
 		&dest.Vehicle.PlateNumber,
+		&vehicleClass,
 		&dest.RatingAverage,
 		&dest.RatingCount,
 		&dest.CreatedAt,
@@ -264,6 +277,7 @@ func scanDriver(row pgx.Row, dest *driver.Driver) error {
 
 	dest.Status = driver.Status(status)
 	dest.AvailabilityStatus = driver.AvailabilityStatus(availability)
+	dest.Vehicle.Class = driver.VehicleClass(vehicleClass)
 
 	return nil
 }

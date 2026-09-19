@@ -29,6 +29,25 @@ func (a AvailabilityStatus) Valid() bool {
 	}
 }
 
+// VehicleClass is the service tier a driver's vehicle qualifies for.
+// Adding a class means adding a constant here, extending Valid, and
+// widening the drivers_vehicle_class_check constraint in a migration.
+type VehicleClass string
+
+const (
+	VehicleClassEconomy VehicleClass = "economy"
+	VehicleClassComfort VehicleClass = "comfort"
+)
+
+func (c VehicleClass) Valid() bool {
+	switch c {
+	case VehicleClassEconomy, VehicleClassComfort:
+		return true
+	default:
+		return false
+	}
+}
+
 // DisplayName is a validated, trimmed driver display name.
 type DisplayName struct {
 	value string
@@ -53,14 +72,20 @@ func (d DisplayName) String() string {
 }
 
 // Vehicle is a validated vehicle value object.
+//
+// Class may be empty when a caller did not specify one: CreateDriver turns
+// that into economy, while UpdateDriverProfile leaves the stored class
+// untouched. Once a Vehicle is read back from the database Class is
+// always set.
 type Vehicle struct {
 	Make        string
 	Model       string
 	Color       string
 	PlateNumber string
+	Class       VehicleClass
 }
 
-func NewVehicle(make_, model, color, plateNumber string) (Vehicle, error) {
+func NewVehicle(make_, model, color, plateNumber, vehicleClass string) (Vehicle, error) {
 	trimmedPlate := strings.TrimSpace(plateNumber)
 
 	if strings.TrimSpace(make_) == "" ||
@@ -69,11 +94,17 @@ func NewVehicle(make_, model, color, plateNumber string) (Vehicle, error) {
 		return Vehicle{}, ErrVehicleFieldsRequired
 	}
 
+	class := VehicleClass(strings.ToLower(strings.TrimSpace(vehicleClass)))
+	if class != "" && !class.Valid() {
+		return Vehicle{}, ErrInvalidVehicleClass
+	}
+
 	return Vehicle{
 		Make:        strings.TrimSpace(make_),
 		Model:       strings.TrimSpace(model),
 		Color:       strings.TrimSpace(color),
 		PlateNumber: strings.ToUpper(trimmedPlate),
+		Class:       class,
 	}, nil
 }
 

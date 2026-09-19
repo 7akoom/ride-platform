@@ -129,6 +129,7 @@ type Vehicle struct {
 	Model         string                 `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
 	Color         string                 `protobuf:"bytes,3,opt,name=color,proto3" json:"color,omitempty"`
 	PlateNumber   string                 `protobuf:"bytes,4,opt,name=plate_number,json=plateNumber,proto3" json:"plate_number,omitempty"`
+	VehicleClass  string                 `protobuf:"bytes,5,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"` // economy or comfort
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -187,6 +188,13 @@ func (x *Vehicle) GetColor() string {
 func (x *Vehicle) GetPlateNumber() string {
 	if x != nil {
 		return x.PlateNumber
+	}
+	return ""
+}
+
+func (x *Vehicle) GetVehicleClass() string {
+	if x != nil {
+		return x.VehicleClass
 	}
 	return ""
 }
@@ -747,12 +755,13 @@ var File_ride_driver_v1_driver_proto protoreflect.FileDescriptor
 
 const file_ride_driver_v1_driver_proto_rawDesc = "" +
 	"\n" +
-	"\x1bride/driver/v1/driver.proto\x12\x0eride.driver.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"l\n" +
+	"\x1bride/driver/v1/driver.proto\x12\x0eride.driver.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x91\x01\n" +
 	"\aVehicle\x12\x12\n" +
 	"\x04make\x18\x01 \x01(\tR\x04make\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x12\x14\n" +
 	"\x05color\x18\x03 \x01(\tR\x05color\x12!\n" +
-	"\fplate_number\x18\x04 \x01(\tR\vplateNumber\"\xda\x03\n" +
+	"\fplate_number\x18\x04 \x01(\tR\vplateNumber\x12#\n" +
+	"\rvehicle_class\x18\x05 \x01(\tR\fvehicleClass\"\xda\x03\n" +
 	"\x06Driver\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\videntity_id\x18\x02 \x01(\tR\n" +

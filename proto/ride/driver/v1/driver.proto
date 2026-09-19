@@ -31,6 +31,7 @@ message Vehicle {
   string model = 2;
   string color = 3;
   string plate_number = 4;
+  string vehicle_class = 5; // economy or comfort
 }
 
 message Driver {

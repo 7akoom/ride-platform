@@ -428,7 +428,7 @@ func TestNewVehicle(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := driver.NewVehicle(tc.make_, tc.model, tc.color, tc.plate)
+			got, err := driver.NewVehicle(tc.make_, tc.model, tc.color, tc.plate, "")
 
 			if tc.wantErr != nil {
 				if !errors.Is(err, tc.wantErr) {

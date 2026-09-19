@@ -26,9 +26,15 @@ func (s *service) CreateDriver(
 		input.VehicleModel,
 		input.VehicleColor,
 		input.VehiclePlate,
+		input.VehicleClass,
 	)
 	if err != nil {
 		return Driver{}, err
+	}
+
+	// Clients that predate vehicle classes send none; they become economy.
+	if vehicle.Class == "" {
+		vehicle.Class = VehicleClassEconomy
 	}
 
 	existing, err := s.repository.FindByIdentityID(ctx, identityID)

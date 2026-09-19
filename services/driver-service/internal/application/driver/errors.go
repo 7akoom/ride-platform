@@ -8,6 +8,7 @@ var (
 	ErrIdentityIDRequired    = errors.New("identity id is required")
 	ErrDriverIDRequired      = errors.New("driver id is required")
 	ErrVehicleFieldsRequired = errors.New("vehicle make, model, and plate number are required")
+	ErrInvalidVehicleClass   = errors.New("invalid vehicle class")
 	ErrInvalidAvailability   = errors.New("invalid availability status")
 
 	ErrDriverNotFound      = errors.New("driver not found")

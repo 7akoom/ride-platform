@@ -9,6 +9,7 @@ type CreateDriverInput struct {
 	VehicleModel string
 	VehicleColor string
 	VehiclePlate string
+	VehicleClass string
 }
 
 type UpdateDriverProfileInput struct {
@@ -18,6 +19,7 @@ type UpdateDriverProfileInput struct {
 	VehicleModel string
 	VehicleColor string
 	VehiclePlate string
+	VehicleClass string
 }
 
 type UpdateDriverAvailabilityInput struct {

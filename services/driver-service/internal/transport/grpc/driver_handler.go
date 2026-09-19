@@ -56,6 +56,7 @@ func (h *DriverHandler) CreateDriver(
 			VehicleModel: vehicle.GetModel(),
 			VehicleColor: vehicle.GetColor(),
 			VehiclePlate: vehicle.GetPlateNumber(),
+			VehicleClass: vehicle.GetVehicleClass(),
 		},
 	)
 	if err != nil {
@@ -122,6 +123,7 @@ func (h *DriverHandler) UpdateDriverProfile(
 			VehicleModel: vehicle.GetModel(),
 			VehicleColor: vehicle.GetColor(),
 			VehiclePlate: vehicle.GetPlateNumber(),
+			VehicleClass: vehicle.GetVehicleClass(),
 		},
 	)
 	if err != nil {
@@ -173,6 +175,7 @@ func (h *DriverHandler) mapDriverError(err error) error {
 		errors.Is(err, driver.ErrDisplayNameRequired),
 		errors.Is(err, driver.ErrDisplayNameTooLong),
 		errors.Is(err, driver.ErrVehicleFieldsRequired),
+		errors.Is(err, driver.ErrInvalidVehicleClass),
 		errors.Is(err, driver.ErrInvalidAvailability):
 		return status.Error(codes.InvalidArgument, err.Error())
 
@@ -224,10 +227,11 @@ func toProtoDriver(d driver.Driver) *driverv1.Driver {
 		Status:             protoStatus,
 		AvailabilityStatus: protoAvailability,
 		Vehicle: &driverv1.Vehicle{
-			Make:        d.Vehicle.Make,
-			Model:       d.Vehicle.Model,
-			Color:       d.Vehicle.Color,
-			PlateNumber: d.Vehicle.PlateNumber,
+			Make:         d.Vehicle.Make,
+			Model:        d.Vehicle.Model,
+			Color:        d.Vehicle.Color,
+			PlateNumber:  d.Vehicle.PlateNumber,
+			VehicleClass: string(d.Vehicle.Class),
 		},
 		RatingAverage: d.RatingAverage,
 		RatingCount:   d.RatingCount,
