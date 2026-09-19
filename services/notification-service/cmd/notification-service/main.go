@@ -141,7 +141,7 @@ func run() int {
 		natsConnection.JetStream(),
 		"TRIP_EVENTS",
 		tripEventsDurable,
-		[]string{"trip.accepted", "trip.started", "trip.cancelled"},
+		[]string{"trip.accepted", "trip.started", "trip.cancelled", "trip.sos_triggered"},
 		eventHandler.Dispatch,
 		logger,
 	)
