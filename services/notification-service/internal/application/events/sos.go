@@ -14,10 +14,15 @@ import (
 //     (this is the part that matters for safety), and
 //  2. sends a confirmation to whoever pressed the button.
 //
-// The operator alert goes first and does not depend on the trip lookup
-// succeeding: if trip-service is down, operators still get an alert built
-// from the event alone. The alert is delivered once per event even if the
-// confirmation fails and the event is redelivered.
+// Neither may block the other. The operator alert does not depend on the
+// trip lookup succeeding (if trip-service is down, operators still get an
+// alert built from the event alone), and the person's confirmation is sent
+// even while the operator alert is still being retried: a broken SMS
+// gateway must not leave someone in danger without any acknowledgement.
+//
+// Redelivery is safe. The confirmation is idempotent on the event id, and
+// the operator alert is delivered once per event, so the retry of a failed
+// alert neither re-sends the confirmation nor pages operators twice.
 func (h *Handler) handleTripSOSTriggered(ctx context.Context, envelope Envelope) error {
 	var payload tripSOSTriggeredPayload
 
@@ -53,10 +58,26 @@ func (h *Handler) handleTripSOSTriggered(ctx context.Context, envelope Envelope)
 
 	alert := buildSOSAlert(payload, trip, driverName, envelope.OccurredAt)
 
-	if err := h.sos.deliver(ctx, envelope.EventID, alert); err != nil {
-		return err
+	alertErr := h.sos.deliver(ctx, envelope.EventID, alert)
+	confirmErr := h.confirmSOS(ctx, envelope, payload, trip, tripErr)
+
+	// A failed operator alert is what must be retried on its timer, so it
+	// takes precedence; a failed confirmation is retried the usual way.
+	if alertErr != nil {
+		return alertErr
 	}
 
+	return confirmErr
+}
+
+// confirmSOS tells whoever pressed SOS that it was received.
+func (h *Handler) confirmSOS(
+	ctx context.Context,
+	envelope Envelope,
+	payload tripSOSTriggeredPayload,
+	trip TripInfo,
+	tripErr error,
+) error {
 	if tripErr != nil {
 		return fmt.Errorf("look up trip %s: %w", payload.TripID, tripErr)
 	}
