@@ -65,6 +65,7 @@ type Trip struct {
 	Pickup             Coordinates
 	Dropoff            Coordinates
 	CancellationReason string
+	VehicleClass       string
 	RequestedAt        time.Time
 	AcceptedAt         *time.Time
 	StartedAt          *time.Time

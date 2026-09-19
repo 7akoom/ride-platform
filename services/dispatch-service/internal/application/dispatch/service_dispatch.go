@@ -63,6 +63,12 @@ func (s *service) DispatchTrip(
 			continue
 		}
 
+		// A comfort trip is only offered to comfort drivers, and economy to
+		// economy: strict match, no cross-class fallback.
+		if effectiveVehicleClass(driverInfo.VehicleClass) != effectiveVehicleClass(tripInfo.VehicleClass) {
+			continue
+		}
+
 		standing, err := s.walletClient.CheckDriverStanding(ctx, candidate.DriverID)
 		if err != nil {
 			// Can't verify standing — skip rather than risk assigning a

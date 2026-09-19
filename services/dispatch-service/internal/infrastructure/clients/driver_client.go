@@ -36,6 +36,7 @@ func (c *DriverClient) GetDriver(
 		ID:                 driver.GetId(),
 		Status:             driverStatusToString(driver.GetStatus()),
 		AvailabilityStatus: availabilityToString(driver.GetAvailabilityStatus()),
+		VehicleClass:       driver.GetVehicle().GetVehicleClass(),
 	}, nil
 }
 

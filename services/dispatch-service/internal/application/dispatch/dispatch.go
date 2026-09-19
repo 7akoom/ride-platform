@@ -7,8 +7,8 @@ const DefaultSearchRadiusMeters = 5000
 
 // candidateLimit is how many nearby drivers we consider before giving up.
 // Kept generous because some candidates will be filtered out (already
-// busy, or lost a race to accept another trip first).
-const candidateLimit = 10
+// busy, wrong vehicle class, or lost a race to accept another trip first).
+const candidateLimit = 30
 
 type TripInfo struct {
 	ID        string
@@ -16,6 +16,8 @@ type TripInfo struct {
 	Status    string
 	PickupLat float64
 	PickupLng float64
+	// economy or comfort; empty is treated as economy.
+	VehicleClass string
 }
 
 // TripClient is Dispatch's view of trip-service — just enough to read a
@@ -43,6 +45,8 @@ type DriverInfo struct {
 	ID                 string
 	Status             string
 	AvailabilityStatus string
+	// economy or comfort; empty is treated as economy.
+	VehicleClass string
 }
 
 // DriverClient is Dispatch's view of driver-service.

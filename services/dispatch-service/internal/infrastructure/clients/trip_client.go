@@ -33,11 +33,12 @@ func (c *TripClient) GetTrip(
 	trip := response.GetTrip()
 
 	return dispatch.TripInfo{
-		ID:        trip.GetId(),
-		RiderID:   trip.GetRiderId(),
-		Status:    tripStatusToString(trip.GetStatus()),
-		PickupLat: trip.GetPickup().GetLatitude(),
-		PickupLng: trip.GetPickup().GetLongitude(),
+		ID:           trip.GetId(),
+		RiderID:      trip.GetRiderId(),
+		Status:       tripStatusToString(trip.GetStatus()),
+		PickupLat:    trip.GetPickup().GetLatitude(),
+		PickupLng:    trip.GetPickup().GetLongitude(),
+		VehicleClass: trip.GetVehicleClass(),
 	}, nil
 }
 

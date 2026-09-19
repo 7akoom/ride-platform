@@ -6,11 +6,12 @@ import (
 )
 
 type RequestTripInput struct {
-	RiderID    string
-	PickupLat  float64
-	PickupLng  float64
-	DropoffLat float64
-	DropoffLng float64
+	RiderID      string
+	PickupLat    float64
+	PickupLng    float64
+	DropoffLat   float64
+	DropoffLng   float64
+	VehicleClass string
 }
 
 type Service interface {

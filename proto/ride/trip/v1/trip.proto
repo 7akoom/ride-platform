@@ -109,12 +109,16 @@ message Trip {
   google.protobuf.Timestamp started_at = 10;
   google.protobuf.Timestamp completed_at = 11;
   google.protobuf.Timestamp cancelled_at = 12;
+  // economy or comfort.
+  string vehicle_class = 13;
 }
 
 message RequestTripRequest {
   string rider_id = 1;
   Coordinates pickup = 2;
   Coordinates dropoff = 3;
+  // economy (default when empty) or comfort.
+  string vehicle_class = 4;
 }
 
 message RequestTripResponse {

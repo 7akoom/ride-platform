@@ -16,6 +16,11 @@ func (s *service) RequestTrip(
 		return Trip{}, ErrRiderIDRequired
 	}
 
+	vehicleClass, err := NormalizeVehicleClass(input.VehicleClass)
+	if err != nil {
+		return Trip{}, err
+	}
+
 	pickup, err := NewCoordinates(input.PickupLat, input.PickupLng)
 	if err != nil {
 		return Trip{}, err
@@ -48,10 +53,11 @@ func (s *service) RequestTrip(
 	created, err := s.repository.Create(
 		ctx,
 		CreateInput{
-			ID:      s.idGenerator.NewID(),
-			RiderID: riderID,
-			Pickup:  pickup,
-			Dropoff: dropoff,
+			ID:           s.idGenerator.NewID(),
+			RiderID:      riderID,
+			Pickup:       pickup,
+			Dropoff:      dropoff,
+			VehicleClass: vehicleClass,
 		},
 	)
 	if err != nil {
