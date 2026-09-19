@@ -461,7 +461,11 @@ func applyMovementTx(
 ) (wallet.Wallet, wallet.Transaction, error) {
 	newBalance := target.Balance.Add(input.Amount)
 
-	if !input.AllowNegative && newBalance.IsNegative() {
+	// Only a debit can run out of funds. A credit (a driver's deposit
+	// against an already-negative prepaid balance, say) never makes the
+	// balance worse, so it must not be refused just because the balance
+	// is still below zero afterwards.
+	if !input.AllowNegative && input.Amount.IsNegative() && newBalance.IsNegative() {
 		return wallet.Wallet{}, wallet.Transaction{}, wallet.ErrInsufficientFunds
 	}
 
