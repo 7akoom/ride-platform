@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	googlegrpc "google.golang.org/grpc"
@@ -13,18 +14,36 @@ import (
 const (
 	testInternalMethod = "/test.Service/Internal"
 	testOwnerMethod    = "/test.Service/Owner"
+	testUnwiredMethod  = "/test.Service/OwnerWithoutCheck"
 	testPublicMethod   = "/test.Service/Public"
 	testUnknownMethod  = "/test.Service/Unknown"
 )
 
-func runAuthorization(t *testing.T, principal *authenticatedPrincipal, method string) (bool, codes.Code) {
+type emptyOwnerResolver struct{}
+
+func (emptyOwnerResolver) RiderID(context.Context, string) (string, error)  { return "", nil }
+func (emptyOwnerResolver) DriverID(context.Context, string) (string, error) { return "", nil }
+
+func runAuthorizationCase(
+	t *testing.T,
+	principal *authenticatedPrincipal,
+	method string,
+	check ownerCheck,
+	resolver CallerResolver,
+) (bool, codes.Code) {
 	t.Helper()
+
+	checks := map[string]ownerCheck{}
+	if check != nil {
+		checks[testOwnerMethod] = check
+	}
 
 	interceptor := newAuthorizationInterceptor(map[string]accessLevel{
 		testInternalMethod: accessInternal,
 		testOwnerMethod:    accessOwner,
+		testUnwiredMethod:  accessOwner,
 		testPublicMethod:   accessAuthenticated,
-	})
+	}, checks, resolver)
 
 	ctx := context.Background()
 	if principal != nil {
@@ -42,38 +61,74 @@ func runAuthorization(t *testing.T, principal *authenticatedPrincipal, method st
 	return called, status.Code(err)
 }
 
+func checkAllows(context.Context, caller, any) (bool, error) { return true, nil }
+func checkDenies(context.Context, caller, any) (bool, error) { return false, nil }
+
 func TestAuthorizationInternalCallerReachesEveryMethod(t *testing.T) {
 	internal := &authenticatedPrincipal{IdentityID: internalServicePrincipalID, SessionID: internalServicePrincipalID}
 
-	for _, method := range []string{testInternalMethod, testOwnerMethod, testPublicMethod, testUnknownMethod} {
-		if called, code := runAuthorization(t, internal, method); !called || code != codes.OK {
+	for _, method := range []string{testInternalMethod, testOwnerMethod, testUnwiredMethod, testPublicMethod, testUnknownMethod} {
+		if called, code := runAuthorizationCase(t, internal, method, nil, nil); !called || code != codes.OK {
 			t.Fatalf("%s: internal caller must pass, got called=%v code=%v", method, called, code)
 		}
 	}
 }
 
-func TestAuthorizationEndUserIsLimitedToAuthenticatedMethods(t *testing.T) {
+func TestAuthorizationEndUserReachesAuthenticatedMethods(t *testing.T) {
 	user := &authenticatedPrincipal{IdentityID: "user-1", SessionID: "session-1"}
 
-	if called, code := runAuthorization(t, user, testPublicMethod); !called || code != codes.OK {
-		t.Fatalf("an end user must reach an authenticated method, got called=%v code=%v", called, code)
+	if called, code := runAuthorizationCase(t, user, testPublicMethod, nil, nil); !called || code != codes.OK {
+		t.Fatalf("got called=%v code=%v", called, code)
 	}
+}
 
-	for _, method := range []string{testInternalMethod, testOwnerMethod, testUnknownMethod} {
-		if called, code := runAuthorization(t, user, method); called || code != codes.PermissionDenied {
-			t.Fatalf("%s: an end user must be denied, got called=%v code=%v", method, called, code)
+func TestAuthorizationEndUserIsDeniedInternalUnknownAndUnwiredMethods(t *testing.T) {
+	user := &authenticatedPrincipal{IdentityID: "user-1", SessionID: "session-1"}
+
+	for _, method := range []string{testInternalMethod, testUnknownMethod, testUnwiredMethod} {
+		if called, code := runAuthorizationCase(t, user, method, checkAllows, emptyOwnerResolver{}); called || code != codes.PermissionDenied {
+			t.Fatalf("%s: got called=%v code=%v", method, called, code)
 		}
 	}
 }
 
+func TestAuthorizationOwnerMethodFollowsTheOwnerCheck(t *testing.T) {
+	user := &authenticatedPrincipal{IdentityID: "user-1", SessionID: "session-1"}
+
+	if called, code := runAuthorizationCase(t, user, testOwnerMethod, checkAllows, emptyOwnerResolver{}); !called || code != codes.OK {
+		t.Fatalf("an owner must pass, got called=%v code=%v", called, code)
+	}
+
+	if called, code := runAuthorizationCase(t, user, testOwnerMethod, checkDenies, emptyOwnerResolver{}); called || code != codes.PermissionDenied {
+		t.Fatalf("a non-owner must be denied, got called=%v code=%v", called, code)
+	}
+}
+
+func TestAuthorizationOwnerMethodFailsClosedWithoutAResolver(t *testing.T) {
+	user := &authenticatedPrincipal{IdentityID: "user-1", SessionID: "session-1"}
+
+	if called, code := runAuthorizationCase(t, user, testOwnerMethod, checkAllows, nil); called || code != codes.PermissionDenied {
+		t.Fatalf("got called=%v code=%v", called, code)
+	}
+}
+
+func TestAuthorizationOwnershipLookupFailureIsUnavailableNotAllowed(t *testing.T) {
+	user := &authenticatedPrincipal{IdentityID: "user-1", SessionID: "session-1"}
+	broken := func(context.Context, caller, any) (bool, error) { return true, errors.New("rider-service down") }
+
+	if called, code := runAuthorizationCase(t, user, testOwnerMethod, broken, emptyOwnerResolver{}); called || code != codes.Unavailable {
+		t.Fatalf("got called=%v code=%v", called, code)
+	}
+}
+
 func TestAuthorizationRequiresAnAuthenticatedPrincipal(t *testing.T) {
-	if called, code := runAuthorization(t, nil, testPublicMethod); called || code != codes.Unauthenticated {
-		t.Fatalf("no principal must be unauthenticated, got called=%v code=%v", called, code)
+	if called, code := runAuthorizationCase(t, nil, testPublicMethod, nil, nil); called || code != codes.Unauthenticated {
+		t.Fatalf("got called=%v code=%v", called, code)
 	}
 }
 
 func TestAuthorizationExemptMethodsNeedNoPrincipal(t *testing.T) {
-	if called, code := runAuthorization(t, nil, healthv1.Health_Check_FullMethodName); !called || code != codes.OK {
-		t.Fatalf("the health check must be reachable, got called=%v code=%v", called, code)
+	if called, code := runAuthorizationCase(t, nil, healthv1.Health_Check_FullMethodName, nil, nil); !called || code != codes.OK {
+		t.Fatalf("got called=%v code=%v", called, code)
 	}
 }

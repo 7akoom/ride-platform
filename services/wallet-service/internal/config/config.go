@@ -3,12 +3,14 @@ package config
 import "os"
 
 type Config struct {
-	ServiceName        string
-	Environment        string
-	GRPCAddress        string
-	MetricsAddress     string
-	DatabaseURL        string
-	TripServiceAddress string
+	ServiceName          string
+	Environment          string
+	GRPCAddress          string
+	MetricsAddress       string
+	DatabaseURL          string
+	TripServiceAddress   string
+	RiderServiceAddress  string
+	DriverServiceAddress string
 
 	NATSURL            string
 	NATSPublishTimeout string
@@ -69,12 +71,14 @@ type Config struct {
 
 func Load() Config {
 	return Config{
-		ServiceName:        getEnv("SERVICE_NAME", "wallet-service"),
-		Environment:        getEnv("ENVIRONMENT", "development"),
-		GRPCAddress:        getEnv("GRPC_ADDRESS", ":50058"),
-		MetricsAddress:     getEnv("METRICS_ADDRESS", ":9098"),
-		DatabaseURL:        getEnv("DATABASE_URL", ""),
-		TripServiceAddress: getEnv("TRIP_SERVICE_ADDRESS", "localhost:50055"),
+		ServiceName:          getEnv("SERVICE_NAME", "wallet-service"),
+		Environment:          getEnv("ENVIRONMENT", "development"),
+		GRPCAddress:          getEnv("GRPC_ADDRESS", ":50058"),
+		MetricsAddress:       getEnv("METRICS_ADDRESS", ":9098"),
+		DatabaseURL:          getEnv("DATABASE_URL", ""),
+		TripServiceAddress:   getEnv("TRIP_SERVICE_ADDRESS", "localhost:50055"),
+		RiderServiceAddress:  getEnv("RIDER_SERVICE_ADDRESS", "localhost:50052"),
+		DriverServiceAddress: getEnv("DRIVER_SERVICE_ADDRESS", "localhost:50053"),
 
 		NATSURL: getEnv(
 			"NATS_URL",

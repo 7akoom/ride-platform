@@ -35,7 +35,7 @@ func NewWalletHandler(walletService wallet.Service, topupService topup.Service, 
 		panic("logger is required")
 	}
 
-	return &WalletHandler{walletService: walletService, topupService: topupService}
+	return &WalletHandler{walletService: walletService, topupService: topupService, logger: logger}
 }
 
 func (h *WalletHandler) GetWallet(
