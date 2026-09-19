@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/events"
 	outboxapp "github.com/7akoom/ride-platform/services/pricing-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/config"
@@ -23,6 +24,16 @@ import (
 	grpcserver "github.com/7akoom/ride-platform/services/pricing-service/internal/transport/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+)
+
+const (
+	// tripEventsStream is created by the compose bootstrap container that
+	// belongs to trip-service; this service only binds a consumer to it.
+	tripEventsStream = "TRIP_EVENTS"
+
+	// tripCompletedDurable is this service's own durable consumer name. It
+	// must stay stable across restarts so redelivery resumes where it left off.
+	tripCompletedDurable = "pricing-trip-completed"
 )
 
 func main() {
@@ -49,6 +60,13 @@ func run() int {
 	outboxConfig, err := config.ParseOutbox(cfg)
 	if err != nil {
 		logger.Error("invalid outbox configuration", "error", err)
+
+		return 1
+	}
+
+	autoFareConfig, err := config.ParseAutoFare(cfg)
+	if err != nil {
+		logger.Error("invalid auto-fare configuration", "error", err)
 
 		return 1
 	}
@@ -95,6 +113,20 @@ func run() int {
 		return 1
 	}
 	defer locationConn.Close()
+
+	tripConn, err := grpc.NewClient(
+		cfg.TripServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to trip-service", "error", err)
+
+		return 1
+	}
+	defer tripConn.Close()
 
 	natsConnection, err := natsinfra.OpenConnection(
 		natsinfra.ConnectionConfig{
@@ -158,6 +190,30 @@ func run() int {
 		weather.NewClient(cfg.WeatherTimeout),
 	)
 	pricingHandler := grpcserver.NewPricingHandler(pricingService, logger)
+
+	eventHandler := events.NewHandler(
+		pricingService,
+		clients.NewTripClient(tripConn),
+		autoFareConfig.RetryInterval,
+		autoFareConfig.GiveUpAfter,
+		logger,
+	)
+
+	tripSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		tripEventsStream,
+		tripCompletedDurable,
+		[]string{events.SubjectTripCompleted},
+		eventHandler.Handle,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to trip.completed events", "error", err)
+
+		return 1
+	}
+	defer tripSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

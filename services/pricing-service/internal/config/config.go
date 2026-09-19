@@ -12,6 +12,7 @@ type Config struct {
 	MetricsAddress         string
 	DatabaseURL            string
 	LocationServiceAddress string
+	TripServiceAddress     string
 	OSRMBaseURL            string
 	RoutingTimeout         time.Duration
 	WeatherTimeout         time.Duration
@@ -27,6 +28,11 @@ type Config struct {
 	OutboxBatchSize         string
 	OutboxInitialRetryDelay string
 	OutboxMaxRetryDelay     string
+
+	// Auto-fare: this service consumes trip.completed and prices the trip
+	// by itself (see config/auto_fare.go).
+	FareRetryInterval string
+	FareGiveUpAfter   string
 
 	// Verifies access tokens issued by identity-service. The public key
 	// must be copied from identity-service's own .local/keys directory —
@@ -59,6 +65,7 @@ func Load() Config {
 		MetricsAddress:         getEnv("METRICS_ADDRESS", ":9097"),
 		DatabaseURL:            getEnv("DATABASE_URL", ""),
 		LocationServiceAddress: getEnv("LOCATION_SERVICE_ADDRESS", "localhost:50054"),
+		TripServiceAddress:     getEnv("TRIP_SERVICE_ADDRESS", "localhost:50055"),
 		OSRMBaseURL:            getEnv("OSRM_BASE_URL", "http://localhost:5000"),
 		RoutingTimeout:         3 * time.Second,
 		WeatherTimeout:         3 * time.Second,
@@ -111,6 +118,16 @@ func Load() Config {
 		OutboxMaxRetryDelay: getEnv(
 			"OUTBOX_MAX_RETRY_DELAY",
 			"1m",
+		),
+
+		FareRetryInterval: getEnv(
+			"FARE_RETRY_INTERVAL",
+			"10s",
+		),
+
+		FareGiveUpAfter: getEnv(
+			"FARE_GIVE_UP_AFTER",
+			"30m",
 		),
 
 		AccessTokenPublicKeyPath: getEnv(
