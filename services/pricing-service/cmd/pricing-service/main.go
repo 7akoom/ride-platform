@@ -71,6 +71,13 @@ func run() int {
 		return 1
 	}
 
+	fareRoundingIncrement, err := config.ParseFareRoundingIncrement(cfg)
+	if err != nil {
+		logger.Error("invalid fare rounding configuration", "error", err)
+
+		return 1
+	}
+
 	metricsRuntime, err := observability.NewMetricsRuntime(cfg.ServiceName, cfg.MetricsAddress)
 	if err != nil {
 		logger.Error("invalid metrics configuration", "error", err)
@@ -188,6 +195,7 @@ func run() int {
 		clients.NewLocationClient(locationConn),
 		routing.NewOSRMClient(cfg.OSRMBaseURL, cfg.RoutingTimeout),
 		weather.NewClient(cfg.WeatherTimeout),
+		pricing.WithFareRounding(fareRoundingIncrement),
 	)
 	pricingHandler := grpcserver.NewPricingHandler(pricingService, logger)
 

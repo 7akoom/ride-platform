@@ -150,7 +150,10 @@ func (s *service) buildFare(
 		total = decimal.Zero
 	}
 
-	breakdown.Total = total
+	// The one and only place a fare is rounded: what the rider is quoted,
+	// what is stored, what fare.calculated publishes and what wallet-service
+	// settles all come from this single value.
+	breakdown.Total = roundToIncrement(total, s.fareRoundingIncrement)
 
 	return breakdown, discount.Coupon, nil
 }

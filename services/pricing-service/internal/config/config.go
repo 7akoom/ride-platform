@@ -34,6 +34,10 @@ type Config struct {
 	FareRetryInterval string
 	FareGiveUpAfter   string
 
+	// FareRoundingIncrement rounds every fare total to a multiple of it
+	// (250 = the smallest Iraqi dinar banknote). 0 disables rounding.
+	FareRoundingIncrement string
+
 	// Verifies access tokens issued by identity-service. The public key
 	// must be copied from identity-service's own .local/keys directory —
 	// it is never committed to the repo.
@@ -128,6 +132,11 @@ func Load() Config {
 		FareGiveUpAfter: getEnv(
 			"FARE_GIVE_UP_AFTER",
 			"30m",
+		),
+
+		FareRoundingIncrement: getEnv(
+			"FARE_ROUNDING_INCREMENT",
+			"250",
 		),
 
 		AccessTokenPublicKeyPath: getEnv(

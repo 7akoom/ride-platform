@@ -1,6 +1,10 @@
 package pricing
 
-import "context"
+import (
+	"context"
+
+	"github.com/shopspring/decimal"
+)
 
 type EstimateFareInput struct {
 	RiderID      string
@@ -35,6 +39,10 @@ type service struct {
 	locationClient LocationClient
 	routingClient  RoutingClient
 	weatherClient  WeatherClient
+
+	// fareRoundingIncrement, when positive, rounds every fare total to a
+	// multiple of it (see fare_rounding.go). Zero means no rounding.
+	fareRoundingIncrement decimal.Decimal
 }
 
 func NewService(
@@ -42,6 +50,7 @@ func NewService(
 	locationClient LocationClient,
 	routingClient RoutingClient,
 	weatherClient WeatherClient,
+	options ...Option,
 ) Service {
 	if repository == nil {
 		panic("pricing repository is required")
@@ -59,10 +68,16 @@ func NewService(
 		panic("weather client is required")
 	}
 
-	return &service{
+	s := &service{
 		repository:     repository,
 		locationClient: locationClient,
 		routingClient:  routingClient,
 		weatherClient:  weatherClient,
 	}
+
+	for _, option := range options {
+		option(s)
+	}
+
+	return s
 }
