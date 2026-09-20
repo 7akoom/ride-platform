@@ -30,10 +30,18 @@ func TestEveryRPCIsClassified(t *testing.T) {
 			t.Errorf("methodAccess lists %s, which is not an RPC of %s", full, desc.ServiceName)
 		}
 	}
+}
 
-	for full := range exemptMethods {
-		if _, ok := registered[full]; !ok && full != "/grpc.health.v1.Health/Check" {
-			t.Errorf("exemptMethods lists %s, which is not an RPC of %s", full, desc.ServiceName)
+func TestEveryOwnerMethodHasAnOwnerCheck(t *testing.T) {
+	for full, level := range methodAccess {
+		_, hasCheck := ownerChecks[full]
+
+		if level == accessOwner && !hasCheck {
+			t.Errorf("%s is accessOwner but has no owner check", full)
+		}
+
+		if level != accessOwner && hasCheck {
+			t.Errorf("%s has an owner check but is not accessOwner", full)
 		}
 	}
 }

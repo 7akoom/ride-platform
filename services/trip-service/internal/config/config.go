@@ -39,6 +39,8 @@ type Config struct {
 	// Peer this service calls to enforce that a trip can only be
 	// requested with a pickup point inside an active service zone.
 	LocationServiceAddress string
+	RiderServiceAddress    string
+	DriverServiceAddress   string
 
 	// Per-caller token-bucket rate limit (see
 	// transport/grpc/rate_limit_interceptor.go). Defaults are generous
@@ -134,6 +136,16 @@ func Load() Config {
 		LocationServiceAddress: getEnv(
 			"LOCATION_SERVICE_ADDRESS",
 			"localhost:50054",
+		),
+
+		RiderServiceAddress: getEnv(
+			"RIDER_SERVICE_ADDRESS",
+			"localhost:50052",
+		),
+
+		DriverServiceAddress: getEnv(
+			"DRIVER_SERVICE_ADDRESS",
+			"localhost:50053",
 		),
 
 		RateLimitRequestsPerSecond: getEnv(

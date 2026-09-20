@@ -144,6 +144,24 @@ func run() int {
 	}
 	defer locationConn.Close()
 
+	riderConn, err := dialService(cfg.RiderServiceAddress, cfg.InternalServiceToken)
+	if err != nil {
+		logger.Error("failed to connect to rider-service", "error", err)
+
+		return 1
+	}
+	defer riderConn.Close()
+
+	driverConn, err := dialService(cfg.DriverServiceAddress, cfg.InternalServiceToken)
+	if err != nil {
+		logger.Error("failed to connect to driver-service", "error", err)
+
+		return 1
+	}
+	defer driverConn.Close()
+
+	profileResolver := grpcserver.NewCachingResolver(clients.NewProfileResolver(riderConn, driverConn))
+
 	locationClient := clients.NewLocationClient(locationConn)
 
 	tripRepository := postgresrepo.NewTripRepository(pool)
@@ -176,7 +194,7 @@ func run() int {
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
-		grpcserver.NewAuthorizationUnaryInterceptor(),
+		grpcserver.NewAuthorizationUnaryInterceptor(profileResolver, tripService),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterTripService(tripHandler)

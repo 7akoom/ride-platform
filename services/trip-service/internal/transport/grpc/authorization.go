@@ -17,16 +17,17 @@ const (
 	accessAuthenticated
 )
 
+type ownerCheck func(ctx context.Context, c caller, request any) (bool, error)
+
 var exemptMethods = map[string]struct{}{
 	healthv1.Health_Check_FullMethodName: {},
 }
 
 // methodAccess classifies every RPC. Methods missing from it are denied to
-// end users. accessOwner methods stay closed to end users until their
-// handlers verify ownership.
+// end users, and so are accessOwner methods without an entry in ownerChecks.
 var methodAccess = map[string]accessLevel{
 	"/ride.trip.v1.TripService/RequestTrip":    accessOwner,
-	"/ride.trip.v1.TripService/AcceptTrip":     accessOwner,
+	"/ride.trip.v1.TripService/AcceptTrip":     accessInternal,
 	"/ride.trip.v1.TripService/StartTrip":      accessOwner,
 	"/ride.trip.v1.TripService/CompleteTrip":   accessOwner,
 	"/ride.trip.v1.TripService/CancelTrip":     accessOwner,
@@ -36,11 +37,16 @@ var methodAccess = map[string]accessLevel{
 	"/ride.trip.v1.TripService/GetTripPath":    accessOwner,
 }
 
-func NewAuthorizationUnaryInterceptor() googlegrpc.UnaryServerInterceptor {
-	return newAuthorizationInterceptor(methodAccess)
+func NewAuthorizationUnaryInterceptor(resolver CallerResolver, trips TripReader) googlegrpc.UnaryServerInterceptor {
+	return newAuthorizationInterceptor(methodAccess, ownerChecks, resolver, trips)
 }
 
-func newAuthorizationInterceptor(levels map[string]accessLevel) googlegrpc.UnaryServerInterceptor {
+func newAuthorizationInterceptor(
+	levels map[string]accessLevel,
+	checks map[string]ownerCheck,
+	resolver CallerResolver,
+	trips TripReader,
+) googlegrpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		request any,
@@ -64,8 +70,24 @@ func newAuthorizationInterceptor(levels map[string]accessLevel) googlegrpc.Unary
 			return handler(ctx, request)
 		}
 
-		if levels[info.FullMethod] == accessAuthenticated {
+		switch levels[info.FullMethod] {
+		case accessAuthenticated:
 			return handler(ctx, request)
+
+		case accessOwner:
+			check, registered := checks[info.FullMethod]
+			if !registered || resolver == nil {
+				break
+			}
+
+			allowed, err := check(ctx, caller{identityID: principal.IdentityID, resolver: resolver, trips: trips}, request)
+			if err != nil {
+				return nil, status.Error(codes.Unavailable, "ownership could not be verified")
+			}
+
+			if allowed {
+				return handler(ctx, request)
+			}
 		}
 
 		return nil, status.Error(codes.PermissionDenied, "permission denied")

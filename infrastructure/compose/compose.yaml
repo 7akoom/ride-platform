@@ -656,6 +656,8 @@ services:
       DATABASE_URL: postgres://${TRIP_DB_USER}:${TRIP_DB_PASSWORD}@trip-postgres:5432/${TRIP_DB_NAME}?sslmode=disable
       NATS_URL: nats://nats:4222
       LOCATION_SERVICE_ADDRESS: location-service:50054
+      RIDER_SERVICE_ADDRESS: rider-service:50052
+      DRIVER_SERVICE_ADDRESS: driver-service:50053
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -666,6 +668,10 @@ services:
       nats:
         condition: service_healthy
       location-service:
+        condition: service_started
+      rider-service:
+        condition: service_started
+      driver-service:
         condition: service_started
 
     ports:
