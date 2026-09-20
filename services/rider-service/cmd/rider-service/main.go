@@ -163,7 +163,7 @@ func run() int {
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
-		grpcserver.NewAuthorizationUnaryInterceptor(),
+		grpcserver.NewAuthorizationUnaryInterceptor(riderService),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterRiderService(riderHandler)
