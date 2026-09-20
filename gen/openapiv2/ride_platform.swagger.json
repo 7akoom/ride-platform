@@ -1,12 +1,39 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "ride/dispatch/v1/dispatch.proto",
+    "title": "ride/analytics/v1/analytics.proto",
     "version": "version not set"
   },
   "tags": [
     {
+      "name": "AnalyticsService"
+    },
+    {
       "name": "DispatchService"
+    },
+    {
+      "name": "DriverService"
+    },
+    {
+      "name": "IdentityService"
+    },
+    {
+      "name": "LocationService"
+    },
+    {
+      "name": "NotificationService"
+    },
+    {
+      "name": "PricingService"
+    },
+    {
+      "name": "RiderService"
+    },
+    {
+      "name": "TripService"
+    },
+    {
+      "name": "WalletService"
     }
   ],
   "consumes": [
@@ -15,8 +42,1512 @@
   "produces": [
     "application/json"
   ],
-  "paths": {},
+  "paths": {
+    "/v1/analytics/cancellations": {
+      "get": {
+        "operationId": "AnalyticsService_GetCancellationBreakdown",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetCancellationBreakdownResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "range.startDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "range.endDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "AnalyticsService"
+        ]
+      }
+    },
+    "/v1/analytics/retention/drivers": {
+      "get": {
+        "operationId": "AnalyticsService_GetDriverRetention",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetRetentionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cohortWeeks",
+            "description": "how many weeks back to include",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "AnalyticsService"
+        ]
+      }
+    },
+    "/v1/analytics/retention/riders": {
+      "get": {
+        "operationId": "AnalyticsService_GetRiderRetention",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetRetentionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cohortWeeks",
+            "description": "how many weeks back to include",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "AnalyticsService"
+        ]
+      }
+    },
+    "/v1/analytics/revenue": {
+      "get": {
+        "operationId": "AnalyticsService_GetRevenueSummary",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetRevenueSummaryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "range.startDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "range.endDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "AnalyticsService"
+        ]
+      }
+    },
+    "/v1/analytics/trip-funnel": {
+      "get": {
+        "operationId": "AnalyticsService_GetTripFunnel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTripFunnelResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "range.startDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "range.endDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "AnalyticsService"
+        ]
+      }
+    },
+    "/v1/devices": {
+      "post": {
+        "summary": "RegisterDevice registers a push token for the caller's own rider or driver profile.",
+        "operationId": "NotificationService_RegisterDevice",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RegisterDeviceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RegisterDeviceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "NotificationService"
+        ]
+      }
+    },
+    "/v1/devices:unregister": {
+      "post": {
+        "summary": "UnregisterDevice removes a push token the caller owns. The token travels in the body: push tokens\ncontain ':' which cannot appear in a URL path segment.",
+        "operationId": "NotificationService_UnregisterDevice",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UnregisterDeviceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UnregisterDeviceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "NotificationService"
+        ]
+      }
+    },
+    "/v1/drivers": {
+      "post": {
+        "summary": "CreateDriver creates the caller's own driver profile: identity_id must be the caller's identity.",
+        "operationId": "DriverService_CreateDriver",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateDriverResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateDriverRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/drivers/{driverId}": {
+      "get": {
+        "summary": "GetDriver returns the caller's own driver profile.",
+        "operationId": "DriverService_GetDriver",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDriverResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      },
+      "patch": {
+        "summary": "UpdateDriverProfile changes the caller's own driver profile and vehicle.",
+        "operationId": "DriverService_UpdateDriverProfile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateDriverProfileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceUpdateDriverProfileBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/drivers/{driverId}/availability": {
+      "put": {
+        "summary": "UpdateAvailability goes online or offline; only the driver themselves may.",
+        "operationId": "DriverService_UpdateAvailability",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateAvailabilityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceUpdateAvailabilityBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/drivers/{driverId}/payouts": {
+      "post": {
+        "summary": "RequestPayout withdraws from the driver's own wallet; idempotency_key makes a retry safe.",
+        "operationId": "WalletService_RequestPayout",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RequestPayoutResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceRequestPayoutBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/drivers/{driverId}/standing": {
+      "get": {
+        "summary": "CheckDriverStanding tells a driver whether they can take trips and how much to deposit if not.",
+        "operationId": "WalletService_CheckDriverStanding",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CheckDriverStandingResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/fare-estimates": {
+      "post": {
+        "summary": "EstimateFare quotes a trip for the caller: rider_id must be the caller's own rider profile.",
+        "operationId": "PricingService_EstimateFare",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1EstimateFareResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1EstimateFareRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/identities/{identityId}/driver": {
+      "get": {
+        "summary": "GetDriverByIdentity finds the caller's driver profile from their identity id.",
+        "operationId": "DriverService_GetDriverByIdentity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDriverResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "identityId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/identities/{identityId}/rider": {
+      "get": {
+        "summary": "GetRiderByIdentity finds the caller's rider profile from their identity id.",
+        "operationId": "RiderService_GetRiderByIdentity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetRiderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "identityId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      }
+    },
+    "/v1/locations/{entityId}": {
+      "get": {
+        "summary": "GetLocation is the rider app's poll target for a driver's live\nposition during an active trip (entity_type=ENTITY_TYPE_DRIVER).\nentity_type isn't in the path because grpc-gateway can't bind an\nenum's string value there reliably — it comes through as a normal\nquery param (?entity_type=ENTITY_TYPE_DRIVER) instead.",
+        "operationId": "LocationService_GetLocation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetLocationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "entityId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "entityType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "ENTITY_TYPE_UNSPECIFIED",
+              "ENTITY_TYPE_DRIVER",
+              "ENTITY_TYPE_RIDER"
+            ],
+            "default": "ENTITY_TYPE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateLocation reports the caller's own position (driver app, every few seconds).",
+        "operationId": "LocationService_UpdateLocation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateLocationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "entityId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LocationServiceUpdateLocationBody"
+            }
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/notifications": {
+      "get": {
+        "summary": "ListNotifications returns the caller's own inbox; recipient_type and recipient_id are query parameters.",
+        "operationId": "NotificationService_ListNotifications",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListNotificationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "recipientType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "RECIPIENT_TYPE_UNSPECIFIED",
+              "RECIPIENT_TYPE_RIDER",
+              "RECIPIENT_TYPE_DRIVER"
+            ],
+            "default": "RECIPIENT_TYPE_UNSPECIFIED"
+          },
+          {
+            "name": "recipientId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "unreadOnly",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "NotificationService"
+        ]
+      }
+    },
+    "/v1/notifications:read": {
+      "post": {
+        "summary": "MarkAsRead marks notifications of the caller's own inbox as read.",
+        "operationId": "NotificationService_MarkAsRead",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MarkAsReadResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1MarkAsReadRequest"
+            }
+          }
+        ],
+        "tags": [
+          "NotificationService"
+        ]
+      }
+    },
+    "/v1/riders": {
+      "post": {
+        "summary": "CreateRider creates the caller's own rider profile: identity_id must be the caller's identity.",
+        "operationId": "RiderService_CreateRider",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateRiderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateRiderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      }
+    },
+    "/v1/riders/{riderId}": {
+      "get": {
+        "summary": "GetRider returns the caller's own rider profile.",
+        "operationId": "RiderService_GetRider",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetRiderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      },
+      "patch": {
+        "summary": "UpdateRiderProfile changes the caller's own rider profile.",
+        "operationId": "RiderService_UpdateRiderProfile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateRiderProfileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RiderServiceUpdateRiderProfileBody"
+            }
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      }
+    },
+    "/v1/trips": {
+      "post": {
+        "operationId": "TripService_RequestTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RequestTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RequestTripRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}": {
+      "get": {
+        "summary": "GetTrip is the rider/driver app's poll target for live trip status —\nboth the Rider app's tracking screen and the Driver app's active-trip\nscreen call this every few seconds until they see the status they're\nwaiting for (ACCEPTED, then IN_PROGRESS, then COMPLETED).",
+        "operationId": "TripService_GetTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}/driver-location": {
+      "get": {
+        "summary": "GetDriverLocation is the Rider app's live-tracking poll target: where the\ndriver of this trip last reported being. Only the trip's rider may ask, and\nonly while the trip is ACCEPTED or IN_PROGRESS (FAILED_PRECONDITION\notherwise). It returns the position and when the driver reported it, and\nnothing else about the driver. NOT_FOUND means the driver has not reported\nrecently (a live position expires after 30 seconds); the app keeps polling.",
+        "operationId": "TripService_GetDriverLocation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDriverLocationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}/path": {
+      "get": {
+        "summary": "GetTripPath returns every waypoint recorded for a trip, oldest\nfirst — the reconstructed route for a completed trip, or the route\nso far for one still in progress (e.g. right after an SOS alert).",
+        "operationId": "TripService_GetTripPath",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTripPathResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}:accept": {
+      "post": {
+        "operationId": "TripService_AcceptTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AcceptTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceAcceptTripBody"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}:cancel": {
+      "post": {
+        "operationId": "TripService_CancelTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CancelTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceCancelTripBody"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}:complete": {
+      "post": {
+        "operationId": "TripService_CompleteTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CompleteTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}:sos": {
+      "post": {
+        "summary": "TriggerSOS records a safety alert during an active trip — it does\nNOT replace calling emergency services directly (the app's SOS\nbutton dials the local emergency number itself); this is the\nplatform-side record: what trip, who pressed it, and where, so the\nsafety team can pull up the trip (and its path, via GetTripPath)\nimmediately and a notification goes out to the configured safety\ncontact.",
+        "operationId": "TripService_TriggerSOS",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TriggerSOSResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceTriggerSOSBody"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}:start": {
+      "post": {
+        "operationId": "TripService_StartTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StartTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}:waypoint": {
+      "post": {
+        "summary": "RecordWaypoint appends one point to the trip's path. Called by the\ndriver app on a timer (every ~15-30s) alongside — not instead of —\nits regular LocationService.UpdateLocation ping; the two are\nindependent so a failure in one never blocks the other. Duplicate\ncalls inside the throttle window are silently absorbed, so the\ncaller doesn't need its own client-side timing logic.",
+        "operationId": "TripService_RecordWaypoint",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RecordWaypointResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceRecordWaypointBody"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/wallet/topups/zaincash": {
+      "post": {
+        "summary": "InitiateTopUp starts a ZainCash-funded top-up for a driver: creates\na pending record and opens a ZainCash payment session, returning\nthe URL the driver's browser/webview should be sent to.",
+        "operationId": "WalletService_InitiateTopUp",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1InitiateTopUpResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1InitiateTopUpRequest"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallet/zaincash/webhook": {
+      "post": {
+        "summary": "ProcessZainCashWebhook receives ZainCash's server-to-server payment\nnotification. Called directly by ZainCash, not by an authenticated\nplatform client — exempted from the auth interceptor same as the\nhealth check (see authentication_interceptor.go).",
+        "operationId": "WalletService_ProcessZainCashWebhook",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ProcessZainCashWebhookResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ProcessZainCashWebhookRequest"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{ownerId}": {
+      "get": {
+        "summary": "GetWallet returns the caller's own wallet: ?owner_type=OWNER_TYPE_RIDER or OWNER_TYPE_DRIVER.",
+        "operationId": "WalletService_GetWallet",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetWalletResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ownerId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ownerType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "OWNER_TYPE_UNSPECIFIED",
+              "OWNER_TYPE_RIDER",
+              "OWNER_TYPE_DRIVER"
+            ],
+            "default": "OWNER_TYPE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{ownerId}/transactions": {
+      "get": {
+        "summary": "ListTransactions lists the caller's own wallet history: ?owner_type=\u0026limit=.",
+        "operationId": "WalletService_ListTransactions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListTransactionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ownerId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ownerType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "OWNER_TYPE_UNSPECIFIED",
+              "OWNER_TYPE_RIDER",
+              "OWNER_TYPE_DRIVER"
+            ],
+            "default": "OWNER_TYPE_UNSPECIFIED"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/zones": {
+      "get": {
+        "summary": "ListZones lists service zones, optionally for one city (?city=).",
+        "operationId": "LocationService_ListZones",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListZonesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "city",
+            "description": "Optional. Empty returns zones for every city.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/zones/{zoneId}": {
+      "get": {
+        "summary": "GetZone reads one service zone.",
+        "operationId": "LocationService_GetZone",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ZoneResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "zoneId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/zones:check": {
+      "get": {
+        "summary": "CheckServiceZone tells whether a point is served (?coordinates.latitude=\u0026coordinates.longitude=).",
+        "operationId": "LocationService_CheckServiceZone",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CheckServiceZoneResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "coordinates.latitude",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "coordinates.longitude",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    }
+  },
   "definitions": {
+    "DriverServiceUpdateAvailabilityBody": {
+      "type": "object",
+      "properties": {
+        "availabilityStatus": {
+          "$ref": "#/definitions/v1AvailabilityStatus"
+        }
+      }
+    },
+    "DriverServiceUpdateDriverProfileBody": {
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string"
+        },
+        "vehicle": {
+          "$ref": "#/definitions/v1Vehicle"
+        }
+      }
+    },
+    "LocationServiceUpdateLocationBody": {
+      "type": "object",
+      "properties": {
+        "entityType": {
+          "$ref": "#/definitions/v1EntityType"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/rideLocationV1Coordinates"
+        }
+      }
+    },
+    "RiderServiceUpdateRiderProfileBody": {
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string"
+        }
+      }
+    },
+    "TripServiceAcceptTripBody": {
+      "type": "object",
+      "properties": {
+        "driverId": {
+          "type": "string"
+        }
+      }
+    },
+    "TripServiceCancelTripBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "TripServiceRecordWaypointBody": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        }
+      }
+    },
+    "TripServiceTriggerSOSBody": {
+      "type": "object",
+      "properties": {
+        "triggeredBy": {
+          "$ref": "#/definitions/v1SosTriggeredBy"
+        },
+        "location": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        }
+      }
+    },
+    "WalletServiceRequestPayoutBody": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string"
+        },
+        "idempotencyKey": {
+          "type": "string"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -25,6 +1556,45 @@
         }
       },
       "additionalProperties": {}
+    },
+    "rideLocationV1Coordinates": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "format": "double"
+        },
+        "longitude": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "ridePricingV1Coordinates": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "format": "double"
+        },
+        "longitude": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "rideTripV1Coordinates": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "format": "double"
+        },
+        "longitude": {
+          "type": "number",
+          "format": "double"
+        }
+      }
     },
     "rpcStatus": {
       "type": "object",
@@ -42,6 +1612,1115 @@
             "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
+        }
+      }
+    },
+    "v1AcceptTripResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/v1Trip"
+        }
+      }
+    },
+    "v1AvailabilityStatus": {
+      "type": "string",
+      "enum": [
+        "AVAILABILITY_STATUS_UNSPECIFIED",
+        "AVAILABILITY_STATUS_OFFLINE",
+        "AVAILABILITY_STATUS_AVAILABLE",
+        "AVAILABILITY_STATUS_BUSY"
+      ],
+      "default": "AVAILABILITY_STATUS_UNSPECIFIED"
+    },
+    "v1CancelTripResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/v1Trip"
+        }
+      }
+    },
+    "v1CancellationStageCount": {
+      "type": "object",
+      "properties": {
+        "stage": {
+          "type": "string",
+          "title": "requested | accepted | started"
+        },
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1CheckDriverStandingResponse": {
+      "type": "object",
+      "properties": {
+        "canTakeTrips": {
+          "type": "boolean",
+          "description": "False means: assign no trips to this driver at all."
+        },
+        "suspended": {
+          "type": "boolean"
+        },
+        "currentBalance": {
+          "type": "string"
+        },
+        "suspensionThreshold": {
+          "type": "string",
+          "description": "Balance at or below which the account is suspended (negative or zero)."
+        },
+        "amountDue": {
+          "type": "string",
+          "description": "How much the driver must deposit to get back above the threshold.\nZero when they are in good standing."
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "description": "A driver works on a prepaid commission balance: they deposit money up\nfront, commission is drawn from it, and once the balance falls to the\nsuspension threshold their account stops receiving trips entirely\nuntil they top up again."
+    },
+    "v1CheckServiceZoneResponse": {
+      "type": "object",
+      "properties": {
+        "served": {
+          "type": "boolean"
+        },
+        "zoneId": {
+          "type": "string",
+          "description": "zone_id/city are only set when served is true."
+        },
+        "city": {
+          "type": "string"
+        }
+      }
+    },
+    "v1CompleteTripResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/v1Trip"
+        }
+      }
+    },
+    "v1CreateDriverRequest": {
+      "type": "object",
+      "properties": {
+        "identityId": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "vehicle": {
+          "$ref": "#/definitions/v1Vehicle"
+        }
+      }
+    },
+    "v1CreateDriverResponse": {
+      "type": "object",
+      "properties": {
+        "driver": {
+          "$ref": "#/definitions/v1Driver"
+        }
+      }
+    },
+    "v1CreateRiderRequest": {
+      "type": "object",
+      "properties": {
+        "identityId": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        }
+      }
+    },
+    "v1CreateRiderResponse": {
+      "type": "object",
+      "properties": {
+        "rider": {
+          "$ref": "#/definitions/v1Rider"
+        }
+      }
+    },
+    "v1DateRange": {
+      "type": "object",
+      "properties": {
+        "startDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1DiscountType": {
+      "type": "string",
+      "enum": [
+        "DISCOUNT_TYPE_UNSPECIFIED",
+        "DISCOUNT_TYPE_PERCENTAGE",
+        "DISCOUNT_TYPE_FIXED_AMOUNT"
+      ],
+      "default": "DISCOUNT_TYPE_UNSPECIFIED"
+    },
+    "v1Driver": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "identityId": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1DriverStatus"
+        },
+        "availabilityStatus": {
+          "$ref": "#/definitions/v1AvailabilityStatus"
+        },
+        "vehicle": {
+          "$ref": "#/definitions/v1Vehicle"
+        },
+        "ratingAverage": {
+          "type": "number",
+          "format": "double"
+        },
+        "ratingCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1DriverStatus": {
+      "type": "string",
+      "enum": [
+        "DRIVER_STATUS_UNSPECIFIED",
+        "DRIVER_STATUS_ACTIVE",
+        "DRIVER_STATUS_SUSPENDED"
+      ],
+      "default": "DRIVER_STATUS_UNSPECIFIED"
+    },
+    "v1EntityType": {
+      "type": "string",
+      "enum": [
+        "ENTITY_TYPE_UNSPECIFIED",
+        "ENTITY_TYPE_DRIVER",
+        "ENTITY_TYPE_RIDER"
+      ],
+      "default": "ENTITY_TYPE_UNSPECIFIED"
+    },
+    "v1EstimateFareRequest": {
+      "type": "object",
+      "properties": {
+        "riderId": {
+          "type": "string"
+        },
+        "pickup": {
+          "$ref": "#/definitions/ridePricingV1Coordinates"
+        },
+        "dropoff": {
+          "$ref": "#/definitions/ridePricingV1Coordinates"
+        },
+        "couponCode": {
+          "type": "string"
+        },
+        "vehicleClass": {
+          "type": "string",
+          "description": "economy (default when empty) or comfort."
+        }
+      }
+    },
+    "v1EstimateFareResponse": {
+      "type": "object",
+      "properties": {
+        "fare": {
+          "$ref": "#/definitions/v1FareBreakdown"
+        }
+      }
+    },
+    "v1FareBreakdown": {
+      "type": "object",
+      "properties": {
+        "currencyCode": {
+          "type": "string"
+        },
+        "zoneId": {
+          "type": "string",
+          "description": "The service zone the pickup resolved to — set even when that\nzone has no rate card of its own and pricing fell back to the\ndeployment's global default."
+        },
+        "baseFare": {
+          "type": "string"
+        },
+        "distanceKm": {
+          "type": "number",
+          "format": "double"
+        },
+        "distanceFare": {
+          "type": "string"
+        },
+        "durationMinutes": {
+          "type": "number",
+          "format": "double"
+        },
+        "durationFare": {
+          "type": "string"
+        },
+        "subtotal": {
+          "type": "string"
+        },
+        "surge": {
+          "$ref": "#/definitions/v1SurgeBreakdown"
+        },
+        "surgeAmount": {
+          "type": "string"
+        },
+        "appliedDiscountType": {
+          "$ref": "#/definitions/v1DiscountType"
+        },
+        "appliedDiscountLabel": {
+          "type": "string"
+        },
+        "discountAmount": {
+          "type": "string"
+        },
+        "total": {
+          "type": "string"
+        },
+        "vehicleClass": {
+          "type": "string",
+          "description": "The vehicle class this fare was priced for."
+        }
+      },
+      "description": "Money fields are decimal strings (e.g. \"2451.6\"), never double —\nfloat64 in protobuf would reintroduce exactly the precision problem\nthe underlying NUMERIC columns exist to avoid (same convention as\nwallet.proto). distance_km/duration_minutes stay double: physical\nmeasurements from OSRM, not currency."
+    },
+    "v1FunnelDayPoint": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "title": "YYYY-MM-DD"
+        },
+        "requestedCount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "acceptedCount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "startedCount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "completedCount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "cancelledCount": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1GetCancellationBreakdownResponse": {
+      "type": "object",
+      "properties": {
+        "byStage": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1CancellationStageCount"
+          }
+        },
+        "totalCancellations": {
+          "type": "string",
+          "format": "int64"
+        },
+        "totalTrips": {
+          "type": "string",
+          "format": "int64"
+        },
+        "cancellationRatePercent": {
+          "type": "string",
+          "title": "decimal string"
+        }
+      }
+    },
+    "v1GetDriverLocationResponse": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the driver's phone last reported this position."
+        }
+      }
+    },
+    "v1GetDriverResponse": {
+      "type": "object",
+      "properties": {
+        "driver": {
+          "$ref": "#/definitions/v1Driver"
+        }
+      }
+    },
+    "v1GetLocationResponse": {
+      "type": "object",
+      "properties": {
+        "coordinates": {
+          "$ref": "#/definitions/rideLocationV1Coordinates"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1GetRetentionResponse": {
+      "type": "object",
+      "properties": {
+        "cohorts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1RetentionCohort"
+          }
+        }
+      }
+    },
+    "v1GetRevenueSummaryResponse": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1RevenueDayPoint"
+          }
+        },
+        "grossFareTotal": {
+          "type": "string"
+        },
+        "commissionTotal": {
+          "type": "string"
+        },
+        "totalTrips": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1GetRiderResponse": {
+      "type": "object",
+      "properties": {
+        "rider": {
+          "$ref": "#/definitions/v1Rider"
+        }
+      }
+    },
+    "v1GetTripFunnelResponse": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1FunnelDayPoint"
+          }
+        },
+        "totals": {
+          "$ref": "#/definitions/v1FunnelDayPoint"
+        }
+      }
+    },
+    "v1GetTripPathResponse": {
+      "type": "object",
+      "properties": {
+        "waypoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Waypoint"
+          }
+        }
+      }
+    },
+    "v1GetTripResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/v1Trip"
+        }
+      }
+    },
+    "v1GetWalletResponse": {
+      "type": "object",
+      "properties": {
+        "wallet": {
+          "$ref": "#/definitions/v1Wallet"
+        }
+      }
+    },
+    "v1InitiateTopUpRequest": {
+      "type": "object",
+      "properties": {
+        "driverId": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Decimal string, e.g. \"25000\"."
+        }
+      }
+    },
+    "v1InitiateTopUpResponse": {
+      "type": "object",
+      "properties": {
+        "topUpId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "title": "pending | succeeded | failed"
+        },
+        "redirectUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListNotificationsResponse": {
+      "type": "object",
+      "properties": {
+        "notifications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Notification"
+          }
+        },
+        "unreadCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1ListTransactionsResponse": {
+      "type": "object",
+      "properties": {
+        "transactions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Transaction"
+          }
+        }
+      }
+    },
+    "v1ListZonesResponse": {
+      "type": "object",
+      "properties": {
+        "zones": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Zone"
+          }
+        }
+      }
+    },
+    "v1MarkAsReadRequest": {
+      "type": "object",
+      "properties": {
+        "recipientType": {
+          "$ref": "#/definitions/v1RecipientType"
+        },
+        "recipientId": {
+          "type": "string"
+        },
+        "notificationIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "When empty, marks every unread notification for this recipient."
+        }
+      }
+    },
+    "v1MarkAsReadResponse": {
+      "type": "object",
+      "properties": {
+        "markedCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1Notification": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "recipientType": {
+          "$ref": "#/definitions/v1RecipientType"
+        },
+        "recipientId": {
+          "type": "string"
+        },
+        "eventKey": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "locale": {
+          "type": "string"
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "read": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1OwnerType": {
+      "type": "string",
+      "enum": [
+        "OWNER_TYPE_UNSPECIFIED",
+        "OWNER_TYPE_RIDER",
+        "OWNER_TYPE_DRIVER"
+      ],
+      "default": "OWNER_TYPE_UNSPECIFIED"
+    },
+    "v1Platform": {
+      "type": "string",
+      "enum": [
+        "PLATFORM_UNSPECIFIED",
+        "PLATFORM_ANDROID",
+        "PLATFORM_IOS",
+        "PLATFORM_WEB"
+      ],
+      "default": "PLATFORM_UNSPECIFIED"
+    },
+    "v1ProcessZainCashWebhookRequest": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "description": "The raw JWT ZainCash sends (their \"token\" field)."
+        }
+      }
+    },
+    "v1ProcessZainCashWebhookResponse": {
+      "type": "object"
+    },
+    "v1RecipientType": {
+      "type": "string",
+      "enum": [
+        "RECIPIENT_TYPE_UNSPECIFIED",
+        "RECIPIENT_TYPE_RIDER",
+        "RECIPIENT_TYPE_DRIVER"
+      ],
+      "default": "RECIPIENT_TYPE_UNSPECIFIED"
+    },
+    "v1RecordWaypointResponse": {
+      "type": "object",
+      "description": "Empty on purpose: a throttled-away duplicate and a freshly recorded\npoint both succeed identically — the caller doesn't need to\ndistinguish them, so there's nothing worth returning either way."
+    },
+    "v1RegisterDeviceRequest": {
+      "type": "object",
+      "properties": {
+        "recipientType": {
+          "$ref": "#/definitions/v1RecipientType"
+        },
+        "recipientId": {
+          "type": "string"
+        },
+        "deviceToken": {
+          "type": "string"
+        },
+        "platform": {
+          "$ref": "#/definitions/v1Platform"
+        },
+        "locale": {
+          "type": "string"
+        }
+      }
+    },
+    "v1RegisterDeviceResponse": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        }
+      }
+    },
+    "v1RequestPayoutResponse": {
+      "type": "object",
+      "properties": {
+        "wallet": {
+          "$ref": "#/definitions/v1Wallet"
+        },
+        "transaction": {
+          "$ref": "#/definitions/v1Transaction"
+        }
+      }
+    },
+    "v1RequestTripRequest": {
+      "type": "object",
+      "properties": {
+        "riderId": {
+          "type": "string"
+        },
+        "pickup": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "dropoff": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "vehicleClass": {
+          "type": "string",
+          "description": "economy (default when empty) or comfort."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "cash (default when empty) or wallet. card is not supported yet."
+        }
+      }
+    },
+    "v1RequestTripResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/v1Trip"
+        }
+      }
+    },
+    "v1RetentionCohort": {
+      "type": "object",
+      "properties": {
+        "cohortWeek": {
+          "type": "string",
+          "title": "YYYY-MM-DD of the cohort's week-start Monday"
+        },
+        "cohortSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "retentionPercentByWeek": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "decimal strings, week 0..N"
+        }
+      }
+    },
+    "v1RevenueDayPoint": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "grossFareTotal": {
+          "type": "string",
+          "title": "decimal string"
+        },
+        "commissionTotal": {
+          "type": "string",
+          "title": "decimal string"
+        },
+        "tripCount": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1Rider": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "identityId": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1RiderStatus"
+        },
+        "ratingAverage": {
+          "type": "number",
+          "format": "double"
+        },
+        "ratingCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1RiderStatus": {
+      "type": "string",
+      "enum": [
+        "RIDER_STATUS_UNSPECIFIED",
+        "RIDER_STATUS_ACTIVE",
+        "RIDER_STATUS_SUSPENDED"
+      ],
+      "default": "RIDER_STATUS_UNSPECIFIED"
+    },
+    "v1SosTriggeredBy": {
+      "type": "string",
+      "enum": [
+        "SOS_TRIGGERED_BY_UNSPECIFIED",
+        "SOS_TRIGGERED_BY_RIDER",
+        "SOS_TRIGGERED_BY_DRIVER"
+      ],
+      "default": "SOS_TRIGGERED_BY_UNSPECIFIED"
+    },
+    "v1StartTripResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/v1Trip"
+        }
+      }
+    },
+    "v1SurgeBreakdown": {
+      "type": "object",
+      "properties": {
+        "timeOfDayPercent": {
+          "type": "string"
+        },
+        "demandPercent": {
+          "type": "string"
+        },
+        "weatherPercent": {
+          "type": "string"
+        },
+        "totalPercent": {
+          "type": "string"
+        },
+        "multiplier": {
+          "type": "string"
+        }
+      },
+      "description": "SurgeBreakdown makes each contributing factor visible instead of just a\nfinal multiplier — useful for support/debugging (\"why was my fare\nhigher\") and for the rider-facing app to show \"+20% due to demand\".\nPercent/multiplier fields are decimal strings, not double — they feed\ndirectly into fare math (see FareBreakdown below) and float64 would\nreintroduce the same rounding drift the decimal fare fields exist to\navoid."
+    },
+    "v1Transaction": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "walletId": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/v1TransactionType"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Signed decimal string: negative means money left the wallet."
+        },
+        "balanceAfter": {
+          "type": "string"
+        },
+        "tripId": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1TransactionType": {
+      "type": "string",
+      "enum": [
+        "TRANSACTION_TYPE_UNSPECIFIED",
+        "TRANSACTION_TYPE_TOP_UP",
+        "TRANSACTION_TYPE_TRIP_PAYMENT",
+        "TRANSACTION_TYPE_TRIP_EARNING",
+        "TRANSACTION_TYPE_COMMISSION",
+        "TRANSACTION_TYPE_PAYOUT",
+        "TRANSACTION_TYPE_ADJUSTMENT"
+      ],
+      "default": "TRANSACTION_TYPE_UNSPECIFIED"
+    },
+    "v1TriggerSOSResponse": {
+      "type": "object",
+      "properties": {
+        "alertId": {
+          "type": "string"
+        },
+        "triggeredAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1Trip": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "riderId": {
+          "type": "string"
+        },
+        "driverId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1TripStatus"
+        },
+        "pickup": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "dropoff": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "cancellationReason": {
+          "type": "string"
+        },
+        "requestedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "acceptedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cancelledAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "vehicleClass": {
+          "type": "string",
+          "description": "economy or comfort."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "cash or wallet."
+        }
+      }
+    },
+    "v1TripStatus": {
+      "type": "string",
+      "enum": [
+        "TRIP_STATUS_UNSPECIFIED",
+        "TRIP_STATUS_REQUESTED",
+        "TRIP_STATUS_ACCEPTED",
+        "TRIP_STATUS_IN_PROGRESS",
+        "TRIP_STATUS_COMPLETED",
+        "TRIP_STATUS_CANCELLED"
+      ],
+      "default": "TRIP_STATUS_UNSPECIFIED"
+    },
+    "v1UnregisterDeviceRequest": {
+      "type": "object",
+      "properties": {
+        "deviceToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1UnregisterDeviceResponse": {
+      "type": "object",
+      "properties": {
+        "removed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1UpdateAvailabilityResponse": {
+      "type": "object",
+      "properties": {
+        "driver": {
+          "$ref": "#/definitions/v1Driver"
+        }
+      }
+    },
+    "v1UpdateDriverProfileResponse": {
+      "type": "object",
+      "properties": {
+        "driver": {
+          "$ref": "#/definitions/v1Driver"
+        }
+      }
+    },
+    "v1UpdateLocationResponse": {
+      "type": "object",
+      "properties": {
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1UpdateRiderProfileResponse": {
+      "type": "object",
+      "properties": {
+        "rider": {
+          "$ref": "#/definitions/v1Rider"
+        }
+      }
+    },
+    "v1Vehicle": {
+      "type": "object",
+      "properties": {
+        "make": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "plateNumber": {
+          "type": "string"
+        },
+        "vehicleClass": {
+          "type": "string",
+          "title": "economy or comfort"
+        }
+      }
+    },
+    "v1Wallet": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "ownerType": {
+          "$ref": "#/definitions/v1OwnerType"
+        },
+        "ownerId": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "balance": {
+          "type": "string",
+          "description": "Decimal string (e.g. \"2451.6\") — never a float, to avoid any\nprecision loss crossing the wire."
+        },
+        "blocked": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1Waypoint": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "recordedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1Zone": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "boundary": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/rideLocationV1Coordinates"
+          }
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1ZoneResponse": {
+      "type": "object",
+      "properties": {
+        "zone": {
+          "$ref": "#/definitions/v1Zone"
         }
       }
     }
