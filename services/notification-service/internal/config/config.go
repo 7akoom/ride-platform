@@ -22,6 +22,7 @@ type Config struct {
 	// notification (rider ID, driver name/vehicle, dropoff location).
 	TripServiceAddress   string
 	DriverServiceAddress string
+	RiderServiceAddress  string
 
 	NATSURL            string
 	NATSConnectTimeout string
@@ -79,6 +80,7 @@ func Load() Config {
 
 		TripServiceAddress:   getEnv("TRIP_SERVICE_ADDRESS", "localhost:50055"),
 		DriverServiceAddress: getEnv("DRIVER_SERVICE_ADDRESS", "localhost:50053"),
+		RiderServiceAddress:  getEnv("RIDER_SERVICE_ADDRESS", "localhost:50052"),
 
 		NATSURL:            getEnv("NATS_URL", "nats://localhost:4222"),
 		NATSConnectTimeout: getEnv("NATS_CONNECT_TIMEOUT", "5s"),

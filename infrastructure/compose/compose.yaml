@@ -832,6 +832,7 @@ services:
       NATS_URL: nats://nats:4222
       TRIP_SERVICE_ADDRESS: trip-service:50055
       DRIVER_SERVICE_ADDRESS: driver-service:50053
+      RIDER_SERVICE_ADDRESS: rider-service:50052
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -841,6 +842,10 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
+      rider-service:
+        condition: service_started
+      driver-service:
+        condition: service_started
 
     ports:
       - "127.0.0.1:50059:50059"

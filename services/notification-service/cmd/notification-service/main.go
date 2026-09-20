@@ -104,6 +104,16 @@ func run() int {
 	}
 	defer driverConn.Close()
 
+	riderConn, err := dialService(cfg.RiderServiceAddress, cfg.InternalServiceToken)
+	if err != nil {
+		logger.Error("failed to connect to rider-service", "error", err)
+
+		return 1
+	}
+	defer riderConn.Close()
+
+	profileResolver := grpcserver.NewCachingResolver(clients.NewProfileResolver(riderConn, driverConn))
+
 	natsConnection, err := natsinfra.OpenConnection(
 		natsinfra.ConnectionConfig{
 			URL:            natsConfig.URL,
@@ -128,8 +138,10 @@ func run() int {
 
 	pushSender := buildPushSender(cfg, logger)
 
+	notificationRepository := postgresrepo.NewNotificationRepository(pool)
+
 	notificationService := notification.NewService(
-		postgresrepo.NewNotificationRepository(pool),
+		notificationRepository,
 		pushSender,
 		// SMS gateways are regional; wire a local provider here when
 		// the deployment has one.
@@ -214,7 +226,7 @@ func run() int {
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
-		grpcserver.NewAuthorizationUnaryInterceptor(),
+		grpcserver.NewAuthorizationUnaryInterceptor(profileResolver, notificationRepository),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterNotificationService(notificationHandler)
