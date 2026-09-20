@@ -19,6 +19,9 @@ type LocationHandler struct {
 	locationService location.Service
 	zoneService     zone.Service
 	logger          *slog.Logger
+
+	// mapService serves the map RPCs; nil until WithMaps.
+	mapService mapsService
 }
 
 func NewLocationHandler(

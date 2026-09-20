@@ -50,6 +50,30 @@ service LocationService {
       get: "/v1/zones:check"
     };
   }
+
+  // GetRoute returns the best route by road between two points: how far, how long, and
+  // the line to draw on a map. Any signed-in user may ask.
+  rpc GetRoute(GetRouteRequest) returns (GetRouteResponse) {
+    option (google.api.http) = {
+      post: "/v1/routes:compute"
+      body: "*"
+    };
+  }
+
+  // SearchPlaces finds places (a mall, a street, a neighbourhood) by name, best match
+  // first. Any signed-in user may ask.
+  rpc SearchPlaces(SearchPlacesRequest) returns (SearchPlacesResponse) {
+    option (google.api.http) = {
+      get: "/v1/places:search"
+    };
+  }
+
+  // ReverseGeocode names what is at a point. Any signed-in user may ask.
+  rpc ReverseGeocode(ReverseGeocodeRequest) returns (ReverseGeocodeResponse) {
+    option (google.api.http) = {
+      get: "/v1/places:reverse"
+    };
+  }
 }
 
 enum EntityType {
@@ -160,4 +184,64 @@ message CheckServiceZoneResponse {
   // zone_id/city are only set when served is true.
   string zone_id = 2;
   string city = 3;
+}
+
+message GetRouteRequest {
+  Coordinates origin = 1;
+  Coordinates destination = 2;
+}
+
+message GetRouteResponse {
+  double distance_meters = 1;
+  double duration_seconds = 2;
+
+  // The whole path as a Google encoded polyline with 5 digits of precision (about a
+  // metre), ready to decode and draw.
+  string polyline = 3;
+}
+
+message SearchPlacesRequest {
+  // What to look for; 2 to 200 characters.
+  string query = 1;
+
+  // When set, places close to it are ranked first (others are not excluded).
+  Coordinates near = 2;
+
+  // How many places to return: 5 by default, at most 10.
+  int32 limit = 3;
+
+  // The language names are given in: "ar", "ku" or "en". Empty means Arabic, then
+  // Kurdish, then English.
+  string language = 4;
+}
+
+message SearchPlacesResponse {
+  repeated Place places = 1;
+}
+
+message ReverseGeocodeRequest {
+  Coordinates coordinates = 1;
+  string language = 2;
+}
+
+message ReverseGeocodeResponse {
+  Place place = 1;
+}
+
+message Place {
+  // The OpenStreetMap object, for example "way/123456".
+  string id = 1;
+
+  // The short name (a mall, a street) and the full one with neighbourhood, city and
+  // country.
+  string name = 2;
+  string display_name = 3;
+
+  string category = 4;
+  string type = 5;
+  Coordinates coordinates = 6;
+
+  // The parts of the address that are known (road, neighbourhood, suburb, city, state,
+  // postcode...), by OpenStreetMap's own names.
+  map<string, string> address = 7;
 }

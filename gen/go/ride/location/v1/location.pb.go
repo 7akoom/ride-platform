@@ -1050,6 +1050,430 @@ func (x *CheckServiceZoneResponse) GetCity() string {
 	return ""
 }
 
+type GetRouteRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Origin        *Coordinates           `protobuf:"bytes,1,opt,name=origin,proto3" json:"origin,omitempty"`
+	Destination   *Coordinates           `protobuf:"bytes,2,opt,name=destination,proto3" json:"destination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRouteRequest) Reset() {
+	*x = GetRouteRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRouteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRouteRequest) ProtoMessage() {}
+
+func (x *GetRouteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRouteRequest.ProtoReflect.Descriptor instead.
+func (*GetRouteRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetRouteRequest) GetOrigin() *Coordinates {
+	if x != nil {
+		return x.Origin
+	}
+	return nil
+}
+
+func (x *GetRouteRequest) GetDestination() *Coordinates {
+	if x != nil {
+		return x.Destination
+	}
+	return nil
+}
+
+type GetRouteResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	DistanceMeters  float64                `protobuf:"fixed64,1,opt,name=distance_meters,json=distanceMeters,proto3" json:"distance_meters,omitempty"`
+	DurationSeconds float64                `protobuf:"fixed64,2,opt,name=duration_seconds,json=durationSeconds,proto3" json:"duration_seconds,omitempty"`
+	// The whole path as a Google encoded polyline with 5 digits of precision (about a
+	// metre), ready to decode and draw.
+	Polyline      string `protobuf:"bytes,3,opt,name=polyline,proto3" json:"polyline,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRouteResponse) Reset() {
+	*x = GetRouteResponse{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRouteResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRouteResponse) ProtoMessage() {}
+
+func (x *GetRouteResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRouteResponse.ProtoReflect.Descriptor instead.
+func (*GetRouteResponse) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetRouteResponse) GetDistanceMeters() float64 {
+	if x != nil {
+		return x.DistanceMeters
+	}
+	return 0
+}
+
+func (x *GetRouteResponse) GetDurationSeconds() float64 {
+	if x != nil {
+		return x.DurationSeconds
+	}
+	return 0
+}
+
+func (x *GetRouteResponse) GetPolyline() string {
+	if x != nil {
+		return x.Polyline
+	}
+	return ""
+}
+
+type SearchPlacesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// What to look for; 2 to 200 characters.
+	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// When set, places close to it are ranked first (others are not excluded).
+	Near *Coordinates `protobuf:"bytes,2,opt,name=near,proto3" json:"near,omitempty"`
+	// How many places to return: 5 by default, at most 10.
+	Limit int32 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	// The language names are given in: "ar", "ku" or "en". Empty means Arabic, then
+	// Kurdish, then English.
+	Language      string `protobuf:"bytes,4,opt,name=language,proto3" json:"language,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchPlacesRequest) Reset() {
+	*x = SearchPlacesRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchPlacesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchPlacesRequest) ProtoMessage() {}
+
+func (x *SearchPlacesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchPlacesRequest.ProtoReflect.Descriptor instead.
+func (*SearchPlacesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *SearchPlacesRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+func (x *SearchPlacesRequest) GetNear() *Coordinates {
+	if x != nil {
+		return x.Near
+	}
+	return nil
+}
+
+func (x *SearchPlacesRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *SearchPlacesRequest) GetLanguage() string {
+	if x != nil {
+		return x.Language
+	}
+	return ""
+}
+
+type SearchPlacesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Places        []*Place               `protobuf:"bytes,1,rep,name=places,proto3" json:"places,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchPlacesResponse) Reset() {
+	*x = SearchPlacesResponse{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchPlacesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchPlacesResponse) ProtoMessage() {}
+
+func (x *SearchPlacesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchPlacesResponse.ProtoReflect.Descriptor instead.
+func (*SearchPlacesResponse) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *SearchPlacesResponse) GetPlaces() []*Place {
+	if x != nil {
+		return x.Places
+	}
+	return nil
+}
+
+type ReverseGeocodeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Coordinates   *Coordinates           `protobuf:"bytes,1,opt,name=coordinates,proto3" json:"coordinates,omitempty"`
+	Language      string                 `protobuf:"bytes,2,opt,name=language,proto3" json:"language,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReverseGeocodeRequest) Reset() {
+	*x = ReverseGeocodeRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReverseGeocodeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReverseGeocodeRequest) ProtoMessage() {}
+
+func (x *ReverseGeocodeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReverseGeocodeRequest.ProtoReflect.Descriptor instead.
+func (*ReverseGeocodeRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *ReverseGeocodeRequest) GetCoordinates() *Coordinates {
+	if x != nil {
+		return x.Coordinates
+	}
+	return nil
+}
+
+func (x *ReverseGeocodeRequest) GetLanguage() string {
+	if x != nil {
+		return x.Language
+	}
+	return ""
+}
+
+type ReverseGeocodeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Place         *Place                 `protobuf:"bytes,1,opt,name=place,proto3" json:"place,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReverseGeocodeResponse) Reset() {
+	*x = ReverseGeocodeResponse{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReverseGeocodeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReverseGeocodeResponse) ProtoMessage() {}
+
+func (x *ReverseGeocodeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReverseGeocodeResponse.ProtoReflect.Descriptor instead.
+func (*ReverseGeocodeResponse) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *ReverseGeocodeResponse) GetPlace() *Place {
+	if x != nil {
+		return x.Place
+	}
+	return nil
+}
+
+type Place struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The OpenStreetMap object, for example "way/123456".
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The short name (a mall, a street) and the full one with neighbourhood, city and
+	// country.
+	Name        string       `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	DisplayName string       `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Category    string       `protobuf:"bytes,4,opt,name=category,proto3" json:"category,omitempty"`
+	Type        string       `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	Coordinates *Coordinates `protobuf:"bytes,6,opt,name=coordinates,proto3" json:"coordinates,omitempty"`
+	// The parts of the address that are known (road, neighbourhood, suburb, city, state,
+	// postcode...), by OpenStreetMap's own names.
+	Address       map[string]string `protobuf:"bytes,7,rep,name=address,proto3" json:"address,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Place) Reset() {
+	*x = Place{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Place) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Place) ProtoMessage() {}
+
+func (x *Place) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Place.ProtoReflect.Descriptor instead.
+func (*Place) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *Place) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Place) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Place) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *Place) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *Place) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *Place) GetCoordinates() *Coordinates {
+	if x != nil {
+		return x.Coordinates
+	}
+	return nil
+}
+
+func (x *Place) GetAddress() map[string]string {
+	if x != nil {
+		return x.Address
+	}
+	return nil
+}
+
 var File_ride_location_v1_location_proto protoreflect.FileDescriptor
 
 const file_ride_location_v1_location_proto_rawDesc = "" +
@@ -1120,12 +1544,43 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"\x18CheckServiceZoneResponse\x12\x16\n" +
 	"\x06served\x18\x01 \x01(\bR\x06served\x12\x17\n" +
 	"\azone_id\x18\x02 \x01(\tR\x06zoneId\x12\x12\n" +
-	"\x04city\x18\x03 \x01(\tR\x04city*X\n" +
+	"\x04city\x18\x03 \x01(\tR\x04city\"\x89\x01\n" +
+	"\x0fGetRouteRequest\x125\n" +
+	"\x06origin\x18\x01 \x01(\v2\x1d.ride.location.v1.CoordinatesR\x06origin\x12?\n" +
+	"\vdestination\x18\x02 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vdestination\"\x82\x01\n" +
+	"\x10GetRouteResponse\x12'\n" +
+	"\x0fdistance_meters\x18\x01 \x01(\x01R\x0edistanceMeters\x12)\n" +
+	"\x10duration_seconds\x18\x02 \x01(\x01R\x0fdurationSeconds\x12\x1a\n" +
+	"\bpolyline\x18\x03 \x01(\tR\bpolyline\"\x90\x01\n" +
+	"\x13SearchPlacesRequest\x12\x14\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\x121\n" +
+	"\x04near\x18\x02 \x01(\v2\x1d.ride.location.v1.CoordinatesR\x04near\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x1a\n" +
+	"\blanguage\x18\x04 \x01(\tR\blanguage\"G\n" +
+	"\x14SearchPlacesResponse\x12/\n" +
+	"\x06places\x18\x01 \x03(\v2\x17.ride.location.v1.PlaceR\x06places\"t\n" +
+	"\x15ReverseGeocodeRequest\x12?\n" +
+	"\vcoordinates\x18\x01 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vcoordinates\x12\x1a\n" +
+	"\blanguage\x18\x02 \x01(\tR\blanguage\"G\n" +
+	"\x16ReverseGeocodeResponse\x12-\n" +
+	"\x05place\x18\x01 \x01(\v2\x17.ride.location.v1.PlaceR\x05place\"\xbb\x02\n" +
+	"\x05Place\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12!\n" +
+	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\x12\x1a\n" +
+	"\bcategory\x18\x04 \x01(\tR\bcategory\x12\x12\n" +
+	"\x04type\x18\x05 \x01(\tR\x04type\x12?\n" +
+	"\vcoordinates\x18\x06 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vcoordinates\x12>\n" +
+	"\aaddress\x18\a \x03(\v2$.ride.location.v1.Place.AddressEntryR\aaddress\x1a:\n" +
+	"\fAddressEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*X\n" +
 	"\n" +
 	"EntityType\x12\x1b\n" +
 	"\x17ENTITY_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ENTITY_TYPE_DRIVER\x10\x01\x12\x15\n" +
-	"\x11ENTITY_TYPE_RIDER\x10\x022\xcc\a\n" +
+	"\x11ENTITY_TYPE_RIDER\x10\x022\xb9\n" +
+	"\n" +
 	"\x0fLocationService\x12\x89\x01\n" +
 	"\x0eUpdateLocation\x12'.ride.location.v1.UpdateLocationRequest\x1a(.ride.location.v1.UpdateLocationResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\x1a\x19/v1/locations/{entity_id}\x12}\n" +
 	"\vGetLocation\x12$.ride.location.v1.GetLocationRequest\x1a%.ride.location.v1.GetLocationResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/locations/{entity_id}\x12W\n" +
@@ -1138,7 +1593,10 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"\rSetZoneActive\x12&.ride.location.v1.SetZoneActiveRequest\x1a\x1e.ride.location.v1.ZoneResponse\x12h\n" +
 	"\aGetZone\x12 .ride.location.v1.GetZoneRequest\x1a\x1e.ride.location.v1.ZoneResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/zones/{zone_id}\x12g\n" +
 	"\tListZones\x12\".ride.location.v1.ListZonesRequest\x1a#.ride.location.v1.ListZonesResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/zones\x12\x82\x01\n" +
-	"\x10CheckServiceZone\x12).ride.location.v1.CheckServiceZoneRequest\x1a*.ride.location.v1.CheckServiceZoneResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/zones:checkBDZBgithub.com/7akoom/ride-platform/gen/go/ride/location/v1;locationv1b\x06proto3"
+	"\x10CheckServiceZone\x12).ride.location.v1.CheckServiceZoneRequest\x1a*.ride.location.v1.CheckServiceZoneResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/zones:check\x12p\n" +
+	"\bGetRoute\x12!.ride.location.v1.GetRouteRequest\x1a\".ride.location.v1.GetRouteResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/routes:compute\x12x\n" +
+	"\fSearchPlaces\x12%.ride.location.v1.SearchPlacesRequest\x1a&.ride.location.v1.SearchPlacesResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/places:search\x12\x7f\n" +
+	"\x0eReverseGeocode\x12'.ride.location.v1.ReverseGeocodeRequest\x1a(.ride.location.v1.ReverseGeocodeResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/places:reverseBDZBgithub.com/7akoom/ride-platform/gen/go/ride/location/v1;locationv1b\x06proto3"
 
 var (
 	file_ride_location_v1_location_proto_rawDescOnce sync.Once
@@ -1153,7 +1611,7 @@ func file_ride_location_v1_location_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_location_v1_location_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ride_location_v1_location_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_ride_location_v1_location_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_ride_location_v1_location_proto_goTypes = []any{
 	(EntityType)(0),                  // 0: ride.location.v1.EntityType
 	(*Coordinates)(nil),              // 1: ride.location.v1.Coordinates
@@ -1174,50 +1632,72 @@ var file_ride_location_v1_location_proto_goTypes = []any{
 	(*ListZonesResponse)(nil),        // 16: ride.location.v1.ListZonesResponse
 	(*CheckServiceZoneRequest)(nil),  // 17: ride.location.v1.CheckServiceZoneRequest
 	(*CheckServiceZoneResponse)(nil), // 18: ride.location.v1.CheckServiceZoneResponse
-	(*timestamppb.Timestamp)(nil),    // 19: google.protobuf.Timestamp
+	(*GetRouteRequest)(nil),          // 19: ride.location.v1.GetRouteRequest
+	(*GetRouteResponse)(nil),         // 20: ride.location.v1.GetRouteResponse
+	(*SearchPlacesRequest)(nil),      // 21: ride.location.v1.SearchPlacesRequest
+	(*SearchPlacesResponse)(nil),     // 22: ride.location.v1.SearchPlacesResponse
+	(*ReverseGeocodeRequest)(nil),    // 23: ride.location.v1.ReverseGeocodeRequest
+	(*ReverseGeocodeResponse)(nil),   // 24: ride.location.v1.ReverseGeocodeResponse
+	(*Place)(nil),                    // 25: ride.location.v1.Place
+	nil,                              // 26: ride.location.v1.Place.AddressEntry
+	(*timestamppb.Timestamp)(nil),    // 27: google.protobuf.Timestamp
 }
 var file_ride_location_v1_location_proto_depIdxs = []int32{
 	0,  // 0: ride.location.v1.UpdateLocationRequest.entity_type:type_name -> ride.location.v1.EntityType
 	1,  // 1: ride.location.v1.UpdateLocationRequest.coordinates:type_name -> ride.location.v1.Coordinates
-	19, // 2: ride.location.v1.UpdateLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
+	27, // 2: ride.location.v1.UpdateLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: ride.location.v1.GetLocationRequest.entity_type:type_name -> ride.location.v1.EntityType
 	1,  // 4: ride.location.v1.GetLocationResponse.coordinates:type_name -> ride.location.v1.Coordinates
-	19, // 5: ride.location.v1.GetLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
+	27, // 5: ride.location.v1.GetLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
 	1,  // 6: ride.location.v1.NearbyEntity.coordinates:type_name -> ride.location.v1.Coordinates
 	0,  // 7: ride.location.v1.FindNearbyRequest.entity_type:type_name -> ride.location.v1.EntityType
 	1,  // 8: ride.location.v1.FindNearbyRequest.coordinates:type_name -> ride.location.v1.Coordinates
 	6,  // 9: ride.location.v1.FindNearbyResponse.entities:type_name -> ride.location.v1.NearbyEntity
 	1,  // 10: ride.location.v1.Zone.boundary:type_name -> ride.location.v1.Coordinates
-	19, // 11: ride.location.v1.Zone.created_at:type_name -> google.protobuf.Timestamp
-	19, // 12: ride.location.v1.Zone.updated_at:type_name -> google.protobuf.Timestamp
+	27, // 11: ride.location.v1.Zone.created_at:type_name -> google.protobuf.Timestamp
+	27, // 12: ride.location.v1.Zone.updated_at:type_name -> google.protobuf.Timestamp
 	1,  // 13: ride.location.v1.CreateZoneRequest.boundary:type_name -> ride.location.v1.Coordinates
 	1,  // 14: ride.location.v1.UpdateZoneRequest.boundary:type_name -> ride.location.v1.Coordinates
 	9,  // 15: ride.location.v1.ZoneResponse.zone:type_name -> ride.location.v1.Zone
 	9,  // 16: ride.location.v1.ListZonesResponse.zones:type_name -> ride.location.v1.Zone
 	1,  // 17: ride.location.v1.CheckServiceZoneRequest.coordinates:type_name -> ride.location.v1.Coordinates
-	2,  // 18: ride.location.v1.LocationService.UpdateLocation:input_type -> ride.location.v1.UpdateLocationRequest
-	4,  // 19: ride.location.v1.LocationService.GetLocation:input_type -> ride.location.v1.GetLocationRequest
-	7,  // 20: ride.location.v1.LocationService.FindNearby:input_type -> ride.location.v1.FindNearbyRequest
-	10, // 21: ride.location.v1.LocationService.CreateZone:input_type -> ride.location.v1.CreateZoneRequest
-	11, // 22: ride.location.v1.LocationService.UpdateZone:input_type -> ride.location.v1.UpdateZoneRequest
-	12, // 23: ride.location.v1.LocationService.SetZoneActive:input_type -> ride.location.v1.SetZoneActiveRequest
-	14, // 24: ride.location.v1.LocationService.GetZone:input_type -> ride.location.v1.GetZoneRequest
-	15, // 25: ride.location.v1.LocationService.ListZones:input_type -> ride.location.v1.ListZonesRequest
-	17, // 26: ride.location.v1.LocationService.CheckServiceZone:input_type -> ride.location.v1.CheckServiceZoneRequest
-	3,  // 27: ride.location.v1.LocationService.UpdateLocation:output_type -> ride.location.v1.UpdateLocationResponse
-	5,  // 28: ride.location.v1.LocationService.GetLocation:output_type -> ride.location.v1.GetLocationResponse
-	8,  // 29: ride.location.v1.LocationService.FindNearby:output_type -> ride.location.v1.FindNearbyResponse
-	13, // 30: ride.location.v1.LocationService.CreateZone:output_type -> ride.location.v1.ZoneResponse
-	13, // 31: ride.location.v1.LocationService.UpdateZone:output_type -> ride.location.v1.ZoneResponse
-	13, // 32: ride.location.v1.LocationService.SetZoneActive:output_type -> ride.location.v1.ZoneResponse
-	13, // 33: ride.location.v1.LocationService.GetZone:output_type -> ride.location.v1.ZoneResponse
-	16, // 34: ride.location.v1.LocationService.ListZones:output_type -> ride.location.v1.ListZonesResponse
-	18, // 35: ride.location.v1.LocationService.CheckServiceZone:output_type -> ride.location.v1.CheckServiceZoneResponse
-	27, // [27:36] is the sub-list for method output_type
-	18, // [18:27] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	1,  // 18: ride.location.v1.GetRouteRequest.origin:type_name -> ride.location.v1.Coordinates
+	1,  // 19: ride.location.v1.GetRouteRequest.destination:type_name -> ride.location.v1.Coordinates
+	1,  // 20: ride.location.v1.SearchPlacesRequest.near:type_name -> ride.location.v1.Coordinates
+	25, // 21: ride.location.v1.SearchPlacesResponse.places:type_name -> ride.location.v1.Place
+	1,  // 22: ride.location.v1.ReverseGeocodeRequest.coordinates:type_name -> ride.location.v1.Coordinates
+	25, // 23: ride.location.v1.ReverseGeocodeResponse.place:type_name -> ride.location.v1.Place
+	1,  // 24: ride.location.v1.Place.coordinates:type_name -> ride.location.v1.Coordinates
+	26, // 25: ride.location.v1.Place.address:type_name -> ride.location.v1.Place.AddressEntry
+	2,  // 26: ride.location.v1.LocationService.UpdateLocation:input_type -> ride.location.v1.UpdateLocationRequest
+	4,  // 27: ride.location.v1.LocationService.GetLocation:input_type -> ride.location.v1.GetLocationRequest
+	7,  // 28: ride.location.v1.LocationService.FindNearby:input_type -> ride.location.v1.FindNearbyRequest
+	10, // 29: ride.location.v1.LocationService.CreateZone:input_type -> ride.location.v1.CreateZoneRequest
+	11, // 30: ride.location.v1.LocationService.UpdateZone:input_type -> ride.location.v1.UpdateZoneRequest
+	12, // 31: ride.location.v1.LocationService.SetZoneActive:input_type -> ride.location.v1.SetZoneActiveRequest
+	14, // 32: ride.location.v1.LocationService.GetZone:input_type -> ride.location.v1.GetZoneRequest
+	15, // 33: ride.location.v1.LocationService.ListZones:input_type -> ride.location.v1.ListZonesRequest
+	17, // 34: ride.location.v1.LocationService.CheckServiceZone:input_type -> ride.location.v1.CheckServiceZoneRequest
+	19, // 35: ride.location.v1.LocationService.GetRoute:input_type -> ride.location.v1.GetRouteRequest
+	21, // 36: ride.location.v1.LocationService.SearchPlaces:input_type -> ride.location.v1.SearchPlacesRequest
+	23, // 37: ride.location.v1.LocationService.ReverseGeocode:input_type -> ride.location.v1.ReverseGeocodeRequest
+	3,  // 38: ride.location.v1.LocationService.UpdateLocation:output_type -> ride.location.v1.UpdateLocationResponse
+	5,  // 39: ride.location.v1.LocationService.GetLocation:output_type -> ride.location.v1.GetLocationResponse
+	8,  // 40: ride.location.v1.LocationService.FindNearby:output_type -> ride.location.v1.FindNearbyResponse
+	13, // 41: ride.location.v1.LocationService.CreateZone:output_type -> ride.location.v1.ZoneResponse
+	13, // 42: ride.location.v1.LocationService.UpdateZone:output_type -> ride.location.v1.ZoneResponse
+	13, // 43: ride.location.v1.LocationService.SetZoneActive:output_type -> ride.location.v1.ZoneResponse
+	13, // 44: ride.location.v1.LocationService.GetZone:output_type -> ride.location.v1.ZoneResponse
+	16, // 45: ride.location.v1.LocationService.ListZones:output_type -> ride.location.v1.ListZonesResponse
+	18, // 46: ride.location.v1.LocationService.CheckServiceZone:output_type -> ride.location.v1.CheckServiceZoneResponse
+	20, // 47: ride.location.v1.LocationService.GetRoute:output_type -> ride.location.v1.GetRouteResponse
+	22, // 48: ride.location.v1.LocationService.SearchPlaces:output_type -> ride.location.v1.SearchPlacesResponse
+	24, // 49: ride.location.v1.LocationService.ReverseGeocode:output_type -> ride.location.v1.ReverseGeocodeResponse
+	38, // [38:50] is the sub-list for method output_type
+	26, // [26:38] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_ride_location_v1_location_proto_init() }
@@ -1231,7 +1711,7 @@ func file_ride_location_v1_location_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_location_v1_location_proto_rawDesc), len(file_ride_location_v1_location_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   18,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -105,6 +105,18 @@ gateway it always answers 403 to a user, and the internal token is refused with 
 | GET | `/v1/zones/{zoneId}` | any user | |
 | GET | `/v1/zones:check` | any user | `?coordinates.latitude=&coordinates.longitude=` |
 
+### Maps: routes and places
+
+Routes come from a self-hosted OSRM and places from a self-hosted Nominatim, both built from OpenStreetMap. Any signed-in user may call them (rate-limited like every other route).
+
+| Method | Path | What it does |
+|---|---|---|
+| POST | `/v1/routes:compute` | Best route by road between `origin` and `destination` (each `{latitude, longitude}`): `distanceMeters`, `durationSeconds` and `polyline`, the whole path as a Google encoded polyline with 5 digits of precision, ready to decode and draw. `404` when there is no way between the points, `400` when a point is missing, is not a position on Earth, or is more than 1 km from any road, `503` when the routing engine is down. |
+| GET | `/v1/places:search` | Places by name, best match first. Query: `query` (2 to 200 characters), `near.latitude` and `near.longitude` (optional, ranks close places first without excluding the rest), `limit` (5 by default, at most 10), `language` (`ar`, `ku` or `en`; Arabic first when empty). Each place has `id`, `name`, `displayName`, `category`, `type`, `coordinates` and `address` (road, neighbourhood, suburb, city, state, postcode...). An empty `places` list means nothing was found. |
+| GET | `/v1/places:reverse` | What is at a point. Query: `coordinates.latitude`, `coordinates.longitude`, `language`. `404` when there is nothing there. |
+
+Searching is limited to the country set by `MAPS_COUNTRY_CODES` (Iraq by default).
+
 ### Fares
 
 | Method | Path | Who |

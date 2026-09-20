@@ -38,6 +38,13 @@ type Config struct {
 	// stop a runaway retry loop or a naive script.
 	RateLimitRequestsPerSecond string
 	RateLimitBurst             string
+
+	// Maps: the routing engine (OSRM) and the place search (Nominatim), both
+	// self-hosted and built from OpenStreetMap (see config/maps.go).
+	OSRMBaseURL      string
+	NominatimBaseURL string
+	MapsCountryCodes string
+	MapsTimeout      string
 }
 
 func Load() Config {
@@ -63,6 +70,11 @@ func Load() Config {
 
 		RateLimitRequestsPerSecond: getEnv("RATE_LIMIT_REQUESTS_PER_SECOND", "20"),
 		RateLimitBurst:             getEnv("RATE_LIMIT_BURST", "40"),
+
+		OSRMBaseURL:      getEnv("OSRM_BASE_URL", "http://localhost:5000"),
+		NominatimBaseURL: getEnv("NOMINATIM_BASE_URL", "http://localhost:8088"),
+		MapsCountryCodes: getEnv("MAPS_COUNTRY_CODES", "iq"),
+		MapsTimeout:      getEnv("MAPS_HTTP_TIMEOUT", "5s"),
 	}
 }
 

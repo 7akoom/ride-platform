@@ -41,6 +41,9 @@ var methodAccess = map[string]accessLevel{
 	"/ride.location.v1.LocationService/GetZone":          accessAuthenticated,
 	"/ride.location.v1.LocationService/ListZones":        accessAuthenticated,
 	"/ride.location.v1.LocationService/CheckServiceZone": accessAuthenticated,
+	"/ride.location.v1.LocationService/GetRoute":         accessAuthenticated,
+	"/ride.location.v1.LocationService/SearchPlaces":     accessAuthenticated,
+	"/ride.location.v1.LocationService/ReverseGeocode":   accessAuthenticated,
 }
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver) googlegrpc.UnaryServerInterceptor {

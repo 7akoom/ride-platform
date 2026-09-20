@@ -28,6 +28,9 @@ const (
 	LocationService_GetZone_FullMethodName          = "/ride.location.v1.LocationService/GetZone"
 	LocationService_ListZones_FullMethodName        = "/ride.location.v1.LocationService/ListZones"
 	LocationService_CheckServiceZone_FullMethodName = "/ride.location.v1.LocationService/CheckServiceZone"
+	LocationService_GetRoute_FullMethodName         = "/ride.location.v1.LocationService/GetRoute"
+	LocationService_SearchPlaces_FullMethodName     = "/ride.location.v1.LocationService/SearchPlaces"
+	LocationService_ReverseGeocode_FullMethodName   = "/ride.location.v1.LocationService/ReverseGeocode"
 )
 
 // LocationServiceClient is the client API for LocationService service.
@@ -55,6 +58,14 @@ type LocationServiceClient interface {
 	ListZones(ctx context.Context, in *ListZonesRequest, opts ...grpc.CallOption) (*ListZonesResponse, error)
 	// CheckServiceZone tells whether a point is served (?coordinates.latitude=&coordinates.longitude=).
 	CheckServiceZone(ctx context.Context, in *CheckServiceZoneRequest, opts ...grpc.CallOption) (*CheckServiceZoneResponse, error)
+	// GetRoute returns the best route by road between two points: how far, how long, and
+	// the line to draw on a map. Any signed-in user may ask.
+	GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*GetRouteResponse, error)
+	// SearchPlaces finds places (a mall, a street, a neighbourhood) by name, best match
+	// first. Any signed-in user may ask.
+	SearchPlaces(ctx context.Context, in *SearchPlacesRequest, opts ...grpc.CallOption) (*SearchPlacesResponse, error)
+	// ReverseGeocode names what is at a point. Any signed-in user may ask.
+	ReverseGeocode(ctx context.Context, in *ReverseGeocodeRequest, opts ...grpc.CallOption) (*ReverseGeocodeResponse, error)
 }
 
 type locationServiceClient struct {
@@ -155,6 +166,36 @@ func (c *locationServiceClient) CheckServiceZone(ctx context.Context, in *CheckS
 	return out, nil
 }
 
+func (c *locationServiceClient) GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*GetRouteResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRouteResponse)
+	err := c.cc.Invoke(ctx, LocationService_GetRoute_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) SearchPlaces(ctx context.Context, in *SearchPlacesRequest, opts ...grpc.CallOption) (*SearchPlacesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchPlacesResponse)
+	err := c.cc.Invoke(ctx, LocationService_SearchPlaces_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) ReverseGeocode(ctx context.Context, in *ReverseGeocodeRequest, opts ...grpc.CallOption) (*ReverseGeocodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReverseGeocodeResponse)
+	err := c.cc.Invoke(ctx, LocationService_ReverseGeocode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LocationServiceServer is the server API for LocationService service.
 // All implementations must embed UnimplementedLocationServiceServer
 // for forward compatibility.
@@ -180,6 +221,14 @@ type LocationServiceServer interface {
 	ListZones(context.Context, *ListZonesRequest) (*ListZonesResponse, error)
 	// CheckServiceZone tells whether a point is served (?coordinates.latitude=&coordinates.longitude=).
 	CheckServiceZone(context.Context, *CheckServiceZoneRequest) (*CheckServiceZoneResponse, error)
+	// GetRoute returns the best route by road between two points: how far, how long, and
+	// the line to draw on a map. Any signed-in user may ask.
+	GetRoute(context.Context, *GetRouteRequest) (*GetRouteResponse, error)
+	// SearchPlaces finds places (a mall, a street, a neighbourhood) by name, best match
+	// first. Any signed-in user may ask.
+	SearchPlaces(context.Context, *SearchPlacesRequest) (*SearchPlacesResponse, error)
+	// ReverseGeocode names what is at a point. Any signed-in user may ask.
+	ReverseGeocode(context.Context, *ReverseGeocodeRequest) (*ReverseGeocodeResponse, error)
 	mustEmbedUnimplementedLocationServiceServer()
 }
 
@@ -216,6 +265,15 @@ func (UnimplementedLocationServiceServer) ListZones(context.Context, *ListZonesR
 }
 func (UnimplementedLocationServiceServer) CheckServiceZone(context.Context, *CheckServiceZoneRequest) (*CheckServiceZoneResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CheckServiceZone not implemented")
+}
+func (UnimplementedLocationServiceServer) GetRoute(context.Context, *GetRouteRequest) (*GetRouteResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRoute not implemented")
+}
+func (UnimplementedLocationServiceServer) SearchPlaces(context.Context, *SearchPlacesRequest) (*SearchPlacesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SearchPlaces not implemented")
+}
+func (UnimplementedLocationServiceServer) ReverseGeocode(context.Context, *ReverseGeocodeRequest) (*ReverseGeocodeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReverseGeocode not implemented")
 }
 func (UnimplementedLocationServiceServer) mustEmbedUnimplementedLocationServiceServer() {}
 func (UnimplementedLocationServiceServer) testEmbeddedByValue()                         {}
@@ -400,6 +458,60 @@ func _LocationService_CheckServiceZone_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LocationService_GetRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRouteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).GetRoute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_GetRoute_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).GetRoute(ctx, req.(*GetRouteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_SearchPlaces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchPlacesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).SearchPlaces(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_SearchPlaces_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).SearchPlaces(ctx, req.(*SearchPlacesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_ReverseGeocode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReverseGeocodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).ReverseGeocode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_ReverseGeocode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).ReverseGeocode(ctx, req.(*ReverseGeocodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LocationService_ServiceDesc is the grpc.ServiceDesc for LocationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -442,6 +554,18 @@ var LocationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckServiceZone",
 			Handler:    _LocationService_CheckServiceZone_Handler,
+		},
+		{
+			MethodName: "GetRoute",
+			Handler:    _LocationService_GetRoute_Handler,
+		},
+		{
+			MethodName: "SearchPlaces",
+			Handler:    _LocationService_SearchPlaces_Handler,
+		},
+		{
+			MethodName: "ReverseGeocode",
+			Handler:    _LocationService_ReverseGeocode_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

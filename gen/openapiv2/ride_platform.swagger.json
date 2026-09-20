@@ -1166,6 +1166,112 @@
         ]
       }
     },
+    "/v1/places:reverse": {
+      "get": {
+        "summary": "ReverseGeocode names what is at a point. Any signed-in user may ask.",
+        "operationId": "LocationService_ReverseGeocode",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ReverseGeocodeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "coordinates.latitude",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "coordinates.longitude",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/places:search": {
+      "get": {
+        "summary": "SearchPlaces finds places (a mall, a street, a neighbourhood) by name, best match\nfirst. Any signed-in user may ask.",
+        "operationId": "LocationService_SearchPlaces",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SearchPlacesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "description": "What to look for; 2 to 200 characters.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "near.latitude",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "near.longitude",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "limit",
+            "description": "How many places to return: 5 by default, at most 10.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "language",
+            "description": "The language names are given in: \"ar\", \"ku\" or \"en\". Empty means Arabic, then\nKurdish, then English.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
     "/v1/riders": {
       "post": {
         "summary": "CreateRider creates the caller's own rider profile: identity_id must be the caller's identity.",
@@ -1264,6 +1370,39 @@
         ],
         "tags": [
           "RiderService"
+        ]
+      }
+    },
+    "/v1/routes:compute": {
+      "post": {
+        "summary": "GetRoute returns the best route by road between two points: how far, how long, and\nthe line to draw on a map. Any signed-in user may ask.",
+        "operationId": "LocationService_GetRoute",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetRouteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1GetRouteRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LocationService"
         ]
       }
     },
@@ -2666,6 +2805,34 @@
         }
       }
     },
+    "v1GetRouteRequest": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "$ref": "#/definitions/rideLocationV1Coordinates"
+        },
+        "destination": {
+          "$ref": "#/definitions/rideLocationV1Coordinates"
+        }
+      }
+    },
+    "v1GetRouteResponse": {
+      "type": "object",
+      "properties": {
+        "distanceMeters": {
+          "type": "number",
+          "format": "double"
+        },
+        "durationSeconds": {
+          "type": "number",
+          "format": "double"
+        },
+        "polyline": {
+          "type": "string",
+          "description": "The whole path as a Google encoded polyline with 5 digits of precision (about a\nmetre), ready to decode and draw."
+        }
+      }
+    },
     "v1GetTripFunnelResponse": {
       "type": "object",
       "properties": {
@@ -2943,6 +3110,38 @@
       ],
       "default": "OWNER_TYPE_UNSPECIFIED"
     },
+    "v1Place": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The OpenStreetMap object, for example \"way/123456\"."
+        },
+        "name": {
+          "type": "string",
+          "description": "The short name (a mall, a street) and the full one with neighbourhood, city and\ncountry."
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/rideLocationV1Coordinates"
+        },
+        "address": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The parts of the address that are known (road, neighbourhood, suburb, city, state,\npostcode...), by OpenStreetMap's own names."
+        }
+      }
+    },
     "v1Platform": {
       "type": "string",
       "enum": [
@@ -3191,6 +3390,14 @@
         }
       }
     },
+    "v1ReverseGeocodeResponse": {
+      "type": "object",
+      "properties": {
+        "place": {
+          "$ref": "#/definitions/v1Place"
+        }
+      }
+    },
     "v1RevokeSessionResponse": {
       "type": "object"
     },
@@ -3235,6 +3442,18 @@
         "RIDER_STATUS_SUSPENDED"
       ],
       "default": "RIDER_STATUS_UNSPECIFIED"
+    },
+    "v1SearchPlacesResponse": {
+      "type": "object",
+      "properties": {
+        "places": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Place"
+          }
+        }
+      }
     },
     "v1Session": {
       "type": "object",

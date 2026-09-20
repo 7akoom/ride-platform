@@ -9,13 +9,16 @@ import (
 	"time"
 
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/location"
+	"github.com/7akoom/ride-platform/services/location-service/internal/application/maps"
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/zone"
 	"github.com/7akoom/ride-platform/services/location-service/internal/config"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/clients"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/database"
+	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/geocoding"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/identifier"
 	postgresrepo "github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/persistence/postgres"
 	valkeystore "github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/persistence/valkey"
+	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/routing"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/token"
 	"github.com/7akoom/ride-platform/services/location-service/internal/observability"
 	grpcserver "github.com/7akoom/ride-platform/services/location-service/internal/transport/grpc"
@@ -86,7 +89,19 @@ func run() int {
 	zoneRepository := postgresrepo.NewZoneStore(pool)
 	zoneService := zone.NewService(zoneRepository, identifier.NewUUIDGenerator())
 
-	locationHandler := grpcserver.NewLocationHandler(locationService, zoneService, logger)
+	mapsConfig, err := config.ParseMaps(cfg)
+	if err != nil {
+		logger.Error("invalid maps configuration", "error", err)
+
+		return 1
+	}
+
+	mapsService := maps.NewService(
+		routing.NewOSRMClient(mapsConfig.OSRMBaseURL, mapsConfig.Timeout),
+		geocoding.NewNominatimClient(mapsConfig.NominatimBaseURL, mapsConfig.CountryCodes, mapsConfig.Timeout),
+	)
+
+	locationHandler := grpcserver.NewLocationHandler(locationService, zoneService, logger).WithMaps(mapsService)
 
 	riderConn, err := grpc.NewClient(
 		cfg.RiderServiceAddress,
