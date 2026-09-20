@@ -185,6 +185,27 @@ func run() int {
 		return 1
 	}
 	defer tripSubscription.Stop()
+	lifecycleHandler := events.NewLifecycleHandler(
+		clients.NewTripClient(tripConn),
+		clients.NewDriverClient(driverConn),
+		logger,
+	)
+
+	lifecycleSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		tripEventsStream,
+		events.LifecycleDurable,
+		events.LifecycleSubjects,
+		lifecycleHandler.Handle,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to trip lifecycle events", "error", err)
+
+		return 1
+	}
+	defer lifecycleSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,
