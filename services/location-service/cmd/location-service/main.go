@@ -11,6 +11,7 @@ import (
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/location"
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/zone"
 	"github.com/7akoom/ride-platform/services/location-service/internal/config"
+	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/clients"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/database"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/identifier"
 	postgresrepo "github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/persistence/postgres"
@@ -18,6 +19,8 @@ import (
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/token"
 	"github.com/7akoom/ride-platform/services/location-service/internal/observability"
 	grpcserver "github.com/7akoom/ride-platform/services/location-service/internal/transport/grpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -79,6 +82,36 @@ func run() int {
 
 	locationHandler := grpcserver.NewLocationHandler(locationService, zoneService, logger)
 
+	riderConn, err := grpc.NewClient(
+		cfg.RiderServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to rider-service", "error", err)
+
+		return 1
+	}
+	defer riderConn.Close()
+
+	driverConn, err := grpc.NewClient(
+		cfg.DriverServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to driver-service", "error", err)
+
+		return 1
+	}
+	defer driverConn.Close()
+
+	profileResolver := grpcserver.NewCachingResolver(clients.NewProfileResolver(riderConn, driverConn))
+
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,
 		cfg.AccessTokenIssuer,
@@ -103,7 +136,7 @@ func run() int {
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
-		grpcserver.NewAuthorizationUnaryInterceptor(),
+		grpcserver.NewAuthorizationUnaryInterceptor(profileResolver),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterLocationService(locationHandler)

@@ -41,6 +41,7 @@ func NewLocationHandler(
 	return &LocationHandler{
 		locationService: locationService,
 		zoneService:     zoneService,
+		logger:          logger,
 	}
 }
 

@@ -29,6 +29,8 @@ type Config struct {
 	// treat it like a password — the checked-in default is for local
 	// dev only.
 	InternalServiceToken string
+	RiderServiceAddress  string
+	DriverServiceAddress string
 
 	// Per-caller token-bucket rate limit (see
 	// transport/grpc/rate_limit_interceptor.go). Defaults are generous
@@ -55,6 +57,9 @@ func Load() Config {
 		AccessTokenKeyID:         getEnv("ACCESS_TOKEN_KEY_ID", "identity-dev-1"),
 
 		InternalServiceToken: getEnv("INTERNAL_SERVICE_TOKEN", "dev-internal-service-token-change-me"),
+
+		RiderServiceAddress:  getEnv("RIDER_SERVICE_ADDRESS", "localhost:50052"),
+		DriverServiceAddress: getEnv("DRIVER_SERVICE_ADDRESS", "localhost:50053"),
 
 		RateLimitRequestsPerSecond: getEnv("RATE_LIMIT_REQUESTS_PER_SECOND", "20"),
 		RateLimitBurst:             getEnv("RATE_LIMIT_BURST", "40"),

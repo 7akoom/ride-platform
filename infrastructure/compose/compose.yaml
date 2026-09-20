@@ -622,6 +622,8 @@ services:
       VALKEY_ADDRESS: location-valkey:6379
       VALKEY_PASSWORD: ${LOCATION_VALKEY_PASSWORD}
       DATABASE_URL: postgres://${LOCATION_DB_USER}:${LOCATION_DB_PASSWORD}@location-postgres:5432/${LOCATION_DB_NAME}?sslmode=disable
+      RIDER_SERVICE_ADDRESS: rider-service:50052
+      DRIVER_SERVICE_ADDRESS: driver-service:50053
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -631,6 +633,10 @@ services:
         condition: service_healthy
       location-postgres:
         condition: service_healthy
+      rider-service:
+        condition: service_started
+      driver-service:
+        condition: service_started
 
     ports:
       - "127.0.0.1:50054:50054"

@@ -37,3 +37,23 @@ func TestEveryRPCIsClassified(t *testing.T) {
 		}
 	}
 }
+
+func TestEveryOwnerMethodHasAnOwnerCheck(t *testing.T) {
+	for full, level := range methodAccess {
+		_, hasCheck := ownerChecks[full]
+
+		if level == accessOwner && !hasCheck {
+			t.Errorf("%s is accessOwner but has no owner check", full)
+		}
+
+		if level != accessOwner && hasCheck {
+			t.Errorf("%s has an owner check but is not accessOwner", full)
+		}
+	}
+
+	for full := range ownerChecks {
+		if _, classified := methodAccess[full]; !classified {
+			t.Errorf("ownerChecks lists %s, which is not in methodAccess", full)
+		}
+	}
+}
