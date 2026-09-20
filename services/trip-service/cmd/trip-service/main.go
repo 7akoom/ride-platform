@@ -31,6 +31,12 @@ func main() {
 func run() int {
 	cfg := config.Load()
 
+	if err := config.ValidateSecrets(cfg); err != nil {
+		slog.Error("refusing to start with an unsafe configuration", "error", err)
+
+		return 1
+	}
+
 	logger := slog.New(
 		slog.NewJSONHandler(os.Stdout, nil),
 	).With(

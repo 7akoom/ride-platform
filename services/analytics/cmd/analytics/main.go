@@ -24,10 +24,10 @@ import (
 // forwarded to the same ingest.Handler.Dispatch, which switches on the
 // event's own event_type.
 const (
-	riderEventsDurable    = "analytics-rider-events"
-	driverEventsDurable   = "analytics-driver-events"
-	tripEventsDurable     = "analytics-trip-events"
-	pricingEventsDurable  = "analytics-pricing-events"
+	riderEventsDurable   = "analytics-rider-events"
+	driverEventsDurable  = "analytics-driver-events"
+	tripEventsDurable    = "analytics-trip-events"
+	pricingEventsDurable = "analytics-pricing-events"
 )
 
 func main() {
@@ -36,6 +36,12 @@ func main() {
 
 func run() int {
 	cfg := config.Load()
+
+	if err := config.ValidateSecrets(cfg); err != nil {
+		slog.Error("refusing to start with an unsafe configuration", "error", err)
+
+		return 1
+	}
 
 	logger := slog.New(
 		slog.NewJSONHandler(os.Stdout, nil),
