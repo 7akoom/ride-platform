@@ -1572,6 +1572,501 @@ func (x *ListTripsResponse) GetNextPageToken() string {
 	return ""
 }
 
+// TripOffer is what a driver sees to decide. The rider is not identified.
+type TripOffer struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TripId        string                 `protobuf:"bytes,1,opt,name=trip_id,json=tripId,proto3" json:"trip_id,omitempty"`
+	Pickup        *Coordinates           `protobuf:"bytes,2,opt,name=pickup,proto3" json:"pickup,omitempty"`
+	Dropoff       *Coordinates           `protobuf:"bytes,3,opt,name=dropoff,proto3" json:"dropoff,omitempty"`
+	VehicleClass  string                 `protobuf:"bytes,4,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	PaymentMethod string                 `protobuf:"bytes,5,opt,name=payment_method,json=paymentMethod,proto3" json:"payment_method,omitempty"`
+	OfferedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=offered_at,json=offeredAt,proto3" json:"offered_at,omitempty"`
+	// The last moment the driver can accept.
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TripOffer) Reset() {
+	*x = TripOffer{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TripOffer) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TripOffer) ProtoMessage() {}
+
+func (x *TripOffer) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TripOffer.ProtoReflect.Descriptor instead.
+func (*TripOffer) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *TripOffer) GetTripId() string {
+	if x != nil {
+		return x.TripId
+	}
+	return ""
+}
+
+func (x *TripOffer) GetPickup() *Coordinates {
+	if x != nil {
+		return x.Pickup
+	}
+	return nil
+}
+
+func (x *TripOffer) GetDropoff() *Coordinates {
+	if x != nil {
+		return x.Dropoff
+	}
+	return nil
+}
+
+func (x *TripOffer) GetVehicleClass() string {
+	if x != nil {
+		return x.VehicleClass
+	}
+	return ""
+}
+
+func (x *TripOffer) GetPaymentMethod() string {
+	if x != nil {
+		return x.PaymentMethod
+	}
+	return ""
+}
+
+func (x *TripOffer) GetOfferedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.OfferedAt
+	}
+	return nil
+}
+
+func (x *TripOffer) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+type OfferTripRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	TripId   string                 `protobuf:"bytes,1,opt,name=trip_id,json=tripId,proto3" json:"trip_id,omitempty"`
+	DriverId string                 `protobuf:"bytes,2,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	// 0 means the default (15); anything else is served within 5 to 60.
+	TtlSeconds    int32 `protobuf:"varint,3,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OfferTripRequest) Reset() {
+	*x = OfferTripRequest{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OfferTripRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OfferTripRequest) ProtoMessage() {}
+
+func (x *OfferTripRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OfferTripRequest.ProtoReflect.Descriptor instead.
+func (*OfferTripRequest) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *OfferTripRequest) GetTripId() string {
+	if x != nil {
+		return x.TripId
+	}
+	return ""
+}
+
+func (x *OfferTripRequest) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+func (x *OfferTripRequest) GetTtlSeconds() int32 {
+	if x != nil {
+		return x.TtlSeconds
+	}
+	return 0
+}
+
+type OfferTripResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TripId        string                 `protobuf:"bytes,1,opt,name=trip_id,json=tripId,proto3" json:"trip_id,omitempty"`
+	DriverId      string                 `protobuf:"bytes,2,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	OfferedAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=offered_at,json=offeredAt,proto3" json:"offered_at,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OfferTripResponse) Reset() {
+	*x = OfferTripResponse{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OfferTripResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OfferTripResponse) ProtoMessage() {}
+
+func (x *OfferTripResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OfferTripResponse.ProtoReflect.Descriptor instead.
+func (*OfferTripResponse) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *OfferTripResponse) GetTripId() string {
+	if x != nil {
+		return x.TripId
+	}
+	return ""
+}
+
+func (x *OfferTripResponse) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+func (x *OfferTripResponse) GetOfferedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.OfferedAt
+	}
+	return nil
+}
+
+func (x *OfferTripResponse) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+type GetPendingOfferRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DriverId      string                 `protobuf:"bytes,1,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPendingOfferRequest) Reset() {
+	*x = GetPendingOfferRequest{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPendingOfferRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPendingOfferRequest) ProtoMessage() {}
+
+func (x *GetPendingOfferRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPendingOfferRequest.ProtoReflect.Descriptor instead.
+func (*GetPendingOfferRequest) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *GetPendingOfferRequest) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+type GetPendingOfferResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Offer         *TripOffer             `protobuf:"bytes,1,opt,name=offer,proto3" json:"offer,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPendingOfferResponse) Reset() {
+	*x = GetPendingOfferResponse{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPendingOfferResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPendingOfferResponse) ProtoMessage() {}
+
+func (x *GetPendingOfferResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPendingOfferResponse.ProtoReflect.Descriptor instead.
+func (*GetPendingOfferResponse) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *GetPendingOfferResponse) GetOffer() *TripOffer {
+	if x != nil {
+		return x.Offer
+	}
+	return nil
+}
+
+type AcceptOfferRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TripId        string                 `protobuf:"bytes,1,opt,name=trip_id,json=tripId,proto3" json:"trip_id,omitempty"`
+	DriverId      string                 `protobuf:"bytes,2,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AcceptOfferRequest) Reset() {
+	*x = AcceptOfferRequest{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AcceptOfferRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AcceptOfferRequest) ProtoMessage() {}
+
+func (x *AcceptOfferRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AcceptOfferRequest.ProtoReflect.Descriptor instead.
+func (*AcceptOfferRequest) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *AcceptOfferRequest) GetTripId() string {
+	if x != nil {
+		return x.TripId
+	}
+	return ""
+}
+
+func (x *AcceptOfferRequest) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+type AcceptOfferResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Trip          *Trip                  `protobuf:"bytes,1,opt,name=trip,proto3" json:"trip,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AcceptOfferResponse) Reset() {
+	*x = AcceptOfferResponse{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AcceptOfferResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AcceptOfferResponse) ProtoMessage() {}
+
+func (x *AcceptOfferResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AcceptOfferResponse.ProtoReflect.Descriptor instead.
+func (*AcceptOfferResponse) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *AcceptOfferResponse) GetTrip() *Trip {
+	if x != nil {
+		return x.Trip
+	}
+	return nil
+}
+
+type RejectOfferRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TripId        string                 `protobuf:"bytes,1,opt,name=trip_id,json=tripId,proto3" json:"trip_id,omitempty"`
+	DriverId      string                 `protobuf:"bytes,2,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RejectOfferRequest) Reset() {
+	*x = RejectOfferRequest{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RejectOfferRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RejectOfferRequest) ProtoMessage() {}
+
+func (x *RejectOfferRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RejectOfferRequest.ProtoReflect.Descriptor instead.
+func (*RejectOfferRequest) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *RejectOfferRequest) GetTripId() string {
+	if x != nil {
+		return x.TripId
+	}
+	return ""
+}
+
+func (x *RejectOfferRequest) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+type RejectOfferResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RejectOfferResponse) Reset() {
+	*x = RejectOfferResponse{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RejectOfferResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RejectOfferResponse) ProtoMessage() {}
+
+func (x *RejectOfferResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RejectOfferResponse.ProtoReflect.Descriptor instead.
+func (*RejectOfferResponse) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{35}
+}
+
 var File_ride_trip_v1_trip_proto protoreflect.FileDescriptor
 
 const file_ride_trip_v1_trip_proto_rawDesc = "" +
@@ -1666,7 +2161,42 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"page_token\x18\x04 \x01(\tR\tpageToken\"e\n" +
 	"\x11ListTripsResponse\x12(\n" +
 	"\x05trips\x18\x01 \x03(\v2\x12.ride.trip.v1.TripR\x05trips\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\xb1\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xce\x02\n" +
+	"\tTripOffer\x12\x17\n" +
+	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x121\n" +
+	"\x06pickup\x18\x02 \x01(\v2\x19.ride.trip.v1.CoordinatesR\x06pickup\x123\n" +
+	"\adropoff\x18\x03 \x01(\v2\x19.ride.trip.v1.CoordinatesR\adropoff\x12#\n" +
+	"\rvehicle_class\x18\x04 \x01(\tR\fvehicleClass\x12%\n" +
+	"\x0epayment_method\x18\x05 \x01(\tR\rpaymentMethod\x129\n" +
+	"\n" +
+	"offered_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tofferedAt\x129\n" +
+	"\n" +
+	"expires_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"i\n" +
+	"\x10OfferTripRequest\x12\x17\n" +
+	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12\x1b\n" +
+	"\tdriver_id\x18\x02 \x01(\tR\bdriverId\x12\x1f\n" +
+	"\vttl_seconds\x18\x03 \x01(\x05R\n" +
+	"ttlSeconds\"\xbf\x01\n" +
+	"\x11OfferTripResponse\x12\x17\n" +
+	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12\x1b\n" +
+	"\tdriver_id\x18\x02 \x01(\tR\bdriverId\x129\n" +
+	"\n" +
+	"offered_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tofferedAt\x129\n" +
+	"\n" +
+	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"5\n" +
+	"\x16GetPendingOfferRequest\x12\x1b\n" +
+	"\tdriver_id\x18\x01 \x01(\tR\bdriverId\"H\n" +
+	"\x17GetPendingOfferResponse\x12-\n" +
+	"\x05offer\x18\x01 \x01(\v2\x17.ride.trip.v1.TripOfferR\x05offer\"J\n" +
+	"\x12AcceptOfferRequest\x12\x17\n" +
+	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12\x1b\n" +
+	"\tdriver_id\x18\x02 \x01(\tR\bdriverId\"=\n" +
+	"\x13AcceptOfferResponse\x12&\n" +
+	"\x04trip\x18\x01 \x01(\v2\x12.ride.trip.v1.TripR\x04trip\"J\n" +
+	"\x12RejectOfferRequest\x12\x17\n" +
+	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12\x1b\n" +
+	"\tdriver_id\x18\x02 \x01(\tR\bdriverId\"\x15\n" +
+	"\x13RejectOfferResponse*\xb1\x01\n" +
 	"\n" +
 	"TripStatus\x12\x1b\n" +
 	"\x17TRIP_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
@@ -1678,7 +2208,7 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x0eSosTriggeredBy\x12 \n" +
 	"\x1cSOS_TRIGGERED_BY_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16SOS_TRIGGERED_BY_RIDER\x10\x01\x12\x1b\n" +
-	"\x17SOS_TRIGGERED_BY_DRIVER\x10\x022\x95\v\n" +
+	"\x17SOS_TRIGGERED_BY_DRIVER\x10\x022\xed\x0e\n" +
 	"\vTripService\x12h\n" +
 	"\vRequestTrip\x12 .ride.trip.v1.RequestTripRequest\x1a!.ride.trip.v1.RequestTripResponse\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/trips\x12v\n" +
 	"\n" +
@@ -1694,7 +2224,11 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\vGetTripPath\x12 .ride.trip.v1.GetTripPathRequest\x1a!.ride.trip.v1.GetTripPathResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/trips/{trip_id}/path\x12\x91\x01\n" +
 	"\x11GetDriverLocation\x12&.ride.trip.v1.GetDriverLocationRequest\x1a'.ride.trip.v1.GetDriverLocationResponse\"+\x82\xd3\xe4\x93\x02%\x12#/v1/trips/{trip_id}/driver-location\x12r\n" +
 	"\rGetActiveTrip\x12\".ride.trip.v1.GetActiveTripRequest\x1a#.ride.trip.v1.GetActiveTripResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/trips:active\x12_\n" +
-	"\tListTrips\x12\x1e.ride.trip.v1.ListTripsRequest\x1a\x1f.ride.trip.v1.ListTripsResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/tripsB<Z:github.com/7akoom/ride-platform/gen/go/ride/trip/v1;tripv1b\x06proto3"
+	"\tListTrips\x12\x1e.ride.trip.v1.ListTripsRequest\x1a\x1f.ride.trip.v1.ListTripsResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/trips\x12L\n" +
+	"\tOfferTrip\x12\x1e.ride.trip.v1.OfferTripRequest\x1a\x1f.ride.trip.v1.OfferTripResponse\x12\x85\x01\n" +
+	"\x0fGetPendingOffer\x12$.ride.trip.v1.GetPendingOfferRequest\x1a%.ride.trip.v1.GetPendingOfferResponse\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/v1/drivers/{driver_id}/offer\x12\x7f\n" +
+	"\vAcceptOffer\x12 .ride.trip.v1.AcceptOfferRequest\x1a!.ride.trip.v1.AcceptOfferResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /v1/trips/{trip_id}:accept-offer\x12\x7f\n" +
+	"\vRejectOffer\x12 .ride.trip.v1.RejectOfferRequest\x1a!.ride.trip.v1.RejectOfferResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /v1/trips/{trip_id}:reject-offerB<Z:github.com/7akoom/ride-platform/gen/go/ride/trip/v1;tripv1b\x06proto3"
 
 var (
 	file_ride_trip_v1_trip_proto_rawDescOnce sync.Once
@@ -1709,7 +2243,7 @@ func file_ride_trip_v1_trip_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_trip_v1_trip_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_ride_trip_v1_trip_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_ride_trip_v1_trip_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
 var file_ride_trip_v1_trip_proto_goTypes = []any{
 	(TripStatus)(0),                   // 0: ride.trip.v1.TripStatus
 	(SosTriggeredBy)(0),               // 1: ride.trip.v1.SosTriggeredBy
@@ -1740,17 +2274,26 @@ var file_ride_trip_v1_trip_proto_goTypes = []any{
 	(*GetActiveTripResponse)(nil),     // 26: ride.trip.v1.GetActiveTripResponse
 	(*ListTripsRequest)(nil),          // 27: ride.trip.v1.ListTripsRequest
 	(*ListTripsResponse)(nil),         // 28: ride.trip.v1.ListTripsResponse
-	(*timestamppb.Timestamp)(nil),     // 29: google.protobuf.Timestamp
+	(*TripOffer)(nil),                 // 29: ride.trip.v1.TripOffer
+	(*OfferTripRequest)(nil),          // 30: ride.trip.v1.OfferTripRequest
+	(*OfferTripResponse)(nil),         // 31: ride.trip.v1.OfferTripResponse
+	(*GetPendingOfferRequest)(nil),    // 32: ride.trip.v1.GetPendingOfferRequest
+	(*GetPendingOfferResponse)(nil),   // 33: ride.trip.v1.GetPendingOfferResponse
+	(*AcceptOfferRequest)(nil),        // 34: ride.trip.v1.AcceptOfferRequest
+	(*AcceptOfferResponse)(nil),       // 35: ride.trip.v1.AcceptOfferResponse
+	(*RejectOfferRequest)(nil),        // 36: ride.trip.v1.RejectOfferRequest
+	(*RejectOfferResponse)(nil),       // 37: ride.trip.v1.RejectOfferResponse
+	(*timestamppb.Timestamp)(nil),     // 38: google.protobuf.Timestamp
 }
 var file_ride_trip_v1_trip_proto_depIdxs = []int32{
 	0,  // 0: ride.trip.v1.Trip.status:type_name -> ride.trip.v1.TripStatus
 	2,  // 1: ride.trip.v1.Trip.pickup:type_name -> ride.trip.v1.Coordinates
 	2,  // 2: ride.trip.v1.Trip.dropoff:type_name -> ride.trip.v1.Coordinates
-	29, // 3: ride.trip.v1.Trip.requested_at:type_name -> google.protobuf.Timestamp
-	29, // 4: ride.trip.v1.Trip.accepted_at:type_name -> google.protobuf.Timestamp
-	29, // 5: ride.trip.v1.Trip.started_at:type_name -> google.protobuf.Timestamp
-	29, // 6: ride.trip.v1.Trip.completed_at:type_name -> google.protobuf.Timestamp
-	29, // 7: ride.trip.v1.Trip.cancelled_at:type_name -> google.protobuf.Timestamp
+	38, // 3: ride.trip.v1.Trip.requested_at:type_name -> google.protobuf.Timestamp
+	38, // 4: ride.trip.v1.Trip.accepted_at:type_name -> google.protobuf.Timestamp
+	38, // 5: ride.trip.v1.Trip.started_at:type_name -> google.protobuf.Timestamp
+	38, // 6: ride.trip.v1.Trip.completed_at:type_name -> google.protobuf.Timestamp
+	38, // 7: ride.trip.v1.Trip.cancelled_at:type_name -> google.protobuf.Timestamp
 	2,  // 8: ride.trip.v1.RequestTripRequest.pickup:type_name -> ride.trip.v1.Coordinates
 	2,  // 9: ride.trip.v1.RequestTripRequest.dropoff:type_name -> ride.trip.v1.Coordinates
 	3,  // 10: ride.trip.v1.RequestTripResponse.trip:type_name -> ride.trip.v1.Trip
@@ -1761,44 +2304,60 @@ var file_ride_trip_v1_trip_proto_depIdxs = []int32{
 	3,  // 15: ride.trip.v1.GetTripResponse.trip:type_name -> ride.trip.v1.Trip
 	1,  // 16: ride.trip.v1.TriggerSOSRequest.triggered_by:type_name -> ride.trip.v1.SosTriggeredBy
 	2,  // 17: ride.trip.v1.TriggerSOSRequest.location:type_name -> ride.trip.v1.Coordinates
-	29, // 18: ride.trip.v1.TriggerSOSResponse.triggered_at:type_name -> google.protobuf.Timestamp
+	38, // 18: ride.trip.v1.TriggerSOSResponse.triggered_at:type_name -> google.protobuf.Timestamp
 	2,  // 19: ride.trip.v1.Waypoint.location:type_name -> ride.trip.v1.Coordinates
-	29, // 20: ride.trip.v1.Waypoint.recorded_at:type_name -> google.protobuf.Timestamp
+	38, // 20: ride.trip.v1.Waypoint.recorded_at:type_name -> google.protobuf.Timestamp
 	2,  // 21: ride.trip.v1.RecordWaypointRequest.location:type_name -> ride.trip.v1.Coordinates
 	18, // 22: ride.trip.v1.GetTripPathResponse.waypoints:type_name -> ride.trip.v1.Waypoint
 	2,  // 23: ride.trip.v1.GetDriverLocationResponse.location:type_name -> ride.trip.v1.Coordinates
-	29, // 24: ride.trip.v1.GetDriverLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
+	38, // 24: ride.trip.v1.GetDriverLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
 	3,  // 25: ride.trip.v1.GetActiveTripResponse.trip:type_name -> ride.trip.v1.Trip
 	3,  // 26: ride.trip.v1.ListTripsResponse.trips:type_name -> ride.trip.v1.Trip
-	4,  // 27: ride.trip.v1.TripService.RequestTrip:input_type -> ride.trip.v1.RequestTripRequest
-	6,  // 28: ride.trip.v1.TripService.AcceptTrip:input_type -> ride.trip.v1.AcceptTripRequest
-	8,  // 29: ride.trip.v1.TripService.StartTrip:input_type -> ride.trip.v1.StartTripRequest
-	10, // 30: ride.trip.v1.TripService.CompleteTrip:input_type -> ride.trip.v1.CompleteTripRequest
-	12, // 31: ride.trip.v1.TripService.CancelTrip:input_type -> ride.trip.v1.CancelTripRequest
-	14, // 32: ride.trip.v1.TripService.GetTrip:input_type -> ride.trip.v1.GetTripRequest
-	16, // 33: ride.trip.v1.TripService.TriggerSOS:input_type -> ride.trip.v1.TriggerSOSRequest
-	19, // 34: ride.trip.v1.TripService.RecordWaypoint:input_type -> ride.trip.v1.RecordWaypointRequest
-	21, // 35: ride.trip.v1.TripService.GetTripPath:input_type -> ride.trip.v1.GetTripPathRequest
-	23, // 36: ride.trip.v1.TripService.GetDriverLocation:input_type -> ride.trip.v1.GetDriverLocationRequest
-	25, // 37: ride.trip.v1.TripService.GetActiveTrip:input_type -> ride.trip.v1.GetActiveTripRequest
-	27, // 38: ride.trip.v1.TripService.ListTrips:input_type -> ride.trip.v1.ListTripsRequest
-	5,  // 39: ride.trip.v1.TripService.RequestTrip:output_type -> ride.trip.v1.RequestTripResponse
-	7,  // 40: ride.trip.v1.TripService.AcceptTrip:output_type -> ride.trip.v1.AcceptTripResponse
-	9,  // 41: ride.trip.v1.TripService.StartTrip:output_type -> ride.trip.v1.StartTripResponse
-	11, // 42: ride.trip.v1.TripService.CompleteTrip:output_type -> ride.trip.v1.CompleteTripResponse
-	13, // 43: ride.trip.v1.TripService.CancelTrip:output_type -> ride.trip.v1.CancelTripResponse
-	15, // 44: ride.trip.v1.TripService.GetTrip:output_type -> ride.trip.v1.GetTripResponse
-	17, // 45: ride.trip.v1.TripService.TriggerSOS:output_type -> ride.trip.v1.TriggerSOSResponse
-	20, // 46: ride.trip.v1.TripService.RecordWaypoint:output_type -> ride.trip.v1.RecordWaypointResponse
-	22, // 47: ride.trip.v1.TripService.GetTripPath:output_type -> ride.trip.v1.GetTripPathResponse
-	24, // 48: ride.trip.v1.TripService.GetDriverLocation:output_type -> ride.trip.v1.GetDriverLocationResponse
-	26, // 49: ride.trip.v1.TripService.GetActiveTrip:output_type -> ride.trip.v1.GetActiveTripResponse
-	28, // 50: ride.trip.v1.TripService.ListTrips:output_type -> ride.trip.v1.ListTripsResponse
-	39, // [39:51] is the sub-list for method output_type
-	27, // [27:39] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	2,  // 27: ride.trip.v1.TripOffer.pickup:type_name -> ride.trip.v1.Coordinates
+	2,  // 28: ride.trip.v1.TripOffer.dropoff:type_name -> ride.trip.v1.Coordinates
+	38, // 29: ride.trip.v1.TripOffer.offered_at:type_name -> google.protobuf.Timestamp
+	38, // 30: ride.trip.v1.TripOffer.expires_at:type_name -> google.protobuf.Timestamp
+	38, // 31: ride.trip.v1.OfferTripResponse.offered_at:type_name -> google.protobuf.Timestamp
+	38, // 32: ride.trip.v1.OfferTripResponse.expires_at:type_name -> google.protobuf.Timestamp
+	29, // 33: ride.trip.v1.GetPendingOfferResponse.offer:type_name -> ride.trip.v1.TripOffer
+	3,  // 34: ride.trip.v1.AcceptOfferResponse.trip:type_name -> ride.trip.v1.Trip
+	4,  // 35: ride.trip.v1.TripService.RequestTrip:input_type -> ride.trip.v1.RequestTripRequest
+	6,  // 36: ride.trip.v1.TripService.AcceptTrip:input_type -> ride.trip.v1.AcceptTripRequest
+	8,  // 37: ride.trip.v1.TripService.StartTrip:input_type -> ride.trip.v1.StartTripRequest
+	10, // 38: ride.trip.v1.TripService.CompleteTrip:input_type -> ride.trip.v1.CompleteTripRequest
+	12, // 39: ride.trip.v1.TripService.CancelTrip:input_type -> ride.trip.v1.CancelTripRequest
+	14, // 40: ride.trip.v1.TripService.GetTrip:input_type -> ride.trip.v1.GetTripRequest
+	16, // 41: ride.trip.v1.TripService.TriggerSOS:input_type -> ride.trip.v1.TriggerSOSRequest
+	19, // 42: ride.trip.v1.TripService.RecordWaypoint:input_type -> ride.trip.v1.RecordWaypointRequest
+	21, // 43: ride.trip.v1.TripService.GetTripPath:input_type -> ride.trip.v1.GetTripPathRequest
+	23, // 44: ride.trip.v1.TripService.GetDriverLocation:input_type -> ride.trip.v1.GetDriverLocationRequest
+	25, // 45: ride.trip.v1.TripService.GetActiveTrip:input_type -> ride.trip.v1.GetActiveTripRequest
+	27, // 46: ride.trip.v1.TripService.ListTrips:input_type -> ride.trip.v1.ListTripsRequest
+	30, // 47: ride.trip.v1.TripService.OfferTrip:input_type -> ride.trip.v1.OfferTripRequest
+	32, // 48: ride.trip.v1.TripService.GetPendingOffer:input_type -> ride.trip.v1.GetPendingOfferRequest
+	34, // 49: ride.trip.v1.TripService.AcceptOffer:input_type -> ride.trip.v1.AcceptOfferRequest
+	36, // 50: ride.trip.v1.TripService.RejectOffer:input_type -> ride.trip.v1.RejectOfferRequest
+	5,  // 51: ride.trip.v1.TripService.RequestTrip:output_type -> ride.trip.v1.RequestTripResponse
+	7,  // 52: ride.trip.v1.TripService.AcceptTrip:output_type -> ride.trip.v1.AcceptTripResponse
+	9,  // 53: ride.trip.v1.TripService.StartTrip:output_type -> ride.trip.v1.StartTripResponse
+	11, // 54: ride.trip.v1.TripService.CompleteTrip:output_type -> ride.trip.v1.CompleteTripResponse
+	13, // 55: ride.trip.v1.TripService.CancelTrip:output_type -> ride.trip.v1.CancelTripResponse
+	15, // 56: ride.trip.v1.TripService.GetTrip:output_type -> ride.trip.v1.GetTripResponse
+	17, // 57: ride.trip.v1.TripService.TriggerSOS:output_type -> ride.trip.v1.TriggerSOSResponse
+	20, // 58: ride.trip.v1.TripService.RecordWaypoint:output_type -> ride.trip.v1.RecordWaypointResponse
+	22, // 59: ride.trip.v1.TripService.GetTripPath:output_type -> ride.trip.v1.GetTripPathResponse
+	24, // 60: ride.trip.v1.TripService.GetDriverLocation:output_type -> ride.trip.v1.GetDriverLocationResponse
+	26, // 61: ride.trip.v1.TripService.GetActiveTrip:output_type -> ride.trip.v1.GetActiveTripResponse
+	28, // 62: ride.trip.v1.TripService.ListTrips:output_type -> ride.trip.v1.ListTripsResponse
+	31, // 63: ride.trip.v1.TripService.OfferTrip:output_type -> ride.trip.v1.OfferTripResponse
+	33, // 64: ride.trip.v1.TripService.GetPendingOffer:output_type -> ride.trip.v1.GetPendingOfferResponse
+	35, // 65: ride.trip.v1.TripService.AcceptOffer:output_type -> ride.trip.v1.AcceptOfferResponse
+	37, // 66: ride.trip.v1.TripService.RejectOffer:output_type -> ride.trip.v1.RejectOfferResponse
+	51, // [51:67] is the sub-list for method output_type
+	35, // [35:51] is the sub-list for method input_type
+	35, // [35:35] is the sub-list for extension type_name
+	35, // [35:35] is the sub-list for extension extendee
+	0,  // [0:35] is the sub-list for field type_name
 }
 
 func init() { file_ride_trip_v1_trip_proto_init() }
@@ -1812,7 +2371,7 @@ func file_ride_trip_v1_trip_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_trip_v1_trip_proto_rawDesc), len(file_ride_trip_v1_trip_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   27,
+			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

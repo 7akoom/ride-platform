@@ -31,6 +31,10 @@ const (
 	TripService_GetDriverLocation_FullMethodName = "/ride.trip.v1.TripService/GetDriverLocation"
 	TripService_GetActiveTrip_FullMethodName     = "/ride.trip.v1.TripService/GetActiveTrip"
 	TripService_ListTrips_FullMethodName         = "/ride.trip.v1.TripService/ListTrips"
+	TripService_OfferTrip_FullMethodName         = "/ride.trip.v1.TripService/OfferTrip"
+	TripService_GetPendingOffer_FullMethodName   = "/ride.trip.v1.TripService/GetPendingOffer"
+	TripService_AcceptOffer_FullMethodName       = "/ride.trip.v1.TripService/AcceptOffer"
+	TripService_RejectOffer_FullMethodName       = "/ride.trip.v1.TripService/RejectOffer"
 )
 
 // TripServiceClient is the client API for TripService service.
@@ -83,6 +87,28 @@ type TripServiceClient interface {
 	// Pass the previous page's next_page_token to get the following page; an empty
 	// next_page_token means that was the last one.
 	ListTrips(ctx context.Context, in *ListTripsRequest, opts ...grpc.CallOption) (*ListTripsResponse, error)
+	// OfferTrip puts a trip to one driver for a short time: ttl_seconds (default 15,
+	// clamped to 5-60). Internal: only dispatch calls it. A driver is offered a trip
+	// at most once, so dispatch needs no memory of who it already asked. The refusals
+	// tell dispatch what to do: ALREADY_EXISTS (this driver was offered it before)
+	// and FAILED_PRECONDITION (the driver has a pending offer or a trip, or the trip
+	// is no longer waiting) mean try the next driver; ABORTED means another driver
+	// has a live offer for this trip, so wait for it to be answered or to expire.
+	OfferTrip(ctx context.Context, in *OfferTripRequest, opts ...grpc.CallOption) (*OfferTripResponse, error)
+	// GetPendingOffer is the Driver app's poll target: the trip it is being offered,
+	// with what it needs to decide (where from and to, vehicle class, payment method,
+	// when the offer ends), or NOT_FOUND when there is none. It does not say who the
+	// rider is. driver_id must be the caller's own driver profile.
+	GetPendingOffer(ctx context.Context, in *GetPendingOfferRequest, opts ...grpc.CallOption) (*GetPendingOfferResponse, error)
+	// AcceptOffer makes the caller the driver of the trip: the offer and the trip
+	// change together (the trip goes from REQUESTED to ACCEPTED). NOT_FOUND: there
+	// is no live offer of this trip to this driver. FAILED_PRECONDITION: the offer
+	// expired, the trip was cancelled meanwhile, or the driver is on another trip.
+	// driver_id must be the caller's own driver profile.
+	AcceptOffer(ctx context.Context, in *AcceptOfferRequest, opts ...grpc.CallOption) (*AcceptOfferResponse, error)
+	// RejectOffer declines the offer; the trip goes on to the next driver, and this
+	// driver is not offered it again. driver_id must be the caller's own profile.
+	RejectOffer(ctx context.Context, in *RejectOfferRequest, opts ...grpc.CallOption) (*RejectOfferResponse, error)
 }
 
 type tripServiceClient struct {
@@ -213,6 +239,46 @@ func (c *tripServiceClient) ListTrips(ctx context.Context, in *ListTripsRequest,
 	return out, nil
 }
 
+func (c *tripServiceClient) OfferTrip(ctx context.Context, in *OfferTripRequest, opts ...grpc.CallOption) (*OfferTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OfferTripResponse)
+	err := c.cc.Invoke(ctx, TripService_OfferTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) GetPendingOffer(ctx context.Context, in *GetPendingOfferRequest, opts ...grpc.CallOption) (*GetPendingOfferResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPendingOfferResponse)
+	err := c.cc.Invoke(ctx, TripService_GetPendingOffer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) AcceptOffer(ctx context.Context, in *AcceptOfferRequest, opts ...grpc.CallOption) (*AcceptOfferResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AcceptOfferResponse)
+	err := c.cc.Invoke(ctx, TripService_AcceptOffer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) RejectOffer(ctx context.Context, in *RejectOfferRequest, opts ...grpc.CallOption) (*RejectOfferResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RejectOfferResponse)
+	err := c.cc.Invoke(ctx, TripService_RejectOffer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TripServiceServer is the server API for TripService service.
 // All implementations must embed UnimplementedTripServiceServer
 // for forward compatibility.
@@ -263,6 +329,28 @@ type TripServiceServer interface {
 	// Pass the previous page's next_page_token to get the following page; an empty
 	// next_page_token means that was the last one.
 	ListTrips(context.Context, *ListTripsRequest) (*ListTripsResponse, error)
+	// OfferTrip puts a trip to one driver for a short time: ttl_seconds (default 15,
+	// clamped to 5-60). Internal: only dispatch calls it. A driver is offered a trip
+	// at most once, so dispatch needs no memory of who it already asked. The refusals
+	// tell dispatch what to do: ALREADY_EXISTS (this driver was offered it before)
+	// and FAILED_PRECONDITION (the driver has a pending offer or a trip, or the trip
+	// is no longer waiting) mean try the next driver; ABORTED means another driver
+	// has a live offer for this trip, so wait for it to be answered or to expire.
+	OfferTrip(context.Context, *OfferTripRequest) (*OfferTripResponse, error)
+	// GetPendingOffer is the Driver app's poll target: the trip it is being offered,
+	// with what it needs to decide (where from and to, vehicle class, payment method,
+	// when the offer ends), or NOT_FOUND when there is none. It does not say who the
+	// rider is. driver_id must be the caller's own driver profile.
+	GetPendingOffer(context.Context, *GetPendingOfferRequest) (*GetPendingOfferResponse, error)
+	// AcceptOffer makes the caller the driver of the trip: the offer and the trip
+	// change together (the trip goes from REQUESTED to ACCEPTED). NOT_FOUND: there
+	// is no live offer of this trip to this driver. FAILED_PRECONDITION: the offer
+	// expired, the trip was cancelled meanwhile, or the driver is on another trip.
+	// driver_id must be the caller's own driver profile.
+	AcceptOffer(context.Context, *AcceptOfferRequest) (*AcceptOfferResponse, error)
+	// RejectOffer declines the offer; the trip goes on to the next driver, and this
+	// driver is not offered it again. driver_id must be the caller's own profile.
+	RejectOffer(context.Context, *RejectOfferRequest) (*RejectOfferResponse, error)
 	mustEmbedUnimplementedTripServiceServer()
 }
 
@@ -308,6 +396,18 @@ func (UnimplementedTripServiceServer) GetActiveTrip(context.Context, *GetActiveT
 }
 func (UnimplementedTripServiceServer) ListTrips(context.Context, *ListTripsRequest) (*ListTripsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTrips not implemented")
+}
+func (UnimplementedTripServiceServer) OfferTrip(context.Context, *OfferTripRequest) (*OfferTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method OfferTrip not implemented")
+}
+func (UnimplementedTripServiceServer) GetPendingOffer(context.Context, *GetPendingOfferRequest) (*GetPendingOfferResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPendingOffer not implemented")
+}
+func (UnimplementedTripServiceServer) AcceptOffer(context.Context, *AcceptOfferRequest) (*AcceptOfferResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AcceptOffer not implemented")
+}
+func (UnimplementedTripServiceServer) RejectOffer(context.Context, *RejectOfferRequest) (*RejectOfferResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RejectOffer not implemented")
 }
 func (UnimplementedTripServiceServer) mustEmbedUnimplementedTripServiceServer() {}
 func (UnimplementedTripServiceServer) testEmbeddedByValue()                     {}
@@ -546,6 +646,78 @@ func _TripService_ListTrips_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_OfferTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OfferTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).OfferTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_OfferTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).OfferTrip(ctx, req.(*OfferTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_GetPendingOffer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPendingOfferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetPendingOffer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetPendingOffer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetPendingOffer(ctx, req.(*GetPendingOfferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_AcceptOffer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AcceptOfferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).AcceptOffer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_AcceptOffer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).AcceptOffer(ctx, req.(*AcceptOfferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_RejectOffer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RejectOfferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).RejectOffer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_RejectOffer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).RejectOffer(ctx, req.(*RejectOfferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TripService_ServiceDesc is the grpc.ServiceDesc for TripService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -600,6 +772,22 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTrips",
 			Handler:    _TripService_ListTrips_Handler,
+		},
+		{
+			MethodName: "OfferTrip",
+			Handler:    _TripService_OfferTrip_Handler,
+		},
+		{
+			MethodName: "GetPendingOffer",
+			Handler:    _TripService_GetPendingOffer_Handler,
+		},
+		{
+			MethodName: "AcceptOffer",
+			Handler:    _TripService_AcceptOffer_Handler,
+		},
+		{
+			MethodName: "RejectOffer",
+			Handler:    _TripService_RejectOffer_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

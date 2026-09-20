@@ -112,6 +112,46 @@ service TripService {
       get: "/v1/trips"
     };
   }
+
+  // OfferTrip puts a trip to one driver for a short time: ttl_seconds (default 15,
+  // clamped to 5-60). Internal: only dispatch calls it. A driver is offered a trip
+  // at most once, so dispatch needs no memory of who it already asked. The refusals
+  // tell dispatch what to do: ALREADY_EXISTS (this driver was offered it before)
+  // and FAILED_PRECONDITION (the driver has a pending offer or a trip, or the trip
+  // is no longer waiting) mean try the next driver; ABORTED means another driver
+  // has a live offer for this trip, so wait for it to be answered or to expire.
+  rpc OfferTrip(OfferTripRequest) returns (OfferTripResponse);
+
+  // GetPendingOffer is the Driver app's poll target: the trip it is being offered,
+  // with what it needs to decide (where from and to, vehicle class, payment method,
+  // when the offer ends), or NOT_FOUND when there is none. It does not say who the
+  // rider is. driver_id must be the caller's own driver profile.
+  rpc GetPendingOffer(GetPendingOfferRequest) returns (GetPendingOfferResponse) {
+    option (google.api.http) = {
+      get: "/v1/drivers/{driver_id}/offer"
+    };
+  }
+
+  // AcceptOffer makes the caller the driver of the trip: the offer and the trip
+  // change together (the trip goes from REQUESTED to ACCEPTED). NOT_FOUND: there
+  // is no live offer of this trip to this driver. FAILED_PRECONDITION: the offer
+  // expired, the trip was cancelled meanwhile, or the driver is on another trip.
+  // driver_id must be the caller's own driver profile.
+  rpc AcceptOffer(AcceptOfferRequest) returns (AcceptOfferResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}:accept-offer"
+      body: "*"
+    };
+  }
+
+  // RejectOffer declines the offer; the trip goes on to the next driver, and this
+  // driver is not offered it again. driver_id must be the caller's own profile.
+  rpc RejectOffer(RejectOfferRequest) returns (RejectOfferResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}:reject-offer"
+      body: "*"
+    };
+  }
 }
 
 enum TripStatus {
@@ -288,3 +328,55 @@ message ListTripsResponse {
   // Empty on the last page.
   string next_page_token = 2;
 }
+
+// --- Driver offers: a trip put to one driver at a time ----------------
+
+// TripOffer is what a driver sees to decide. The rider is not identified.
+message TripOffer {
+  string trip_id = 1;
+  Coordinates pickup = 2;
+  Coordinates dropoff = 3;
+  string vehicle_class = 4;
+  string payment_method = 5;
+  google.protobuf.Timestamp offered_at = 6;
+  // The last moment the driver can accept.
+  google.protobuf.Timestamp expires_at = 7;
+}
+
+message OfferTripRequest {
+  string trip_id = 1;
+  string driver_id = 2;
+  // 0 means the default (15); anything else is served within 5 to 60.
+  int32 ttl_seconds = 3;
+}
+
+message OfferTripResponse {
+  string trip_id = 1;
+  string driver_id = 2;
+  google.protobuf.Timestamp offered_at = 3;
+  google.protobuf.Timestamp expires_at = 4;
+}
+
+message GetPendingOfferRequest {
+  string driver_id = 1;
+}
+
+message GetPendingOfferResponse {
+  TripOffer offer = 1;
+}
+
+message AcceptOfferRequest {
+  string trip_id = 1;
+  string driver_id = 2;
+}
+
+message AcceptOfferResponse {
+  Trip trip = 1;
+}
+
+message RejectOfferRequest {
+  string trip_id = 1;
+  string driver_id = 2;
+}
+
+message RejectOfferResponse {}

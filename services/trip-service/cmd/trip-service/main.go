@@ -173,10 +173,13 @@ func run() int {
 	tripRepository := postgresrepo.NewTripRepository(pool)
 	idGenerator := identifier.NewUUIDGenerator()
 
-	tripService := trip.WithTripHistory(
-		trip.WithDriverTracking(
-			trip.NewService(tripRepository, idGenerator, locationClient),
-			locationClient,
+	tripService := trip.WithTripOffers(
+		trip.WithTripHistory(
+			trip.WithDriverTracking(
+				trip.NewService(tripRepository, idGenerator, locationClient),
+				locationClient,
+			),
+			tripRepository,
 		),
 		tripRepository,
 	)

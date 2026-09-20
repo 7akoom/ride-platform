@@ -70,6 +70,13 @@ per-source OTP limit counts every user as one source.
 | GET | `/v1/trips/{tripId}/driver-location` | **rider** of the trip | only while accepted or in progress; 404 means the driver has not reported for 30 s, keep polling |
 | GET | `/v1/trips:active?rider_id=` or `?driver_id=` | the profile's owner | the requested, accepted or in-progress trip; 404 `no active trip` when there is none. Call it when the app opens, to resume a trip |
 | GET | `/v1/trips?rider_id=` or `?driver_id=` | the profile's owner | history, newest first: `page_size` (1-50, default 20) and `page_token`; the response's `nextPageToken` is empty on the last page |
+| GET | `/v1/drivers/{driverId}/offer` | the driver | the trip currently offered to them: `tripId`, `pickup`, `dropoff`, `vehicleClass`, `paymentMethod`, `offeredAt`, `expiresAt` (not who the rider is); 404 when there is none. Poll about every 2 s while online |
+| POST | `/v1/trips/{tripId}:accept-offer` | the driver | body `{"driverId": ...}`; makes them the driver of the trip. 404: no live offer; 400: the offer expired, the trip was cancelled, or they are on another trip |
+| POST | `/v1/trips/{tripId}:reject-offer` | the driver | body `{"driverId": ...}`; the trip goes on to the next driver and is not offered to them again |
+
+Offers: dispatch puts each trip to one driver at a time, who has 15 seconds to
+accept or reject it; a trip goes on to the next driver until one accepts. (Until
+dispatch is switched to offers, drivers are still assigned automatically.)
 
 `:accept` has a route but is internal (dispatch assigns drivers): through the
 gateway it always answers 403 to a user, and the internal token is refused with 401.
@@ -129,5 +136,4 @@ Top-ups of a rider's wallet and trip settlement are internal: no route.
 
 ## Not exposed yet
 
-Driver offers (accept or reject with a timeout),
-ratings, admin and analytics (needs staff roles).
+Ratings, admin and analytics (needs staff roles).

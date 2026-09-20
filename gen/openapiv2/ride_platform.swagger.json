@@ -592,6 +592,37 @@
         ]
       }
     },
+    "/v1/drivers/{driverId}/offer": {
+      "get": {
+        "summary": "GetPendingOffer is the Driver app's poll target: the trip it is being offered,\nwith what it needs to decide (where from and to, vehicle class, payment method,\nwhen the offer ends), or NOT_FOUND when there is none. It does not say who the\nrider is. driver_id must be the caller's own driver profile.",
+        "operationId": "TripService_GetPendingOffer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetPendingOfferResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/drivers/{driverId}/payouts": {
       "post": {
         "summary": "RequestPayout withdraws from the driver's own wallet; idempotency_key makes a retry safe.",
@@ -1450,6 +1481,45 @@
         ]
       }
     },
+    "/v1/trips/{tripId}:accept-offer": {
+      "post": {
+        "summary": "AcceptOffer makes the caller the driver of the trip: the offer and the trip\nchange together (the trip goes from REQUESTED to ACCEPTED). NOT_FOUND: there\nis no live offer of this trip to this driver. FAILED_PRECONDITION: the offer\nexpired, the trip was cancelled meanwhile, or the driver is on another trip.\ndriver_id must be the caller's own driver profile.",
+        "operationId": "TripService_AcceptOffer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AcceptOfferResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceAcceptOfferBody"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/trips/{tripId}:cancel": {
       "post": {
         "operationId": "TripService_CancelTrip",
@@ -1511,6 +1581,45 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}:reject-offer": {
+      "post": {
+        "summary": "RejectOffer declines the offer; the trip goes on to the next driver, and this\ndriver is not offered it again. driver_id must be the caller's own profile.",
+        "operationId": "TripService_RejectOffer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RejectOfferResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceRejectOfferBody"
+            }
           }
         ],
         "tags": [
@@ -1965,6 +2074,14 @@
         }
       }
     },
+    "TripServiceAcceptOfferBody": {
+      "type": "object",
+      "properties": {
+        "driverId": {
+          "type": "string"
+        }
+      }
+    },
     "TripServiceAcceptTripBody": {
       "type": "object",
       "properties": {
@@ -1986,6 +2103,14 @@
       "properties": {
         "location": {
           "$ref": "#/definitions/rideTripV1Coordinates"
+        }
+      }
+    },
+    "TripServiceRejectOfferBody": {
+      "type": "object",
+      "properties": {
+        "driverId": {
+          "type": "string"
         }
       }
     },
@@ -2075,6 +2200,14 @@
             "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
+        }
+      }
+    },
+    "v1AcceptOfferResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/v1Trip"
         }
       }
     },
@@ -2480,6 +2613,14 @@
             "type": "object",
             "$ref": "#/definitions/v1VerifiedIdentifier"
           }
+        }
+      }
+    },
+    "v1GetPendingOfferResponse": {
+      "type": "object",
+      "properties": {
+        "offer": {
+          "$ref": "#/definitions/v1TripOffer"
         }
       }
     },
@@ -2891,6 +3032,9 @@
         }
       }
     },
+    "v1RejectOfferResponse": {
+      "type": "object"
+    },
     "v1RequestIdentifierLinkOTPRequest": {
       "type": "object",
       "properties": {
@@ -3283,6 +3427,36 @@
           "description": "cash or wallet."
         }
       }
+    },
+    "v1TripOffer": {
+      "type": "object",
+      "properties": {
+        "tripId": {
+          "type": "string"
+        },
+        "pickup": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "dropoff": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "vehicleClass": {
+          "type": "string"
+        },
+        "paymentMethod": {
+          "type": "string"
+        },
+        "offeredAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The last moment the driver can accept."
+        }
+      },
+      "description": "TripOffer is what a driver sees to decide. The rider is not identified."
     },
     "v1TripStatus": {
       "type": "string",
