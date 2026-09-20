@@ -930,7 +930,52 @@ services:
 
     restart: unless-stopped
 
+  # Address and place search (Nominatim), data from OpenStreetMap (Geofabrik: Iraq).
+  # Behind the "maps" profile: the FIRST start downloads the extract and imports it,
+  # which takes an hour or more and needs a few GB of RAM; after that it starts in
+  # seconds and serves on 127.0.0.1:8088. Progress: docker logs -f ride-nominatim
+  #
+  # Only the parent of PostgreSQL's data directory is mounted, so the data survives
+  # whichever PostgreSQL version the image ships.
+  nominatim:
+    image: mediagis/nominatim:4.5
+    container_name: ride-nominatim
+    profiles: ["maps"]
+
+    environment:
+      PBF_URL: https://download.geofabrik.de/asia/iraq-latest.osm.pbf
+      REPLICATION_URL: https://download.geofabrik.de/asia/iraq-updates/
+      # once: catch up with OpenStreetMap when the container starts, then stop updating.
+      # (continuous keeps a second process busy; the map of a city changes slowly.)
+      UPDATE_MODE: once
+      # full: places (shops, hospitals, malls...) as well as streets and addresses.
+      IMPORT_STYLE: full
+      NOMINATIM_PASSWORD: ${NOMINATIM_DB_PASSWORD:-nominatim-dev-password}
+      THREADS: "6"
+      POSTGRES_SHARED_BUFFERS: 1GB
+      POSTGRES_MAINT_WORK_MEM: 1GB
+      POSTGRES_WORK_MEM: 50MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 3GB
+
+    shm_size: 1gb
+
+    volumes:
+      - nominatim-data:/var/lib/postgresql
+
+    ports:
+      - "127.0.0.1:8088:8080"
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/status || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 120s
+
+    restart: unless-stopped
+
 volumes:
+  nominatim-data:
   identity-postgres-data:
   rider-postgres-data:
   driver-postgres-data:
