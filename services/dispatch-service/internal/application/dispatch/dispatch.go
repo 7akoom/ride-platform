@@ -75,4 +75,8 @@ type Result struct {
 	TripID         string
 	DriverID       string
 	DistanceMeters float64
+
+	// Offered is true when the trip was put to DriverID as an offer they have not
+	// answered yet, false when it was assigned to them.
+	Offered bool
 }

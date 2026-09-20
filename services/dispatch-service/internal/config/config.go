@@ -46,6 +46,10 @@ type Config struct {
 	// Auto-dispatch behaviour (see config/auto_dispatch.go).
 	DispatchRetryInterval string
 	DispatchSearchTimeout string
+
+	// How long a driver has to accept a trip dispatch offers them (5s to 60s).
+	// 0 (the default) switches offers off: the trip is assigned at once.
+	DispatchOfferTTL string
 }
 
 func Load() Config {
@@ -76,6 +80,7 @@ func Load() Config {
 
 		DispatchRetryInterval: getEnv("DISPATCH_RETRY_INTERVAL", "5s"),
 		DispatchSearchTimeout: getEnv("DISPATCH_SEARCH_TIMEOUT", "2m"),
+		DispatchOfferTTL:      getEnv("DISPATCH_OFFER_TTL", "0s"),
 	}
 }
 

@@ -117,12 +117,26 @@ func run() int {
 	}
 	defer walletConn.Close()
 
+	offerTTL, err := config.ParseOfferTTL(cfg)
+	if err != nil {
+		logger.Error("invalid offer TTL configuration", "error", err)
+
+		return 1
+	}
+
+	if offerTTL > 0 {
+		logger.Info("dispatch works by offers", "offer_ttl", offerTTL)
+	} else {
+		logger.Info("dispatch assigns drivers directly (DISPATCH_OFFER_TTL is 0)")
+	}
+
 	dispatchService := dispatch.NewService(
 		clients.NewTripClient(tripConn),
 		clients.NewLocationClient(locationConn),
 		clients.NewDriverClient(driverConn),
 		clients.NewWalletClient(walletConn),
 		dispatch.WithLogger(logger),
+		dispatch.WithOffers(offerTTL),
 	)
 	dispatchHandler := grpcserver.NewDispatchHandler(dispatchService, logger)
 

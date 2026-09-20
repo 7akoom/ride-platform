@@ -700,6 +700,7 @@ services:
       - ../../services/dispatch-service/.env
 
     environment:
+      DISPATCH_OFFER_TTL: ${DISPATCH_OFFER_TTL:-0s}
       GRPC_ADDRESS: ":50056"
       METRICS_ADDRESS: ":9096"
       TRIP_SERVICE_ADDRESS: trip-service:50055

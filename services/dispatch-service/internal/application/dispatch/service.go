@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"time"
 )
 
 type Service interface {
@@ -24,6 +25,10 @@ type service struct {
 	driverClient   DriverClient
 	walletClient   WalletClient
 	logger         *slog.Logger
+
+	// offerTTL, when positive, makes dispatch offer a trip to a driver for this long
+	// instead of assigning it (see WithOffers).
+	offerTTL time.Duration
 }
 
 // Option customises a service at construction time.

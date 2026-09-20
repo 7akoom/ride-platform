@@ -110,6 +110,17 @@ func (s *service) DispatchTrip(
 			continue
 		}
 
+		// By offers, the trip is put to this driver, who answers within the TTL,
+		// instead of being assigned to them outright.
+		if s.offerTTL > 0 {
+			result, done, err := s.offerToCandidate(ctx, trimmedID, candidate, driverInfo, skip)
+			if done {
+				return result, err
+			}
+
+			continue
+		}
+
 		if err := s.tripClient.AcceptTrip(ctx, trimmedID, driverInfo.ID); err != nil {
 			// Someone else (a concurrent dispatch, or a manual accept)
 			// may have taken this trip or this driver already — move on.

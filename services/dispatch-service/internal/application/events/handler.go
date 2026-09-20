@@ -165,6 +165,14 @@ func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error
 	}
 
 	result, err := h.dispatcher.DispatchTrip(ctx, tripID, 0)
+	if err == nil && result.Offered {
+		return h.awaitOffer(ctx, result)
+	}
+
+	if errors.Is(err, dispatch.ErrOfferPending) {
+		return h.awaitPendingOffer(ctx, tripID)
+	}
+
 	if err == nil {
 		h.logger.InfoContext(ctx, "trip dispatched automatically",
 			"trip_id", result.TripID,
