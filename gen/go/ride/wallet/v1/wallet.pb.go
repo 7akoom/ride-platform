@@ -1428,15 +1428,15 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x1dTRANSACTION_TYPE_TRIP_EARNING\x10\x03\x12\x1f\n" +
 	"\x1bTRANSACTION_TYPE_COMMISSION\x10\x04\x12\x1b\n" +
 	"\x17TRANSACTION_TYPE_PAYOUT\x10\x05\x12\x1f\n" +
-	"\x1bTRANSACTION_TYPE_ADJUSTMENT\x10\x062\xd9\x06\n" +
-	"\rWalletService\x12P\n" +
-	"\tGetWallet\x12 .ride.wallet.v1.GetWalletRequest\x1a!.ride.wallet.v1.GetWalletResponse\x12D\n" +
+	"\x1bTRANSACTION_TYPE_ADJUSTMENT\x10\x062\xff\a\n" +
+	"\rWalletService\x12p\n" +
+	"\tGetWallet\x12 .ride.wallet.v1.GetWalletRequest\x1a!.ride.wallet.v1.GetWalletResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/wallets/{owner_id}\x12D\n" +
 	"\x05TopUp\x12\x1c.ride.wallet.v1.TopUpRequest\x1a\x1d.ride.wallet.v1.TopUpResponse\x12S\n" +
 	"\n" +
-	"SettleTrip\x12!.ride.wallet.v1.SettleTripRequest\x1a\".ride.wallet.v1.SettleTripResponse\x12e\n" +
-	"\x10ListTransactions\x12'.ride.wallet.v1.ListTransactionsRequest\x1a(.ride.wallet.v1.ListTransactionsResponse\x12n\n" +
-	"\x13CheckDriverStanding\x12*.ride.wallet.v1.CheckDriverStandingRequest\x1a+.ride.wallet.v1.CheckDriverStandingResponse\x12\\\n" +
-	"\rRequestPayout\x12$.ride.wallet.v1.RequestPayoutRequest\x1a%.ride.wallet.v1.RequestPayoutResponse\x12\x83\x01\n" +
+	"SettleTrip\x12!.ride.wallet.v1.SettleTripRequest\x1a\".ride.wallet.v1.SettleTripResponse\x12\x92\x01\n" +
+	"\x10ListTransactions\x12'.ride.wallet.v1.ListTransactionsRequest\x1a(.ride.wallet.v1.ListTransactionsResponse\"+\x82\xd3\xe4\x93\x02%\x12#/v1/wallets/{owner_id}/transactions\x12\x98\x01\n" +
+	"\x13CheckDriverStanding\x12*.ride.wallet.v1.CheckDriverStandingRequest\x1a+.ride.wallet.v1.CheckDriverStandingResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/drivers/{driver_id}/standing\x12\x88\x01\n" +
+	"\rRequestPayout\x12$.ride.wallet.v1.RequestPayoutRequest\x1a%.ride.wallet.v1.RequestPayoutResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/v1/drivers/{driver_id}/payouts\x12\x83\x01\n" +
 	"\rInitiateTopUp\x12$.ride.wallet.v1.InitiateTopUpRequest\x1a%.ride.wallet.v1.InitiateTopUpResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v1/wallet/topups/zaincash\x12\x9f\x01\n" +
 	"\x16ProcessZainCashWebhook\x12-.ride.wallet.v1.ProcessZainCashWebhookRequest\x1a..ride.wallet.v1.ProcessZainCashWebhookResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/wallet/zaincash/webhookB@Z>github.com/7akoom/ride-platform/gen/go/ride/wallet/v1;walletv1b\x06proto3"
 

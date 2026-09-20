@@ -7,12 +7,33 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1;walletv1";
 
 service WalletService {
-  rpc GetWallet(GetWalletRequest) returns (GetWalletResponse);
+  // GetWallet returns the caller's own wallet: ?owner_type=OWNER_TYPE_RIDER or OWNER_TYPE_DRIVER.
+  rpc GetWallet(GetWalletRequest) returns (GetWalletResponse) {
+    option (google.api.http) = {
+      get: "/v1/wallets/{owner_id}"
+    };
+  }
   rpc TopUp(TopUpRequest) returns (TopUpResponse);
   rpc SettleTrip(SettleTripRequest) returns (SettleTripResponse);
-  rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse);
-  rpc CheckDriverStanding(CheckDriverStandingRequest) returns (CheckDriverStandingResponse);
-  rpc RequestPayout(RequestPayoutRequest) returns (RequestPayoutResponse);
+  // ListTransactions lists the caller's own wallet history: ?owner_type=&limit=.
+  rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/wallets/{owner_id}/transactions"
+    };
+  }
+  // CheckDriverStanding tells a driver whether they can take trips and how much to deposit if not.
+  rpc CheckDriverStanding(CheckDriverStandingRequest) returns (CheckDriverStandingResponse) {
+    option (google.api.http) = {
+      get: "/v1/drivers/{driver_id}/standing"
+    };
+  }
+  // RequestPayout withdraws from the driver's own wallet; idempotency_key makes a retry safe.
+  rpc RequestPayout(RequestPayoutRequest) returns (RequestPayoutResponse) {
+    option (google.api.http) = {
+      post: "/v1/drivers/{driver_id}/payouts"
+      body: "*"
+    };
+  }
 
   // InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
   // a pending record and opens a ZainCash payment session, returning

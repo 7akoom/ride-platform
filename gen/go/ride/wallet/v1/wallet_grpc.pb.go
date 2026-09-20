@@ -33,11 +33,15 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WalletServiceClient interface {
+	// GetWallet returns the caller's own wallet: ?owner_type=OWNER_TYPE_RIDER or OWNER_TYPE_DRIVER.
 	GetWallet(ctx context.Context, in *GetWalletRequest, opts ...grpc.CallOption) (*GetWalletResponse, error)
 	TopUp(ctx context.Context, in *TopUpRequest, opts ...grpc.CallOption) (*TopUpResponse, error)
 	SettleTrip(ctx context.Context, in *SettleTripRequest, opts ...grpc.CallOption) (*SettleTripResponse, error)
+	// ListTransactions lists the caller's own wallet history: ?owner_type=&limit=.
 	ListTransactions(ctx context.Context, in *ListTransactionsRequest, opts ...grpc.CallOption) (*ListTransactionsResponse, error)
+	// CheckDriverStanding tells a driver whether they can take trips and how much to deposit if not.
 	CheckDriverStanding(ctx context.Context, in *CheckDriverStandingRequest, opts ...grpc.CallOption) (*CheckDriverStandingResponse, error)
+	// RequestPayout withdraws from the driver's own wallet; idempotency_key makes a retry safe.
 	RequestPayout(ctx context.Context, in *RequestPayoutRequest, opts ...grpc.CallOption) (*RequestPayoutResponse, error)
 	// InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
 	// a pending record and opens a ZainCash payment session, returning
@@ -142,11 +146,15 @@ func (c *walletServiceClient) ProcessZainCashWebhook(ctx context.Context, in *Pr
 // All implementations must embed UnimplementedWalletServiceServer
 // for forward compatibility.
 type WalletServiceServer interface {
+	// GetWallet returns the caller's own wallet: ?owner_type=OWNER_TYPE_RIDER or OWNER_TYPE_DRIVER.
 	GetWallet(context.Context, *GetWalletRequest) (*GetWalletResponse, error)
 	TopUp(context.Context, *TopUpRequest) (*TopUpResponse, error)
 	SettleTrip(context.Context, *SettleTripRequest) (*SettleTripResponse, error)
+	// ListTransactions lists the caller's own wallet history: ?owner_type=&limit=.
 	ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error)
+	// CheckDriverStanding tells a driver whether they can take trips and how much to deposit if not.
 	CheckDriverStanding(context.Context, *CheckDriverStandingRequest) (*CheckDriverStandingResponse, error)
+	// RequestPayout withdraws from the driver's own wallet; idempotency_key makes a retry safe.
 	RequestPayout(context.Context, *RequestPayoutRequest) (*RequestPayoutResponse, error)
 	// InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
 	// a pending record and opens a ZainCash payment session, returning

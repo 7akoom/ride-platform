@@ -85,13 +85,20 @@ gateway it always answers 403 to a user, and the internal token is refused with 
 
 ### Wallet
 
-Only the ZainCash routes are exposed so far: `POST /v1/wallet/topups/zaincash` and
-the provider webhook `POST /v1/wallet/zaincash/webhook`. The webhook is called by
-ZainCash, not by a user, so the gateway does not require a user token shape on that
-one path (the wallet service verifies the provider itself).
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| GET | `/v1/wallets/{ownerId}?owner_type=OWNER_TYPE_DRIVER` | the owner | `ownerId` is the rider or driver id; balances are decimal strings |
+| GET | `/v1/wallets/{ownerId}/transactions?owner_type=&limit=` | the owner | signed decimal `amount`: negative means money left |
+| GET | `/v1/drivers/{driverId}/standing` | the driver | can they take trips, and the amount due if suspended |
+| POST | `/v1/drivers/{driverId}/payouts` | the driver | `amount` and `idempotencyKey`; a retry with the same key is safe |
+| POST | `/v1/wallet/topups/zaincash` | the driver | returns the ZainCash `redirectUrl` for the webview |
+| POST | `/v1/wallet/zaincash/webhook` | ZainCash | not a user: wallet-service exempts it from authentication and verifies the JWT in the body |
+
+`owner_type` is a query parameter because an enum cannot be bound in a URL path.
+Top-ups of a rider's wallet and trip settlement are internal: no route.
 
 ## Not exposed yet
 
-Login and sessions (identity), wallet balance, transactions and payouts, the
+Login and sessions (identity), the
 trip list and "my active trip", driver offers (accept or reject with a timeout),
 ratings, admin and analytics (needs staff roles).
