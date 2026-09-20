@@ -23,9 +23,16 @@ WORKDIR /src/infrastructure/gateway
 ENV GOWORK=off
 ENV CGO_ENABLED=0
 
-RUN go mod edit -replace github.com/7akoom/ride-platform/gen/go=../../gen/go \
-	&& go mod download \
-	&& go build -trimpath -ldflags="-s -w" -o /out/gateway "./cmd/gateway"
+# Two BuildKit cache mounts keep the downloaded modules and the compiled packages
+# between builds (same as infrastructure/docker/Dockerfile). They are shared with
+# every service image built on this machine, so grpc, protobuf and grpc-gateway
+# compiled for one image are reused here. Without them each build downloaded and
+# recompiled everything: about 220 seconds for a one-line change.
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go mod edit -replace github.com/7akoom/ride-platform/gen/go=../../gen/go \
+        && go mod download \
+        && go build -trimpath -ldflags="-s -w" -o /out/gateway "./cmd/gateway"
 
 FROM gcr.io/distroless/static-debian12:nonroot AS runtime
 WORKDIR /app
