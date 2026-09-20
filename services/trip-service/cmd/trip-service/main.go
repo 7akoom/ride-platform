@@ -173,7 +173,10 @@ func run() int {
 	tripRepository := postgresrepo.NewTripRepository(pool)
 	idGenerator := identifier.NewUUIDGenerator()
 
-	tripService := trip.NewService(tripRepository, idGenerator, locationClient)
+	tripService := trip.WithDriverTracking(
+		trip.NewService(tripRepository, idGenerator, locationClient),
+		locationClient,
+	)
 	tripHandler := grpcserver.NewTripHandler(tripService, logger)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(

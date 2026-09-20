@@ -26,15 +26,16 @@ var exemptMethods = map[string]struct{}{
 // methodAccess classifies every RPC. Methods missing from it are denied to
 // end users, and so are accessOwner methods without an entry in ownerChecks.
 var methodAccess = map[string]accessLevel{
-	"/ride.trip.v1.TripService/RequestTrip":    accessOwner,
-	"/ride.trip.v1.TripService/AcceptTrip":     accessInternal,
-	"/ride.trip.v1.TripService/StartTrip":      accessOwner,
-	"/ride.trip.v1.TripService/CompleteTrip":   accessOwner,
-	"/ride.trip.v1.TripService/CancelTrip":     accessOwner,
-	"/ride.trip.v1.TripService/GetTrip":        accessOwner,
-	"/ride.trip.v1.TripService/TriggerSOS":     accessOwner,
-	"/ride.trip.v1.TripService/RecordWaypoint": accessOwner,
-	"/ride.trip.v1.TripService/GetTripPath":    accessOwner,
+	"/ride.trip.v1.TripService/RequestTrip":       accessOwner,
+	"/ride.trip.v1.TripService/AcceptTrip":        accessInternal,
+	"/ride.trip.v1.TripService/StartTrip":         accessOwner,
+	"/ride.trip.v1.TripService/CompleteTrip":      accessOwner,
+	"/ride.trip.v1.TripService/CancelTrip":        accessOwner,
+	"/ride.trip.v1.TripService/GetTrip":           accessOwner,
+	"/ride.trip.v1.TripService/TriggerSOS":        accessOwner,
+	"/ride.trip.v1.TripService/RecordWaypoint":    accessOwner,
+	"/ride.trip.v1.TripService/GetTripPath":       accessOwner,
+	"/ride.trip.v1.TripService/GetDriverLocation": accessOwner,
 }
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver, trips TripReader) googlegrpc.UnaryServerInterceptor {

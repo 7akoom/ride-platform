@@ -19,15 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TripService_RequestTrip_FullMethodName    = "/ride.trip.v1.TripService/RequestTrip"
-	TripService_AcceptTrip_FullMethodName     = "/ride.trip.v1.TripService/AcceptTrip"
-	TripService_StartTrip_FullMethodName      = "/ride.trip.v1.TripService/StartTrip"
-	TripService_CompleteTrip_FullMethodName   = "/ride.trip.v1.TripService/CompleteTrip"
-	TripService_CancelTrip_FullMethodName     = "/ride.trip.v1.TripService/CancelTrip"
-	TripService_GetTrip_FullMethodName        = "/ride.trip.v1.TripService/GetTrip"
-	TripService_TriggerSOS_FullMethodName     = "/ride.trip.v1.TripService/TriggerSOS"
-	TripService_RecordWaypoint_FullMethodName = "/ride.trip.v1.TripService/RecordWaypoint"
-	TripService_GetTripPath_FullMethodName    = "/ride.trip.v1.TripService/GetTripPath"
+	TripService_RequestTrip_FullMethodName       = "/ride.trip.v1.TripService/RequestTrip"
+	TripService_AcceptTrip_FullMethodName        = "/ride.trip.v1.TripService/AcceptTrip"
+	TripService_StartTrip_FullMethodName         = "/ride.trip.v1.TripService/StartTrip"
+	TripService_CompleteTrip_FullMethodName      = "/ride.trip.v1.TripService/CompleteTrip"
+	TripService_CancelTrip_FullMethodName        = "/ride.trip.v1.TripService/CancelTrip"
+	TripService_GetTrip_FullMethodName           = "/ride.trip.v1.TripService/GetTrip"
+	TripService_TriggerSOS_FullMethodName        = "/ride.trip.v1.TripService/TriggerSOS"
+	TripService_RecordWaypoint_FullMethodName    = "/ride.trip.v1.TripService/RecordWaypoint"
+	TripService_GetTripPath_FullMethodName       = "/ride.trip.v1.TripService/GetTripPath"
+	TripService_GetDriverLocation_FullMethodName = "/ride.trip.v1.TripService/GetDriverLocation"
 )
 
 // TripServiceClient is the client API for TripService service.
@@ -63,6 +64,13 @@ type TripServiceClient interface {
 	// first — the reconstructed route for a completed trip, or the route
 	// so far for one still in progress (e.g. right after an SOS alert).
 	GetTripPath(ctx context.Context, in *GetTripPathRequest, opts ...grpc.CallOption) (*GetTripPathResponse, error)
+	// GetDriverLocation is the Rider app's live-tracking poll target: where the
+	// driver of this trip last reported being. Only the trip's rider may ask, and
+	// only while the trip is ACCEPTED or IN_PROGRESS (FAILED_PRECONDITION
+	// otherwise). It returns the position and when the driver reported it, and
+	// nothing else about the driver. NOT_FOUND means the driver has not reported
+	// recently (a live position expires after 30 seconds); the app keeps polling.
+	GetDriverLocation(ctx context.Context, in *GetDriverLocationRequest, opts ...grpc.CallOption) (*GetDriverLocationResponse, error)
 }
 
 type tripServiceClient struct {
@@ -163,6 +171,16 @@ func (c *tripServiceClient) GetTripPath(ctx context.Context, in *GetTripPathRequ
 	return out, nil
 }
 
+func (c *tripServiceClient) GetDriverLocation(ctx context.Context, in *GetDriverLocationRequest, opts ...grpc.CallOption) (*GetDriverLocationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDriverLocationResponse)
+	err := c.cc.Invoke(ctx, TripService_GetDriverLocation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TripServiceServer is the server API for TripService service.
 // All implementations must embed UnimplementedTripServiceServer
 // for forward compatibility.
@@ -196,6 +214,13 @@ type TripServiceServer interface {
 	// first — the reconstructed route for a completed trip, or the route
 	// so far for one still in progress (e.g. right after an SOS alert).
 	GetTripPath(context.Context, *GetTripPathRequest) (*GetTripPathResponse, error)
+	// GetDriverLocation is the Rider app's live-tracking poll target: where the
+	// driver of this trip last reported being. Only the trip's rider may ask, and
+	// only while the trip is ACCEPTED or IN_PROGRESS (FAILED_PRECONDITION
+	// otherwise). It returns the position and when the driver reported it, and
+	// nothing else about the driver. NOT_FOUND means the driver has not reported
+	// recently (a live position expires after 30 seconds); the app keeps polling.
+	GetDriverLocation(context.Context, *GetDriverLocationRequest) (*GetDriverLocationResponse, error)
 	mustEmbedUnimplementedTripServiceServer()
 }
 
@@ -232,6 +257,9 @@ func (UnimplementedTripServiceServer) RecordWaypoint(context.Context, *RecordWay
 }
 func (UnimplementedTripServiceServer) GetTripPath(context.Context, *GetTripPathRequest) (*GetTripPathResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTripPath not implemented")
+}
+func (UnimplementedTripServiceServer) GetDriverLocation(context.Context, *GetDriverLocationRequest) (*GetDriverLocationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDriverLocation not implemented")
 }
 func (UnimplementedTripServiceServer) mustEmbedUnimplementedTripServiceServer() {}
 func (UnimplementedTripServiceServer) testEmbeddedByValue()                     {}
@@ -416,6 +444,24 @@ func _TripService_GetTripPath_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_GetDriverLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDriverLocationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetDriverLocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetDriverLocation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetDriverLocation(ctx, req.(*GetDriverLocationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TripService_ServiceDesc is the grpc.ServiceDesc for TripService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -458,6 +504,10 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTripPath",
 			Handler:    _TripService_GetTripPath_Handler,
+		},
+		{
+			MethodName: "GetDriverLocation",
+			Handler:    _TripService_GetDriverLocation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

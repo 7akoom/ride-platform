@@ -1253,6 +1253,103 @@ func (x *GetTripPathResponse) GetWaypoints() []*Waypoint {
 	return nil
 }
 
+type GetDriverLocationRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TripId        string                 `protobuf:"bytes,1,opt,name=trip_id,json=tripId,proto3" json:"trip_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDriverLocationRequest) Reset() {
+	*x = GetDriverLocationRequest{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDriverLocationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDriverLocationRequest) ProtoMessage() {}
+
+func (x *GetDriverLocationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDriverLocationRequest.ProtoReflect.Descriptor instead.
+func (*GetDriverLocationRequest) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GetDriverLocationRequest) GetTripId() string {
+	if x != nil {
+		return x.TripId
+	}
+	return ""
+}
+
+type GetDriverLocationResponse struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Location *Coordinates           `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
+	// When the driver's phone last reported this position.
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDriverLocationResponse) Reset() {
+	*x = GetDriverLocationResponse{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDriverLocationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDriverLocationResponse) ProtoMessage() {}
+
+func (x *GetDriverLocationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDriverLocationResponse.ProtoReflect.Descriptor instead.
+func (*GetDriverLocationResponse) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetDriverLocationResponse) GetLocation() *Coordinates {
+	if x != nil {
+		return x.Location
+	}
+	return nil
+}
+
+func (x *GetDriverLocationResponse) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
 var File_ride_trip_v1_trip_proto protoreflect.FileDescriptor
 
 const file_ride_trip_v1_trip_proto_rawDesc = "" +
@@ -1327,7 +1424,13 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x12GetTripPathRequest\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\"K\n" +
 	"\x13GetTripPathResponse\x124\n" +
-	"\twaypoints\x18\x01 \x03(\v2\x16.ride.trip.v1.WaypointR\twaypoints*\xb1\x01\n" +
+	"\twaypoints\x18\x01 \x03(\v2\x16.ride.trip.v1.WaypointR\twaypoints\"3\n" +
+	"\x18GetDriverLocationRequest\x12\x17\n" +
+	"\atrip_id\x18\x01 \x01(\tR\x06tripId\"\x8d\x01\n" +
+	"\x19GetDriverLocationResponse\x125\n" +
+	"\blocation\x18\x01 \x01(\v2\x19.ride.trip.v1.CoordinatesR\blocation\x129\n" +
+	"\n" +
+	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt*\xb1\x01\n" +
 	"\n" +
 	"TripStatus\x12\x1b\n" +
 	"\x17TRIP_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
@@ -1339,7 +1442,7 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x0eSosTriggeredBy\x12 \n" +
 	"\x1cSOS_TRIGGERED_BY_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16SOS_TRIGGERED_BY_RIDER\x10\x01\x12\x1b\n" +
-	"\x17SOS_TRIGGERED_BY_DRIVER\x10\x022\xac\b\n" +
+	"\x17SOS_TRIGGERED_BY_DRIVER\x10\x022\xc0\t\n" +
 	"\vTripService\x12h\n" +
 	"\vRequestTrip\x12 .ride.trip.v1.RequestTripRequest\x1a!.ride.trip.v1.RequestTripResponse\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/trips\x12v\n" +
 	"\n" +
@@ -1352,7 +1455,8 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\n" +
 	"TriggerSOS\x12\x1f.ride.trip.v1.TriggerSOSRequest\x1a .ride.trip.v1.TriggerSOSResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/v1/trips/{trip_id}:sos\x12\x84\x01\n" +
 	"\x0eRecordWaypoint\x12#.ride.trip.v1.RecordWaypointRequest\x1a$.ride.trip.v1.RecordWaypointResponse\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/v1/trips/{trip_id}:waypoint\x12t\n" +
-	"\vGetTripPath\x12 .ride.trip.v1.GetTripPathRequest\x1a!.ride.trip.v1.GetTripPathResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/trips/{trip_id}/pathB<Z:github.com/7akoom/ride-platform/gen/go/ride/trip/v1;tripv1b\x06proto3"
+	"\vGetTripPath\x12 .ride.trip.v1.GetTripPathRequest\x1a!.ride.trip.v1.GetTripPathResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/trips/{trip_id}/path\x12\x91\x01\n" +
+	"\x11GetDriverLocation\x12&.ride.trip.v1.GetDriverLocationRequest\x1a'.ride.trip.v1.GetDriverLocationResponse\"+\x82\xd3\xe4\x93\x02%\x12#/v1/trips/{trip_id}/driver-locationB<Z:github.com/7akoom/ride-platform/gen/go/ride/trip/v1;tripv1b\x06proto3"
 
 var (
 	file_ride_trip_v1_trip_proto_rawDescOnce sync.Once
@@ -1367,42 +1471,44 @@ func file_ride_trip_v1_trip_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_trip_v1_trip_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_ride_trip_v1_trip_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_ride_trip_v1_trip_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_ride_trip_v1_trip_proto_goTypes = []any{
-	(TripStatus)(0),                // 0: ride.trip.v1.TripStatus
-	(SosTriggeredBy)(0),            // 1: ride.trip.v1.SosTriggeredBy
-	(*Coordinates)(nil),            // 2: ride.trip.v1.Coordinates
-	(*Trip)(nil),                   // 3: ride.trip.v1.Trip
-	(*RequestTripRequest)(nil),     // 4: ride.trip.v1.RequestTripRequest
-	(*RequestTripResponse)(nil),    // 5: ride.trip.v1.RequestTripResponse
-	(*AcceptTripRequest)(nil),      // 6: ride.trip.v1.AcceptTripRequest
-	(*AcceptTripResponse)(nil),     // 7: ride.trip.v1.AcceptTripResponse
-	(*StartTripRequest)(nil),       // 8: ride.trip.v1.StartTripRequest
-	(*StartTripResponse)(nil),      // 9: ride.trip.v1.StartTripResponse
-	(*CompleteTripRequest)(nil),    // 10: ride.trip.v1.CompleteTripRequest
-	(*CompleteTripResponse)(nil),   // 11: ride.trip.v1.CompleteTripResponse
-	(*CancelTripRequest)(nil),      // 12: ride.trip.v1.CancelTripRequest
-	(*CancelTripResponse)(nil),     // 13: ride.trip.v1.CancelTripResponse
-	(*GetTripRequest)(nil),         // 14: ride.trip.v1.GetTripRequest
-	(*GetTripResponse)(nil),        // 15: ride.trip.v1.GetTripResponse
-	(*TriggerSOSRequest)(nil),      // 16: ride.trip.v1.TriggerSOSRequest
-	(*TriggerSOSResponse)(nil),     // 17: ride.trip.v1.TriggerSOSResponse
-	(*Waypoint)(nil),               // 18: ride.trip.v1.Waypoint
-	(*RecordWaypointRequest)(nil),  // 19: ride.trip.v1.RecordWaypointRequest
-	(*RecordWaypointResponse)(nil), // 20: ride.trip.v1.RecordWaypointResponse
-	(*GetTripPathRequest)(nil),     // 21: ride.trip.v1.GetTripPathRequest
-	(*GetTripPathResponse)(nil),    // 22: ride.trip.v1.GetTripPathResponse
-	(*timestamppb.Timestamp)(nil),  // 23: google.protobuf.Timestamp
+	(TripStatus)(0),                   // 0: ride.trip.v1.TripStatus
+	(SosTriggeredBy)(0),               // 1: ride.trip.v1.SosTriggeredBy
+	(*Coordinates)(nil),               // 2: ride.trip.v1.Coordinates
+	(*Trip)(nil),                      // 3: ride.trip.v1.Trip
+	(*RequestTripRequest)(nil),        // 4: ride.trip.v1.RequestTripRequest
+	(*RequestTripResponse)(nil),       // 5: ride.trip.v1.RequestTripResponse
+	(*AcceptTripRequest)(nil),         // 6: ride.trip.v1.AcceptTripRequest
+	(*AcceptTripResponse)(nil),        // 7: ride.trip.v1.AcceptTripResponse
+	(*StartTripRequest)(nil),          // 8: ride.trip.v1.StartTripRequest
+	(*StartTripResponse)(nil),         // 9: ride.trip.v1.StartTripResponse
+	(*CompleteTripRequest)(nil),       // 10: ride.trip.v1.CompleteTripRequest
+	(*CompleteTripResponse)(nil),      // 11: ride.trip.v1.CompleteTripResponse
+	(*CancelTripRequest)(nil),         // 12: ride.trip.v1.CancelTripRequest
+	(*CancelTripResponse)(nil),        // 13: ride.trip.v1.CancelTripResponse
+	(*GetTripRequest)(nil),            // 14: ride.trip.v1.GetTripRequest
+	(*GetTripResponse)(nil),           // 15: ride.trip.v1.GetTripResponse
+	(*TriggerSOSRequest)(nil),         // 16: ride.trip.v1.TriggerSOSRequest
+	(*TriggerSOSResponse)(nil),        // 17: ride.trip.v1.TriggerSOSResponse
+	(*Waypoint)(nil),                  // 18: ride.trip.v1.Waypoint
+	(*RecordWaypointRequest)(nil),     // 19: ride.trip.v1.RecordWaypointRequest
+	(*RecordWaypointResponse)(nil),    // 20: ride.trip.v1.RecordWaypointResponse
+	(*GetTripPathRequest)(nil),        // 21: ride.trip.v1.GetTripPathRequest
+	(*GetTripPathResponse)(nil),       // 22: ride.trip.v1.GetTripPathResponse
+	(*GetDriverLocationRequest)(nil),  // 23: ride.trip.v1.GetDriverLocationRequest
+	(*GetDriverLocationResponse)(nil), // 24: ride.trip.v1.GetDriverLocationResponse
+	(*timestamppb.Timestamp)(nil),     // 25: google.protobuf.Timestamp
 }
 var file_ride_trip_v1_trip_proto_depIdxs = []int32{
 	0,  // 0: ride.trip.v1.Trip.status:type_name -> ride.trip.v1.TripStatus
 	2,  // 1: ride.trip.v1.Trip.pickup:type_name -> ride.trip.v1.Coordinates
 	2,  // 2: ride.trip.v1.Trip.dropoff:type_name -> ride.trip.v1.Coordinates
-	23, // 3: ride.trip.v1.Trip.requested_at:type_name -> google.protobuf.Timestamp
-	23, // 4: ride.trip.v1.Trip.accepted_at:type_name -> google.protobuf.Timestamp
-	23, // 5: ride.trip.v1.Trip.started_at:type_name -> google.protobuf.Timestamp
-	23, // 6: ride.trip.v1.Trip.completed_at:type_name -> google.protobuf.Timestamp
-	23, // 7: ride.trip.v1.Trip.cancelled_at:type_name -> google.protobuf.Timestamp
+	25, // 3: ride.trip.v1.Trip.requested_at:type_name -> google.protobuf.Timestamp
+	25, // 4: ride.trip.v1.Trip.accepted_at:type_name -> google.protobuf.Timestamp
+	25, // 5: ride.trip.v1.Trip.started_at:type_name -> google.protobuf.Timestamp
+	25, // 6: ride.trip.v1.Trip.completed_at:type_name -> google.protobuf.Timestamp
+	25, // 7: ride.trip.v1.Trip.cancelled_at:type_name -> google.protobuf.Timestamp
 	2,  // 8: ride.trip.v1.RequestTripRequest.pickup:type_name -> ride.trip.v1.Coordinates
 	2,  // 9: ride.trip.v1.RequestTripRequest.dropoff:type_name -> ride.trip.v1.Coordinates
 	3,  // 10: ride.trip.v1.RequestTripResponse.trip:type_name -> ride.trip.v1.Trip
@@ -1413,34 +1519,38 @@ var file_ride_trip_v1_trip_proto_depIdxs = []int32{
 	3,  // 15: ride.trip.v1.GetTripResponse.trip:type_name -> ride.trip.v1.Trip
 	1,  // 16: ride.trip.v1.TriggerSOSRequest.triggered_by:type_name -> ride.trip.v1.SosTriggeredBy
 	2,  // 17: ride.trip.v1.TriggerSOSRequest.location:type_name -> ride.trip.v1.Coordinates
-	23, // 18: ride.trip.v1.TriggerSOSResponse.triggered_at:type_name -> google.protobuf.Timestamp
+	25, // 18: ride.trip.v1.TriggerSOSResponse.triggered_at:type_name -> google.protobuf.Timestamp
 	2,  // 19: ride.trip.v1.Waypoint.location:type_name -> ride.trip.v1.Coordinates
-	23, // 20: ride.trip.v1.Waypoint.recorded_at:type_name -> google.protobuf.Timestamp
+	25, // 20: ride.trip.v1.Waypoint.recorded_at:type_name -> google.protobuf.Timestamp
 	2,  // 21: ride.trip.v1.RecordWaypointRequest.location:type_name -> ride.trip.v1.Coordinates
 	18, // 22: ride.trip.v1.GetTripPathResponse.waypoints:type_name -> ride.trip.v1.Waypoint
-	4,  // 23: ride.trip.v1.TripService.RequestTrip:input_type -> ride.trip.v1.RequestTripRequest
-	6,  // 24: ride.trip.v1.TripService.AcceptTrip:input_type -> ride.trip.v1.AcceptTripRequest
-	8,  // 25: ride.trip.v1.TripService.StartTrip:input_type -> ride.trip.v1.StartTripRequest
-	10, // 26: ride.trip.v1.TripService.CompleteTrip:input_type -> ride.trip.v1.CompleteTripRequest
-	12, // 27: ride.trip.v1.TripService.CancelTrip:input_type -> ride.trip.v1.CancelTripRequest
-	14, // 28: ride.trip.v1.TripService.GetTrip:input_type -> ride.trip.v1.GetTripRequest
-	16, // 29: ride.trip.v1.TripService.TriggerSOS:input_type -> ride.trip.v1.TriggerSOSRequest
-	19, // 30: ride.trip.v1.TripService.RecordWaypoint:input_type -> ride.trip.v1.RecordWaypointRequest
-	21, // 31: ride.trip.v1.TripService.GetTripPath:input_type -> ride.trip.v1.GetTripPathRequest
-	5,  // 32: ride.trip.v1.TripService.RequestTrip:output_type -> ride.trip.v1.RequestTripResponse
-	7,  // 33: ride.trip.v1.TripService.AcceptTrip:output_type -> ride.trip.v1.AcceptTripResponse
-	9,  // 34: ride.trip.v1.TripService.StartTrip:output_type -> ride.trip.v1.StartTripResponse
-	11, // 35: ride.trip.v1.TripService.CompleteTrip:output_type -> ride.trip.v1.CompleteTripResponse
-	13, // 36: ride.trip.v1.TripService.CancelTrip:output_type -> ride.trip.v1.CancelTripResponse
-	15, // 37: ride.trip.v1.TripService.GetTrip:output_type -> ride.trip.v1.GetTripResponse
-	17, // 38: ride.trip.v1.TripService.TriggerSOS:output_type -> ride.trip.v1.TriggerSOSResponse
-	20, // 39: ride.trip.v1.TripService.RecordWaypoint:output_type -> ride.trip.v1.RecordWaypointResponse
-	22, // 40: ride.trip.v1.TripService.GetTripPath:output_type -> ride.trip.v1.GetTripPathResponse
-	32, // [32:41] is the sub-list for method output_type
-	23, // [23:32] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	2,  // 23: ride.trip.v1.GetDriverLocationResponse.location:type_name -> ride.trip.v1.Coordinates
+	25, // 24: ride.trip.v1.GetDriverLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
+	4,  // 25: ride.trip.v1.TripService.RequestTrip:input_type -> ride.trip.v1.RequestTripRequest
+	6,  // 26: ride.trip.v1.TripService.AcceptTrip:input_type -> ride.trip.v1.AcceptTripRequest
+	8,  // 27: ride.trip.v1.TripService.StartTrip:input_type -> ride.trip.v1.StartTripRequest
+	10, // 28: ride.trip.v1.TripService.CompleteTrip:input_type -> ride.trip.v1.CompleteTripRequest
+	12, // 29: ride.trip.v1.TripService.CancelTrip:input_type -> ride.trip.v1.CancelTripRequest
+	14, // 30: ride.trip.v1.TripService.GetTrip:input_type -> ride.trip.v1.GetTripRequest
+	16, // 31: ride.trip.v1.TripService.TriggerSOS:input_type -> ride.trip.v1.TriggerSOSRequest
+	19, // 32: ride.trip.v1.TripService.RecordWaypoint:input_type -> ride.trip.v1.RecordWaypointRequest
+	21, // 33: ride.trip.v1.TripService.GetTripPath:input_type -> ride.trip.v1.GetTripPathRequest
+	23, // 34: ride.trip.v1.TripService.GetDriverLocation:input_type -> ride.trip.v1.GetDriverLocationRequest
+	5,  // 35: ride.trip.v1.TripService.RequestTrip:output_type -> ride.trip.v1.RequestTripResponse
+	7,  // 36: ride.trip.v1.TripService.AcceptTrip:output_type -> ride.trip.v1.AcceptTripResponse
+	9,  // 37: ride.trip.v1.TripService.StartTrip:output_type -> ride.trip.v1.StartTripResponse
+	11, // 38: ride.trip.v1.TripService.CompleteTrip:output_type -> ride.trip.v1.CompleteTripResponse
+	13, // 39: ride.trip.v1.TripService.CancelTrip:output_type -> ride.trip.v1.CancelTripResponse
+	15, // 40: ride.trip.v1.TripService.GetTrip:output_type -> ride.trip.v1.GetTripResponse
+	17, // 41: ride.trip.v1.TripService.TriggerSOS:output_type -> ride.trip.v1.TriggerSOSResponse
+	20, // 42: ride.trip.v1.TripService.RecordWaypoint:output_type -> ride.trip.v1.RecordWaypointResponse
+	22, // 43: ride.trip.v1.TripService.GetTripPath:output_type -> ride.trip.v1.GetTripPathResponse
+	24, // 44: ride.trip.v1.TripService.GetDriverLocation:output_type -> ride.trip.v1.GetDriverLocationResponse
+	35, // [35:45] is the sub-list for method output_type
+	25, // [25:35] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_ride_trip_v1_trip_proto_init() }
@@ -1454,7 +1564,7 @@ func file_ride_trip_v1_trip_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_trip_v1_trip_proto_rawDesc), len(file_ride_trip_v1_trip_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   21,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

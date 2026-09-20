@@ -80,6 +80,18 @@ service TripService {
       get: "/v1/trips/{trip_id}/path"
     };
   }
+
+  // GetDriverLocation is the Rider app's live-tracking poll target: where the
+  // driver of this trip last reported being. Only the trip's rider may ask, and
+  // only while the trip is ACCEPTED or IN_PROGRESS (FAILED_PRECONDITION
+  // otherwise). It returns the position and when the driver reported it, and
+  // nothing else about the driver. NOT_FOUND means the driver has not reported
+  // recently (a live position expires after 30 seconds); the app keeps polling.
+  rpc GetDriverLocation(GetDriverLocationRequest) returns (GetDriverLocationResponse) {
+    option (google.api.http) = {
+      get: "/v1/trips/{trip_id}/driver-location"
+    };
+  }
 }
 
 enum TripStatus {
@@ -215,3 +227,15 @@ message GetTripPathResponse {
   repeated Waypoint waypoints = 1;
 }
 
+
+// --- Rider tracking: the driver's live position -----------------------
+
+message GetDriverLocationRequest {
+  string trip_id = 1;
+}
+
+message GetDriverLocationResponse {
+  Coordinates location = 1;
+  // When the driver's phone last reported this position.
+  google.protobuf.Timestamp updated_at = 2;
+}

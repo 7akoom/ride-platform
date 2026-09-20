@@ -19,12 +19,13 @@ var ownerChecks = map[string]ownerCheck{
 
 		return c.ownsRider(ctx, r.GetRiderId())
 	},
-	tripRPCPrefix + "StartTrip":      driverOfTrip,
-	tripRPCPrefix + "CompleteTrip":   driverOfTrip,
-	tripRPCPrefix + "RecordWaypoint": driverOfTrip,
-	tripRPCPrefix + "CancelTrip":     participantOfTrip,
-	tripRPCPrefix + "GetTrip":        participantOfTrip,
-	tripRPCPrefix + "GetTripPath":    participantOfTrip,
+	tripRPCPrefix + "StartTrip":         driverOfTrip,
+	tripRPCPrefix + "CompleteTrip":      driverOfTrip,
+	tripRPCPrefix + "RecordWaypoint":    driverOfTrip,
+	tripRPCPrefix + "CancelTrip":        participantOfTrip,
+	tripRPCPrefix + "GetTrip":           participantOfTrip,
+	tripRPCPrefix + "GetTripPath":       participantOfTrip,
+	tripRPCPrefix + "GetDriverLocation": riderOfTrip,
 	tripRPCPrefix + "TriggerSOS": func(ctx context.Context, c caller, request any) (bool, error) {
 		r, ok := request.(*tripv1.TriggerSOSRequest)
 		if !ok {
