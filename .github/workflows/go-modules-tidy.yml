@@ -1,0 +1,59 @@
+name: go modules
+
+# Every Go module of the repo must be tidy and build ON ITS OWN, without go.work.
+#
+# Locally go.work supplies each module with the dependencies of the generated code
+# (gen/go), so `go build` works even when a service's own go.mod / go.sum lack an
+# entry its generated code now needs. Docker and this check build each module alone
+# and fail with "missing go.sum entry". Regenerating protos (a new grpc-gateway file,
+# a new import) is what triggers it. This job catches it before the merge.
+#
+# To fix a failure locally:  bash scripts/tools/tidy-modules.sh
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/*.go"
+      - "**/go.mod"
+      - "**/go.sum"
+      - "go.work"
+      - "proto/**"
+      - "buf.gen.yaml"
+      - "scripts/tools/tidy-modules.sh"
+      - ".github/workflows/go-modules-tidy.yml"
+  pull_request:
+    paths:
+      - "**/*.go"
+      - "**/go.mod"
+      - "**/go.sum"
+      - "go.work"
+      - "proto/**"
+      - "buf.gen.yaml"
+      - "scripts/tools/tidy-modules.sh"
+      - ".github/workflows/go-modules-tidy.yml"
+
+concurrency:
+  group: go-modules-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tidy:
+    name: every module is tidy and builds on its own
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.work
+          cache-dependency-path: |
+            **/go.sum
+
+      - name: go mod tidy and go build of each module, without go.work
+        run: bash scripts/tools/tidy-modules.sh --check
