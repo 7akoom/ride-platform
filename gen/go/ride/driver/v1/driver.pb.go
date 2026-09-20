@@ -7,6 +7,7 @@
 package driverv1
 
 import (
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -755,7 +756,7 @@ var File_ride_driver_v1_driver_proto protoreflect.FileDescriptor
 
 const file_ride_driver_v1_driver_proto_rawDesc = "" +
 	"\n" +
-	"\x1bride/driver/v1/driver.proto\x12\x0eride.driver.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x91\x01\n" +
+	"\x1bride/driver/v1/driver.proto\x12\x0eride.driver.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x91\x01\n" +
 	"\aVehicle\x12\x12\n" +
 	"\x04make\x18\x01 \x01(\tR\x04make\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x12\x14\n" +
@@ -810,13 +811,13 @@ const file_ride_driver_v1_driver_proto_rawDesc = "" +
 	"\x1fAVAILABILITY_STATUS_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bAVAILABILITY_STATUS_OFFLINE\x10\x01\x12!\n" +
 	"\x1dAVAILABILITY_STATUS_AVAILABLE\x10\x02\x12\x1c\n" +
-	"\x18AVAILABILITY_STATUS_BUSY\x10\x032\xff\x03\n" +
-	"\rDriverService\x12Y\n" +
-	"\fCreateDriver\x12#.ride.driver.v1.CreateDriverRequest\x1a$.ride.driver.v1.CreateDriverResponse\x12P\n" +
-	"\tGetDriver\x12 .ride.driver.v1.GetDriverRequest\x1a!.ride.driver.v1.GetDriverResponse\x12d\n" +
-	"\x13GetDriverByIdentity\x12*.ride.driver.v1.GetDriverByIdentityRequest\x1a!.ride.driver.v1.GetDriverResponse\x12n\n" +
-	"\x13UpdateDriverProfile\x12*.ride.driver.v1.UpdateDriverProfileRequest\x1a+.ride.driver.v1.UpdateDriverProfileResponse\x12k\n" +
-	"\x12UpdateAvailability\x12).ride.driver.v1.UpdateAvailabilityRequest\x1a*.ride.driver.v1.UpdateAvailabilityResponseB@Z>github.com/7akoom/ride-platform/gen/go/ride/driver/v1;driverv1b\x06proto3"
+	"\x18AVAILABILITY_STATUS_BUSY\x10\x032\xbd\x05\n" +
+	"\rDriverService\x12q\n" +
+	"\fCreateDriver\x12#.ride.driver.v1.CreateDriverRequest\x1a$.ride.driver.v1.CreateDriverResponse\"\x16\x82\xd3\xe4\x93\x02\x10:\x01*\"\v/v1/drivers\x12q\n" +
+	"\tGetDriver\x12 .ride.driver.v1.GetDriverRequest\x1a!.ride.driver.v1.GetDriverResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/drivers/{driver_id}\x12\x91\x01\n" +
+	"\x13GetDriverByIdentity\x12*.ride.driver.v1.GetDriverByIdentityRequest\x1a!.ride.driver.v1.GetDriverResponse\"+\x82\xd3\xe4\x93\x02%\x12#/v1/identities/{identity_id}/driver\x12\x92\x01\n" +
+	"\x13UpdateDriverProfile\x12*.ride.driver.v1.UpdateDriverProfileRequest\x1a+.ride.driver.v1.UpdateDriverProfileResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*2\x17/v1/drivers/{driver_id}\x12\x9c\x01\n" +
+	"\x12UpdateAvailability\x12).ride.driver.v1.UpdateAvailabilityRequest\x1a*.ride.driver.v1.UpdateAvailabilityResponse\"/\x82\xd3\xe4\x93\x02):\x01*\x1a$/v1/drivers/{driver_id}/availabilityB@Z>github.com/7akoom/ride-platform/gen/go/ride/driver/v1;driverv1b\x06proto3"
 
 var (
 	file_ride_driver_v1_driver_proto_rawDescOnce sync.Once

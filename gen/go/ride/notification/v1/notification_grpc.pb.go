@@ -32,9 +32,14 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NotificationServiceClient interface {
 	Send(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error)
+	// RegisterDevice registers a push token for the caller's own rider or driver profile.
 	RegisterDevice(ctx context.Context, in *RegisterDeviceRequest, opts ...grpc.CallOption) (*RegisterDeviceResponse, error)
+	// UnregisterDevice removes a push token the caller owns. The token travels in the body: push tokens
+	// contain ':' which cannot appear in a URL path segment.
 	UnregisterDevice(ctx context.Context, in *UnregisterDeviceRequest, opts ...grpc.CallOption) (*UnregisterDeviceResponse, error)
+	// ListNotifications returns the caller's own inbox; recipient_type and recipient_id are query parameters.
 	ListNotifications(ctx context.Context, in *ListNotificationsRequest, opts ...grpc.CallOption) (*ListNotificationsResponse, error)
+	// MarkAsRead marks notifications of the caller's own inbox as read.
 	MarkAsRead(ctx context.Context, in *MarkAsReadRequest, opts ...grpc.CallOption) (*MarkAsReadResponse, error)
 	UpsertTemplate(ctx context.Context, in *UpsertTemplateRequest, opts ...grpc.CallOption) (*UpsertTemplateResponse, error)
 }
@@ -112,9 +117,14 @@ func (c *notificationServiceClient) UpsertTemplate(ctx context.Context, in *Upse
 // for forward compatibility.
 type NotificationServiceServer interface {
 	Send(context.Context, *SendRequest) (*SendResponse, error)
+	// RegisterDevice registers a push token for the caller's own rider or driver profile.
 	RegisterDevice(context.Context, *RegisterDeviceRequest) (*RegisterDeviceResponse, error)
+	// UnregisterDevice removes a push token the caller owns. The token travels in the body: push tokens
+	// contain ':' which cannot appear in a URL path segment.
 	UnregisterDevice(context.Context, *UnregisterDeviceRequest) (*UnregisterDeviceResponse, error)
+	// ListNotifications returns the caller's own inbox; recipient_type and recipient_id are query parameters.
 	ListNotifications(context.Context, *ListNotificationsRequest) (*ListNotificationsResponse, error)
+	// MarkAsRead marks notifications of the caller's own inbox as read.
 	MarkAsRead(context.Context, *MarkAsReadRequest) (*MarkAsReadResponse, error)
 	UpsertTemplate(context.Context, *UpsertTemplateRequest) (*UpsertTemplateResponse, error)
 	mustEmbedUnimplementedNotificationServiceServer()

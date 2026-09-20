@@ -1125,9 +1125,9 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"EntityType\x12\x1b\n" +
 	"\x17ENTITY_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ENTITY_TYPE_DRIVER\x10\x01\x12\x15\n" +
-	"\x11ENTITY_TYPE_RIDER\x10\x022\xdb\x06\n" +
-	"\x0fLocationService\x12c\n" +
-	"\x0eUpdateLocation\x12'.ride.location.v1.UpdateLocationRequest\x1a(.ride.location.v1.UpdateLocationResponse\x12}\n" +
+	"\x11ENTITY_TYPE_RIDER\x10\x022\xcc\a\n" +
+	"\x0fLocationService\x12\x89\x01\n" +
+	"\x0eUpdateLocation\x12'.ride.location.v1.UpdateLocationRequest\x1a(.ride.location.v1.UpdateLocationResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\x1a\x19/v1/locations/{entity_id}\x12}\n" +
 	"\vGetLocation\x12$.ride.location.v1.GetLocationRequest\x1a%.ride.location.v1.GetLocationResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/locations/{entity_id}\x12W\n" +
 	"\n" +
 	"FindNearby\x12#.ride.location.v1.FindNearbyRequest\x1a$.ride.location.v1.FindNearbyResponse\x12Q\n" +
@@ -1135,10 +1135,10 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"CreateZone\x12#.ride.location.v1.CreateZoneRequest\x1a\x1e.ride.location.v1.ZoneResponse\x12Q\n" +
 	"\n" +
 	"UpdateZone\x12#.ride.location.v1.UpdateZoneRequest\x1a\x1e.ride.location.v1.ZoneResponse\x12W\n" +
-	"\rSetZoneActive\x12&.ride.location.v1.SetZoneActiveRequest\x1a\x1e.ride.location.v1.ZoneResponse\x12K\n" +
-	"\aGetZone\x12 .ride.location.v1.GetZoneRequest\x1a\x1e.ride.location.v1.ZoneResponse\x12T\n" +
-	"\tListZones\x12\".ride.location.v1.ListZonesRequest\x1a#.ride.location.v1.ListZonesResponse\x12i\n" +
-	"\x10CheckServiceZone\x12).ride.location.v1.CheckServiceZoneRequest\x1a*.ride.location.v1.CheckServiceZoneResponseBDZBgithub.com/7akoom/ride-platform/gen/go/ride/location/v1;locationv1b\x06proto3"
+	"\rSetZoneActive\x12&.ride.location.v1.SetZoneActiveRequest\x1a\x1e.ride.location.v1.ZoneResponse\x12h\n" +
+	"\aGetZone\x12 .ride.location.v1.GetZoneRequest\x1a\x1e.ride.location.v1.ZoneResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/zones/{zone_id}\x12g\n" +
+	"\tListZones\x12\".ride.location.v1.ListZonesRequest\x1a#.ride.location.v1.ListZonesResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/zones\x12\x82\x01\n" +
+	"\x10CheckServiceZone\x12).ride.location.v1.CheckServiceZoneRequest\x1a*.ride.location.v1.CheckServiceZoneResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/zones:checkBDZBgithub.com/7akoom/ride-platform/gen/go/ride/location/v1;locationv1b\x06proto3"
 
 var (
 	file_ride_location_v1_location_proto_rawDescOnce sync.Once

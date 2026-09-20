@@ -2,14 +2,37 @@ syntax = "proto3";
 
 package ride.rider.v1;
 
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/rider/v1;riderv1";
 
 service RiderService {
-  rpc CreateRider(CreateRiderRequest) returns (CreateRiderResponse);
-  rpc GetRider(GetRiderRequest) returns (GetRiderResponse);
-  rpc GetRiderByIdentity(GetRiderByIdentityRequest) returns (GetRiderResponse);
-  rpc UpdateRiderProfile(UpdateRiderProfileRequest) returns (UpdateRiderProfileResponse);
+  // CreateRider creates the caller's own rider profile: identity_id must be the caller's identity.
+  rpc CreateRider(CreateRiderRequest) returns (CreateRiderResponse) {
+    option (google.api.http) = {
+      post: "/v1/riders"
+      body: "*"
+    };
+  }
+  // GetRider returns the caller's own rider profile.
+  rpc GetRider(GetRiderRequest) returns (GetRiderResponse) {
+    option (google.api.http) = {
+      get: "/v1/riders/{rider_id}"
+    };
+  }
+  // GetRiderByIdentity finds the caller's rider profile from their identity id.
+  rpc GetRiderByIdentity(GetRiderByIdentityRequest) returns (GetRiderResponse) {
+    option (google.api.http) = {
+      get: "/v1/identities/{identity_id}/rider"
+    };
+  }
+  // UpdateRiderProfile changes the caller's own rider profile.
+  rpc UpdateRiderProfile(UpdateRiderProfileRequest) returns (UpdateRiderProfileResponse) {
+    option (google.api.http) = {
+      patch: "/v1/riders/{rider_id}"
+      body: "*"
+    };
+  }
 }
 
 enum RiderStatus {

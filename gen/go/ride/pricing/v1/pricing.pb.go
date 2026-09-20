@@ -7,6 +7,7 @@
 package pricingv1
 
 import (
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -972,7 +973,7 @@ var File_ride_pricing_v1_pricing_proto protoreflect.FileDescriptor
 
 const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\n" +
-	"\x1dride/pricing/v1/pricing.proto\x12\x0fride.pricing.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"G\n" +
+	"\x1dride/pricing/v1/pricing.proto\x12\x0fride.pricing.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"G\n" +
 	"\vCoordinates\x12\x1a\n" +
 	"\blatitude\x18\x01 \x01(\x01R\blatitude\x12\x1c\n" +
 	"\tlongitude\x18\x02 \x01(\x01R\tlongitude\"\xd4\x01\n" +
@@ -1055,9 +1056,9 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\fDiscountType\x12\x1d\n" +
 	"\x19DISCOUNT_TYPE_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18DISCOUNT_TYPE_PERCENTAGE\x10\x01\x12\x1e\n" +
-	"\x1aDISCOUNT_TYPE_FIXED_AMOUNT\x10\x022\xfe\x02\n" +
-	"\x0ePricingService\x12[\n" +
-	"\fEstimateFare\x12$.ride.pricing.v1.EstimateFareRequest\x1a%.ride.pricing.v1.EstimateFareResponse\x12^\n" +
+	"\x1aDISCOUNT_TYPE_FIXED_AMOUNT\x10\x022\x9d\x03\n" +
+	"\x0ePricingService\x12z\n" +
+	"\fEstimateFare\x12$.ride.pricing.v1.EstimateFareRequest\x1a%.ride.pricing.v1.EstimateFareResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/fare-estimates\x12^\n" +
 	"\rCalculateFare\x12%.ride.pricing.v1.CalculateFareRequest\x1a&.ride.pricing.v1.CalculateFareResponse\x12[\n" +
 	"\fCreateCoupon\x12$.ride.pricing.v1.CreateCouponRequest\x1a%.ride.pricing.v1.CreateCouponResponse\x12R\n" +
 	"\tGetCoupon\x12!.ride.pricing.v1.GetCouponRequest\x1a\".ride.pricing.v1.GetCouponResponseBBZ@github.com/7akoom/ride-platform/gen/go/ride/pricing/v1;pricingv1b\x06proto3"

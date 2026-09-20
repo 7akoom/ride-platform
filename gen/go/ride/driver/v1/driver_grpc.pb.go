@@ -30,10 +30,15 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DriverServiceClient interface {
+	// CreateDriver creates the caller's own driver profile: identity_id must be the caller's identity.
 	CreateDriver(ctx context.Context, in *CreateDriverRequest, opts ...grpc.CallOption) (*CreateDriverResponse, error)
+	// GetDriver returns the caller's own driver profile.
 	GetDriver(ctx context.Context, in *GetDriverRequest, opts ...grpc.CallOption) (*GetDriverResponse, error)
+	// GetDriverByIdentity finds the caller's driver profile from their identity id.
 	GetDriverByIdentity(ctx context.Context, in *GetDriverByIdentityRequest, opts ...grpc.CallOption) (*GetDriverResponse, error)
+	// UpdateDriverProfile changes the caller's own driver profile and vehicle.
 	UpdateDriverProfile(ctx context.Context, in *UpdateDriverProfileRequest, opts ...grpc.CallOption) (*UpdateDriverProfileResponse, error)
+	// UpdateAvailability goes online or offline; only the driver themselves may.
 	UpdateAvailability(ctx context.Context, in *UpdateAvailabilityRequest, opts ...grpc.CallOption) (*UpdateAvailabilityResponse, error)
 }
 
@@ -99,10 +104,15 @@ func (c *driverServiceClient) UpdateAvailability(ctx context.Context, in *Update
 // All implementations must embed UnimplementedDriverServiceServer
 // for forward compatibility.
 type DriverServiceServer interface {
+	// CreateDriver creates the caller's own driver profile: identity_id must be the caller's identity.
 	CreateDriver(context.Context, *CreateDriverRequest) (*CreateDriverResponse, error)
+	// GetDriver returns the caller's own driver profile.
 	GetDriver(context.Context, *GetDriverRequest) (*GetDriverResponse, error)
+	// GetDriverByIdentity finds the caller's driver profile from their identity id.
 	GetDriverByIdentity(context.Context, *GetDriverByIdentityRequest) (*GetDriverResponse, error)
+	// UpdateDriverProfile changes the caller's own driver profile and vehicle.
 	UpdateDriverProfile(context.Context, *UpdateDriverProfileRequest) (*UpdateDriverProfileResponse, error)
+	// UpdateAvailability goes online or offline; only the driver themselves may.
 	UpdateAvailability(context.Context, *UpdateAvailabilityRequest) (*UpdateAvailabilityResponse, error)
 	mustEmbedUnimplementedDriverServiceServer()
 }

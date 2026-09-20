@@ -2,15 +2,44 @@ syntax = "proto3";
 
 package ride.driver.v1;
 
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/driver/v1;driverv1";
 
 service DriverService {
-  rpc CreateDriver(CreateDriverRequest) returns (CreateDriverResponse);
-  rpc GetDriver(GetDriverRequest) returns (GetDriverResponse);
-  rpc GetDriverByIdentity(GetDriverByIdentityRequest) returns (GetDriverResponse);
-  rpc UpdateDriverProfile(UpdateDriverProfileRequest) returns (UpdateDriverProfileResponse);
-  rpc UpdateAvailability(UpdateAvailabilityRequest) returns (UpdateAvailabilityResponse);
+  // CreateDriver creates the caller's own driver profile: identity_id must be the caller's identity.
+  rpc CreateDriver(CreateDriverRequest) returns (CreateDriverResponse) {
+    option (google.api.http) = {
+      post: "/v1/drivers"
+      body: "*"
+    };
+  }
+  // GetDriver returns the caller's own driver profile.
+  rpc GetDriver(GetDriverRequest) returns (GetDriverResponse) {
+    option (google.api.http) = {
+      get: "/v1/drivers/{driver_id}"
+    };
+  }
+  // GetDriverByIdentity finds the caller's driver profile from their identity id.
+  rpc GetDriverByIdentity(GetDriverByIdentityRequest) returns (GetDriverResponse) {
+    option (google.api.http) = {
+      get: "/v1/identities/{identity_id}/driver"
+    };
+  }
+  // UpdateDriverProfile changes the caller's own driver profile and vehicle.
+  rpc UpdateDriverProfile(UpdateDriverProfileRequest) returns (UpdateDriverProfileResponse) {
+    option (google.api.http) = {
+      patch: "/v1/drivers/{driver_id}"
+      body: "*"
+    };
+  }
+  // UpdateAvailability goes online or offline; only the driver themselves may.
+  rpc UpdateAvailability(UpdateAvailabilityRequest) returns (UpdateAvailabilityResponse) {
+    option (google.api.http) = {
+      put: "/v1/drivers/{driver_id}/availability"
+      body: "*"
+    };
+  }
 }
 
 enum DriverStatus {

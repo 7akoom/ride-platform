@@ -7,6 +7,7 @@
 package riderv1
 
 import (
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -499,7 +500,7 @@ var File_ride_rider_v1_rider_proto protoreflect.FileDescriptor
 
 const file_ride_rider_v1_rider_proto_rawDesc = "" +
 	"\n" +
-	"\x19ride/rider/v1/rider.proto\x12\rride.rider.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xcf\x02\n" +
+	"\x19ride/rider/v1/rider.proto\x12\rride.rider.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xcf\x02\n" +
 	"\x05Rider\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\videntity_id\x18\x02 \x01(\tR\n" +
@@ -533,12 +534,13 @@ const file_ride_rider_v1_rider_proto_rawDesc = "" +
 	"\vRiderStatus\x12\x1c\n" +
 	"\x18RIDER_STATUS_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13RIDER_STATUS_ACTIVE\x10\x01\x12\x1a\n" +
-	"\x16RIDER_STATUS_SUSPENDED\x10\x022\xfd\x02\n" +
-	"\fRiderService\x12T\n" +
-	"\vCreateRider\x12!.ride.rider.v1.CreateRiderRequest\x1a\".ride.rider.v1.CreateRiderResponse\x12K\n" +
-	"\bGetRider\x12\x1e.ride.rider.v1.GetRiderRequest\x1a\x1f.ride.rider.v1.GetRiderResponse\x12_\n" +
-	"\x12GetRiderByIdentity\x12(.ride.rider.v1.GetRiderByIdentityRequest\x1a\x1f.ride.rider.v1.GetRiderResponse\x12i\n" +
-	"\x12UpdateRiderProfile\x12(.ride.rider.v1.UpdateRiderProfileRequest\x1a).ride.rider.v1.UpdateRiderProfileResponseB>Z<github.com/7akoom/ride-platform/gen/go/ride/rider/v1;riderv1b\x06proto3"
+	"\x16RIDER_STATUS_SUSPENDED\x10\x022\x83\x04\n" +
+	"\fRiderService\x12k\n" +
+	"\vCreateRider\x12!.ride.rider.v1.CreateRiderRequest\x1a\".ride.rider.v1.CreateRiderResponse\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\"\n" +
+	"/v1/riders\x12j\n" +
+	"\bGetRider\x12\x1e.ride.rider.v1.GetRiderRequest\x1a\x1f.ride.rider.v1.GetRiderResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/v1/riders/{rider_id}\x12\x8b\x01\n" +
+	"\x12GetRiderByIdentity\x12(.ride.rider.v1.GetRiderByIdentityRequest\x1a\x1f.ride.rider.v1.GetRiderResponse\"*\x82\xd3\xe4\x93\x02$\x12\"/v1/identities/{identity_id}/rider\x12\x8b\x01\n" +
+	"\x12UpdateRiderProfile\x12(.ride.rider.v1.UpdateRiderProfileRequest\x1a).ride.rider.v1.UpdateRiderProfileResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*2\x15/v1/riders/{rider_id}B>Z<github.com/7akoom/ride-platform/gen/go/ride/rider/v1;riderv1b\x06proto3"
 
 var (
 	file_ride_rider_v1_rider_proto_rawDescOnce sync.Once

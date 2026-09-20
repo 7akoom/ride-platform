@@ -898,6 +898,10 @@ services:
       TRIP_SERVICE_ADDRESS: trip-service:50055
       WALLET_SERVICE_ADDRESS: wallet-service:50058
       LOCATION_SERVICE_ADDRESS: location-service:50054
+      RIDER_SERVICE_ADDRESS: rider-service:50052
+      DRIVER_SERVICE_ADDRESS: driver-service:50053
+      PRICING_SERVICE_ADDRESS: pricing-service:50057
+      NOTIFICATION_SERVICE_ADDRESS: notification-service:50059
       ALLOWED_ORIGINS: http://localhost:3000
 
     depends_on:
@@ -906,6 +910,14 @@ services:
       wallet-service:
         condition: service_started
       location-service:
+        condition: service_started
+      rider-service:
+        condition: service_started
+      driver-service:
+        condition: service_started
+      pricing-service:
+        condition: service_started
+      notification-service:
         condition: service_started
 
     ports:

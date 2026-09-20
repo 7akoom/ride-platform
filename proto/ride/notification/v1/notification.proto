@@ -2,15 +2,40 @@ syntax = "proto3";
 
 package ride.notification.v1;
 
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/notification/v1;notificationv1";
 
 service NotificationService {
   rpc Send(SendRequest) returns (SendResponse);
-  rpc RegisterDevice(RegisterDeviceRequest) returns (RegisterDeviceResponse);
-  rpc UnregisterDevice(UnregisterDeviceRequest) returns (UnregisterDeviceResponse);
-  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
-  rpc MarkAsRead(MarkAsReadRequest) returns (MarkAsReadResponse);
+  // RegisterDevice registers a push token for the caller's own rider or driver profile.
+  rpc RegisterDevice(RegisterDeviceRequest) returns (RegisterDeviceResponse) {
+    option (google.api.http) = {
+      post: "/v1/devices"
+      body: "*"
+    };
+  }
+  // UnregisterDevice removes a push token the caller owns. The token travels in the body: push tokens
+  // contain ':' which cannot appear in a URL path segment.
+  rpc UnregisterDevice(UnregisterDeviceRequest) returns (UnregisterDeviceResponse) {
+    option (google.api.http) = {
+      post: "/v1/devices:unregister"
+      body: "*"
+    };
+  }
+  // ListNotifications returns the caller's own inbox; recipient_type and recipient_id are query parameters.
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse) {
+    option (google.api.http) = {
+      get: "/v1/notifications"
+    };
+  }
+  // MarkAsRead marks notifications of the caller's own inbox as read.
+  rpc MarkAsRead(MarkAsReadRequest) returns (MarkAsReadResponse) {
+    option (google.api.http) = {
+      post: "/v1/notifications:read"
+      body: "*"
+    };
+  }
   rpc UpsertTemplate(UpsertTemplateRequest) returns (UpsertTemplateResponse);
 }
 

@@ -29,9 +29,13 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RiderServiceClient interface {
+	// CreateRider creates the caller's own rider profile: identity_id must be the caller's identity.
 	CreateRider(ctx context.Context, in *CreateRiderRequest, opts ...grpc.CallOption) (*CreateRiderResponse, error)
+	// GetRider returns the caller's own rider profile.
 	GetRider(ctx context.Context, in *GetRiderRequest, opts ...grpc.CallOption) (*GetRiderResponse, error)
+	// GetRiderByIdentity finds the caller's rider profile from their identity id.
 	GetRiderByIdentity(ctx context.Context, in *GetRiderByIdentityRequest, opts ...grpc.CallOption) (*GetRiderResponse, error)
+	// UpdateRiderProfile changes the caller's own rider profile.
 	UpdateRiderProfile(ctx context.Context, in *UpdateRiderProfileRequest, opts ...grpc.CallOption) (*UpdateRiderProfileResponse, error)
 }
 
@@ -87,9 +91,13 @@ func (c *riderServiceClient) UpdateRiderProfile(ctx context.Context, in *UpdateR
 // All implementations must embed UnimplementedRiderServiceServer
 // for forward compatibility.
 type RiderServiceServer interface {
+	// CreateRider creates the caller's own rider profile: identity_id must be the caller's identity.
 	CreateRider(context.Context, *CreateRiderRequest) (*CreateRiderResponse, error)
+	// GetRider returns the caller's own rider profile.
 	GetRider(context.Context, *GetRiderRequest) (*GetRiderResponse, error)
+	// GetRiderByIdentity finds the caller's rider profile from their identity id.
 	GetRiderByIdentity(context.Context, *GetRiderByIdentityRequest) (*GetRiderResponse, error)
+	// UpdateRiderProfile changes the caller's own rider profile.
 	UpdateRiderProfile(context.Context, *UpdateRiderProfileRequest) (*UpdateRiderProfileResponse, error)
 	mustEmbedUnimplementedRiderServiceServer()
 }

@@ -29,6 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PricingServiceClient interface {
+	// EstimateFare quotes a trip for the caller: rider_id must be the caller's own rider profile.
 	EstimateFare(ctx context.Context, in *EstimateFareRequest, opts ...grpc.CallOption) (*EstimateFareResponse, error)
 	CalculateFare(ctx context.Context, in *CalculateFareRequest, opts ...grpc.CallOption) (*CalculateFareResponse, error)
 	CreateCoupon(ctx context.Context, in *CreateCouponRequest, opts ...grpc.CallOption) (*CreateCouponResponse, error)
@@ -87,6 +88,7 @@ func (c *pricingServiceClient) GetCoupon(ctx context.Context, in *GetCouponReque
 // All implementations must embed UnimplementedPricingServiceServer
 // for forward compatibility.
 type PricingServiceServer interface {
+	// EstimateFare quotes a trip for the caller: rider_id must be the caller's own rider profile.
 	EstimateFare(context.Context, *EstimateFareRequest) (*EstimateFareResponse, error)
 	CalculateFare(context.Context, *CalculateFareRequest) (*CalculateFareResponse, error)
 	CreateCoupon(context.Context, *CreateCouponRequest) (*CreateCouponResponse, error)

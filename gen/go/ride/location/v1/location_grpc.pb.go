@@ -34,6 +34,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LocationServiceClient interface {
+	// UpdateLocation reports the caller's own position (driver app, every few seconds).
 	UpdateLocation(ctx context.Context, in *UpdateLocationRequest, opts ...grpc.CallOption) (*UpdateLocationResponse, error)
 	// GetLocation is the rider app's poll target for a driver's live
 	// position during an active trip (entity_type=ENTITY_TYPE_DRIVER).
@@ -48,8 +49,11 @@ type LocationServiceClient interface {
 	CreateZone(ctx context.Context, in *CreateZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
 	UpdateZone(ctx context.Context, in *UpdateZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
 	SetZoneActive(ctx context.Context, in *SetZoneActiveRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
+	// GetZone reads one service zone.
 	GetZone(ctx context.Context, in *GetZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
+	// ListZones lists service zones, optionally for one city (?city=).
 	ListZones(ctx context.Context, in *ListZonesRequest, opts ...grpc.CallOption) (*ListZonesResponse, error)
+	// CheckServiceZone tells whether a point is served (?coordinates.latitude=&coordinates.longitude=).
 	CheckServiceZone(ctx context.Context, in *CheckServiceZoneRequest, opts ...grpc.CallOption) (*CheckServiceZoneResponse, error)
 }
 
@@ -155,6 +159,7 @@ func (c *locationServiceClient) CheckServiceZone(ctx context.Context, in *CheckS
 // All implementations must embed UnimplementedLocationServiceServer
 // for forward compatibility.
 type LocationServiceServer interface {
+	// UpdateLocation reports the caller's own position (driver app, every few seconds).
 	UpdateLocation(context.Context, *UpdateLocationRequest) (*UpdateLocationResponse, error)
 	// GetLocation is the rider app's poll target for a driver's live
 	// position during an active trip (entity_type=ENTITY_TYPE_DRIVER).
@@ -169,8 +174,11 @@ type LocationServiceServer interface {
 	CreateZone(context.Context, *CreateZoneRequest) (*ZoneResponse, error)
 	UpdateZone(context.Context, *UpdateZoneRequest) (*ZoneResponse, error)
 	SetZoneActive(context.Context, *SetZoneActiveRequest) (*ZoneResponse, error)
+	// GetZone reads one service zone.
 	GetZone(context.Context, *GetZoneRequest) (*ZoneResponse, error)
+	// ListZones lists service zones, optionally for one city (?city=).
 	ListZones(context.Context, *ListZonesRequest) (*ListZonesResponse, error)
+	// CheckServiceZone tells whether a point is served (?coordinates.latitude=&coordinates.longitude=).
 	CheckServiceZone(context.Context, *CheckServiceZoneRequest) (*CheckServiceZoneResponse, error)
 	mustEmbedUnimplementedLocationServiceServer()
 }

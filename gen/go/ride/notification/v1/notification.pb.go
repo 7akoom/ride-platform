@@ -7,6 +7,7 @@
 package notificationv1
 
 import (
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -1174,7 +1175,7 @@ var File_ride_notification_v1_notification_proto protoreflect.FileDescriptor
 
 const file_ride_notification_v1_notification_proto_rawDesc = "" +
 	"\n" +
-	"'ride/notification/v1/notification.proto\x12\x14ride.notification.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb6\x03\n" +
+	"'ride/notification/v1/notification.proto\x12\x14ride.notification.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb6\x03\n" +
 	"\fNotification\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12J\n" +
 	"\x0erecipient_type\x18\x02 \x01(\x0e2#.ride.notification.v1.RecipientTypeR\rrecipientType\x12!\n" +
@@ -1272,14 +1273,14 @@ const file_ride_notification_v1_notification_proto_rawDesc = "" +
 	"\x14PLATFORM_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PLATFORM_ANDROID\x10\x01\x12\x10\n" +
 	"\fPLATFORM_IOS\x10\x02\x12\x10\n" +
-	"\fPLATFORM_WEB\x10\x032\x88\x05\n" +
+	"\fPLATFORM_WEB\x10\x032\x85\x06\n" +
 	"\x13NotificationService\x12M\n" +
-	"\x04Send\x12!.ride.notification.v1.SendRequest\x1a\".ride.notification.v1.SendResponse\x12k\n" +
-	"\x0eRegisterDevice\x12+.ride.notification.v1.RegisterDeviceRequest\x1a,.ride.notification.v1.RegisterDeviceResponse\x12q\n" +
-	"\x10UnregisterDevice\x12-.ride.notification.v1.UnregisterDeviceRequest\x1a..ride.notification.v1.UnregisterDeviceResponse\x12t\n" +
-	"\x11ListNotifications\x12..ride.notification.v1.ListNotificationsRequest\x1a/.ride.notification.v1.ListNotificationsResponse\x12_\n" +
+	"\x04Send\x12!.ride.notification.v1.SendRequest\x1a\".ride.notification.v1.SendResponse\x12\x83\x01\n" +
+	"\x0eRegisterDevice\x12+.ride.notification.v1.RegisterDeviceRequest\x1a,.ride.notification.v1.RegisterDeviceResponse\"\x16\x82\xd3\xe4\x93\x02\x10:\x01*\"\v/v1/devices\x12\x94\x01\n" +
+	"\x10UnregisterDevice\x12-.ride.notification.v1.UnregisterDeviceRequest\x1a..ride.notification.v1.UnregisterDeviceResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/devices:unregister\x12\x8f\x01\n" +
+	"\x11ListNotifications\x12..ride.notification.v1.ListNotificationsRequest\x1a/.ride.notification.v1.ListNotificationsResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/notifications\x12\x82\x01\n" +
 	"\n" +
-	"MarkAsRead\x12'.ride.notification.v1.MarkAsReadRequest\x1a(.ride.notification.v1.MarkAsReadResponse\x12k\n" +
+	"MarkAsRead\x12'.ride.notification.v1.MarkAsReadRequest\x1a(.ride.notification.v1.MarkAsReadResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/notifications:read\x12k\n" +
 	"\x0eUpsertTemplate\x12+.ride.notification.v1.UpsertTemplateRequest\x1a,.ride.notification.v1.UpsertTemplateResponseBLZJgithub.com/7akoom/ride-platform/gen/go/ride/notification/v1;notificationv1b\x06proto3"
 
 var (

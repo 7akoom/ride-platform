@@ -7,7 +7,13 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/location/v1;locationv1";
 
 service LocationService {
-  rpc UpdateLocation(UpdateLocationRequest) returns (UpdateLocationResponse);
+  // UpdateLocation reports the caller's own position (driver app, every few seconds).
+  rpc UpdateLocation(UpdateLocationRequest) returns (UpdateLocationResponse) {
+    option (google.api.http) = {
+      put: "/v1/locations/{entity_id}"
+      body: "*"
+    };
+  }
   // GetLocation is the rider app's poll target for a driver's live
   // position during an active trip (entity_type=ENTITY_TYPE_DRIVER).
   // entity_type isn't in the path because grpc-gateway can't bind an
@@ -26,9 +32,24 @@ service LocationService {
   rpc CreateZone(CreateZoneRequest) returns (ZoneResponse);
   rpc UpdateZone(UpdateZoneRequest) returns (ZoneResponse);
   rpc SetZoneActive(SetZoneActiveRequest) returns (ZoneResponse);
-  rpc GetZone(GetZoneRequest) returns (ZoneResponse);
-  rpc ListZones(ListZonesRequest) returns (ListZonesResponse);
-  rpc CheckServiceZone(CheckServiceZoneRequest) returns (CheckServiceZoneResponse);
+  // GetZone reads one service zone.
+  rpc GetZone(GetZoneRequest) returns (ZoneResponse) {
+    option (google.api.http) = {
+      get: "/v1/zones/{zone_id}"
+    };
+  }
+  // ListZones lists service zones, optionally for one city (?city=).
+  rpc ListZones(ListZonesRequest) returns (ListZonesResponse) {
+    option (google.api.http) = {
+      get: "/v1/zones"
+    };
+  }
+  // CheckServiceZone tells whether a point is served (?coordinates.latitude=&coordinates.longitude=).
+  rpc CheckServiceZone(CheckServiceZoneRequest) returns (CheckServiceZoneResponse) {
+    option (google.api.http) = {
+      get: "/v1/zones:check"
+    };
+  }
 }
 
 enum EntityType {

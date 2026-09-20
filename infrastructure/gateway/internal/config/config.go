@@ -16,9 +16,13 @@ type Config struct {
 	// Backend gRPC targets this gateway proxies to. One field per
 	// service, added as its client-facing RPCs get `google.api.http`
 	// annotations.
-	TripServiceAddress     string
-	WalletServiceAddress   string
-	LocationServiceAddress string
+	TripServiceAddress         string
+	WalletServiceAddress       string
+	LocationServiceAddress     string
+	RiderServiceAddress        string
+	DriverServiceAddress       string
+	PricingServiceAddress      string
+	NotificationServiceAddress string
 
 	// Comma-separated browser origins allowed to call this gateway
 	// (the Admin web app). Mobile apps don't send an Origin header and
@@ -40,6 +44,22 @@ func Load() Config {
 		LocationServiceAddress: getEnv(
 			"LOCATION_SERVICE_ADDRESS",
 			"localhost:50054",
+		),
+		RiderServiceAddress: getEnv(
+			"RIDER_SERVICE_ADDRESS",
+			"localhost:50052",
+		),
+		DriverServiceAddress: getEnv(
+			"DRIVER_SERVICE_ADDRESS",
+			"localhost:50053",
+		),
+		PricingServiceAddress: getEnv(
+			"PRICING_SERVICE_ADDRESS",
+			"localhost:50057",
+		),
+		NotificationServiceAddress: getEnv(
+			"NOTIFICATION_SERVICE_ADDRESS",
+			"localhost:50059",
 		),
 
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:3000"),

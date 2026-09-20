@@ -10,7 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	driverv1 "github.com/7akoom/ride-platform/gen/go/ride/driver/v1"
 	locationv1 "github.com/7akoom/ride-platform/gen/go/ride/location/v1"
+	notificationv1 "github.com/7akoom/ride-platform/gen/go/ride/notification/v1"
+	pricingv1 "github.com/7akoom/ride-platform/gen/go/ride/pricing/v1"
+	riderv1 "github.com/7akoom/ride-platform/gen/go/ride/rider/v1"
 	tripv1 "github.com/7akoom/ride-platform/gen/go/ride/trip/v1"
 	walletv1 "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1"
 	"github.com/7akoom/ride-platform/infrastructure/gateway/internal/config"
@@ -85,9 +89,65 @@ func run() int {
 		return 1
 	}
 
+	riderConn, err := dialBackend(cfg.RiderServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to rider-service", "error", err)
+
+		return 1
+	}
+	defer riderConn.Close()
+
+	if err := riderv1.RegisterRiderServiceHandler(ctx, mux, riderConn); err != nil {
+		logger.Error("failed to register rider-service gateway handler", "error", err)
+
+		return 1
+	}
+
+	driverConn, err := dialBackend(cfg.DriverServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to driver-service", "error", err)
+
+		return 1
+	}
+	defer driverConn.Close()
+
+	if err := driverv1.RegisterDriverServiceHandler(ctx, mux, driverConn); err != nil {
+		logger.Error("failed to register driver-service gateway handler", "error", err)
+
+		return 1
+	}
+
+	pricingConn, err := dialBackend(cfg.PricingServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to pricing-service", "error", err)
+
+		return 1
+	}
+	defer pricingConn.Close()
+
+	if err := pricingv1.RegisterPricingServiceHandler(ctx, mux, pricingConn); err != nil {
+		logger.Error("failed to register pricing-service gateway handler", "error", err)
+
+		return 1
+	}
+
+	notificationConn, err := dialBackend(cfg.NotificationServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to notification-service", "error", err)
+
+		return 1
+	}
+	defer notificationConn.Close()
+
+	if err := notificationv1.RegisterNotificationServiceHandler(ctx, mux, notificationConn); err != nil {
+		logger.Error("failed to register notification-service gateway handler", "error", err)
+
+		return 1
+	}
+
 	server := &http.Server{
 		Addr:              cfg.HTTPAddress,
-		Handler:           withCORS(cfg.AllowedOrigins, mux),
+		Handler:           withCORS(cfg.AllowedOrigins, requireUserCredentials(mux)),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

@@ -2,11 +2,18 @@ syntax = "proto3";
 
 package ride.pricing.v1;
 
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/pricing/v1;pricingv1";
 
 service PricingService {
-  rpc EstimateFare(EstimateFareRequest) returns (EstimateFareResponse);
+  // EstimateFare quotes a trip for the caller: rider_id must be the caller's own rider profile.
+  rpc EstimateFare(EstimateFareRequest) returns (EstimateFareResponse) {
+    option (google.api.http) = {
+      post: "/v1/fare-estimates"
+      body: "*"
+    };
+  }
   rpc CalculateFare(CalculateFareRequest) returns (CalculateFareResponse);
   rpc CreateCoupon(CreateCouponRequest) returns (CreateCouponResponse);
   rpc GetCoupon(GetCouponRequest) returns (GetCouponResponse);
