@@ -13,6 +13,7 @@ type Config struct {
 	DatabaseURL            string
 	LocationServiceAddress string
 	TripServiceAddress     string
+	RiderServiceAddress    string
 	OSRMBaseURL            string
 	RoutingTimeout         time.Duration
 	WeatherTimeout         time.Duration
@@ -70,6 +71,7 @@ func Load() Config {
 		DatabaseURL:            getEnv("DATABASE_URL", ""),
 		LocationServiceAddress: getEnv("LOCATION_SERVICE_ADDRESS", "localhost:50054"),
 		TripServiceAddress:     getEnv("TRIP_SERVICE_ADDRESS", "localhost:50055"),
+		RiderServiceAddress:    getEnv("RIDER_SERVICE_ADDRESS", "localhost:50052"),
 		OSRMBaseURL:            getEnv("OSRM_BASE_URL", "http://localhost:5000"),
 		RoutingTimeout:         3 * time.Second,
 		WeatherTimeout:         3 * time.Second,

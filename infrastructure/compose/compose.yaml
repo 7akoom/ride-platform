@@ -747,6 +747,7 @@ services:
       NATS_URL: nats://nats:4222
       LOCATION_SERVICE_ADDRESS: location-service:50054
       TRIP_SERVICE_ADDRESS: trip-service:50055
+      RIDER_SERVICE_ADDRESS: rider-service:50052
       OSRM_BASE_URL: http://osrm:5000
 
     volumes:
@@ -760,6 +761,8 @@ services:
       location-service:
         condition: service_started
       trip-service:
+        condition: service_started
+      rider-service:
         condition: service_started
 
     ports:

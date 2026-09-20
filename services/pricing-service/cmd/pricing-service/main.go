@@ -135,6 +135,22 @@ func run() int {
 	}
 	defer tripConn.Close()
 
+	riderConn, err := grpc.NewClient(
+		cfg.RiderServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to rider-service", "error", err)
+
+		return 1
+	}
+	defer riderConn.Close()
+
+	riderResolver := grpcserver.NewCachingResolver(clients.NewRiderResolver(riderConn))
+
 	natsConnection, err := natsinfra.OpenConnection(
 		natsinfra.ConnectionConfig{
 			URL:            natsConfig.URL,
@@ -247,7 +263,7 @@ func run() int {
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
-		grpcserver.NewAuthorizationUnaryInterceptor(),
+		grpcserver.NewAuthorizationUnaryInterceptor(riderResolver),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterPricingService(pricingHandler)

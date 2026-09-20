@@ -17,13 +17,16 @@ const (
 	accessAuthenticated
 )
 
+// ownerCheck reports whether the calling identity owns what the request
+// touches. An error means ownership could not be verified.
+type ownerCheck func(ctx context.Context, c caller, request any) (bool, error)
+
 var exemptMethods = map[string]struct{}{
 	healthv1.Health_Check_FullMethodName: {},
 }
 
 // methodAccess classifies every RPC. Methods missing from it are denied to
-// end users. accessOwner methods stay closed to end users until their
-// handlers verify ownership.
+// end users, and so are accessOwner methods without an entry in ownerChecks.
 var methodAccess = map[string]accessLevel{
 	"/ride.pricing.v1.PricingService/EstimateFare":  accessOwner,
 	"/ride.pricing.v1.PricingService/CalculateFare": accessInternal,
@@ -31,11 +34,15 @@ var methodAccess = map[string]accessLevel{
 	"/ride.pricing.v1.PricingService/GetCoupon":     accessInternal,
 }
 
-func NewAuthorizationUnaryInterceptor() googlegrpc.UnaryServerInterceptor {
-	return newAuthorizationInterceptor(methodAccess)
+func NewAuthorizationUnaryInterceptor(resolver CallerResolver) googlegrpc.UnaryServerInterceptor {
+	return newAuthorizationInterceptor(methodAccess, ownerChecks, resolver)
 }
 
-func newAuthorizationInterceptor(levels map[string]accessLevel) googlegrpc.UnaryServerInterceptor {
+func newAuthorizationInterceptor(
+	levels map[string]accessLevel,
+	checks map[string]ownerCheck,
+	resolver CallerResolver,
+) googlegrpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		request any,
@@ -59,8 +66,24 @@ func newAuthorizationInterceptor(levels map[string]accessLevel) googlegrpc.Unary
 			return handler(ctx, request)
 		}
 
-		if levels[info.FullMethod] == accessAuthenticated {
+		switch levels[info.FullMethod] {
+		case accessAuthenticated:
 			return handler(ctx, request)
+
+		case accessOwner:
+			check, registered := checks[info.FullMethod]
+			if !registered {
+				break
+			}
+
+			allowed, err := check(ctx, caller{identityID: principal.IdentityID, resolver: resolver}, request)
+			if err != nil {
+				return nil, status.Error(codes.Unavailable, "ownership could not be verified")
+			}
+
+			if allowed {
+				return handler(ctx, request)
+			}
 		}
 
 		return nil, status.Error(codes.PermissionDenied, "permission denied")
