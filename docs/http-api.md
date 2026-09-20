@@ -68,6 +68,8 @@ per-source OTP limit counts every user as one source.
 | POST | `/v1/trips/{tripId}:waypoint` | driver of the trip | every 15-30 s; throttled server-side |
 | GET | `/v1/trips/{tripId}/path` | rider or driver of the trip | |
 | GET | `/v1/trips/{tripId}/driver-location` | **rider** of the trip | only while accepted or in progress; 404 means the driver has not reported for 30 s, keep polling |
+| GET | `/v1/trips:active?rider_id=` or `?driver_id=` | the profile's owner | the requested, accepted or in-progress trip; 404 `no active trip` when there is none. Call it when the app opens, to resume a trip |
+| GET | `/v1/trips?rider_id=` or `?driver_id=` | the profile's owner | history, newest first: `page_size` (1-50, default 20) and `page_token`; the response's `nextPageToken` is empty on the last page |
 
 `:accept` has a route but is internal (dispatch assigns drivers): through the
 gateway it always answers 403 to a user, and the internal token is refused with 401.
@@ -127,5 +129,5 @@ Top-ups of a rider's wallet and trip settlement are internal: no route.
 
 ## Not exposed yet
 
-The trip list and "my active trip", driver offers (accept or reject with a timeout),
+Driver offers (accept or reject with a timeout),
 ratings, admin and analytics (needs staff roles).

@@ -28,7 +28,7 @@ func (h *TripHandler) GetDriverLocation(
 		return nil, status.Error(codes.InvalidArgument, "request is required")
 	}
 
-	tracker, ok := h.tripService.(driverTracker)
+	tracker, ok := trip.As[driverTracker](h.tripService)
 	if !ok {
 		return nil, status.Error(codes.Unimplemented, "driver tracking is not configured")
 	}

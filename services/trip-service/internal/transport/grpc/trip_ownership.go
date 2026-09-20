@@ -26,6 +26,8 @@ var ownerChecks = map[string]ownerCheck{
 	tripRPCPrefix + "GetTrip":           participantOfTrip,
 	tripRPCPrefix + "GetTripPath":       participantOfTrip,
 	tripRPCPrefix + "GetDriverLocation": riderOfTrip,
+	tripRPCPrefix + "GetActiveTrip":     ownerOfProfile,
+	tripRPCPrefix + "ListTrips":         ownerOfProfile,
 	tripRPCPrefix + "TriggerSOS": func(ctx context.Context, c caller, request any) (bool, error) {
 		r, ok := request.(*tripv1.TriggerSOSRequest)
 		if !ok {

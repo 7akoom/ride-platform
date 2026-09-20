@@ -36,6 +36,8 @@ var methodAccess = map[string]accessLevel{
 	"/ride.trip.v1.TripService/RecordWaypoint":    accessOwner,
 	"/ride.trip.v1.TripService/GetTripPath":       accessOwner,
 	"/ride.trip.v1.TripService/GetDriverLocation": accessOwner,
+	"/ride.trip.v1.TripService/GetActiveTrip":     accessOwner,
+	"/ride.trip.v1.TripService/ListTrips":         accessOwner,
 }
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver, trips TripReader) googlegrpc.UnaryServerInterceptor {

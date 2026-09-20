@@ -29,6 +29,8 @@ const (
 	TripService_RecordWaypoint_FullMethodName    = "/ride.trip.v1.TripService/RecordWaypoint"
 	TripService_GetTripPath_FullMethodName       = "/ride.trip.v1.TripService/GetTripPath"
 	TripService_GetDriverLocation_FullMethodName = "/ride.trip.v1.TripService/GetDriverLocation"
+	TripService_GetActiveTrip_FullMethodName     = "/ride.trip.v1.TripService/GetActiveTrip"
+	TripService_ListTrips_FullMethodName         = "/ride.trip.v1.TripService/ListTrips"
 )
 
 // TripServiceClient is the client API for TripService service.
@@ -71,6 +73,16 @@ type TripServiceClient interface {
 	// nothing else about the driver. NOT_FOUND means the driver has not reported
 	// recently (a live position expires after 30 seconds); the app keeps polling.
 	GetDriverLocation(ctx context.Context, in *GetDriverLocationRequest, opts ...grpc.CallOption) (*GetDriverLocationResponse, error)
+	// GetActiveTrip is how an app finds the trip it should be showing: the caller's
+	// requested, accepted or in-progress trip, for example when the app is opened
+	// again after being closed. Name exactly one of rider_id and driver_id, and it
+	// must be the caller's own profile. NOT_FOUND means there is no active trip.
+	GetActiveTrip(ctx context.Context, in *GetActiveTripRequest, opts ...grpc.CallOption) (*GetActiveTripResponse, error)
+	// ListTrips is the caller's trip history, newest first, one page at a time. Name
+	// exactly one of rider_id and driver_id, and it must be the caller's own profile.
+	// Pass the previous page's next_page_token to get the following page; an empty
+	// next_page_token means that was the last one.
+	ListTrips(ctx context.Context, in *ListTripsRequest, opts ...grpc.CallOption) (*ListTripsResponse, error)
 }
 
 type tripServiceClient struct {
@@ -181,6 +193,26 @@ func (c *tripServiceClient) GetDriverLocation(ctx context.Context, in *GetDriver
 	return out, nil
 }
 
+func (c *tripServiceClient) GetActiveTrip(ctx context.Context, in *GetActiveTripRequest, opts ...grpc.CallOption) (*GetActiveTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetActiveTripResponse)
+	err := c.cc.Invoke(ctx, TripService_GetActiveTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) ListTrips(ctx context.Context, in *ListTripsRequest, opts ...grpc.CallOption) (*ListTripsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTripsResponse)
+	err := c.cc.Invoke(ctx, TripService_ListTrips_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TripServiceServer is the server API for TripService service.
 // All implementations must embed UnimplementedTripServiceServer
 // for forward compatibility.
@@ -221,6 +253,16 @@ type TripServiceServer interface {
 	// nothing else about the driver. NOT_FOUND means the driver has not reported
 	// recently (a live position expires after 30 seconds); the app keeps polling.
 	GetDriverLocation(context.Context, *GetDriverLocationRequest) (*GetDriverLocationResponse, error)
+	// GetActiveTrip is how an app finds the trip it should be showing: the caller's
+	// requested, accepted or in-progress trip, for example when the app is opened
+	// again after being closed. Name exactly one of rider_id and driver_id, and it
+	// must be the caller's own profile. NOT_FOUND means there is no active trip.
+	GetActiveTrip(context.Context, *GetActiveTripRequest) (*GetActiveTripResponse, error)
+	// ListTrips is the caller's trip history, newest first, one page at a time. Name
+	// exactly one of rider_id and driver_id, and it must be the caller's own profile.
+	// Pass the previous page's next_page_token to get the following page; an empty
+	// next_page_token means that was the last one.
+	ListTrips(context.Context, *ListTripsRequest) (*ListTripsResponse, error)
 	mustEmbedUnimplementedTripServiceServer()
 }
 
@@ -260,6 +302,12 @@ func (UnimplementedTripServiceServer) GetTripPath(context.Context, *GetTripPathR
 }
 func (UnimplementedTripServiceServer) GetDriverLocation(context.Context, *GetDriverLocationRequest) (*GetDriverLocationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDriverLocation not implemented")
+}
+func (UnimplementedTripServiceServer) GetActiveTrip(context.Context, *GetActiveTripRequest) (*GetActiveTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetActiveTrip not implemented")
+}
+func (UnimplementedTripServiceServer) ListTrips(context.Context, *ListTripsRequest) (*ListTripsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTrips not implemented")
 }
 func (UnimplementedTripServiceServer) mustEmbedUnimplementedTripServiceServer() {}
 func (UnimplementedTripServiceServer) testEmbeddedByValue()                     {}
@@ -462,6 +510,42 @@ func _TripService_GetDriverLocation_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_GetActiveTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetActiveTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetActiveTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetActiveTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetActiveTrip(ctx, req.(*GetActiveTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_ListTrips_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTripsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).ListTrips(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_ListTrips_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).ListTrips(ctx, req.(*ListTripsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TripService_ServiceDesc is the grpc.ServiceDesc for TripService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -508,6 +592,14 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDriverLocation",
 			Handler:    _TripService_GetDriverLocation_Handler,
+		},
+		{
+			MethodName: "GetActiveTrip",
+			Handler:    _TripService_GetActiveTrip_Handler,
+		},
+		{
+			MethodName: "ListTrips",
+			Handler:    _TripService_ListTrips_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

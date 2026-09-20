@@ -92,6 +92,26 @@ service TripService {
       get: "/v1/trips/{trip_id}/driver-location"
     };
   }
+
+  // GetActiveTrip is how an app finds the trip it should be showing: the caller's
+  // requested, accepted or in-progress trip, for example when the app is opened
+  // again after being closed. Name exactly one of rider_id and driver_id, and it
+  // must be the caller's own profile. NOT_FOUND means there is no active trip.
+  rpc GetActiveTrip(GetActiveTripRequest) returns (GetActiveTripResponse) {
+    option (google.api.http) = {
+      get: "/v1/trips:active"
+    };
+  }
+
+  // ListTrips is the caller's trip history, newest first, one page at a time. Name
+  // exactly one of rider_id and driver_id, and it must be the caller's own profile.
+  // Pass the previous page's next_page_token to get the following page; an empty
+  // next_page_token means that was the last one.
+  rpc ListTrips(ListTripsRequest) returns (ListTripsResponse) {
+    option (google.api.http) = {
+      get: "/v1/trips"
+    };
+  }
 }
 
 enum TripStatus {
@@ -238,4 +258,33 @@ message GetDriverLocationResponse {
   Coordinates location = 1;
   // When the driver's phone last reported this position.
   google.protobuf.Timestamp updated_at = 2;
+}
+
+// --- Trip history: the active trip and the trip list ------------------
+
+message GetActiveTripRequest {
+  // Exactly one of the two, and it must be the caller's own profile.
+  string rider_id = 1;
+  string driver_id = 2;
+}
+
+message GetActiveTripResponse {
+  Trip trip = 1;
+}
+
+message ListTripsRequest {
+  // Exactly one of the two, and it must be the caller's own profile.
+  string rider_id = 1;
+  string driver_id = 2;
+  // 1 to 50, default 20; a larger value is served as 50.
+  int32 page_size = 3;
+  // The next_page_token of the previous page; empty for the first page.
+  string page_token = 4;
+}
+
+message ListTripsResponse {
+  // Newest first.
+  repeated Trip trips = 1;
+  // Empty on the last page.
+  string next_page_token = 2;
 }

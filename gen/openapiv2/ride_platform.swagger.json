@@ -1237,6 +1237,57 @@
       }
     },
     "/v1/trips": {
+      "get": {
+        "summary": "ListTrips is the caller's trip history, newest first, one page at a time. Name\nexactly one of rider_id and driver_id, and it must be the caller's own profile.\nPass the previous page's next_page_token to get the following page; an empty\nnext_page_token means that was the last one.",
+        "operationId": "TripService_ListTrips",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListTripsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "description": "Exactly one of the two, and it must be the caller's own profile.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "driverId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "description": "1 to 50, default 20; a larger value is served as 50.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "description": "The next_page_token of the previous page; empty for the first page.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      },
       "post": {
         "operationId": "TripService_RequestTrip",
         "responses": {
@@ -1568,6 +1619,44 @@
             "schema": {
               "$ref": "#/definitions/TripServiceRecordWaypointBody"
             }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips:active": {
+      "get": {
+        "summary": "GetActiveTrip is how an app finds the trip it should be showing: the caller's\nrequested, accepted or in-progress trip, for example when the app is opened\nagain after being closed. Name exactly one of rider_id and driver_id, and it\nmust be the caller's own profile. NOT_FOUND means there is no active trip.",
+        "operationId": "TripService_GetActiveTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetActiveTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "description": "Exactly one of the two, and it must be the caller's own profile.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "driverId",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -2311,6 +2400,14 @@
         }
       }
     },
+    "v1GetActiveTripResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/v1Trip"
+        }
+      }
+    },
     "v1GetCancellationBreakdownResponse": {
       "type": "object",
       "properties": {
@@ -2565,6 +2662,23 @@
             "type": "object",
             "$ref": "#/definitions/v1Transaction"
           }
+        }
+      }
+    },
+    "v1ListTripsResponse": {
+      "type": "object",
+      "properties": {
+        "trips": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Trip"
+          },
+          "description": "Newest first."
+        },
+        "nextPageToken": {
+          "type": "string",
+          "description": "Empty on the last page."
         }
       }
     },
