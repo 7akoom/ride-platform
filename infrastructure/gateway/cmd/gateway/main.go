@@ -11,6 +11,7 @@ import (
 	"time"
 
 	driverv1 "github.com/7akoom/ride-platform/gen/go/ride/driver/v1"
+	identityv1 "github.com/7akoom/ride-platform/gen/go/ride/identity/v1"
 	locationv1 "github.com/7akoom/ride-platform/gen/go/ride/location/v1"
 	notificationv1 "github.com/7akoom/ride-platform/gen/go/ride/notification/v1"
 	pricingv1 "github.com/7akoom/ride-platform/gen/go/ride/pricing/v1"
@@ -141,6 +142,20 @@ func run() int {
 
 	if err := notificationv1.RegisterNotificationServiceHandler(ctx, mux, notificationConn); err != nil {
 		logger.Error("failed to register notification-service gateway handler", "error", err)
+
+		return 1
+	}
+
+	identityConn, err := dialBackend(cfg.IdentityServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to identity-service", "error", err)
+
+		return 1
+	}
+	defer identityConn.Close()
+
+	if err := identityv1.RegisterIdentityServiceHandler(ctx, mux, identityConn); err != nil {
+		logger.Error("failed to register identity-service gateway handler", "error", err)
 
 		return 1
 	}

@@ -7,6 +7,7 @@
 package identityv1
 
 import (
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -1610,7 +1611,7 @@ var File_ride_identity_v1_identity_proto protoreflect.FileDescriptor
 
 const file_ride_identity_v1_identity_proto_rawDesc = "" +
 	"\n" +
-	"\x1fride/identity/v1/identity.proto\x12\x10ride.identity.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"X\n" +
+	"\x1fride/identity/v1/identity.proto\x12\x10ride.identity.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"X\n" +
 	"\n" +
 	"Identifier\x124\n" +
 	"\x04type\x18\x01 \x01(\x0e2 .ride.identity.v1.IdentifierTypeR\x04type\x12\x14\n" +
@@ -1743,21 +1744,20 @@ const file_ride_identity_v1_identity_proto_rawDesc = "" +
 	"\x1bIDENTITY_STATUS_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16IDENTITY_STATUS_ACTIVE\x10\x01\x12\x1d\n" +
 	"\x19IDENTITY_STATUS_SUSPENDED\x10\x02\x12\x1c\n" +
-	"\x18IDENTITY_STATUS_DISABLED\x10\x032\xb6\n" +
-	"\n" +
-	"\x0fIdentityService\x12f\n" +
-	"\x0fRequestLoginOTP\x12(.ride.identity.v1.RequestLoginOTPRequest\x1a).ride.identity.v1.RequestLoginOTPResponse\x12c\n" +
-	"\x0eVerifyLoginOTP\x12'.ride.identity.v1.VerifyLoginOTPRequest\x1a(.ride.identity.v1.VerifyLoginOTPResponse\x12\x81\x01\n" +
-	"\x18RequestIdentifierLinkOTP\x121.ride.identity.v1.RequestIdentifierLinkOTPRequest\x1a2.ride.identity.v1.RequestIdentifierLinkOTPResponse\x12~\n" +
-	"\x17VerifyIdentifierLinkOTP\x120.ride.identity.v1.VerifyIdentifierLinkOTPRequest\x1a1.ride.identity.v1.VerifyIdentifierLinkOTPResponse\x12\x87\x01\n" +
-	"\x1aRequestIdentifierUnlinkOTP\x123.ride.identity.v1.RequestIdentifierUnlinkOTPRequest\x1a4.ride.identity.v1.RequestIdentifierUnlinkOTPResponse\x12\x84\x01\n" +
-	"\x19VerifyIdentifierUnlinkOTP\x122.ride.identity.v1.VerifyIdentifierUnlinkOTPRequest\x1a3.ride.identity.v1.VerifyIdentifierUnlinkOTPResponse\x12`\n" +
-	"\rGetMyIdentity\x12&.ride.identity.v1.GetMyIdentityRequest\x1a'.ride.identity.v1.GetMyIdentityResponse\x12c\n" +
-	"\x0eListMySessions\x12'.ride.identity.v1.ListMySessionsRequest\x1a(.ride.identity.v1.ListMySessionsResponse\x12`\n" +
-	"\rRevokeSession\x12&.ride.identity.v1.RevokeSessionRequest\x1a'.ride.identity.v1.RevokeSessionResponse\x12]\n" +
-	"\fRefreshToken\x12%.ride.identity.v1.RefreshTokenRequest\x1a&.ride.identity.v1.RefreshTokenResponse\x12K\n" +
-	"\x06Logout\x12\x1f.ride.identity.v1.LogoutRequest\x1a .ride.identity.v1.LogoutResponse\x12l\n" +
-	"\x11LogoutAllSessions\x12*.ride.identity.v1.LogoutAllSessionsRequest\x1a+.ride.identity.v1.LogoutAllSessionsResponseBDZBgithub.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1b\x06proto3"
+	"\x18IDENTITY_STATUS_DISABLED\x10\x032\xc7\r\n" +
+	"\x0fIdentityService\x12\x87\x01\n" +
+	"\x0fRequestLoginOTP\x12(.ride.identity.v1.RequestLoginOTPRequest\x1a).ride.identity.v1.RequestLoginOTPResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/v1/auth/otp:request\x12\x83\x01\n" +
+	"\x0eVerifyLoginOTP\x12'.ride.identity.v1.VerifyLoginOTPRequest\x1a(.ride.identity.v1.VerifyLoginOTPResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/auth/otp:verify\x12\xa9\x01\n" +
+	"\x18RequestIdentifierLinkOTP\x121.ride.identity.v1.RequestIdentifierLinkOTPRequest\x1a2.ride.identity.v1.RequestIdentifierLinkOTPResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/me/identifiers/link-otp\x12\xa2\x01\n" +
+	"\x17VerifyIdentifierLinkOTP\x120.ride.identity.v1.VerifyIdentifierLinkOTPRequest\x1a1.ride.identity.v1.VerifyIdentifierLinkOTPResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/v1/me/identifiers/link\x12\xb1\x01\n" +
+	"\x1aRequestIdentifierUnlinkOTP\x123.ride.identity.v1.RequestIdentifierUnlinkOTPRequest\x1a4.ride.identity.v1.RequestIdentifierUnlinkOTPResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/me/identifiers/unlink-otp\x12\xaa\x01\n" +
+	"\x19VerifyIdentifierUnlinkOTP\x122.ride.identity.v1.VerifyIdentifierUnlinkOTPRequest\x1a3.ride.identity.v1.VerifyIdentifierUnlinkOTPResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/me/identifiers/unlink\x12p\n" +
+	"\rGetMyIdentity\x12&.ride.identity.v1.GetMyIdentityRequest\x1a'.ride.identity.v1.GetMyIdentityResponse\"\x0e\x82\xd3\xe4\x93\x02\b\x12\x06/v1/me\x12|\n" +
+	"\x0eListMySessions\x12'.ride.identity.v1.ListMySessionsRequest\x1a(.ride.identity.v1.ListMySessionsResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/me/sessions\x12\x86\x01\n" +
+	"\rRevokeSession\x12&.ride.identity.v1.RevokeSessionRequest\x1a'.ride.identity.v1.RevokeSessionResponse\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/v1/me/sessions/{session_id}\x12\x80\x01\n" +
+	"\fRefreshToken\x12%.ride.identity.v1.RefreshTokenRequest\x1a&.ride.identity.v1.RefreshTokenResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/auth/token:refresh\x12g\n" +
+	"\x06Logout\x12\x1f.ride.identity.v1.LogoutRequest\x1a .ride.identity.v1.LogoutResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v1/auth/logout\x12\x8c\x01\n" +
+	"\x11LogoutAllSessions\x12*.ride.identity.v1.LogoutAllSessionsRequest\x1a+.ride.identity.v1.LogoutAllSessionsResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/auth/logout-allBDZBgithub.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1b\x06proto3"
 
 var (
 	file_ride_identity_v1_identity_proto_rawDescOnce sync.Once

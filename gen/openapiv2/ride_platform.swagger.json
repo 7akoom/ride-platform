@@ -221,6 +221,171 @@
         ]
       }
     },
+    "/v1/auth/logout": {
+      "post": {
+        "summary": "Logout ends the session of the refresh token in the body. Public: that token is the credential.",
+        "operationId": "IdentityService_Logout",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LogoutResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1LogoutRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IdentityService"
+        ]
+      }
+    },
+    "/v1/auth/logout-all": {
+      "post": {
+        "summary": "LogoutAllSessions ends every session of the identity the refresh token belongs to. Public.",
+        "operationId": "IdentityService_LogoutAllSessions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LogoutAllSessionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1LogoutAllSessionsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IdentityService"
+        ]
+      }
+    },
+    "/v1/auth/otp:request": {
+      "post": {
+        "summary": "RequestLoginOTP sends a one-time code to a phone number or email. Public: no token.",
+        "operationId": "IdentityService_RequestLoginOTP",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RequestLoginOTPResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RequestLoginOTPRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IdentityService"
+        ]
+      }
+    },
+    "/v1/auth/otp:verify": {
+      "post": {
+        "summary": "VerifyLoginOTP exchanges the code for an access token and a refresh token. Public: no token.",
+        "operationId": "IdentityService_VerifyLoginOTP",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VerifyLoginOTPResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1VerifyLoginOTPRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IdentityService"
+        ]
+      }
+    },
+    "/v1/auth/token:refresh": {
+      "post": {
+        "summary": "RefreshToken rotates the token pair. Public: the refresh token in the body is the credential.",
+        "operationId": "IdentityService_RefreshToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RefreshTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RefreshTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IdentityService"
+        ]
+      }
+    },
     "/v1/devices": {
       "post": {
         "summary": "RegisterDevice registers a push token for the caller's own rider or driver profile.",
@@ -669,6 +834,215 @@
         ],
         "tags": [
           "LocationService"
+        ]
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "summary": "GetMyIdentity returns the caller's identity id, status and verified identifiers.",
+        "operationId": "IdentityService_GetMyIdentity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetMyIdentityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "IdentityService"
+        ]
+      }
+    },
+    "/v1/me/identifiers/link": {
+      "post": {
+        "summary": "VerifyIdentifierLinkOTP completes linking with the code.",
+        "operationId": "IdentityService_VerifyIdentifierLinkOTP",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VerifyIdentifierLinkOTPResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1VerifyIdentifierLinkOTPRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IdentityService"
+        ]
+      }
+    },
+    "/v1/me/identifiers/link-otp": {
+      "post": {
+        "summary": "RequestIdentifierLinkOTP starts linking a phone or email to the caller's identity.",
+        "operationId": "IdentityService_RequestIdentifierLinkOTP",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RequestIdentifierLinkOTPResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RequestIdentifierLinkOTPRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IdentityService"
+        ]
+      }
+    },
+    "/v1/me/identifiers/unlink": {
+      "post": {
+        "summary": "VerifyIdentifierUnlinkOTP completes removing it with the code.",
+        "operationId": "IdentityService_VerifyIdentifierUnlinkOTP",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VerifyIdentifierUnlinkOTPResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1VerifyIdentifierUnlinkOTPRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IdentityService"
+        ]
+      }
+    },
+    "/v1/me/identifiers/unlink-otp": {
+      "post": {
+        "summary": "RequestIdentifierUnlinkOTP starts removing a phone or email from the caller's identity.",
+        "operationId": "IdentityService_RequestIdentifierUnlinkOTP",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RequestIdentifierUnlinkOTPResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RequestIdentifierUnlinkOTPRequest"
+            }
+          }
+        ],
+        "tags": [
+          "IdentityService"
+        ]
+      }
+    },
+    "/v1/me/sessions": {
+      "get": {
+        "summary": "ListMySessions lists the caller's sessions (device, address, last seen).",
+        "operationId": "IdentityService_ListMySessions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListMySessionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "IdentityService"
+        ]
+      }
+    },
+    "/v1/me/sessions/{sessionId}": {
+      "delete": {
+        "summary": "RevokeSession ends one of the caller's sessions.",
+        "operationId": "IdentityService_RevokeSession",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RevokeSessionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "IdentityService"
         ]
       }
     },
@@ -1994,6 +2368,24 @@
         }
       }
     },
+    "v1GetMyIdentityResponse": {
+      "type": "object",
+      "properties": {
+        "identityId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1IdentityStatus"
+        },
+        "identifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1VerifiedIdentifier"
+          }
+        }
+      }
+    },
     "v1GetRetentionResponse": {
       "type": "object",
       "properties": {
@@ -2079,6 +2471,36 @@
         }
       }
     },
+    "v1Identifier": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/v1IdentifierType"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "v1IdentifierType": {
+      "type": "string",
+      "enum": [
+        "IDENTIFIER_TYPE_UNSPECIFIED",
+        "IDENTIFIER_TYPE_PHONE",
+        "IDENTIFIER_TYPE_EMAIL"
+      ],
+      "default": "IDENTIFIER_TYPE_UNSPECIFIED"
+    },
+    "v1IdentityStatus": {
+      "type": "string",
+      "enum": [
+        "IDENTITY_STATUS_UNSPECIFIED",
+        "IDENTITY_STATUS_ACTIVE",
+        "IDENTITY_STATUS_SUSPENDED",
+        "IDENTITY_STATUS_DISABLED"
+      ],
+      "default": "IDENTITY_STATUS_UNSPECIFIED"
+    },
     "v1InitiateTopUpRequest": {
       "type": "object",
       "properties": {
@@ -2103,6 +2525,18 @@
         },
         "redirectUrl": {
           "type": "string"
+        }
+      }
+    },
+    "v1ListMySessionsResponse": {
+      "type": "object",
+      "properties": {
+        "sessions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Session"
+          }
         }
       }
     },
@@ -2145,6 +2579,28 @@
           }
         }
       }
+    },
+    "v1LogoutAllSessionsRequest": {
+      "type": "object",
+      "properties": {
+        "refreshToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1LogoutAllSessionsResponse": {
+      "type": "object"
+    },
+    "v1LogoutRequest": {
+      "type": "object",
+      "properties": {
+        "refreshToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1LogoutResponse": {
+      "type": "object"
     },
     "v1MarkAsReadRequest": {
       "type": "object",
@@ -2212,6 +2668,17 @@
         }
       }
     },
+    "v1OTPDeliveryChannel": {
+      "type": "string",
+      "enum": [
+        "OTP_DELIVERY_CHANNEL_UNSPECIFIED",
+        "OTP_DELIVERY_CHANNEL_AUTO",
+        "OTP_DELIVERY_CHANNEL_SMS",
+        "OTP_DELIVERY_CHANNEL_WHATSAPP",
+        "OTP_DELIVERY_CHANNEL_EMAIL"
+      ],
+      "default": "OTP_DELIVERY_CHANNEL_UNSPECIFIED"
+    },
     "v1OwnerType": {
       "type": "string",
       "enum": [
@@ -2256,6 +2723,32 @@
       "type": "object",
       "description": "Empty on purpose: a throttled-away duplicate and a freshly recorded\npoint both succeed identically — the caller doesn't need to\ndistinguish them, so there's nothing worth returning either way."
     },
+    "v1RefreshTokenRequest": {
+      "type": "object",
+      "properties": {
+        "refreshToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1RefreshTokenResponse": {
+      "type": "object",
+      "properties": {
+        "identityId": {
+          "type": "string"
+        },
+        "accessToken": {
+          "type": "string"
+        },
+        "refreshToken": {
+          "type": "string"
+        },
+        "accessTokenExpiresInSeconds": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "v1RegisterDeviceRequest": {
       "type": "object",
       "properties": {
@@ -2281,6 +2774,78 @@
       "properties": {
         "deviceId": {
           "type": "string"
+        }
+      }
+    },
+    "v1RequestIdentifierLinkOTPRequest": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "$ref": "#/definitions/v1Identifier"
+        },
+        "deliveryChannel": {
+          "$ref": "#/definitions/v1OTPDeliveryChannel"
+        }
+      }
+    },
+    "v1RequestIdentifierLinkOTPResponse": {
+      "type": "object",
+      "properties": {
+        "challengeId": {
+          "type": "string"
+        },
+        "expiresInSeconds": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1RequestIdentifierUnlinkOTPRequest": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "$ref": "#/definitions/v1Identifier"
+        },
+        "deliveryChannel": {
+          "$ref": "#/definitions/v1OTPDeliveryChannel"
+        }
+      }
+    },
+    "v1RequestIdentifierUnlinkOTPResponse": {
+      "type": "object",
+      "properties": {
+        "challengeId": {
+          "type": "string"
+        },
+        "expiresInSeconds": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1RequestLoginOTPRequest": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "$ref": "#/definitions/v1Identifier"
+        },
+        "tenantHint": {
+          "type": "string"
+        },
+        "deliveryChannel": {
+          "$ref": "#/definitions/v1OTPDeliveryChannel"
+        }
+      }
+    },
+    "v1RequestLoginOTPResponse": {
+      "type": "object",
+      "properties": {
+        "challengeId": {
+          "type": "string"
+        },
+        "expiresInSeconds": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -2368,6 +2933,9 @@
         }
       }
     },
+    "v1RevokeSessionResponse": {
+      "type": "object"
+    },
     "v1Rider": {
       "type": "object",
       "properties": {
@@ -2409,6 +2977,50 @@
         "RIDER_STATUS_SUSPENDED"
       ],
       "default": "RIDER_STATUS_UNSPECIFIED"
+    },
+    "v1Session": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        },
+        "clientId": {
+          "type": "string"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "deviceName": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "appVersion": {
+          "type": "string"
+        },
+        "ipAddress": {
+          "type": "string"
+        },
+        "userAgent": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastSeenAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "isCurrent": {
+          "type": "boolean"
+        }
+      }
     },
     "v1SosTriggeredBy": {
       "type": "string",
@@ -2637,6 +3249,93 @@
         "vehicleClass": {
           "type": "string",
           "title": "economy or comfort"
+        }
+      }
+    },
+    "v1VerifiedIdentifier": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/v1IdentifierType"
+        },
+        "value": {
+          "type": "string"
+        },
+        "verifiedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1VerifyIdentifierLinkOTPRequest": {
+      "type": "object",
+      "properties": {
+        "challengeId": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        }
+      }
+    },
+    "v1VerifyIdentifierLinkOTPResponse": {
+      "type": "object"
+    },
+    "v1VerifyIdentifierUnlinkOTPRequest": {
+      "type": "object",
+      "properties": {
+        "challengeId": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        }
+      }
+    },
+    "v1VerifyIdentifierUnlinkOTPResponse": {
+      "type": "object"
+    },
+    "v1VerifyLoginOTPRequest": {
+      "type": "object",
+      "properties": {
+        "challengeId": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "clientId": {
+          "type": "string"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "deviceName": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "appVersion": {
+          "type": "string"
+        }
+      }
+    },
+    "v1VerifyLoginOTPResponse": {
+      "type": "object",
+      "properties": {
+        "identityId": {
+          "type": "string"
+        },
+        "accessToken": {
+          "type": "string"
+        },
+        "refreshToken": {
+          "type": "string"
+        },
+        "accessTokenExpiresInSeconds": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

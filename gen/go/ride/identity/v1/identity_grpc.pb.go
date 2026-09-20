@@ -37,17 +37,29 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type IdentityServiceClient interface {
+	// RequestLoginOTP sends a one-time code to a phone number or email. Public: no token.
 	RequestLoginOTP(ctx context.Context, in *RequestLoginOTPRequest, opts ...grpc.CallOption) (*RequestLoginOTPResponse, error)
+	// VerifyLoginOTP exchanges the code for an access token and a refresh token. Public: no token.
 	VerifyLoginOTP(ctx context.Context, in *VerifyLoginOTPRequest, opts ...grpc.CallOption) (*VerifyLoginOTPResponse, error)
+	// RequestIdentifierLinkOTP starts linking a phone or email to the caller's identity.
 	RequestIdentifierLinkOTP(ctx context.Context, in *RequestIdentifierLinkOTPRequest, opts ...grpc.CallOption) (*RequestIdentifierLinkOTPResponse, error)
+	// VerifyIdentifierLinkOTP completes linking with the code.
 	VerifyIdentifierLinkOTP(ctx context.Context, in *VerifyIdentifierLinkOTPRequest, opts ...grpc.CallOption) (*VerifyIdentifierLinkOTPResponse, error)
+	// RequestIdentifierUnlinkOTP starts removing a phone or email from the caller's identity.
 	RequestIdentifierUnlinkOTP(ctx context.Context, in *RequestIdentifierUnlinkOTPRequest, opts ...grpc.CallOption) (*RequestIdentifierUnlinkOTPResponse, error)
+	// VerifyIdentifierUnlinkOTP completes removing it with the code.
 	VerifyIdentifierUnlinkOTP(ctx context.Context, in *VerifyIdentifierUnlinkOTPRequest, opts ...grpc.CallOption) (*VerifyIdentifierUnlinkOTPResponse, error)
+	// GetMyIdentity returns the caller's identity id, status and verified identifiers.
 	GetMyIdentity(ctx context.Context, in *GetMyIdentityRequest, opts ...grpc.CallOption) (*GetMyIdentityResponse, error)
+	// ListMySessions lists the caller's sessions (device, address, last seen).
 	ListMySessions(ctx context.Context, in *ListMySessionsRequest, opts ...grpc.CallOption) (*ListMySessionsResponse, error)
+	// RevokeSession ends one of the caller's sessions.
 	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*RevokeSessionResponse, error)
+	// RefreshToken rotates the token pair. Public: the refresh token in the body is the credential.
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
+	// Logout ends the session of the refresh token in the body. Public: that token is the credential.
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
+	// LogoutAllSessions ends every session of the identity the refresh token belongs to. Public.
 	LogoutAllSessions(ctx context.Context, in *LogoutAllSessionsRequest, opts ...grpc.CallOption) (*LogoutAllSessionsResponse, error)
 }
 
@@ -183,17 +195,29 @@ func (c *identityServiceClient) LogoutAllSessions(ctx context.Context, in *Logou
 // All implementations must embed UnimplementedIdentityServiceServer
 // for forward compatibility.
 type IdentityServiceServer interface {
+	// RequestLoginOTP sends a one-time code to a phone number or email. Public: no token.
 	RequestLoginOTP(context.Context, *RequestLoginOTPRequest) (*RequestLoginOTPResponse, error)
+	// VerifyLoginOTP exchanges the code for an access token and a refresh token. Public: no token.
 	VerifyLoginOTP(context.Context, *VerifyLoginOTPRequest) (*VerifyLoginOTPResponse, error)
+	// RequestIdentifierLinkOTP starts linking a phone or email to the caller's identity.
 	RequestIdentifierLinkOTP(context.Context, *RequestIdentifierLinkOTPRequest) (*RequestIdentifierLinkOTPResponse, error)
+	// VerifyIdentifierLinkOTP completes linking with the code.
 	VerifyIdentifierLinkOTP(context.Context, *VerifyIdentifierLinkOTPRequest) (*VerifyIdentifierLinkOTPResponse, error)
+	// RequestIdentifierUnlinkOTP starts removing a phone or email from the caller's identity.
 	RequestIdentifierUnlinkOTP(context.Context, *RequestIdentifierUnlinkOTPRequest) (*RequestIdentifierUnlinkOTPResponse, error)
+	// VerifyIdentifierUnlinkOTP completes removing it with the code.
 	VerifyIdentifierUnlinkOTP(context.Context, *VerifyIdentifierUnlinkOTPRequest) (*VerifyIdentifierUnlinkOTPResponse, error)
+	// GetMyIdentity returns the caller's identity id, status and verified identifiers.
 	GetMyIdentity(context.Context, *GetMyIdentityRequest) (*GetMyIdentityResponse, error)
+	// ListMySessions lists the caller's sessions (device, address, last seen).
 	ListMySessions(context.Context, *ListMySessionsRequest) (*ListMySessionsResponse, error)
+	// RevokeSession ends one of the caller's sessions.
 	RevokeSession(context.Context, *RevokeSessionRequest) (*RevokeSessionResponse, error)
+	// RefreshToken rotates the token pair. Public: the refresh token in the body is the credential.
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
+	// Logout ends the session of the refresh token in the body. Public: that token is the credential.
 	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
+	// LogoutAllSessions ends every session of the identity the refresh token belongs to. Public.
 	LogoutAllSessions(context.Context, *LogoutAllSessionsRequest) (*LogoutAllSessionsResponse, error)
 	mustEmbedUnimplementedIdentityServiceServer()
 }

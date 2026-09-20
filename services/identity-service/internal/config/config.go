@@ -77,6 +77,8 @@ type Config struct {
 	OTPRequestSourceWindow      string
 	OTPRequestSourceMaxRequests string
 
+	TrustedProxyCIDRs string
+
 	AccessTokenPrivateKeyPath   string
 	AccessTokenPublicKeyPath    string
 	AccessTokenVerificationKeys string
@@ -324,6 +326,8 @@ func Load() Config {
 		OTPRequestMaxRequests:       getEnv("OTP_REQUEST_MAX_REQUESTS", "5"),
 		OTPRequestSourceWindow:      getEnv("OTP_REQUEST_SOURCE_WINDOW", "10m"),
 		OTPRequestSourceMaxRequests: getEnv("OTP_REQUEST_SOURCE_MAX_REQUESTS", "30"),
+
+		TrustedProxyCIDRs: getEnv("TRUSTED_PROXY_CIDRS", ""),
 
 		AccessTokenPrivateKeyPath: getEnv(
 			"ACCESS_TOKEN_PRIVATE_KEY_PATH",

@@ -27,6 +27,34 @@ coupons, zone changes, dispatch, analytics...).
 
 ## Routes
 
+### Login and sessions (identity)
+
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| POST | `/v1/auth/otp:request` | public | `identifier` (phone or email), optional `deliveryChannel`; returns `challengeId` |
+| POST | `/v1/auth/otp:verify` | public | `challengeId`, `code`, and the device (`clientId`, `deviceId`, `deviceName`, `platform`, `appVersion`); returns the tokens |
+| POST | `/v1/auth/token:refresh` | public | the refresh token in the body is the credential; returns a new pair |
+| POST | `/v1/auth/logout` | public | the refresh token in the body ends that session |
+| POST | `/v1/auth/logout-all` | public | ends every session of the identity |
+| GET | `/v1/me` | the user | identity id, status, verified identifiers |
+| GET | `/v1/me/sessions` | the user | device, address, last seen; `isCurrent` marks this one |
+| DELETE | `/v1/me/sessions/{sessionId}` | the user | |
+| POST | `/v1/me/identifiers/link-otp` | the user | start linking a phone or email |
+| POST | `/v1/me/identifiers/link` | the user | finish linking with the code |
+| POST | `/v1/me/identifiers/unlink-otp` | the user | start unlinking |
+| POST | `/v1/me/identifiers/unlink` | the user | finish unlinking with the code |
+
+The public routes need no `Authorization` header. Send the user's language in
+`Accept-Language` (`ar`, `ku` or `en`): it picks the language of the OTP message.
+The user's address and device are recorded from the request itself.
+
+**Deployment:** identity only trusts the forwarded address, device and language
+when the connection comes from a network listed in `TRUSTED_PROXY_CIDRS` (the
+gateway, and any proxy in front of it). The proxy in front of the gateway must
+append the client's address to `X-Forwarded-For`; for nginx:
+`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`. Without it the
+per-source OTP limit counts every user as one source.
+
 ### Trips (rider and driver)
 
 | Method | Path | Who | Notes |
@@ -99,6 +127,5 @@ Top-ups of a rider's wallet and trip settlement are internal: no route.
 
 ## Not exposed yet
 
-Login and sessions (identity), the
-trip list and "my active trip", driver offers (accept or reject with a timeout),
+The trip list and "my active trip", driver offers (accept or reject with a timeout),
 ratings, admin and analytics (needs staff roles).

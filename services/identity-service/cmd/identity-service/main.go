@@ -580,9 +580,17 @@ func run() int {
 		),
 	)
 
+	trustedProxies, err := config.ParseTrustedProxies(cfg)
+	if err != nil {
+		logger.Error("invalid trusted proxy configuration", "error", err)
+
+		return 1
+	}
+
 	server := grpcserver.NewServer(
 		cfg.GRPCAddress,
 		logger,
+		grpcserver.NewClientContextUnaryInterceptor(trustedProxies),
 		grpcserver.NewRequestSourceUnaryInterceptor(),
 		grpcserver.NewAuthenticationUnaryInterceptor(
 			func(

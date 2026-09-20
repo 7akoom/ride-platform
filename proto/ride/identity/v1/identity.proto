@@ -2,23 +2,93 @@ syntax = "proto3";
 
 package ride.identity.v1;
 
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1";
 
 service IdentityService {
-  rpc RequestLoginOTP(RequestLoginOTPRequest) returns (RequestLoginOTPResponse);
-  rpc VerifyLoginOTP(VerifyLoginOTPRequest) returns (VerifyLoginOTPResponse);
+  // RequestLoginOTP sends a one-time code to a phone number or email. Public: no token.
+  rpc RequestLoginOTP(RequestLoginOTPRequest) returns (RequestLoginOTPResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/otp:request"
+      body: "*"
+    };
+  }
+  // VerifyLoginOTP exchanges the code for an access token and a refresh token. Public: no token.
+  rpc VerifyLoginOTP(VerifyLoginOTPRequest) returns (VerifyLoginOTPResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/otp:verify"
+      body: "*"
+    };
+  }
 
-  rpc RequestIdentifierLinkOTP(RequestIdentifierLinkOTPRequest) returns (RequestIdentifierLinkOTPResponse);
-  rpc VerifyIdentifierLinkOTP(VerifyIdentifierLinkOTPRequest) returns (VerifyIdentifierLinkOTPResponse);
-  rpc RequestIdentifierUnlinkOTP(RequestIdentifierUnlinkOTPRequest) returns (RequestIdentifierUnlinkOTPResponse);
-  rpc VerifyIdentifierUnlinkOTP(VerifyIdentifierUnlinkOTPRequest) returns (VerifyIdentifierUnlinkOTPResponse);
-  rpc GetMyIdentity(GetMyIdentityRequest) returns (GetMyIdentityResponse);
-  rpc ListMySessions(ListMySessionsRequest) returns (ListMySessionsResponse);
-  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
-  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
-  rpc Logout(LogoutRequest) returns (LogoutResponse);
-  rpc LogoutAllSessions(LogoutAllSessionsRequest) returns (LogoutAllSessionsResponse);
+  // RequestIdentifierLinkOTP starts linking a phone or email to the caller's identity.
+  rpc RequestIdentifierLinkOTP(RequestIdentifierLinkOTPRequest) returns (RequestIdentifierLinkOTPResponse) {
+    option (google.api.http) = {
+      post: "/v1/me/identifiers/link-otp"
+      body: "*"
+    };
+  }
+  // VerifyIdentifierLinkOTP completes linking with the code.
+  rpc VerifyIdentifierLinkOTP(VerifyIdentifierLinkOTPRequest) returns (VerifyIdentifierLinkOTPResponse) {
+    option (google.api.http) = {
+      post: "/v1/me/identifiers/link"
+      body: "*"
+    };
+  }
+  // RequestIdentifierUnlinkOTP starts removing a phone or email from the caller's identity.
+  rpc RequestIdentifierUnlinkOTP(RequestIdentifierUnlinkOTPRequest) returns (RequestIdentifierUnlinkOTPResponse) {
+    option (google.api.http) = {
+      post: "/v1/me/identifiers/unlink-otp"
+      body: "*"
+    };
+  }
+  // VerifyIdentifierUnlinkOTP completes removing it with the code.
+  rpc VerifyIdentifierUnlinkOTP(VerifyIdentifierUnlinkOTPRequest) returns (VerifyIdentifierUnlinkOTPResponse) {
+    option (google.api.http) = {
+      post: "/v1/me/identifiers/unlink"
+      body: "*"
+    };
+  }
+  // GetMyIdentity returns the caller's identity id, status and verified identifiers.
+  rpc GetMyIdentity(GetMyIdentityRequest) returns (GetMyIdentityResponse) {
+    option (google.api.http) = {
+      get: "/v1/me"
+    };
+  }
+  // ListMySessions lists the caller's sessions (device, address, last seen).
+  rpc ListMySessions(ListMySessionsRequest) returns (ListMySessionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/me/sessions"
+    };
+  }
+  // RevokeSession ends one of the caller's sessions.
+  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse) {
+    option (google.api.http) = {
+      delete: "/v1/me/sessions/{session_id}"
+    };
+  }
+  // RefreshToken rotates the token pair. Public: the refresh token in the body is the credential.
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/token:refresh"
+      body: "*"
+    };
+  }
+  // Logout ends the session of the refresh token in the body. Public: that token is the credential.
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/logout"
+      body: "*"
+    };
+  }
+  // LogoutAllSessions ends every session of the identity the refresh token belongs to. Public.
+  rpc LogoutAllSessions(LogoutAllSessionsRequest) returns (LogoutAllSessionsResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/logout-all"
+      body: "*"
+    };
+  }
 }
 
 enum IdentifierType {
