@@ -31,9 +31,18 @@ WORKDIR /src/services/${SERVICE_NAME}
 ENV GOWORK=off
 ENV CGO_ENABLED=0
 
-RUN go mod edit -replace github.com/7akoom/ride-platform/gen/go=../../gen/go \
-	&& go mod download \
-	&& go build -trimpath -ldflags="-s -w" -o /out/service "./cmd/${SERVICE_NAME}"
+# Two BuildKit cache mounts keep the downloaded modules (/go/pkg/mod) and the
+# compiled packages (the Go build cache) between builds. Without them every
+# build downloads every module and recompiles grpc, protobuf, pgx, nats...
+# from scratch, even for a one-line change. Both caches are shared by every
+# service built on this machine, so a dependency compiled for one service is
+# reused by the others. They live outside the image: nothing from them ends up
+# in the final layers.
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go mod edit -replace github.com/7akoom/ride-platform/gen/go=../../gen/go \
+        && go mod download \
+        && go build -trimpath -ldflags="-s -w" -o /out/service "./cmd/${SERVICE_NAME}"
 
 # Minimal, non-root runtime image. No shell, no package manager, no
 # migrations — migrations are applied separately with goose against
@@ -44,5 +53,13 @@ FROM gcr.io/distroless/static-debian12:nonroot AS runtime
 WORKDIR /app
 COPY --from=build /out/service ./service
 USER nonroot:nonroot
+
+# The image defaults to production. identity-service reads APP_ENV; every other
+# service reads ENVIRONMENT, and refuses to start outside ENVIRONMENT=development
+# while its internal service token is still the published placeholder (or too
+# short). Local development is unaffected: each service's .env sets
+# ENVIRONMENT=development, and an env_file overrides an image default.
 ENV APP_ENV=production
+ENV ENVIRONMENT=production
+
 ENTRYPOINT ["/app/service"]
