@@ -9,6 +9,7 @@ import (
 	"time"
 
 	outboxapp "github.com/7akoom/ride-platform/services/rider-service/internal/application/outbox"
+	"github.com/7akoom/ride-platform/services/rider-service/internal/application/ratings"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/application/rider"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/config"
 	clockinfra "github.com/7akoom/ride-platform/services/rider-service/internal/infrastructure/clock"
@@ -144,6 +145,19 @@ func run() int {
 
 	riderService := rider.NewService(riderRepository, idGenerator)
 	riderHandler := grpcserver.NewRiderHandler(riderService, logger)
+
+	ratingSubscription, err := subscribeTripRatings(
+		ctx,
+		natsConnection.JetStream(),
+		ratings.NewHandler(riderRepository, ratings.RatedByDriver, logger),
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to trip.rated events", "error", err)
+
+		return 1
+	}
+	defer ratingSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

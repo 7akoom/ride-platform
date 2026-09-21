@@ -10,6 +10,7 @@ import (
 
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
 	outboxapp "github.com/7akoom/ride-platform/services/driver-service/internal/application/outbox"
+	"github.com/7akoom/ride-platform/services/driver-service/internal/application/ratings"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/config"
 	clockinfra "github.com/7akoom/ride-platform/services/driver-service/internal/infrastructure/clock"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/infrastructure/database"
@@ -144,6 +145,19 @@ func run() int {
 
 	driverService := driver.NewService(driverRepository, idGenerator)
 	driverHandler := grpcserver.NewDriverHandler(driverService, logger)
+
+	ratingSubscription, err := subscribeTripRatings(
+		ctx,
+		natsConnection.JetStream(),
+		ratings.NewHandler(driverRepository, ratings.RatedByRider, logger),
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to trip.rated events", "error", err)
+
+		return 1
+	}
+	defer ratingSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,
