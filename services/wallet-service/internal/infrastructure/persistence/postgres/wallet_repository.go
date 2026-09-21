@@ -225,28 +225,78 @@ func (r *WalletRepository) SettleTrip(
 		return wallet.Settlement{}, err
 	}
 
+	// walletAmount is what moved through wallets, cashAmount is what the rider
+	// handed to the driver. Both go into the trip.settled event.
+	zero := input.FareAmount.Sub(input.FareAmount)
+	walletAmount := zero
+	cashAmount := zero
+
 	switch input.PaymentMethod {
 	case wallet.PaymentWallet:
-		// Rider's balance pays the fare.
-		riderWallet, _, err = applyMovementTx(ctx, tx, riderWallet, wallet.MovementInput{
-			Type:        wallet.TxTripPayment,
-			Amount:      input.FareAmount.Neg(),
-			TripID:      input.TripID,
-			Description: "Trip fare",
-		})
-		if err != nil {
-			return wallet.Settlement{}, err
+		// The rider's wallet pays what it holds and the rest is cash in the
+		// driver's hand, so a wallet trip can never fail for lack of funds.
+		// The rider row is locked above, so the balance read here is the one
+		// the debit is applied to.
+		walletAmount, cashAmount = wallet.SplitWalletPayment(input.FareAmount, riderWallet.Balance)
+
+		if walletAmount.IsPositive() {
+			riderDescription := "Trip fare"
+			if cashAmount.IsPositive() {
+				riderDescription = "Trip fare (part paid from the wallet, the rest in cash)"
+			}
+
+			riderWallet, _, err = applyMovementTx(ctx, tx, riderWallet, wallet.MovementInput{
+				Type:        wallet.TxTripPayment,
+				Amount:      walletAmount.Neg(),
+				TripID:      input.TripID,
+				Description: riderDescription,
+			})
+			if err != nil {
+				return wallet.Settlement{}, err
+			}
 		}
 
-		driverWallet, _, err = applyMovementTx(ctx, tx, driverWallet, wallet.MovementInput{
-			Type:            wallet.TxTripEarning,
-			Amount:          input.DriverEarning,
-			TripID:          input.TripID,
-			Description:     "Trip earning (after commission)",
-			SuspensionFloor: &input.SuspensionFloor,
-		})
-		if err != nil {
-			return wallet.Settlement{}, err
+		// The platform holds the wallet part, the driver holds the cash part,
+		// and the driver is entitled to the fare minus the commission: so the
+		// platform owes the driver (wallet part - commission). A credit when
+		// the wallet part is larger, a debit when it is smaller.
+		movement := wallet.DriverSettlementAmount(walletAmount, input.CommissionAmount)
+
+		switch {
+		case movement.IsPositive():
+			earningDescription := "Trip earning (after commission)"
+			if cashAmount.IsPositive() {
+				earningDescription = "Trip earning (wallet part, after commission)"
+			}
+
+			driverWallet, _, err = applyMovementTx(ctx, tx, driverWallet, wallet.MovementInput{
+				Type:            wallet.TxTripEarning,
+				Amount:          movement,
+				TripID:          input.TripID,
+				Description:     earningDescription,
+				SuspensionFloor: &input.SuspensionFloor,
+			})
+			if err != nil {
+				return wallet.Settlement{}, err
+			}
+
+		case movement.IsNegative():
+			commissionDescription := "Platform commission on cash trip"
+			if walletAmount.IsPositive() {
+				commissionDescription = "Platform commission on a trip paid partly in cash"
+			}
+
+			driverWallet, _, err = applyMovementTx(ctx, tx, driverWallet, wallet.MovementInput{
+				Type:            wallet.TxCommission,
+				Amount:          movement,
+				TripID:          input.TripID,
+				Description:     commissionDescription,
+				AllowNegative:   true,
+				SuspensionFloor: &input.SuspensionFloor,
+			})
+			if err != nil {
+				return wallet.Settlement{}, err
+			}
 		}
 
 	case wallet.PaymentCard:
@@ -268,6 +318,8 @@ func (r *WalletRepository) SettleTrip(
 		// The driver already holds the entire fare, including the
 		// platform's commission — so the commission is debited from
 		// their digital balance, which is allowed to go negative.
+		cashAmount = input.FareAmount
+
 		driverWallet, _, err = applyMovementTx(ctx, tx, driverWallet, wallet.MovementInput{
 			Type:            wallet.TxCommission,
 			Amount:          input.CommissionAmount.Neg(),
@@ -315,6 +367,8 @@ func (r *WalletRepository) SettleTrip(
 		"fare_amount":       input.FareAmount.String(),
 		"commission_amount": input.CommissionAmount.String(),
 		"driver_earning":    input.DriverEarning.String(),
+		"wallet_amount":     walletAmount.String(),
+		"cash_amount":       cashAmount.String(),
 	})
 	if err != nil {
 		return wallet.Settlement{}, fmt.Errorf("marshal trip.settled payload: %w", err)
