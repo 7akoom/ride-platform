@@ -16,4 +16,8 @@ class AppConfig {
 
   /// Keep in step with `version:` in pubspec.yaml.
   static const String appVersion = '0.1.0';
+
+  /// The number the emergency button dials. Check it for the country of each deployment
+  /// before real riders use the app: a wrong number here is a safety problem.
+  static const String emergencyNumber = '104';
 }

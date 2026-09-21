@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The Flutter tool needs INTERNET to reach the running app (hot reload), and the
+         debug build talks to the backend on this computer over plain HTTP. Release builds
+         go to an https address and do not get this. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <application android:usesCleartextTraffic="true"/>
+</manifest>

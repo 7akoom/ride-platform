@@ -66,6 +66,14 @@ class RiderApi {
     }
   }
 
+  /// Changes the rider's name.
+  Future<void> rename({required String riderId, required String displayName}) async {
+    await _client.patch(
+      '/v1/riders/$riderId',
+      body: <String, dynamic>{'displayName': displayName},
+    );
+  }
+
   RiderProfile? _profileOf(Map<String, dynamic> json) {
     final rider = json['rider'];
 

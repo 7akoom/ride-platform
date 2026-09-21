@@ -12,12 +12,14 @@ import '../../core/models/place.dart';
 import '../../core/models/trip.dart';
 import '../../state/api_providers.dart';
 import '../../state/home_events.dart';
+import '../../state/lookups.dart';
 import '../../state/session_storage.dart';
 import '../../theme/app_theme.dart';
 import '../support/support_screen.dart';
 import '../wallet/wallet_home_screen.dart';
 import 'map_overlay.dart';
 import 'map_picker_screen.dart';
+import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'ride_history_screen.dart';
 import 'searching_driver_screen.dart';
@@ -484,6 +486,7 @@ class _AppDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(riderProfileProvider).valueOrNull;
+    final unread = ref.watch(notificationsProvider).valueOrNull?.unread ?? 0;
 
     return Drawer(
       backgroundColor: colors.surface200,
@@ -504,6 +507,7 @@ class _AppDrawer extends ConsumerWidget {
             Divider(color: colors.border, height: 1),
             ListTile(leading: Icon(Icons.history, color: colors.ink), title: Text('رحلاتي', style: textTheme.bodyLarge), onTap: () => _go(context, const RideHistoryScreen())),
             ListTile(leading: Icon(Icons.person_outline, color: colors.ink), title: Text('الملف الشخصي', style: textTheme.bodyLarge), onTap: () => _go(context, const ProfileScreen())),
+            ListTile(leading: Badge(label: Text('$unread'), isLabelVisible: unread > 0, child: Icon(Icons.notifications_outlined, color: colors.ink)), title: Text('الإشعارات', style: textTheme.bodyLarge), onTap: () => _go(context, const NotificationsScreen())),
             ListTile(leading: Icon(Icons.place_outlined, color: colors.ink), title: Text('عناويني المحفوظة', style: textTheme.bodyLarge), onTap: () => _soon(context)),
             ListTile(leading: Icon(Icons.account_balance_wallet_outlined, color: colors.ink), title: Text('المحفظة', style: textTheme.bodyLarge), onTap: () => _go(context, const WalletHomeScreen())),
             ListTile(leading: Icon(Icons.swap_horiz, color: colors.ink), title: Text('طلبات الدفع', style: textTheme.bodyLarge), onTap: () => _soon(context)),

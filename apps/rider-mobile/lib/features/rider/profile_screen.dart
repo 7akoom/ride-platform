@@ -1,12 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/api/api_exception.dart';
+import '../../core/api/api_messages.dart';
 import '../../state/api_providers.dart';
+import '../../state/session_storage.dart';
 import '../../theme/app_theme.dart';
 import '../support/support_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
+
+  Future<void> _rename(BuildContext context, WidgetRef ref, String current) async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => _RenameDialog(current: current),
+    );
+
+    if (name == null || name.length < 2 || name == current) return;
+
+    try {
+      final riderId = await SessionStorage.readRiderId();
+      if (riderId == null) return;
+
+      await ref.read(riderApiProvider).rename(riderId: riderId, displayName: name);
+      ref.invalidate(riderProfileProvider);
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ الاسم')));
+    } on ApiException catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(describeFailure(error, wrong: 'تعذر حفظ الاسم. تأكد منه وحاول مرة أخرى'))),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -66,7 +94,7 @@ class ProfileScreen extends ConsumerWidget {
           _MenuTile(
             icon: Icons.person_outline,
             label: 'تعديل الاسم',
-            onTap: () {},
+            onTap: () => _rename(context, ref, profile?.displayName ?? ''),
             colors: colors,
             textTheme: textTheme,
           ),
@@ -140,6 +168,54 @@ class _MenuTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The name dialog owns its text controller, so the controller lives exactly as long as the
+/// dialog's text field, including the moment the dialog is closing. (Disposing it from the
+/// screen that opened the dialog, the moment the dialog returns, breaks that field while it
+/// is still on screen.)
+class _RenameDialog extends StatefulWidget {
+  final String current;
+
+  const _RenameDialog({required this.current});
+
+  @override
+  State<_RenameDialog> createState() => _RenameDialogState();
+}
+
+class _RenameDialogState extends State<_RenameDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.current);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('تعديل الاسم'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: 60,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
+        decoration: const InputDecoration(hintText: 'الاسم الكامل'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('إلغاء'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          child: const Text('حفظ'),
+        ),
+      ],
     );
   }
 }

@@ -6,6 +6,7 @@ import '../core/api/api_exception.dart';
 import '../core/api/auth_api.dart';
 import '../core/api/maps_api.dart';
 import '../core/api/money_api.dart';
+import '../core/api/notifications_api.dart';
 import '../core/api/rider_api.dart';
 import '../core/api/trip_api.dart';
 import '../core/app_config.dart';
@@ -55,6 +56,10 @@ final Provider<MapsApi> mapsApiProvider = Provider<MapsApi>((ref) {
 
 final Provider<MoneyApi> moneyApiProvider = Provider<MoneyApi>((ref) {
   return MoneyApi(ref.watch(apiClientProvider));
+});
+
+final Provider<NotificationsApi> notificationsApiProvider = Provider<NotificationsApi>((ref) {
+  return NotificationsApi(ref.watch(apiClientProvider));
 });
 
 /// The signed-in rider's profile (null if there is none yet).

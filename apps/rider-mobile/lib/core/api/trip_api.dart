@@ -129,6 +129,18 @@ class TripApi {
     }
   }
 
+  /// Raises a safety alert for the trip: the operating company's safety team is told, with
+  /// the position given here.
+  Future<void> triggerSos({required String tripId, required GeoPoint location}) async {
+    await _client.post(
+      '/v1/trips/$tripId:sos',
+      body: <String, dynamic>{
+        'triggeredBy': 'SOS_TRIGGERED_BY_RIDER',
+        'location': location.toJson(),
+      },
+    );
+  }
+
   /// The rider's rating of the driver. Stars are 1 to 5.
   Future<void> rateDriver({
     required String tripId,

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api/api_exception.dart';
+import '../core/models/app_notification.dart';
 import '../core/models/fare.dart';
 import '../core/models/geo_point.dart';
 import '../core/models/trip.dart';
@@ -72,4 +73,14 @@ final walletTransactionsProvider = FutureProvider.autoDispose<List<WalletTx>>((r
   }
 
   return ref.read(moneyApiProvider).transactions(riderId);
+});
+
+/// The rider's inbox: the latest messages and how many are unread.
+final notificationsProvider = FutureProvider.autoDispose<({List<AppNotification> items, int unread})>((ref) async {
+  final riderId = await SessionStorage.readRiderId();
+  if (riderId == null) {
+    return (items: const <AppNotification>[], unread: 0);
+  }
+
+  return ref.read(notificationsApiProvider).inbox(riderId);
 });

@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/api_exception.dart';
+import '../../core/app_config.dart';
 import '../../core/format.dart';
 import '../../core/map_config.dart';
 import '../../core/models/geo_point.dart';
@@ -227,6 +229,70 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
     }
   }
 
+  /// The emergency button. It asks first (a tap by accident must not alert anyone), then
+  /// tells the safety team with the position the app has (the driver's, once known: the
+  /// rider is in the same car; the pickup before that) and offers to call the emergency
+  /// number.
+  Future<void> _sos() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('طلب مساعدة عاجلة'),
+        content: const Text('سنرسل تنبيهاً لفريق السلامة مع موقع رحلتك. استخدمه فقط إذا كنت بحاجة لمساعدة.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('إرسال التنبيه'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref.read(tripApiProvider).triggerSos(
+            tripId: _trip.id,
+            location: _driverPoint ?? _trip.pickup,
+          );
+    } on ApiException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر إرسال التنبيه. اتصل بالطوارئ ${AppConfig.emergencyNumber} مباشرة')),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+
+    final call = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('وصل تنبيهك'),
+        content: Text('أُبلغ فريق السلامة. هل تريد الاتصال بالطوارئ (${AppConfig.emergencyNumber}) الآن؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('لاحقاً'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('اتصل الآن'),
+          ),
+        ],
+      ),
+    );
+
+    if (call == true) {
+      await launchUrl(Uri(scheme: 'tel', path: AppConfig.emergencyNumber));
+    }
+  }
+
   void _share() {
     final label = widget.destinationLabel;
     final text = label.isEmpty ? 'أنا بالطريق برحلة عبر Ride Platform' : 'أنا بالطريق إلى $label برحلة عبر Ride Platform';
@@ -342,6 +408,15 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                       const SizedBox(height: AppSpacing.space5),
                       _StageStepper(stage: stage, colors: colors),
                       const SizedBox(height: AppSpacing.space4),
+                      OutlinedButton.icon(
+                        onPressed: _sos,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colors.danger,
+                          side: BorderSide(color: colors.danger),
+                        ),
+                        icon: const Icon(Icons.warning_amber_rounded, size: 18),
+                        label: const Text('طوارئ'),
+                      ),
                       TextButton.icon(
                         onPressed: _share,
                         style: TextButton.styleFrom(foregroundColor: colors.brand500),
