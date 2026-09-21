@@ -169,6 +169,7 @@ func run() int {
 	profileResolver := grpcserver.NewCachingResolver(clients.NewProfileResolver(riderConn, driverConn))
 
 	locationClient := clients.NewLocationClient(locationConn)
+	driverDirectory := clients.NewDriverDirectory(driverConn)
 
 	tripRepository := postgresrepo.NewTripRepository(pool)
 	idGenerator := identifier.NewUUIDGenerator()
@@ -176,7 +177,10 @@ func run() int {
 	tripService := trip.WithTripOffers(
 		trip.WithTripHistory(
 			trip.WithDriverTracking(
-				trip.NewService(tripRepository, idGenerator, locationClient),
+				trip.WithDriverProfile(
+					trip.NewService(tripRepository, idGenerator, locationClient),
+					driverDirectory,
+				),
 				locationClient,
 			),
 			tripRepository,

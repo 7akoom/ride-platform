@@ -29,6 +29,7 @@ const (
 	TripService_RecordWaypoint_FullMethodName    = "/ride.trip.v1.TripService/RecordWaypoint"
 	TripService_GetTripPath_FullMethodName       = "/ride.trip.v1.TripService/GetTripPath"
 	TripService_GetDriverLocation_FullMethodName = "/ride.trip.v1.TripService/GetDriverLocation"
+	TripService_GetTripDriver_FullMethodName     = "/ride.trip.v1.TripService/GetTripDriver"
 	TripService_GetActiveTrip_FullMethodName     = "/ride.trip.v1.TripService/GetActiveTrip"
 	TripService_ListTrips_FullMethodName         = "/ride.trip.v1.TripService/ListTrips"
 	TripService_OfferTrip_FullMethodName         = "/ride.trip.v1.TripService/OfferTrip"
@@ -78,6 +79,11 @@ type TripServiceClient interface {
 	// nothing else about the driver. NOT_FOUND means the driver has not reported
 	// recently (a live position expires after 30 seconds); the app keeps polling.
 	GetDriverLocation(ctx context.Context, in *GetDriverLocationRequest, opts ...grpc.CallOption) (*GetDriverLocationResponse, error)
+	// GetTripDriver is how the rider's app shows who is driving: the driver's name, car,
+	// plate and rating. Only the rider of the trip may ask, and only once a driver has
+	// accepted (FAILED_PRECONDITION before that). It has no phone number, no identity and
+	// nothing about the driver's account.
+	GetTripDriver(ctx context.Context, in *GetTripDriverRequest, opts ...grpc.CallOption) (*GetTripDriverResponse, error)
 	// GetActiveTrip is how an app finds the trip it should be showing: the caller's
 	// requested, accepted or in-progress trip, for example when the app is opened
 	// again after being closed. Name exactly one of rider_id and driver_id, and it
@@ -227,6 +233,16 @@ func (c *tripServiceClient) GetDriverLocation(ctx context.Context, in *GetDriver
 	return out, nil
 }
 
+func (c *tripServiceClient) GetTripDriver(ctx context.Context, in *GetTripDriverRequest, opts ...grpc.CallOption) (*GetTripDriverResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTripDriverResponse)
+	err := c.cc.Invoke(ctx, TripService_GetTripDriver_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tripServiceClient) GetActiveTrip(ctx context.Context, in *GetActiveTripRequest, opts ...grpc.CallOption) (*GetActiveTripResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetActiveTripResponse)
@@ -337,6 +353,11 @@ type TripServiceServer interface {
 	// nothing else about the driver. NOT_FOUND means the driver has not reported
 	// recently (a live position expires after 30 seconds); the app keeps polling.
 	GetDriverLocation(context.Context, *GetDriverLocationRequest) (*GetDriverLocationResponse, error)
+	// GetTripDriver is how the rider's app shows who is driving: the driver's name, car,
+	// plate and rating. Only the rider of the trip may ask, and only once a driver has
+	// accepted (FAILED_PRECONDITION before that). It has no phone number, no identity and
+	// nothing about the driver's account.
+	GetTripDriver(context.Context, *GetTripDriverRequest) (*GetTripDriverResponse, error)
 	// GetActiveTrip is how an app finds the trip it should be showing: the caller's
 	// requested, accepted or in-progress trip, for example when the app is opened
 	// again after being closed. Name exactly one of rider_id and driver_id, and it
@@ -415,6 +436,9 @@ func (UnimplementedTripServiceServer) GetTripPath(context.Context, *GetTripPathR
 }
 func (UnimplementedTripServiceServer) GetDriverLocation(context.Context, *GetDriverLocationRequest) (*GetDriverLocationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDriverLocation not implemented")
+}
+func (UnimplementedTripServiceServer) GetTripDriver(context.Context, *GetTripDriverRequest) (*GetTripDriverResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTripDriver not implemented")
 }
 func (UnimplementedTripServiceServer) GetActiveTrip(context.Context, *GetActiveTripRequest) (*GetActiveTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetActiveTrip not implemented")
@@ -638,6 +662,24 @@ func _TripService_GetDriverLocation_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_GetTripDriver_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTripDriverRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetTripDriver(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetTripDriver_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetTripDriver(ctx, req.(*GetTripDriverRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TripService_GetActiveTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetActiveTripRequest)
 	if err := dec(in); err != nil {
@@ -810,6 +852,10 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDriverLocation",
 			Handler:    _TripService_GetDriverLocation_Handler,
+		},
+		{
+			MethodName: "GetTripDriver",
+			Handler:    _TripService_GetTripDriver_Handler,
 		},
 		{
 			MethodName: "GetActiveTrip",

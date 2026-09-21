@@ -1565,6 +1565,37 @@
         ]
       }
     },
+    "/v1/trips/{tripId}/driver": {
+      "get": {
+        "summary": "GetTripDriver is how the rider's app shows who is driving: the driver's name, car,\nplate and rating. Only the rider of the trip may ask, and only once a driver has\naccepted (FAILED_PRECONDITION before that). It has no phone number, no identity and\nnothing about the driver's account.",
+        "operationId": "TripService_GetTripDriver",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTripDriverResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/trips/{tripId}/driver-location": {
       "get": {
         "summary": "GetDriverLocation is the Rider app's live-tracking poll target: where the\ndriver of this trip last reported being. Only the trip's rider may ask, and\nonly while the trip is ACCEPTED or IN_PROGRESS (FAILED_PRECONDITION\notherwise). It returns the position and when the driver reported it, and\nnothing else about the driver. NOT_FOUND means the driver has not reported\nrecently (a live position expires after 30 seconds); the app keeps polling.",
@@ -2996,6 +3027,14 @@
         }
       }
     },
+    "v1GetTripDriverResponse": {
+      "type": "object",
+      "properties": {
+        "driver": {
+          "$ref": "#/definitions/v1TripDriver"
+        }
+      }
+    },
     "v1GetTripFunnelResponse": {
       "type": "object",
       "properties": {
@@ -3892,6 +3931,25 @@
         }
       }
     },
+    "v1TripDriver": {
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string"
+        },
+        "vehicle": {
+          "$ref": "#/definitions/v1TripVehicle"
+        },
+        "ratingAverage": {
+          "type": "number",
+          "format": "double"
+        },
+        "ratingCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "v1TripOffer": {
       "type": "object",
       "properties": {
@@ -3933,6 +3991,26 @@
         "TRIP_STATUS_CANCELLED"
       ],
       "default": "TRIP_STATUS_UNSPECIFIED"
+    },
+    "v1TripVehicle": {
+      "type": "object",
+      "properties": {
+        "make": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "plateNumber": {
+          "type": "string"
+        },
+        "vehicleClass": {
+          "type": "string"
+        }
+      }
     },
     "v1UnregisterDeviceRequest": {
       "type": "object",

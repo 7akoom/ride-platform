@@ -26,6 +26,7 @@ var ownerChecks = map[string]ownerCheck{
 	tripRPCPrefix + "GetTrip":           participantOfTrip,
 	tripRPCPrefix + "GetTripPath":       participantOfTrip,
 	tripRPCPrefix + "GetDriverLocation": riderOfTrip,
+	tripRPCPrefix + "GetTripDriver":     riderOfTrip,
 	tripRPCPrefix + "GetActiveTrip":     ownerOfProfile,
 	tripRPCPrefix + "ListTrips":         ownerOfProfile,
 	tripRPCPrefix + "GetPendingOffer":   ownerOfDriverID,

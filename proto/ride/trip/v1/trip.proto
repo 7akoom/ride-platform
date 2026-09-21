@@ -93,6 +93,16 @@ service TripService {
     };
   }
 
+  // GetTripDriver is how the rider's app shows who is driving: the driver's name, car,
+  // plate and rating. Only the rider of the trip may ask, and only once a driver has
+  // accepted (FAILED_PRECONDITION before that). It has no phone number, no identity and
+  // nothing about the driver's account.
+  rpc GetTripDriver(GetTripDriverRequest) returns (GetTripDriverResponse) {
+    option (google.api.http) = {
+      get: "/v1/trips/{trip_id}/driver"
+    };
+  }
+
   // GetActiveTrip is how an app finds the trip it should be showing: the caller's
   // requested, accepted or in-progress trip, for example when the app is opened
   // again after being closed. Name exactly one of rider_id and driver_id, and it
@@ -413,3 +423,28 @@ message RateTripRequest {
 }
 
 message RateTripResponse {}
+
+// --- Rider view of the driver ---------------------------------------------
+
+message GetTripDriverRequest {
+  string trip_id = 1;
+}
+
+message GetTripDriverResponse {
+  TripDriver driver = 1;
+}
+
+message TripDriver {
+  string display_name = 1;
+  TripVehicle vehicle = 2;
+  double rating_average = 3;
+  int32 rating_count = 4;
+}
+
+message TripVehicle {
+  string make = 1;
+  string model = 2;
+  string color = 3;
+  string plate_number = 4;
+  string vehicle_class = 5;
+}
