@@ -272,6 +272,18 @@ func (h *TripHandler) mapTripError(err error) error {
 		errors.Is(err, trip.ErrInvalidPaymentMethod):
 		return status.Error(codes.InvalidArgument, err.Error())
 
+	case errors.Is(err, trip.ErrInvalidRatedBy),
+		errors.Is(err, trip.ErrInvalidStars),
+		errors.Is(err, trip.ErrRatingCommentTooLong):
+		return status.Error(codes.InvalidArgument, err.Error())
+
+	case errors.Is(err, trip.ErrTripNotRatable),
+		errors.Is(err, trip.ErrRatingWindowClosed):
+		return status.Error(codes.FailedPrecondition, err.Error())
+
+	case errors.Is(err, trip.ErrAlreadyRated):
+		return status.Error(codes.AlreadyExists, err.Error())
+
 	case errors.Is(err, trip.ErrPickupOutsideServiceZone):
 		return status.Error(codes.InvalidArgument, err.Error())
 

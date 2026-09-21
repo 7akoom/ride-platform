@@ -35,6 +35,7 @@ const (
 	TripService_GetPendingOffer_FullMethodName   = "/ride.trip.v1.TripService/GetPendingOffer"
 	TripService_AcceptOffer_FullMethodName       = "/ride.trip.v1.TripService/AcceptOffer"
 	TripService_RejectOffer_FullMethodName       = "/ride.trip.v1.TripService/RejectOffer"
+	TripService_RateTrip_FullMethodName          = "/ride.trip.v1.TripService/RateTrip"
 )
 
 // TripServiceClient is the client API for TripService service.
@@ -109,6 +110,13 @@ type TripServiceClient interface {
 	// RejectOffer declines the offer; the trip goes on to the next driver, and this
 	// driver is not offered it again. driver_id must be the caller's own profile.
 	RejectOffer(ctx context.Context, in *RejectOfferRequest, opts ...grpc.CallOption) (*RejectOfferResponse, error)
+	// RateTrip is how one side rates the other after a trip: the rider rates the driver and
+	// the driver rates the rider. rated_by names who is speaking and must be the caller's
+	// own side of that trip. Only a COMPLETED trip, within 24 hours of completing, once per
+	// side (ALREADY_EXISTS the second time, which an app can treat as done). Stars are whole
+	// numbers from 1 to 5; the comment is optional (500 characters at most) and is kept for
+	// the operating company only: the person rated never sees it.
+	RateTrip(ctx context.Context, in *RateTripRequest, opts ...grpc.CallOption) (*RateTripResponse, error)
 }
 
 type tripServiceClient struct {
@@ -279,6 +287,16 @@ func (c *tripServiceClient) RejectOffer(ctx context.Context, in *RejectOfferRequ
 	return out, nil
 }
 
+func (c *tripServiceClient) RateTrip(ctx context.Context, in *RateTripRequest, opts ...grpc.CallOption) (*RateTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RateTripResponse)
+	err := c.cc.Invoke(ctx, TripService_RateTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TripServiceServer is the server API for TripService service.
 // All implementations must embed UnimplementedTripServiceServer
 // for forward compatibility.
@@ -351,6 +369,13 @@ type TripServiceServer interface {
 	// RejectOffer declines the offer; the trip goes on to the next driver, and this
 	// driver is not offered it again. driver_id must be the caller's own profile.
 	RejectOffer(context.Context, *RejectOfferRequest) (*RejectOfferResponse, error)
+	// RateTrip is how one side rates the other after a trip: the rider rates the driver and
+	// the driver rates the rider. rated_by names who is speaking and must be the caller's
+	// own side of that trip. Only a COMPLETED trip, within 24 hours of completing, once per
+	// side (ALREADY_EXISTS the second time, which an app can treat as done). Stars are whole
+	// numbers from 1 to 5; the comment is optional (500 characters at most) and is kept for
+	// the operating company only: the person rated never sees it.
+	RateTrip(context.Context, *RateTripRequest) (*RateTripResponse, error)
 	mustEmbedUnimplementedTripServiceServer()
 }
 
@@ -408,6 +433,9 @@ func (UnimplementedTripServiceServer) AcceptOffer(context.Context, *AcceptOfferR
 }
 func (UnimplementedTripServiceServer) RejectOffer(context.Context, *RejectOfferRequest) (*RejectOfferResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RejectOffer not implemented")
+}
+func (UnimplementedTripServiceServer) RateTrip(context.Context, *RateTripRequest) (*RateTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RateTrip not implemented")
 }
 func (UnimplementedTripServiceServer) mustEmbedUnimplementedTripServiceServer() {}
 func (UnimplementedTripServiceServer) testEmbeddedByValue()                     {}
@@ -718,6 +746,24 @@ func _TripService_RejectOffer_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_RateTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RateTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).RateTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_RateTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).RateTrip(ctx, req.(*RateTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TripService_ServiceDesc is the grpc.ServiceDesc for TripService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -788,6 +834,10 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RejectOffer",
 			Handler:    _TripService_RejectOffer_Handler,
+		},
+		{
+			MethodName: "RateTrip",
+			Handler:    _TripService_RateTrip_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

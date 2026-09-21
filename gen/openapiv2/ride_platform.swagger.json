@@ -1772,6 +1772,45 @@
         ]
       }
     },
+    "/v1/trips/{tripId}:rate": {
+      "post": {
+        "summary": "RateTrip is how one side rates the other after a trip: the rider rates the driver and\nthe driver rates the rider. rated_by names who is speaking and must be the caller's\nown side of that trip. Only a COMPLETED trip, within 24 hours of completing, once per\nside (ALREADY_EXISTS the second time, which an app can treat as done). Stars are whole\nnumbers from 1 to 5; the comment is optional (500 characters at most) and is kept for\nthe operating company only: the person rated never sees it.",
+        "operationId": "TripService_RateTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RateTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceRateTripBody"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/trips/{tripId}:reject-offer": {
       "post": {
         "summary": "RejectOffer declines the offer; the trip goes on to the next driver, and this\ndriver is not offered it again. driver_id must be the caller's own profile.",
@@ -2328,6 +2367,24 @@
       "properties": {
         "reason": {
           "type": "string"
+        }
+      }
+    },
+    "TripServiceRateTripBody": {
+      "type": "object",
+      "properties": {
+        "ratedBy": {
+          "$ref": "#/definitions/v1RatedBy",
+          "description": "Who is rating: the rider (rating the driver) or the driver (rating the rider)."
+        },
+        "stars": {
+          "type": "integer",
+          "format": "int32",
+          "description": "A whole number from 1 to 5."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Optional, at most 500 characters. Kept for the operating company; never shown to the\nperson rated."
         }
       }
     },
@@ -3316,6 +3373,18 @@
     },
     "v1ProcessZainCashWebhookResponse": {
       "type": "object"
+    },
+    "v1RateTripResponse": {
+      "type": "object"
+    },
+    "v1RatedBy": {
+      "type": "string",
+      "enum": [
+        "RATED_BY_UNSPECIFIED",
+        "RATED_BY_RIDER",
+        "RATED_BY_DRIVER"
+      ],
+      "default": "RATED_BY_UNSPECIFIED"
     },
     "v1RecipientType": {
       "type": "string",

@@ -67,6 +67,9 @@ type Service interface {
 		ctx context.Context,
 		tripID string,
 	) ([]Waypoint, error)
+
+	// RateTrip records one side's rating of the other after a completed trip.
+	RateTrip(ctx context.Context, input RateTripInput) (Rating, error)
 }
 
 type service struct {

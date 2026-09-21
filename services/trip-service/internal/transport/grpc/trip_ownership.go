@@ -51,6 +51,28 @@ var ownerChecks = map[string]ownerCheck{
 			return false, nil
 		}
 	},
+	tripRPCPrefix + "RateTrip": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*tripv1.RateTripRequest)
+		if !ok {
+			return false, nil
+		}
+
+		p, err := c.participation(ctx, r.GetTripId())
+		if err != nil {
+			return false, err
+		}
+
+		// The side named in the request must be the caller's own side of this trip: a
+		// rider cannot rate as the driver, and a stranger cannot rate at all.
+		switch r.GetRatedBy() {
+		case tripv1.RatedBy_RATED_BY_RIDER:
+			return p.rider, nil
+		case tripv1.RatedBy_RATED_BY_DRIVER:
+			return p.driver, nil
+		default:
+			return false, nil
+		}
+	},
 }
 
 func driverOfTrip(ctx context.Context, c caller, request any) (bool, error) {

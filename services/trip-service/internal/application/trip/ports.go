@@ -101,6 +101,10 @@ type Repository interface {
 		ctx context.Context,
 		tripID string,
 	) ([]Waypoint, error)
+
+	// CreateRating stores a rating and its trip.rated event in one transaction.
+	// It returns ErrAlreadyRated when that side already rated the trip.
+	CreateRating(ctx context.Context, input CreateRatingInput) (Rating, error)
 }
 
 type IDGenerator interface {

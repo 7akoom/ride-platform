@@ -559,3 +559,10 @@ func TestService_GetTrip_WrapsRepositoryError(t *testing.T) {
 		t.Fatalf("got %v, want wrapped %v", err, repoErr)
 	}
 }
+
+func (r *fakeRepository) CreateRating(
+	_ context.Context,
+	_ trip.CreateRatingInput,
+) (trip.Rating, error) {
+	return trip.Rating{}, nil
+}

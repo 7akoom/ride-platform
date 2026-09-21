@@ -152,6 +152,18 @@ service TripService {
       body: "*"
     };
   }
+  // RateTrip is how one side rates the other after a trip: the rider rates the driver and
+  // the driver rates the rider. rated_by names who is speaking and must be the caller's
+  // own side of that trip. Only a COMPLETED trip, within 24 hours of completing, once per
+  // side (ALREADY_EXISTS the second time, which an app can treat as done). Stars are whole
+  // numbers from 1 to 5; the comment is optional (500 characters at most) and is kept for
+  // the operating company only: the person rated never sees it.
+  rpc RateTrip(RateTripRequest) returns (RateTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}:rate"
+      body: "*"
+    };
+  }
 }
 
 enum TripStatus {
@@ -380,3 +392,24 @@ message RejectOfferRequest {
 }
 
 message RejectOfferResponse {}
+
+// --- Ratings: each side rates the other after the trip ----------------
+
+enum RatedBy {
+  RATED_BY_UNSPECIFIED = 0;
+  RATED_BY_RIDER = 1;
+  RATED_BY_DRIVER = 2;
+}
+
+message RateTripRequest {
+  string trip_id = 1;
+  // Who is rating: the rider (rating the driver) or the driver (rating the rider).
+  RatedBy rated_by = 2;
+  // A whole number from 1 to 5.
+  int32 stars = 3;
+  // Optional, at most 500 characters. Kept for the operating company; never shown to the
+  // person rated.
+  string comment = 4;
+}
+
+message RateTripResponse {}
