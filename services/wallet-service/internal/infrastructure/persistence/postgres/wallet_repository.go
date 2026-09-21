@@ -37,7 +37,7 @@ func (r *WalletRepository) GetActiveConfig(
 	row := r.pool.QueryRow(
 		ctx,
 		`SELECT id, currency_code, commission_rate, suspension_threshold,
-		        minimum_payout_amount, created_at
+		        minimum_payout_amount, max_change_credit, created_at
 		 FROM wallet_configs
 		 ORDER BY created_at DESC
 		 LIMIT 1`,
@@ -51,6 +51,7 @@ func (r *WalletRepository) GetActiveConfig(
 		&config.CommissionRate,
 		&config.SuspensionThreshold,
 		&config.MinimumPayoutAmount,
+		&config.MaxChangeCredit,
 		&config.CreatedAt,
 	)
 	if err != nil {
@@ -166,8 +167,10 @@ func (r *WalletRepository) FindSettlement(
 		        s.payment_method, s.fare_amount, s.commission_rate,
 		        s.commission_amount, s.driver_earning,
 		        s.wallet_amount, s.cash_amount,
+		        COALESCE(cc.change_amount, 0),
 		        COALESCE(rw.balance, 0), COALESCE(dw.balance, 0)
 		 FROM trip_settlements s
+		 LEFT JOIN trip_change_credits cc ON cc.trip_id = s.trip_id
 		 LEFT JOIN wallets rw ON rw.owner_type = 'rider' AND rw.owner_id = s.rider_id
 		 LEFT JOIN wallets dw ON dw.owner_type = 'driver' AND dw.owner_id = s.driver_id
 		 WHERE s.trip_id = $1`,
@@ -189,6 +192,7 @@ func (r *WalletRepository) FindSettlement(
 		&settlement.DriverEarning,
 		&settlement.WalletAmount,
 		&settlement.CashAmount,
+		&settlement.ChangeAmount,
 		&settlement.RiderBalance,
 		&settlement.DriverBalance,
 	)

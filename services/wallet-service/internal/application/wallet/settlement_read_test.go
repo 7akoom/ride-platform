@@ -193,3 +193,10 @@ func TestGetTripSettlement_RepositoryFailureIsNotHiddenAsNotFound(t *testing.T) 
 		t.Fatal("a database failure must not look like a missing settlement")
 	}
 }
+
+func (r *settlementRepoFake) CreditTripChange(
+	_ context.Context,
+	_ wallet.ChangeCreditInput,
+) (wallet.ChangeCredit, error) {
+	return wallet.ChangeCredit{}, nil
+}

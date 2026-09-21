@@ -84,4 +84,9 @@ type Repository interface {
 		ownerID string,
 		limit int,
 	) ([]Transaction, error)
+
+	// CreditTripChange records the change and credits the rider's wallet in one
+	// transaction, at most once per trip: the same amount again returns the first record
+	// (Repeated) and a different amount returns ErrChangeAlreadyRecorded.
+	CreditTripChange(ctx context.Context, input ChangeCreditInput) (ChangeCredit, error)
 }

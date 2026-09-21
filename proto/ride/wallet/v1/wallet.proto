@@ -46,6 +46,19 @@ service WalletService {
     };
   }
 
+  // RecordTripChange is how a driver reports that the rider handed over more cash than the
+  // trip's cash part and there was no change to give back: the difference is credited to the
+  // rider's wallet. The driver sends only cash_received (all the cash handed over); the change
+  // is worked out here. The platform pays: nothing is taken from the driver. Only the trip's
+  // own driver, after the trip is settled, once per trip (the same amount again is harmless),
+  // and at most the deployment's max_change_credit.
+  rpc RecordTripChange(RecordTripChangeRequest) returns (RecordTripChangeResponse) {
+    option (google.api.http) = {
+      post: "/v1/drivers/{driver_id}/trips/{trip_id}/change"
+      body: "*"
+    };
+  }
+
   // InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
   // a pending record and opens a ZainCash payment session, returning
   // the URL the driver's browser/webview should be sent to.
@@ -89,6 +102,8 @@ enum TransactionType {
   TRANSACTION_TYPE_COMMISSION = 4;
   TRANSACTION_TYPE_PAYOUT = 5;
   TRANSACTION_TYPE_ADJUSTMENT = 6;
+  // Change the driver could not return in cash, credited to the rider's wallet.
+  TRANSACTION_TYPE_CHANGE_CREDIT = 7;
 }
 
 message Wallet {
@@ -237,4 +252,22 @@ message GetTripSettlementResponse {
   // Only filled for the driver's own view.
   string commission_amount = 7;
   string driver_earning = 8;
+  // The change credited to the rider's wallet because the driver had none. "0" if none.
+  string change_amount = 9;
+}
+
+message RecordTripChangeRequest {
+  string driver_id = 1;
+  string trip_id = 2;
+  // Decimal string: all the cash the rider handed over for this trip.
+  string cash_received = 3;
+}
+
+message RecordTripChangeResponse {
+  string trip_id = 1;
+  string currency_code = 2;
+  // The cash part of the fare, what the rider handed over, and the difference credited.
+  string cash_due = 3;
+  string cash_received = 4;
+  string change_amount = 5;
 }

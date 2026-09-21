@@ -198,7 +198,7 @@ func TestConfig_IsSuspendedAt(t *testing.T) {
 		balance string
 		want    bool
 	}{
-		{"-5000", true},  // exactly at floor
+		{"-5000", true}, // exactly at floor
 		{"-5000.001", true},
 		{"-4999.999", false},
 		{"0", false},
@@ -618,4 +618,11 @@ func TestService_CheckDriverStanding_SuspendedByBalanceEvenIfNotFlagged(t *testi
 	if !got.AmountDue.Equal(d("1001")) {
 		t.Fatalf("got amount due %s, want 1001", got.AmountDue)
 	}
+}
+
+func (r *fakeRepository) CreditTripChange(
+	_ context.Context,
+	_ wallet.ChangeCreditInput,
+) (wallet.ChangeCredit, error) {
+	return wallet.ChangeCredit{}, nil
 }

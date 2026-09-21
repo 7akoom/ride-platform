@@ -693,6 +693,51 @@
         ]
       }
     },
+    "/v1/drivers/{driverId}/trips/{tripId}/change": {
+      "post": {
+        "summary": "RecordTripChange is how a driver reports that the rider handed over more cash than the\ntrip's cash part and there was no change to give back: the difference is credited to the\nrider's wallet. The driver sends only cash_received (all the cash handed over); the change\nis worked out here. The platform pays: nothing is taken from the driver. Only the trip's\nown driver, after the trip is settled, once per trip (the same amount again is harmless),\nand at most the deployment's max_change_credit.",
+        "operationId": "WalletService_RecordTripChange",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RecordTripChangeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceRecordTripChangeBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/fare-estimates": {
       "post": {
         "summary": "EstimateFare quotes a trip for the caller: rider_id must be the caller's own rider profile.",
@@ -2313,6 +2358,15 @@
         }
       }
     },
+    "WalletServiceRecordTripChangeBody": {
+      "type": "object",
+      "properties": {
+        "cashReceived": {
+          "type": "string",
+          "description": "Decimal string: all the cash the rider handed over for this trip."
+        }
+      }
+    },
     "WalletServiceRequestPayoutBody": {
       "type": "object",
       "properties": {
@@ -2950,6 +3004,10 @@
         },
         "driverEarning": {
           "type": "string"
+        },
+        "changeAmount": {
+          "type": "string",
+          "description": "The change credited to the rider's wallet because the driver had none. \"0\" if none."
         }
       }
     },
@@ -3267,6 +3325,27 @@
         "RECIPIENT_TYPE_DRIVER"
       ],
       "default": "RECIPIENT_TYPE_UNSPECIFIED"
+    },
+    "v1RecordTripChangeResponse": {
+      "type": "object",
+      "properties": {
+        "tripId": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "cashDue": {
+          "type": "string",
+          "description": "The cash part of the fare, what the rider handed over, and the difference credited."
+        },
+        "cashReceived": {
+          "type": "string"
+        },
+        "changeAmount": {
+          "type": "string"
+        }
+      }
     },
     "v1RecordWaypointResponse": {
       "type": "object",
@@ -3672,9 +3751,11 @@
         "TRANSACTION_TYPE_TRIP_EARNING",
         "TRANSACTION_TYPE_COMMISSION",
         "TRANSACTION_TYPE_PAYOUT",
-        "TRANSACTION_TYPE_ADJUSTMENT"
+        "TRANSACTION_TYPE_ADJUSTMENT",
+        "TRANSACTION_TYPE_CHANGE_CREDIT"
       ],
-      "default": "TRANSACTION_TYPE_UNSPECIFIED"
+      "default": "TRANSACTION_TYPE_UNSPECIFIED",
+      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet."
     },
     "v1TriggerSOSResponse": {
       "type": "object",

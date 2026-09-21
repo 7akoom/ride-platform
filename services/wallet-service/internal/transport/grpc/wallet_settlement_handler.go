@@ -34,6 +34,7 @@ func (h *WalletHandler) GetTripSettlement(
 		FareAmount:    found.FareAmount.String(),
 		WalletAmount:  found.WalletAmount.String(),
 		CashAmount:    found.CashAmount.String(),
+		ChangeAmount:  found.ChangeAmount.String(),
 	}
 
 	if ownerType == wallet.OwnerDriver {

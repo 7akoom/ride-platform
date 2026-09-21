@@ -270,6 +270,14 @@ func (h *WalletHandler) mapWalletError(err error) error {
 	case errors.Is(err, wallet.ErrWalletNotFound):
 		return status.Error(codes.NotFound, "wallet not found")
 
+	case errors.Is(err, wallet.ErrChangeAboveLimit),
+		errors.Is(err, wallet.ErrChangeAlreadyRecorded),
+		errors.Is(err, wallet.ErrNoCashDue):
+		return status.Error(codes.FailedPrecondition, err.Error())
+
+	case errors.Is(err, wallet.ErrNoChangeOwed):
+		return status.Error(codes.InvalidArgument, err.Error())
+
 	case errors.Is(err, wallet.ErrSettlementNotFound):
 		return status.Error(codes.NotFound, "trip settlement not found")
 
@@ -390,7 +398,7 @@ func toProtoTransaction(t wallet.Transaction) *walletv1.Transaction {
 	return &walletv1.Transaction{
 		Id:           t.ID,
 		WalletId:     t.WalletID,
-		Type:         toProtoTransactionType(t.Type),
+		Type:         transactionTypeForProto(t.Type),
 		Amount:       t.Amount.String(),
 		BalanceAfter: t.BalanceAfter.String(),
 		TripId:       t.TripID,

@@ -57,6 +57,16 @@ var ownerChecks = map[string]ownerCheck{
 		// service then checks that the trip is one of that wallet owner's.
 		return ownsWallet(ctx, c, r.GetOwnerType(), r.GetOwnerId())
 	},
+	"/ride.wallet.v1.WalletService/RecordTripChange": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.RecordTripChangeRequest)
+		if !ok {
+			return false, nil
+		}
+
+		// Only a driver reports change, and only as themselves. That the trip is theirs is
+		// checked by the service against the settlement.
+		return c.ownsDriver(ctx, r.GetDriverId())
+	},
 }
 
 func ownsWallet(ctx context.Context, c caller, ownerType walletv1.OwnerType, ownerID string) (bool, error) {

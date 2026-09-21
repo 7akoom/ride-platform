@@ -44,6 +44,9 @@ type Service interface {
 	// GetTripSettlement returns how a settled trip's fare was paid. Only the rider
 	// and the driver of that trip may see it; anyone else gets ErrSettlementNotFound.
 	GetTripSettlement(ctx context.Context, ownerType OwnerType, ownerID string, tripID string) (Settlement, error)
+	// RecordTripChange credits the rider's wallet with the change the trip's driver could
+	// not return in cash. The platform pays; nothing is taken from the driver.
+	RecordTripChange(ctx context.Context, input RecordTripChangeInput) (ChangeCredit, error)
 }
 
 type service struct {

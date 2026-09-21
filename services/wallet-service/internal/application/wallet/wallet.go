@@ -82,7 +82,9 @@ type Config struct {
 	CommissionRate      Money // percentage, e.g. 20 means 20%
 	SuspensionThreshold Money // stored positive; account suspends at balance <= -SuspensionThreshold
 	MinimumPayoutAmount Money
-	CreatedAt           time.Time
+	// The most change one trip may credit to a rider's wallet (see RecordTripChange).
+	MaxChangeCredit Money
+	CreatedAt       time.Time
 }
 
 // Settlement is the record of how one trip's money was split.
@@ -103,6 +105,8 @@ type Settlement struct {
 	// cash trip; a card trip moves neither.
 	WalletAmount Money
 	CashAmount   Money
+	// The change credited to the rider's wallet because the driver had none (zero if none).
+	ChangeAmount Money
 }
 
 // CommissionFor returns the platform's cut of a fare, rounded to the
