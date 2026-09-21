@@ -19,6 +19,21 @@ func (s *service) UpdateAvailability(
 		return Driver{}, ErrInvalidAvailability
 	}
 
+	// Only offline is allowed until an operator approves the driver. Reading
+	// the status first is safe without a lock: a driver can never move back
+	// to pending or rejected from active, so an active reading cannot go stale
+	// in the wrong direction.
+	if input.AvailabilityStatus != AvailabilityOffline {
+		current, err := s.repository.FindByID(ctx, driverID)
+		if err != nil {
+			return Driver{}, fmt.Errorf("find driver: %w", err)
+		}
+
+		if !current.Status.CanGoOnline() {
+			return Driver{}, ErrDriverNotApproved
+		}
+	}
+
 	updated, err := s.repository.UpdateAvailability(
 		ctx,
 		UpdateAvailabilityInput{

@@ -29,6 +29,10 @@ type fakeRepository struct {
 	updateAvailabilityResult driver.Driver
 	updateAvailabilityErr    error
 	updateAvailabilityCalls  []driver.UpdateAvailabilityInput
+
+	updateStatusResult driver.Driver
+	updateStatusErr    error
+	updateStatusCalls  []driver.UpdateStatusInput
 }
 
 func (r *fakeRepository) Create(
@@ -411,13 +415,13 @@ func TestService_UpdateAvailability_WrapsRepositoryError(t *testing.T) {
 
 func TestNewVehicle(t *testing.T) {
 	cases := []struct {
-		name        string
-		make_       string
-		model       string
-		color       string
-		plate       string
-		wantErr     error
-		wantPlate   string
+		name      string
+		make_     string
+		model     string
+		color     string
+		plate     string
+		wantErr   error
+		wantPlate string
 	}{
 		{"valid", "Toyota", "Camry", "White", "abc-123", nil, "ABC-123"},
 		{"missing make", "", "Camry", "White", "abc-123", driver.ErrVehicleFieldsRequired, ""},
@@ -447,4 +451,17 @@ func TestNewVehicle(t *testing.T) {
 			}
 		})
 	}
+}
+
+func (r *fakeRepository) UpdateStatus(
+	_ context.Context,
+	input driver.UpdateStatusInput,
+) (driver.Driver, error) {
+	r.updateStatusCalls = append(r.updateStatusCalls, input)
+
+	if r.updateStatusErr != nil {
+		return driver.Driver{}, r.updateStatusErr
+	}
+
+	return r.updateStatusResult, nil
 }

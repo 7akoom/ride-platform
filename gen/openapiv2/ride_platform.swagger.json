@@ -454,7 +454,7 @@
     },
     "/v1/drivers": {
       "post": {
-        "summary": "CreateDriver creates the caller's own driver profile: identity_id must be the caller's identity.",
+        "summary": "CreateDriver creates the caller's own driver profile: identity_id must be the caller's identity.\nThe new driver starts PENDING and cannot go online until an operator approves it.",
         "operationId": "DriverService_CreateDriver",
         "responses": {
           "200": {
@@ -555,7 +555,7 @@
     },
     "/v1/drivers/{driverId}/availability": {
       "put": {
-        "summary": "UpdateAvailability goes online or offline; only the driver themselves may.",
+        "summary": "UpdateAvailability goes online or offline; only the driver themselves may.\nA PENDING or REJECTED driver may only be offline (FAILED_PRECONDITION otherwise).",
         "operationId": "DriverService_UpdateAvailability",
         "responses": {
           "200": {
@@ -2546,9 +2546,12 @@
       "enum": [
         "DRIVER_STATUS_UNSPECIFIED",
         "DRIVER_STATUS_ACTIVE",
-        "DRIVER_STATUS_SUSPENDED"
+        "DRIVER_STATUS_SUSPENDED",
+        "DRIVER_STATUS_PENDING",
+        "DRIVER_STATUS_REJECTED"
       ],
-      "default": "DRIVER_STATUS_UNSPECIFIED"
+      "default": "DRIVER_STATUS_UNSPECIFIED",
+      "description": " - DRIVER_STATUS_PENDING: Registered, waiting for an operator to review the driver.\n - DRIVER_STATUS_REJECTED: Reviewed and turned down by an operator."
     },
     "v1EntityType": {
       "type": "string",

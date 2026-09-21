@@ -159,6 +159,42 @@ func (h *DriverHandler) UpdateAvailability(
 	}, nil
 }
 
+func (h *DriverHandler) ApproveDriver(
+	ctx context.Context,
+	request *driverv1.ApproveDriverRequest,
+) (*driverv1.ApproveDriverResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	approved, err := h.driverService.ApproveDriver(ctx, request.GetDriverId())
+	if err != nil {
+		return nil, h.mapDriverError(err)
+	}
+
+	return &driverv1.ApproveDriverResponse{
+		Driver: toProtoDriver(approved),
+	}, nil
+}
+
+func (h *DriverHandler) RejectDriver(
+	ctx context.Context,
+	request *driverv1.RejectDriverRequest,
+) (*driverv1.RejectDriverResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	rejected, err := h.driverService.RejectDriver(ctx, request.GetDriverId())
+	if err != nil {
+		return nil, h.mapDriverError(err)
+	}
+
+	return &driverv1.RejectDriverResponse{
+		Driver: toProtoDriver(rejected),
+	}, nil
+}
+
 func (h *DriverHandler) mapDriverError(err error) error {
 	switch {
 	case errors.Is(err, driver.ErrDriverNotFound):
@@ -169,6 +205,12 @@ func (h *DriverHandler) mapDriverError(err error) error {
 
 	case errors.Is(err, driver.ErrPlateNumberTaken):
 		return status.Error(codes.AlreadyExists, "vehicle plate number is already registered")
+
+	case errors.Is(err, driver.ErrDriverNotApproved):
+		return status.Error(codes.FailedPrecondition, "driver is not approved yet")
+
+	case errors.Is(err, driver.ErrInvalidStatusTransition):
+		return status.Error(codes.FailedPrecondition, "driver status cannot be changed this way")
 
 	case errors.Is(err, driver.ErrIdentityIDRequired),
 		errors.Is(err, driver.ErrDriverIDRequired),
@@ -203,8 +245,12 @@ func toProtoDriver(d driver.Driver) *driverv1.Driver {
 	protoStatus := driverv1.DriverStatus_DRIVER_STATUS_UNSPECIFIED
 
 	switch d.Status {
+	case driver.StatusPending:
+		protoStatus = driverv1.DriverStatus_DRIVER_STATUS_PENDING
 	case driver.StatusActive:
 		protoStatus = driverv1.DriverStatus_DRIVER_STATUS_ACTIVE
+	case driver.StatusRejected:
+		protoStatus = driverv1.DriverStatus_DRIVER_STATUS_REJECTED
 	case driver.StatusSuspended:
 		protoStatus = driverv1.DriverStatus_DRIVER_STATUS_SUSPENDED
 	}

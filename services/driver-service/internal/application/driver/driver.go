@@ -5,12 +5,26 @@ import (
 	"time"
 )
 
+// Status is the operator-controlled state of a driver account.
+//
+// A new driver is pending. Only an operator moves it to active (approved) or
+// rejected. Suspended is a separate, later state for drivers who already worked.
 type Status string
 
 const (
+	StatusPending   Status = "pending"
 	StatusActive    Status = "active"
+	StatusRejected  Status = "rejected"
 	StatusSuspended Status = "suspended"
 )
+
+// CanGoOnline reports whether a driver in this status may be anything other
+// than offline. Pending and rejected drivers never may. Suspended is left
+// alone here on purpose: the trip-lifecycle reconciler must still be able to
+// move a suspended driver from busy back to available after a running trip.
+func (s Status) CanGoOnline() bool {
+	return s != StatusPending && s != StatusRejected
+}
 
 type AvailabilityStatus string
 

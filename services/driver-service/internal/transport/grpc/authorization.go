@@ -33,6 +33,11 @@ var methodAccess = map[string]accessLevel{
 	"/ride.driver.v1.DriverService/GetDriverByIdentity": accessOwner,
 	"/ride.driver.v1.DriverService/UpdateDriverProfile": accessOwner,
 	"/ride.driver.v1.DriverService/UpdateAvailability":  accessOwner,
+
+	// Operator actions: only a service holding the internal token may call
+	// them. A driver approving themselves is the exact thing this blocks.
+	"/ride.driver.v1.DriverService/ApproveDriver": accessInternal,
+	"/ride.driver.v1.DriverService/RejectDriver":  accessInternal,
 }
 
 func NewAuthorizationUnaryInterceptor(drivers DriverReader) googlegrpc.UnaryServerInterceptor {

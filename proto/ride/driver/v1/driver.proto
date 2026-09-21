@@ -8,6 +8,7 @@ option go_package = "github.com/7akoom/ride-platform/gen/go/ride/driver/v1;drive
 
 service DriverService {
   // CreateDriver creates the caller's own driver profile: identity_id must be the caller's identity.
+  // The new driver starts PENDING and cannot go online until an operator approves it.
   rpc CreateDriver(CreateDriverRequest) returns (CreateDriverResponse) {
     option (google.api.http) = {
       post: "/v1/drivers"
@@ -34,18 +35,28 @@ service DriverService {
     };
   }
   // UpdateAvailability goes online or offline; only the driver themselves may.
+  // A PENDING or REJECTED driver may only be offline (FAILED_PRECONDITION otherwise).
   rpc UpdateAvailability(UpdateAvailabilityRequest) returns (UpdateAvailabilityResponse) {
     option (google.api.http) = {
       put: "/v1/drivers/{driver_id}/availability"
       body: "*"
     };
   }
+  // ApproveDriver moves a PENDING (or REJECTED) driver to ACTIVE. Internal only:
+  // deliberately no HTTP route, so it cannot be reached from the internet.
+  rpc ApproveDriver(ApproveDriverRequest) returns (ApproveDriverResponse);
+  // RejectDriver moves a PENDING driver to REJECTED. Internal only, no HTTP route.
+  rpc RejectDriver(RejectDriverRequest) returns (RejectDriverResponse);
 }
 
 enum DriverStatus {
   DRIVER_STATUS_UNSPECIFIED = 0;
   DRIVER_STATUS_ACTIVE = 1;
   DRIVER_STATUS_SUSPENDED = 2;
+  // Registered, waiting for an operator to review the driver.
+  DRIVER_STATUS_PENDING = 3;
+  // Reviewed and turned down by an operator.
+  DRIVER_STATUS_REJECTED = 4;
 }
 
 enum AvailabilityStatus {
@@ -114,5 +125,21 @@ message UpdateAvailabilityRequest {
 }
 
 message UpdateAvailabilityResponse {
+  Driver driver = 1;
+}
+
+message ApproveDriverRequest {
+  string driver_id = 1;
+}
+
+message ApproveDriverResponse {
+  Driver driver = 1;
+}
+
+message RejectDriverRequest {
+  string driver_id = 1;
+}
+
+message RejectDriverResponse {
   Driver driver = 1;
 }

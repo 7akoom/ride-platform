@@ -14,4 +14,9 @@ var (
 	ErrDriverNotFound      = errors.New("driver not found")
 	ErrDriverAlreadyExists = errors.New("driver already exists for this identity")
 	ErrPlateNumberTaken    = errors.New("vehicle plate number is already registered")
+
+	// ErrDriverNotApproved: the driver is pending or rejected and tried to go online.
+	ErrDriverNotApproved = errors.New("driver is not approved")
+	// ErrInvalidStatusTransition: the driver is in a status the requested change cannot start from.
+	ErrInvalidStatusTransition = errors.New("driver status cannot be changed this way")
 )

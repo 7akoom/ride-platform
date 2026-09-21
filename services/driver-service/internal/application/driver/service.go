@@ -53,4 +53,16 @@ type Service interface {
 		ctx context.Context,
 		input UpdateDriverAvailabilityInput,
 	) (Driver, error)
+
+	// ApproveDriver moves a pending (or rejected) driver to active.
+	ApproveDriver(
+		ctx context.Context,
+		driverID string,
+	) (Driver, error)
+
+	// RejectDriver moves a pending driver to rejected.
+	RejectDriver(
+		ctx context.Context,
+		driverID string,
+	) (Driver, error)
 }

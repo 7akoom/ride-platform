@@ -55,12 +55,19 @@ func (c *DriverClient) MarkBusy(
 	return nil
 }
 
+// driverStatusToString names every status the driver-service can return.
+// Dispatch only assigns "active" drivers; the other names exist so its log
+// says "pending" for a driver awaiting approval instead of "unspecified".
 func driverStatusToString(s driverv1.DriverStatus) string {
 	switch s {
 	case driverv1.DriverStatus_DRIVER_STATUS_ACTIVE:
 		return "active"
 	case driverv1.DriverStatus_DRIVER_STATUS_SUSPENDED:
 		return "suspended"
+	case driverv1.DriverStatus_DRIVER_STATUS_PENDING:
+		return "pending"
+	case driverv1.DriverStatus_DRIVER_STATUS_REJECTED:
+		return "rejected"
 	default:
 		return "unspecified"
 	}
