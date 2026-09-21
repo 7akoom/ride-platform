@@ -192,6 +192,22 @@ func run() int {
 	}
 	defer tripSubscription.Stop()
 
+	offerSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		"TRIP_EVENTS",
+		tripOffersDurable,
+		[]string{"trip.offered"},
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to trip offers", "error", err)
+
+		return 1
+	}
+	defer offerSubscription.Stop()
+
 	pricingSubscription, err := natsinfra.SubscribeDurable(
 		ctx,
 		natsConnection.JetStream(),

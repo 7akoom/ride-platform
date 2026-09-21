@@ -114,6 +114,8 @@ func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) err
 		return h.handleFareCalculated(ctx, envelope)
 	case "trip.sos_triggered":
 		return h.handleTripSOSTriggered(ctx, envelope)
+	case "trip.offered":
+		return h.handleTripOffered(ctx, envelope)
 	default:
 		h.logger.WarnContext(ctx, "no notification mapping for subject; skipping", "subject", subject)
 

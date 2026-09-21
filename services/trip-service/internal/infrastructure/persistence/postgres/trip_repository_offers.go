@@ -140,6 +140,19 @@ func (r *TripRepository) CreateOffer(
 		return trip.Offer{}, mapOfferInsertError(err)
 	}
 
+	// The driver's app is told about the offer through this event (see notification-service).
+	// It names the trip, the driver and when the offer ends, and nothing about the rider. It is
+	// written in the same transaction as the offer, so an offer that exists always has its event
+	// and an offer that was refused never does.
+	if err := writeOutboxEvent(ctx, tx, "trip.offered", tripID, map[string]string{
+		"trip_id":    tripID,
+		"driver_id":  driverID,
+		"offered_at": offer.OfferedAt.UTC().Format(time.RFC3339Nano),
+		"expires_at": offer.ExpiresAt.UTC().Format(time.RFC3339Nano),
+	}); err != nil {
+		return trip.Offer{}, err
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return trip.Offer{}, fmt.Errorf("commit transaction: %w", err)
 	}
