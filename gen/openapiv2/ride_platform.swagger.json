@@ -2071,6 +2071,55 @@
         ]
       }
     },
+    "/v1/wallets/{ownerId}/trips/{tripId}/settlement": {
+      "get": {
+        "summary": "GetTripSettlement tells how a settled trip's fare was paid: what left the rider's\nwallet and how much cash the driver collects. ?owner_type=\u0026owner_id= is the caller's\nown wallet, and only the rider and the driver of the trip can read it (anyone else,\nlike a trip that is not settled yet, gets NOT_FOUND). A driver also sees the\ncommission and their earning; a rider does not.",
+        "operationId": "WalletService_GetTripSettlement",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTripSettlementResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ownerId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ownerType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "OWNER_TYPE_UNSPECIFIED",
+              "OWNER_TYPE_RIDER",
+              "OWNER_TYPE_DRIVER"
+            ],
+            "default": "OWNER_TYPE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/zones": {
       "get": {
         "summary": "ListZones lists service zones, optionally for one city (?city=).",
@@ -2871,6 +2920,39 @@
         }
       }
     },
+    "v1GetTripSettlementResponse": {
+      "type": "object",
+      "properties": {
+        "tripId": {
+          "type": "string"
+        },
+        "paymentMethod": {
+          "$ref": "#/definitions/v1PaymentMethod"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "fareAmount": {
+          "type": "string",
+          "description": "Decimal strings, like every money field."
+        },
+        "walletAmount": {
+          "type": "string",
+          "description": "What left the rider's wallet."
+        },
+        "cashAmount": {
+          "type": "string",
+          "description": "What the rider hands the driver in cash."
+        },
+        "commissionAmount": {
+          "type": "string",
+          "description": "Only filled for the driver's own view."
+        },
+        "driverEarning": {
+          "type": "string"
+        }
+      }
+    },
     "v1GetWalletResponse": {
       "type": "object",
       "properties": {
@@ -3112,6 +3194,16 @@
         "OWNER_TYPE_DRIVER"
       ],
       "default": "OWNER_TYPE_UNSPECIFIED"
+    },
+    "v1PaymentMethod": {
+      "type": "string",
+      "enum": [
+        "PAYMENT_METHOD_UNSPECIFIED",
+        "PAYMENT_METHOD_CASH",
+        "PAYMENT_METHOD_WALLET",
+        "PAYMENT_METHOD_CARD"
+      ],
+      "default": "PAYMENT_METHOD_UNSPECIFIED"
     },
     "v1Place": {
       "type": "object",

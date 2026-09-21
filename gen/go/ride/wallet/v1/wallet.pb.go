@@ -1320,6 +1320,170 @@ func (*ProcessZainCashWebhookResponse) Descriptor() ([]byte, []int) {
 	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{17}
 }
 
+type GetTripSettlementRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OwnerType     OwnerType              `protobuf:"varint,1,opt,name=owner_type,json=ownerType,proto3,enum=ride.wallet.v1.OwnerType" json:"owner_type,omitempty"`
+	OwnerId       string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	TripId        string                 `protobuf:"bytes,3,opt,name=trip_id,json=tripId,proto3" json:"trip_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTripSettlementRequest) Reset() {
+	*x = GetTripSettlementRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTripSettlementRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTripSettlementRequest) ProtoMessage() {}
+
+func (x *GetTripSettlementRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTripSettlementRequest.ProtoReflect.Descriptor instead.
+func (*GetTripSettlementRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetTripSettlementRequest) GetOwnerType() OwnerType {
+	if x != nil {
+		return x.OwnerType
+	}
+	return OwnerType_OWNER_TYPE_UNSPECIFIED
+}
+
+func (x *GetTripSettlementRequest) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
+}
+
+func (x *GetTripSettlementRequest) GetTripId() string {
+	if x != nil {
+		return x.TripId
+	}
+	return ""
+}
+
+type GetTripSettlementResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TripId        string                 `protobuf:"bytes,1,opt,name=trip_id,json=tripId,proto3" json:"trip_id,omitempty"`
+	PaymentMethod PaymentMethod          `protobuf:"varint,2,opt,name=payment_method,json=paymentMethod,proto3,enum=ride.wallet.v1.PaymentMethod" json:"payment_method,omitempty"`
+	CurrencyCode  string                 `protobuf:"bytes,3,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	// Decimal strings, like every money field.
+	FareAmount string `protobuf:"bytes,4,opt,name=fare_amount,json=fareAmount,proto3" json:"fare_amount,omitempty"`
+	// What left the rider's wallet.
+	WalletAmount string `protobuf:"bytes,5,opt,name=wallet_amount,json=walletAmount,proto3" json:"wallet_amount,omitempty"`
+	// What the rider hands the driver in cash.
+	CashAmount string `protobuf:"bytes,6,opt,name=cash_amount,json=cashAmount,proto3" json:"cash_amount,omitempty"`
+	// Only filled for the driver's own view.
+	CommissionAmount string `protobuf:"bytes,7,opt,name=commission_amount,json=commissionAmount,proto3" json:"commission_amount,omitempty"`
+	DriverEarning    string `protobuf:"bytes,8,opt,name=driver_earning,json=driverEarning,proto3" json:"driver_earning,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *GetTripSettlementResponse) Reset() {
+	*x = GetTripSettlementResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTripSettlementResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTripSettlementResponse) ProtoMessage() {}
+
+func (x *GetTripSettlementResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTripSettlementResponse.ProtoReflect.Descriptor instead.
+func (*GetTripSettlementResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetTripSettlementResponse) GetTripId() string {
+	if x != nil {
+		return x.TripId
+	}
+	return ""
+}
+
+func (x *GetTripSettlementResponse) GetPaymentMethod() PaymentMethod {
+	if x != nil {
+		return x.PaymentMethod
+	}
+	return PaymentMethod_PAYMENT_METHOD_UNSPECIFIED
+}
+
+func (x *GetTripSettlementResponse) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
+	}
+	return ""
+}
+
+func (x *GetTripSettlementResponse) GetFareAmount() string {
+	if x != nil {
+		return x.FareAmount
+	}
+	return ""
+}
+
+func (x *GetTripSettlementResponse) GetWalletAmount() string {
+	if x != nil {
+		return x.WalletAmount
+	}
+	return ""
+}
+
+func (x *GetTripSettlementResponse) GetCashAmount() string {
+	if x != nil {
+		return x.CashAmount
+	}
+	return ""
+}
+
+func (x *GetTripSettlementResponse) GetCommissionAmount() string {
+	if x != nil {
+		return x.CommissionAmount
+	}
+	return ""
+}
+
+func (x *GetTripSettlementResponse) GetDriverEarning() string {
+	if x != nil {
+		return x.DriverEarning
+	}
+	return ""
+}
+
 var File_ride_wallet_v1_wallet_proto protoreflect.FileDescriptor
 
 const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
@@ -1411,7 +1575,23 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\fredirect_url\x18\x03 \x01(\tR\vredirectUrl\"5\n" +
 	"\x1dProcessZainCashWebhookRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\" \n" +
-	"\x1eProcessZainCashWebhookResponse*T\n" +
+	"\x1eProcessZainCashWebhookResponse\"\x88\x01\n" +
+	"\x18GetTripSettlementRequest\x128\n" +
+	"\n" +
+	"owner_type\x18\x01 \x01(\x0e2\x19.ride.wallet.v1.OwnerTypeR\townerType\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x17\n" +
+	"\atrip_id\x18\x03 \x01(\tR\x06tripId\"\xda\x02\n" +
+	"\x19GetTripSettlementResponse\x12\x17\n" +
+	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12D\n" +
+	"\x0epayment_method\x18\x02 \x01(\x0e2\x1d.ride.wallet.v1.PaymentMethodR\rpaymentMethod\x12#\n" +
+	"\rcurrency_code\x18\x03 \x01(\tR\fcurrencyCode\x12\x1f\n" +
+	"\vfare_amount\x18\x04 \x01(\tR\n" +
+	"fareAmount\x12#\n" +
+	"\rwallet_amount\x18\x05 \x01(\tR\fwalletAmount\x12\x1f\n" +
+	"\vcash_amount\x18\x06 \x01(\tR\n" +
+	"cashAmount\x12+\n" +
+	"\x11commission_amount\x18\a \x01(\tR\x10commissionAmount\x12%\n" +
+	"\x0edriver_earning\x18\b \x01(\tR\rdriverEarning*T\n" +
 	"\tOwnerType\x12\x1a\n" +
 	"\x16OWNER_TYPE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10OWNER_TYPE_RIDER\x10\x01\x12\x15\n" +
@@ -1428,7 +1608,7 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x1dTRANSACTION_TYPE_TRIP_EARNING\x10\x03\x12\x1f\n" +
 	"\x1bTRANSACTION_TYPE_COMMISSION\x10\x04\x12\x1b\n" +
 	"\x17TRANSACTION_TYPE_PAYOUT\x10\x05\x12\x1f\n" +
-	"\x1bTRANSACTION_TYPE_ADJUSTMENT\x10\x062\xff\a\n" +
+	"\x1bTRANSACTION_TYPE_ADJUSTMENT\x10\x062\xa5\t\n" +
 	"\rWalletService\x12p\n" +
 	"\tGetWallet\x12 .ride.wallet.v1.GetWalletRequest\x1a!.ride.wallet.v1.GetWalletResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/wallets/{owner_id}\x12D\n" +
 	"\x05TopUp\x12\x1c.ride.wallet.v1.TopUpRequest\x1a\x1d.ride.wallet.v1.TopUpResponse\x12S\n" +
@@ -1436,7 +1616,8 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"SettleTrip\x12!.ride.wallet.v1.SettleTripRequest\x1a\".ride.wallet.v1.SettleTripResponse\x12\x92\x01\n" +
 	"\x10ListTransactions\x12'.ride.wallet.v1.ListTransactionsRequest\x1a(.ride.wallet.v1.ListTransactionsResponse\"+\x82\xd3\xe4\x93\x02%\x12#/v1/wallets/{owner_id}/transactions\x12\x98\x01\n" +
 	"\x13CheckDriverStanding\x12*.ride.wallet.v1.CheckDriverStandingRequest\x1a+.ride.wallet.v1.CheckDriverStandingResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/drivers/{driver_id}/standing\x12\x88\x01\n" +
-	"\rRequestPayout\x12$.ride.wallet.v1.RequestPayoutRequest\x1a%.ride.wallet.v1.RequestPayoutResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/v1/drivers/{driver_id}/payouts\x12\x83\x01\n" +
+	"\rRequestPayout\x12$.ride.wallet.v1.RequestPayoutRequest\x1a%.ride.wallet.v1.RequestPayoutResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/v1/drivers/{driver_id}/payouts\x12\xa3\x01\n" +
+	"\x11GetTripSettlement\x12(.ride.wallet.v1.GetTripSettlementRequest\x1a).ride.wallet.v1.GetTripSettlementResponse\"9\x82\xd3\xe4\x93\x023\x121/v1/wallets/{owner_id}/trips/{trip_id}/settlement\x12\x83\x01\n" +
 	"\rInitiateTopUp\x12$.ride.wallet.v1.InitiateTopUpRequest\x1a%.ride.wallet.v1.InitiateTopUpResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v1/wallet/topups/zaincash\x12\x9f\x01\n" +
 	"\x16ProcessZainCashWebhook\x12-.ride.wallet.v1.ProcessZainCashWebhookRequest\x1a..ride.wallet.v1.ProcessZainCashWebhookResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/wallet/zaincash/webhookB@Z>github.com/7akoom/ride-platform/gen/go/ride/wallet/v1;walletv1b\x06proto3"
 
@@ -1453,7 +1634,7 @@ func file_ride_wallet_v1_wallet_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_wallet_v1_wallet_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_ride_wallet_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_ride_wallet_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_ride_wallet_v1_wallet_proto_goTypes = []any{
 	(OwnerType)(0),                         // 0: ride.wallet.v1.OwnerType
 	(PaymentMethod)(0),                     // 1: ride.wallet.v1.PaymentMethod
@@ -1476,14 +1657,16 @@ var file_ride_wallet_v1_wallet_proto_goTypes = []any{
 	(*InitiateTopUpResponse)(nil),          // 18: ride.wallet.v1.InitiateTopUpResponse
 	(*ProcessZainCashWebhookRequest)(nil),  // 19: ride.wallet.v1.ProcessZainCashWebhookRequest
 	(*ProcessZainCashWebhookResponse)(nil), // 20: ride.wallet.v1.ProcessZainCashWebhookResponse
-	(*timestamppb.Timestamp)(nil),          // 21: google.protobuf.Timestamp
+	(*GetTripSettlementRequest)(nil),       // 21: ride.wallet.v1.GetTripSettlementRequest
+	(*GetTripSettlementResponse)(nil),      // 22: ride.wallet.v1.GetTripSettlementResponse
+	(*timestamppb.Timestamp)(nil),          // 23: google.protobuf.Timestamp
 }
 var file_ride_wallet_v1_wallet_proto_depIdxs = []int32{
 	0,  // 0: ride.wallet.v1.Wallet.owner_type:type_name -> ride.wallet.v1.OwnerType
-	21, // 1: ride.wallet.v1.Wallet.created_at:type_name -> google.protobuf.Timestamp
-	21, // 2: ride.wallet.v1.Wallet.updated_at:type_name -> google.protobuf.Timestamp
+	23, // 1: ride.wallet.v1.Wallet.created_at:type_name -> google.protobuf.Timestamp
+	23, // 2: ride.wallet.v1.Wallet.updated_at:type_name -> google.protobuf.Timestamp
 	2,  // 3: ride.wallet.v1.Transaction.type:type_name -> ride.wallet.v1.TransactionType
-	21, // 4: ride.wallet.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
+	23, // 4: ride.wallet.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 5: ride.wallet.v1.GetWalletRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	3,  // 6: ride.wallet.v1.GetWalletResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	0,  // 7: ride.wallet.v1.TopUpRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
@@ -1494,27 +1677,31 @@ var file_ride_wallet_v1_wallet_proto_depIdxs = []int32{
 	4,  // 12: ride.wallet.v1.ListTransactionsResponse.transactions:type_name -> ride.wallet.v1.Transaction
 	3,  // 13: ride.wallet.v1.RequestPayoutResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	4,  // 14: ride.wallet.v1.RequestPayoutResponse.transaction:type_name -> ride.wallet.v1.Transaction
-	5,  // 15: ride.wallet.v1.WalletService.GetWallet:input_type -> ride.wallet.v1.GetWalletRequest
-	7,  // 16: ride.wallet.v1.WalletService.TopUp:input_type -> ride.wallet.v1.TopUpRequest
-	9,  // 17: ride.wallet.v1.WalletService.SettleTrip:input_type -> ride.wallet.v1.SettleTripRequest
-	11, // 18: ride.wallet.v1.WalletService.ListTransactions:input_type -> ride.wallet.v1.ListTransactionsRequest
-	13, // 19: ride.wallet.v1.WalletService.CheckDriverStanding:input_type -> ride.wallet.v1.CheckDriverStandingRequest
-	15, // 20: ride.wallet.v1.WalletService.RequestPayout:input_type -> ride.wallet.v1.RequestPayoutRequest
-	17, // 21: ride.wallet.v1.WalletService.InitiateTopUp:input_type -> ride.wallet.v1.InitiateTopUpRequest
-	19, // 22: ride.wallet.v1.WalletService.ProcessZainCashWebhook:input_type -> ride.wallet.v1.ProcessZainCashWebhookRequest
-	6,  // 23: ride.wallet.v1.WalletService.GetWallet:output_type -> ride.wallet.v1.GetWalletResponse
-	8,  // 24: ride.wallet.v1.WalletService.TopUp:output_type -> ride.wallet.v1.TopUpResponse
-	10, // 25: ride.wallet.v1.WalletService.SettleTrip:output_type -> ride.wallet.v1.SettleTripResponse
-	12, // 26: ride.wallet.v1.WalletService.ListTransactions:output_type -> ride.wallet.v1.ListTransactionsResponse
-	14, // 27: ride.wallet.v1.WalletService.CheckDriverStanding:output_type -> ride.wallet.v1.CheckDriverStandingResponse
-	16, // 28: ride.wallet.v1.WalletService.RequestPayout:output_type -> ride.wallet.v1.RequestPayoutResponse
-	18, // 29: ride.wallet.v1.WalletService.InitiateTopUp:output_type -> ride.wallet.v1.InitiateTopUpResponse
-	20, // 30: ride.wallet.v1.WalletService.ProcessZainCashWebhook:output_type -> ride.wallet.v1.ProcessZainCashWebhookResponse
-	23, // [23:31] is the sub-list for method output_type
-	15, // [15:23] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	0,  // 15: ride.wallet.v1.GetTripSettlementRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
+	1,  // 16: ride.wallet.v1.GetTripSettlementResponse.payment_method:type_name -> ride.wallet.v1.PaymentMethod
+	5,  // 17: ride.wallet.v1.WalletService.GetWallet:input_type -> ride.wallet.v1.GetWalletRequest
+	7,  // 18: ride.wallet.v1.WalletService.TopUp:input_type -> ride.wallet.v1.TopUpRequest
+	9,  // 19: ride.wallet.v1.WalletService.SettleTrip:input_type -> ride.wallet.v1.SettleTripRequest
+	11, // 20: ride.wallet.v1.WalletService.ListTransactions:input_type -> ride.wallet.v1.ListTransactionsRequest
+	13, // 21: ride.wallet.v1.WalletService.CheckDriverStanding:input_type -> ride.wallet.v1.CheckDriverStandingRequest
+	15, // 22: ride.wallet.v1.WalletService.RequestPayout:input_type -> ride.wallet.v1.RequestPayoutRequest
+	21, // 23: ride.wallet.v1.WalletService.GetTripSettlement:input_type -> ride.wallet.v1.GetTripSettlementRequest
+	17, // 24: ride.wallet.v1.WalletService.InitiateTopUp:input_type -> ride.wallet.v1.InitiateTopUpRequest
+	19, // 25: ride.wallet.v1.WalletService.ProcessZainCashWebhook:input_type -> ride.wallet.v1.ProcessZainCashWebhookRequest
+	6,  // 26: ride.wallet.v1.WalletService.GetWallet:output_type -> ride.wallet.v1.GetWalletResponse
+	8,  // 27: ride.wallet.v1.WalletService.TopUp:output_type -> ride.wallet.v1.TopUpResponse
+	10, // 28: ride.wallet.v1.WalletService.SettleTrip:output_type -> ride.wallet.v1.SettleTripResponse
+	12, // 29: ride.wallet.v1.WalletService.ListTransactions:output_type -> ride.wallet.v1.ListTransactionsResponse
+	14, // 30: ride.wallet.v1.WalletService.CheckDriverStanding:output_type -> ride.wallet.v1.CheckDriverStandingResponse
+	16, // 31: ride.wallet.v1.WalletService.RequestPayout:output_type -> ride.wallet.v1.RequestPayoutResponse
+	22, // 32: ride.wallet.v1.WalletService.GetTripSettlement:output_type -> ride.wallet.v1.GetTripSettlementResponse
+	18, // 33: ride.wallet.v1.WalletService.InitiateTopUp:output_type -> ride.wallet.v1.InitiateTopUpResponse
+	20, // 34: ride.wallet.v1.WalletService.ProcessZainCashWebhook:output_type -> ride.wallet.v1.ProcessZainCashWebhookResponse
+	26, // [26:35] is the sub-list for method output_type
+	17, // [17:26] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_ride_wallet_v1_wallet_proto_init() }
@@ -1528,7 +1715,7 @@ func file_ride_wallet_v1_wallet_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_wallet_v1_wallet_proto_rawDesc), len(file_ride_wallet_v1_wallet_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -35,6 +35,17 @@ service WalletService {
     };
   }
 
+  // GetTripSettlement tells how a settled trip's fare was paid: what left the rider's
+  // wallet and how much cash the driver collects. ?owner_type=&owner_id= is the caller's
+  // own wallet, and only the rider and the driver of the trip can read it (anyone else,
+  // like a trip that is not settled yet, gets NOT_FOUND). A driver also sees the
+  // commission and their earning; a rider does not.
+  rpc GetTripSettlement(GetTripSettlementRequest) returns (GetTripSettlementResponse) {
+    option (google.api.http) = {
+      get: "/v1/wallets/{owner_id}/trips/{trip_id}/settlement"
+    };
+  }
+
   // InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
   // a pending record and opens a ZainCash payment session, returning
   // the URL the driver's browser/webview should be sent to.
@@ -206,3 +217,24 @@ message ProcessZainCashWebhookRequest {
 }
 
 message ProcessZainCashWebhookResponse {}
+
+message GetTripSettlementRequest {
+  OwnerType owner_type = 1;
+  string owner_id = 2;
+  string trip_id = 3;
+}
+
+message GetTripSettlementResponse {
+  string trip_id = 1;
+  PaymentMethod payment_method = 2;
+  string currency_code = 3;
+  // Decimal strings, like every money field.
+  string fare_amount = 4;
+  // What left the rider's wallet.
+  string wallet_amount = 5;
+  // What the rider hands the driver in cash.
+  string cash_amount = 6;
+  // Only filled for the driver's own view.
+  string commission_amount = 7;
+  string driver_earning = 8;
+}

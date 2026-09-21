@@ -270,6 +270,9 @@ func (h *WalletHandler) mapWalletError(err error) error {
 	case errors.Is(err, wallet.ErrWalletNotFound):
 		return status.Error(codes.NotFound, "wallet not found")
 
+	case errors.Is(err, wallet.ErrSettlementNotFound):
+		return status.Error(codes.NotFound, "trip settlement not found")
+
 	case errors.Is(err, wallet.ErrDuplicateRequest):
 		return status.Error(codes.AlreadyExists, "this request was already processed")
 

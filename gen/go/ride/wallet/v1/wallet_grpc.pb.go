@@ -25,6 +25,7 @@ const (
 	WalletService_ListTransactions_FullMethodName       = "/ride.wallet.v1.WalletService/ListTransactions"
 	WalletService_CheckDriverStanding_FullMethodName    = "/ride.wallet.v1.WalletService/CheckDriverStanding"
 	WalletService_RequestPayout_FullMethodName          = "/ride.wallet.v1.WalletService/RequestPayout"
+	WalletService_GetTripSettlement_FullMethodName      = "/ride.wallet.v1.WalletService/GetTripSettlement"
 	WalletService_InitiateTopUp_FullMethodName          = "/ride.wallet.v1.WalletService/InitiateTopUp"
 	WalletService_ProcessZainCashWebhook_FullMethodName = "/ride.wallet.v1.WalletService/ProcessZainCashWebhook"
 )
@@ -43,6 +44,12 @@ type WalletServiceClient interface {
 	CheckDriverStanding(ctx context.Context, in *CheckDriverStandingRequest, opts ...grpc.CallOption) (*CheckDriverStandingResponse, error)
 	// RequestPayout withdraws from the driver's own wallet; idempotency_key makes a retry safe.
 	RequestPayout(ctx context.Context, in *RequestPayoutRequest, opts ...grpc.CallOption) (*RequestPayoutResponse, error)
+	// GetTripSettlement tells how a settled trip's fare was paid: what left the rider's
+	// wallet and how much cash the driver collects. ?owner_type=&owner_id= is the caller's
+	// own wallet, and only the rider and the driver of the trip can read it (anyone else,
+	// like a trip that is not settled yet, gets NOT_FOUND). A driver also sees the
+	// commission and their earning; a rider does not.
+	GetTripSettlement(ctx context.Context, in *GetTripSettlementRequest, opts ...grpc.CallOption) (*GetTripSettlementResponse, error)
 	// InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
 	// a pending record and opens a ZainCash payment session, returning
 	// the URL the driver's browser/webview should be sent to.
@@ -122,6 +129,16 @@ func (c *walletServiceClient) RequestPayout(ctx context.Context, in *RequestPayo
 	return out, nil
 }
 
+func (c *walletServiceClient) GetTripSettlement(ctx context.Context, in *GetTripSettlementRequest, opts ...grpc.CallOption) (*GetTripSettlementResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTripSettlementResponse)
+	err := c.cc.Invoke(ctx, WalletService_GetTripSettlement_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *walletServiceClient) InitiateTopUp(ctx context.Context, in *InitiateTopUpRequest, opts ...grpc.CallOption) (*InitiateTopUpResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InitiateTopUpResponse)
@@ -156,6 +173,12 @@ type WalletServiceServer interface {
 	CheckDriverStanding(context.Context, *CheckDriverStandingRequest) (*CheckDriverStandingResponse, error)
 	// RequestPayout withdraws from the driver's own wallet; idempotency_key makes a retry safe.
 	RequestPayout(context.Context, *RequestPayoutRequest) (*RequestPayoutResponse, error)
+	// GetTripSettlement tells how a settled trip's fare was paid: what left the rider's
+	// wallet and how much cash the driver collects. ?owner_type=&owner_id= is the caller's
+	// own wallet, and only the rider and the driver of the trip can read it (anyone else,
+	// like a trip that is not settled yet, gets NOT_FOUND). A driver also sees the
+	// commission and their earning; a rider does not.
+	GetTripSettlement(context.Context, *GetTripSettlementRequest) (*GetTripSettlementResponse, error)
 	// InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
 	// a pending record and opens a ZainCash payment session, returning
 	// the URL the driver's browser/webview should be sent to.
@@ -192,6 +215,9 @@ func (UnimplementedWalletServiceServer) CheckDriverStanding(context.Context, *Ch
 }
 func (UnimplementedWalletServiceServer) RequestPayout(context.Context, *RequestPayoutRequest) (*RequestPayoutResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RequestPayout not implemented")
+}
+func (UnimplementedWalletServiceServer) GetTripSettlement(context.Context, *GetTripSettlementRequest) (*GetTripSettlementResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTripSettlement not implemented")
 }
 func (UnimplementedWalletServiceServer) InitiateTopUp(context.Context, *InitiateTopUpRequest) (*InitiateTopUpResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InitiateTopUp not implemented")
@@ -328,6 +354,24 @@ func _WalletService_RequestPayout_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WalletService_GetTripSettlement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTripSettlementRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetTripSettlement(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetTripSettlement_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetTripSettlement(ctx, req.(*GetTripSettlementRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WalletService_InitiateTopUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InitiateTopUpRequest)
 	if err := dec(in); err != nil {
@@ -394,6 +438,10 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestPayout",
 			Handler:    _WalletService_RequestPayout_Handler,
+		},
+		{
+			MethodName: "GetTripSettlement",
+			Handler:    _WalletService_GetTripSettlement_Handler,
 		},
 		{
 			MethodName: "InitiateTopUp",

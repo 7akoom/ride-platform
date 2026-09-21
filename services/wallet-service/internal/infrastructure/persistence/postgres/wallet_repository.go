@@ -165,6 +165,7 @@ func (r *WalletRepository) FindSettlement(
 		`SELECT s.trip_id, s.rider_id, s.driver_id, s.currency_code,
 		        s.payment_method, s.fare_amount, s.commission_rate,
 		        s.commission_amount, s.driver_earning,
+		        s.wallet_amount, s.cash_amount,
 		        COALESCE(rw.balance, 0), COALESCE(dw.balance, 0)
 		 FROM trip_settlements s
 		 LEFT JOIN wallets rw ON rw.owner_type = 'rider' AND rw.owner_id = s.rider_id
@@ -186,6 +187,8 @@ func (r *WalletRepository) FindSettlement(
 		&settlement.CommissionRate,
 		&settlement.CommissionAmount,
 		&settlement.DriverEarning,
+		&settlement.WalletAmount,
+		&settlement.CashAmount,
 		&settlement.RiderBalance,
 		&settlement.DriverBalance,
 	)
@@ -337,8 +340,9 @@ func (r *WalletRepository) SettleTrip(
 		ctx,
 		`INSERT INTO trip_settlements
 		    (trip_id, rider_id, driver_id, currency_code, payment_method,
-		     fare_amount, commission_rate, commission_amount, driver_earning)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		     fare_amount, commission_rate, commission_amount, driver_earning,
+		     wallet_amount, cash_amount)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
 		input.TripID,
 		input.RiderID,
 		input.DriverID,
@@ -348,6 +352,8 @@ func (r *WalletRepository) SettleTrip(
 		input.CommissionRate,
 		input.CommissionAmount,
 		input.DriverEarning,
+		walletAmount,
+		cashAmount,
 	); err != nil {
 		var pgErr *pgconn.PgError
 
@@ -404,6 +410,8 @@ func (r *WalletRepository) SettleTrip(
 		CommissionRate:   input.CommissionRate,
 		CommissionAmount: input.CommissionAmount,
 		DriverEarning:    input.DriverEarning,
+		WalletAmount:     walletAmount,
+		CashAmount:       cashAmount,
 		RiderBalance:     riderWallet.Balance,
 		DriverBalance:    driverWallet.Balance,
 	}, nil

@@ -98,6 +98,11 @@ type Settlement struct {
 	DriverEarning    Money
 	RiderBalance     Money
 	DriverBalance    Money
+	// How much of the fare left the rider's wallet and how much the rider handed
+	// to the driver in cash. WalletAmount + CashAmount is the fare for a wallet or
+	// cash trip; a card trip moves neither.
+	WalletAmount Money
+	CashAmount   Money
 }
 
 // CommissionFor returns the platform's cut of a fare, rounded to the
