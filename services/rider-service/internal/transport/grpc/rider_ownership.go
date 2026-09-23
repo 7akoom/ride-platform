@@ -52,7 +52,27 @@ func (c caller) ownsRider(ctx context.Context, riderID string) (bool, error) {
 	return found.IdentityID != "" && found.IdentityID == c.identityID, nil
 }
 
+// riderIDGetter is every saved address request: they all name the rider.
+type riderIDGetter interface{ GetRiderId() string }
+
+// ownerOfRiderID lets a caller act on the saved addresses of their own rider
+// profile only; which address, among that rider's, is checked by the query.
+func ownerOfRiderID(ctx context.Context, c caller, request any) (bool, error) {
+	r, ok := request.(riderIDGetter)
+	if !ok {
+		return false, nil
+	}
+
+	return c.ownsRider(ctx, r.GetRiderId())
+}
+
 var ownerChecks = map[string]ownerCheck{
+	riderRPCPrefix + "CreateSavedAddress": ownerOfRiderID,
+	riderRPCPrefix + "ListSavedAddresses": ownerOfRiderID,
+	riderRPCPrefix + "GetSavedAddress":    ownerOfRiderID,
+	riderRPCPrefix + "UpdateSavedAddress": ownerOfRiderID,
+	riderRPCPrefix + "DeleteSavedAddress": ownerOfRiderID,
+
 	riderRPCPrefix + "CreateRider": func(_ context.Context, c caller, request any) (bool, error) {
 		r, ok := request.(*riderv1.CreateRiderRequest)
 		if !ok {

@@ -17,4 +17,17 @@ var (
 	ErrPickupOutsideServiceZone = errors.New("pickup location is outside every service zone")
 
 	ErrInvalidSosTriggeredBy = errors.New("triggered_by must be rider or driver")
+
+	ErrAddressTooLong = errors.New("an address is longer than 300 characters")
+
+	// ErrSavedAddressesUnavailable: a saved address was named but this
+	// service cannot read saved addresses.
+	ErrSavedAddressesUnavailable = errors.New("saved addresses are not available")
+
+	// ErrSavedAddressNotFound: the saved address is not one of the rider's.
+	ErrSavedAddressNotFound = errors.New("saved address not found")
+
+	// ErrUpstreamUnavailable: another service this needs (rider-service,
+	// media-service) did not answer.
+	ErrUpstreamUnavailable = errors.New("a service this needs is not available")
 )

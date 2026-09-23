@@ -8,14 +8,7 @@ import (
 )
 
 // historyColumns is the column list scanTrip reads, in its order.
-const historyColumns = `id, rider_id, driver_id, status,
-                pickup_latitude, pickup_longitude,
-                dropoff_latitude, dropoff_longitude,
-                cancellation_reason,
-                vehicle_class,
-                payment_method,
-                requested_at, accepted_at, started_at, completed_at, cancelled_at,
-                created_at, updated_at`
+const historyColumns = tripColumns
 
 // ListByRiderID returns the rider's trips, newest first. See trip.HistoryStore.
 func (r *TripRepository) ListByRiderID(
@@ -103,4 +96,54 @@ func historyQuery(ownerColumn string, afterCursor bool) string {
                   )
             ORDER BY requested_at DESC, id DESC
             LIMIT $3`
+}
+
+// RecentDestinations returns where the rider's completed trips ended, newest
+// first. Drop-offs within about 10 m (4 decimal places) count as one place;
+// each place keeps the address and time of its latest trip. See
+// trip.DestinationStore.
+func (r *TripRepository) RecentDestinations(
+	ctx context.Context,
+	riderID string,
+	limit int,
+) ([]trip.Destination, error) {
+	rows, err := r.pool.Query(
+		ctx,
+		`SELECT latitude, longitude, address, completed_at
+		 FROM (
+		     SELECT DISTINCT ON (round(dropoff_latitude::numeric, 4), round(dropoff_longitude::numeric, 4))
+		            dropoff_latitude AS latitude, dropoff_longitude AS longitude,
+		            dropoff_address AS address, completed_at
+		     FROM trips
+		     WHERE rider_id = $1 AND status = 'completed'
+		     ORDER BY round(dropoff_latitude::numeric, 4), round(dropoff_longitude::numeric, 4),
+		              completed_at DESC
+		 ) places
+		 ORDER BY completed_at DESC
+		 LIMIT $2`,
+		riderID,
+		limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list recent destinations: %w", err)
+	}
+	defer rows.Close()
+
+	out := make([]trip.Destination, 0, limit)
+
+	for rows.Next() {
+		var d trip.Destination
+
+		if err := rows.Scan(&d.Coordinates.Latitude, &d.Coordinates.Longitude, &d.Address, &d.LastTripAt); err != nil {
+			return nil, fmt.Errorf("scan recent destination: %w", err)
+		}
+
+		out = append(out, d)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("list recent destinations: %w", err)
+	}
+
+	return out, nil
 }

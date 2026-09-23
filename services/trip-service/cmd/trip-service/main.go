@@ -166,6 +166,14 @@ func run() int {
 	}
 	defer driverConn.Close()
 
+	mediaConn, err := dialService(cfg.MediaServiceAddress, cfg.InternalServiceToken)
+	if err != nil {
+		logger.Error("failed to connect to media-service", "error", err)
+
+		return 1
+	}
+	defer mediaConn.Close()
+
 	profileResolver := grpcserver.NewCachingResolver(clients.NewProfileResolver(riderConn, driverConn))
 
 	locationClient := clients.NewLocationClient(locationConn)
@@ -174,16 +182,26 @@ func run() int {
 	tripRepository := postgresrepo.NewTripRepository(pool)
 	idGenerator := identifier.NewUUIDGenerator()
 
-	tripService := trip.WithTripOffers(
-		trip.WithTripHistory(
-			trip.WithDriverTracking(
-				trip.WithDriverProfile(
-					trip.NewService(tripRepository, idGenerator, locationClient),
-					driverDirectory,
+	// WithSavedAddresses wraps the base service directly, so every other
+	// decorator's RequestTrip reaches it.
+	baseService := trip.WithSavedAddresses(
+		trip.NewService(tripRepository, idGenerator, locationClient),
+		clients.NewAddressBook(riderConn),
+	)
+
+	tripService := trip.WithRecentDestinations(
+		trip.WithPickupPhotos(
+			trip.WithTripOffers(
+				trip.WithTripHistory(
+					trip.WithDriverTracking(
+						trip.WithDriverProfile(baseService, driverDirectory),
+						locationClient,
+					),
+					tripRepository,
 				),
-				locationClient,
+				tripRepository,
 			),
-			tripRepository,
+			clients.NewPhotoLinks(mediaConn),
 		),
 		tripRepository,
 	)

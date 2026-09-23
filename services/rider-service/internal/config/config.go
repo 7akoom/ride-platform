@@ -36,6 +36,9 @@ type Config struct {
 	// default is for local dev only.
 	InternalServiceToken string
 
+	// media-service, which keeps the photos of saved addresses.
+	MediaServiceAddress string
+
 	// Per-caller token-bucket rate limit (see
 	// transport/grpc/rate_limit_interceptor.go). Defaults are generous
 	// for a single mobile-app client under normal use, tight enough to
@@ -46,11 +49,12 @@ type Config struct {
 
 func Load() Config {
 	return Config{
-		ServiceName:    getEnv("SERVICE_NAME", "rider-service"),
-		Environment:    getEnv("ENVIRONMENT", "development"),
-		GRPCAddress:    getEnv("GRPC_ADDRESS", ":50052"),
-		MetricsAddress: getEnv("METRICS_ADDRESS", ":9092"),
-		DatabaseURL:    getEnv("DATABASE_URL", ""),
+		ServiceName:         getEnv("SERVICE_NAME", "rider-service"),
+		Environment:         getEnv("ENVIRONMENT", "development"),
+		GRPCAddress:         getEnv("GRPC_ADDRESS", ":50052"),
+		MediaServiceAddress: getEnv("MEDIA_SERVICE_ADDRESS", "localhost:50062"),
+		MetricsAddress:      getEnv("METRICS_ADDRESS", ":9092"),
+		DatabaseURL:         getEnv("DATABASE_URL", ""),
 
 		NATSURL: getEnv(
 			"NATS_URL",

@@ -23,6 +23,11 @@ const (
 	RiderService_GetRider_FullMethodName           = "/ride.rider.v1.RiderService/GetRider"
 	RiderService_GetRiderByIdentity_FullMethodName = "/ride.rider.v1.RiderService/GetRiderByIdentity"
 	RiderService_UpdateRiderProfile_FullMethodName = "/ride.rider.v1.RiderService/UpdateRiderProfile"
+	RiderService_CreateSavedAddress_FullMethodName = "/ride.rider.v1.RiderService/CreateSavedAddress"
+	RiderService_ListSavedAddresses_FullMethodName = "/ride.rider.v1.RiderService/ListSavedAddresses"
+	RiderService_GetSavedAddress_FullMethodName    = "/ride.rider.v1.RiderService/GetSavedAddress"
+	RiderService_UpdateSavedAddress_FullMethodName = "/ride.rider.v1.RiderService/UpdateSavedAddress"
+	RiderService_DeleteSavedAddress_FullMethodName = "/ride.rider.v1.RiderService/DeleteSavedAddress"
 )
 
 // RiderServiceClient is the client API for RiderService service.
@@ -37,6 +42,15 @@ type RiderServiceClient interface {
 	GetRiderByIdentity(ctx context.Context, in *GetRiderByIdentityRequest, opts ...grpc.CallOption) (*GetRiderResponse, error)
 	// UpdateRiderProfile changes the caller's own rider profile.
 	UpdateRiderProfile(ctx context.Context, in *UpdateRiderProfileRequest, opts ...grpc.CallOption) (*UpdateRiderProfileResponse, error)
+	// Saved addresses: the caller's own home, work and other places, with what
+	// helps the captain find them (building, floor, a note, a photo). At most 20,
+	// one home and one work. Services (trip-service, with the internal token)
+	// read them when a trip is requested from one.
+	CreateSavedAddress(ctx context.Context, in *CreateSavedAddressRequest, opts ...grpc.CallOption) (*SavedAddressResponse, error)
+	ListSavedAddresses(ctx context.Context, in *ListSavedAddressesRequest, opts ...grpc.CallOption) (*ListSavedAddressesResponse, error)
+	GetSavedAddress(ctx context.Context, in *GetSavedAddressRequest, opts ...grpc.CallOption) (*SavedAddressResponse, error)
+	UpdateSavedAddress(ctx context.Context, in *UpdateSavedAddressRequest, opts ...grpc.CallOption) (*SavedAddressResponse, error)
+	DeleteSavedAddress(ctx context.Context, in *DeleteSavedAddressRequest, opts ...grpc.CallOption) (*DeleteSavedAddressResponse, error)
 }
 
 type riderServiceClient struct {
@@ -87,6 +101,56 @@ func (c *riderServiceClient) UpdateRiderProfile(ctx context.Context, in *UpdateR
 	return out, nil
 }
 
+func (c *riderServiceClient) CreateSavedAddress(ctx context.Context, in *CreateSavedAddressRequest, opts ...grpc.CallOption) (*SavedAddressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SavedAddressResponse)
+	err := c.cc.Invoke(ctx, RiderService_CreateSavedAddress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *riderServiceClient) ListSavedAddresses(ctx context.Context, in *ListSavedAddressesRequest, opts ...grpc.CallOption) (*ListSavedAddressesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSavedAddressesResponse)
+	err := c.cc.Invoke(ctx, RiderService_ListSavedAddresses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *riderServiceClient) GetSavedAddress(ctx context.Context, in *GetSavedAddressRequest, opts ...grpc.CallOption) (*SavedAddressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SavedAddressResponse)
+	err := c.cc.Invoke(ctx, RiderService_GetSavedAddress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *riderServiceClient) UpdateSavedAddress(ctx context.Context, in *UpdateSavedAddressRequest, opts ...grpc.CallOption) (*SavedAddressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SavedAddressResponse)
+	err := c.cc.Invoke(ctx, RiderService_UpdateSavedAddress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *riderServiceClient) DeleteSavedAddress(ctx context.Context, in *DeleteSavedAddressRequest, opts ...grpc.CallOption) (*DeleteSavedAddressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteSavedAddressResponse)
+	err := c.cc.Invoke(ctx, RiderService_DeleteSavedAddress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RiderServiceServer is the server API for RiderService service.
 // All implementations must embed UnimplementedRiderServiceServer
 // for forward compatibility.
@@ -99,6 +163,15 @@ type RiderServiceServer interface {
 	GetRiderByIdentity(context.Context, *GetRiderByIdentityRequest) (*GetRiderResponse, error)
 	// UpdateRiderProfile changes the caller's own rider profile.
 	UpdateRiderProfile(context.Context, *UpdateRiderProfileRequest) (*UpdateRiderProfileResponse, error)
+	// Saved addresses: the caller's own home, work and other places, with what
+	// helps the captain find them (building, floor, a note, a photo). At most 20,
+	// one home and one work. Services (trip-service, with the internal token)
+	// read them when a trip is requested from one.
+	CreateSavedAddress(context.Context, *CreateSavedAddressRequest) (*SavedAddressResponse, error)
+	ListSavedAddresses(context.Context, *ListSavedAddressesRequest) (*ListSavedAddressesResponse, error)
+	GetSavedAddress(context.Context, *GetSavedAddressRequest) (*SavedAddressResponse, error)
+	UpdateSavedAddress(context.Context, *UpdateSavedAddressRequest) (*SavedAddressResponse, error)
+	DeleteSavedAddress(context.Context, *DeleteSavedAddressRequest) (*DeleteSavedAddressResponse, error)
 	mustEmbedUnimplementedRiderServiceServer()
 }
 
@@ -120,6 +193,21 @@ func (UnimplementedRiderServiceServer) GetRiderByIdentity(context.Context, *GetR
 }
 func (UnimplementedRiderServiceServer) UpdateRiderProfile(context.Context, *UpdateRiderProfileRequest) (*UpdateRiderProfileResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateRiderProfile not implemented")
+}
+func (UnimplementedRiderServiceServer) CreateSavedAddress(context.Context, *CreateSavedAddressRequest) (*SavedAddressResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateSavedAddress not implemented")
+}
+func (UnimplementedRiderServiceServer) ListSavedAddresses(context.Context, *ListSavedAddressesRequest) (*ListSavedAddressesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSavedAddresses not implemented")
+}
+func (UnimplementedRiderServiceServer) GetSavedAddress(context.Context, *GetSavedAddressRequest) (*SavedAddressResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSavedAddress not implemented")
+}
+func (UnimplementedRiderServiceServer) UpdateSavedAddress(context.Context, *UpdateSavedAddressRequest) (*SavedAddressResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateSavedAddress not implemented")
+}
+func (UnimplementedRiderServiceServer) DeleteSavedAddress(context.Context, *DeleteSavedAddressRequest) (*DeleteSavedAddressResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteSavedAddress not implemented")
 }
 func (UnimplementedRiderServiceServer) mustEmbedUnimplementedRiderServiceServer() {}
 func (UnimplementedRiderServiceServer) testEmbeddedByValue()                      {}
@@ -214,6 +302,96 @@ func _RiderService_UpdateRiderProfile_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RiderService_CreateSavedAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSavedAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).CreateSavedAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderService_CreateSavedAddress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).CreateSavedAddress(ctx, req.(*CreateSavedAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RiderService_ListSavedAddresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSavedAddressesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).ListSavedAddresses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderService_ListSavedAddresses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).ListSavedAddresses(ctx, req.(*ListSavedAddressesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RiderService_GetSavedAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSavedAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).GetSavedAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderService_GetSavedAddress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).GetSavedAddress(ctx, req.(*GetSavedAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RiderService_UpdateSavedAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSavedAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).UpdateSavedAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderService_UpdateSavedAddress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).UpdateSavedAddress(ctx, req.(*UpdateSavedAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RiderService_DeleteSavedAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSavedAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).DeleteSavedAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderService_DeleteSavedAddress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).DeleteSavedAddress(ctx, req.(*DeleteSavedAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RiderService_ServiceDesc is the grpc.ServiceDesc for RiderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -236,6 +414,26 @@ var RiderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateRiderProfile",
 			Handler:    _RiderService_UpdateRiderProfile_Handler,
+		},
+		{
+			MethodName: "CreateSavedAddress",
+			Handler:    _RiderService_CreateSavedAddress_Handler,
+		},
+		{
+			MethodName: "ListSavedAddresses",
+			Handler:    _RiderService_ListSavedAddresses_Handler,
+		},
+		{
+			MethodName: "GetSavedAddress",
+			Handler:    _RiderService_GetSavedAddress_Handler,
+		},
+		{
+			MethodName: "UpdateSavedAddress",
+			Handler:    _RiderService_UpdateSavedAddress_Handler,
+		},
+		{
+			MethodName: "DeleteSavedAddress",
+			Handler:    _RiderService_DeleteSavedAddress_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

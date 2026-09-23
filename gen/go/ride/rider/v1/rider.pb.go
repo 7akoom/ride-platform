@@ -72,6 +72,60 @@ func (RiderStatus) EnumDescriptor() ([]byte, []int) {
 	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{0}
 }
 
+type SavedAddressKind int32
+
+const (
+	SavedAddressKind_SAVED_ADDRESS_KIND_UNSPECIFIED SavedAddressKind = 0
+	// At most one of each per rider.
+	SavedAddressKind_SAVED_ADDRESS_KIND_HOME SavedAddressKind = 1
+	SavedAddressKind_SAVED_ADDRESS_KIND_WORK SavedAddressKind = 2
+	// Needs a label ("Gym", "Mum's").
+	SavedAddressKind_SAVED_ADDRESS_KIND_OTHER SavedAddressKind = 3
+)
+
+// Enum value maps for SavedAddressKind.
+var (
+	SavedAddressKind_name = map[int32]string{
+		0: "SAVED_ADDRESS_KIND_UNSPECIFIED",
+		1: "SAVED_ADDRESS_KIND_HOME",
+		2: "SAVED_ADDRESS_KIND_WORK",
+		3: "SAVED_ADDRESS_KIND_OTHER",
+	}
+	SavedAddressKind_value = map[string]int32{
+		"SAVED_ADDRESS_KIND_UNSPECIFIED": 0,
+		"SAVED_ADDRESS_KIND_HOME":        1,
+		"SAVED_ADDRESS_KIND_WORK":        2,
+		"SAVED_ADDRESS_KIND_OTHER":       3,
+	}
+)
+
+func (x SavedAddressKind) Enum() *SavedAddressKind {
+	p := new(SavedAddressKind)
+	*p = x
+	return p
+}
+
+func (x SavedAddressKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SavedAddressKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_ride_rider_v1_rider_proto_enumTypes[1].Descriptor()
+}
+
+func (SavedAddressKind) Type() protoreflect.EnumType {
+	return &file_ride_rider_v1_rider_proto_enumTypes[1]
+}
+
+func (x SavedAddressKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SavedAddressKind.Descriptor instead.
+func (SavedAddressKind) EnumDescriptor() ([]byte, []int) {
+	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{1}
+}
+
 type Rider struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -496,6 +550,683 @@ func (x *UpdateRiderProfileResponse) GetRider() *Rider {
 	return nil
 }
 
+type Coordinates struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Latitude      float64                `protobuf:"fixed64,1,opt,name=latitude,proto3" json:"latitude,omitempty"`
+	Longitude     float64                `protobuf:"fixed64,2,opt,name=longitude,proto3" json:"longitude,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Coordinates) Reset() {
+	*x = Coordinates{}
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Coordinates) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Coordinates) ProtoMessage() {}
+
+func (x *Coordinates) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Coordinates.ProtoReflect.Descriptor instead.
+func (*Coordinates) Descriptor() ([]byte, []int) {
+	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *Coordinates) GetLatitude() float64 {
+	if x != nil {
+		return x.Latitude
+	}
+	return 0
+}
+
+func (x *Coordinates) GetLongitude() float64 {
+	if x != nil {
+		return x.Longitude
+	}
+	return 0
+}
+
+type SavedAddress struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Id      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	RiderId string                 `protobuf:"bytes,2,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	Kind    SavedAddressKind       `protobuf:"varint,3,opt,name=kind,proto3,enum=ride.rider.v1.SavedAddressKind" json:"kind,omitempty"`
+	// Required for OTHER; optional otherwise. At most 60 characters.
+	Label string `protobuf:"bytes,4,opt,name=label,proto3" json:"label,omitempty"`
+	// The exact point to be picked up or dropped at.
+	Coordinates *Coordinates `protobuf:"bytes,5,opt,name=coordinates,proto3" json:"coordinates,omitempty"`
+	// The address as shown ("Gulan Street, Erbil"); at most 300 characters.
+	Address string `protobuf:"bytes,6,opt,name=address,proto3" json:"address,omitempty"`
+	// Building, floor, apartment; at most 200 characters.
+	Details string `protobuf:"bytes,7,opt,name=details,proto3" json:"details,omitempty"`
+	// For the captain ("Blue gate, ring twice"); at most 300 characters.
+	NoteForDriver string `protobuf:"bytes,8,opt,name=note_for_driver,json=noteForDriver,proto3" json:"note_for_driver,omitempty"`
+	// A photo of the entrance (media-service, purpose ADDRESS_PHOTO), or empty.
+	PhotoMediaId  string                 `protobuf:"bytes,9,opt,name=photo_media_id,json=photoMediaId,proto3" json:"photo_media_id,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SavedAddress) Reset() {
+	*x = SavedAddress{}
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SavedAddress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SavedAddress) ProtoMessage() {}
+
+func (x *SavedAddress) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SavedAddress.ProtoReflect.Descriptor instead.
+func (*SavedAddress) Descriptor() ([]byte, []int) {
+	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SavedAddress) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SavedAddress) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *SavedAddress) GetKind() SavedAddressKind {
+	if x != nil {
+		return x.Kind
+	}
+	return SavedAddressKind_SAVED_ADDRESS_KIND_UNSPECIFIED
+}
+
+func (x *SavedAddress) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *SavedAddress) GetCoordinates() *Coordinates {
+	if x != nil {
+		return x.Coordinates
+	}
+	return nil
+}
+
+func (x *SavedAddress) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *SavedAddress) GetDetails() string {
+	if x != nil {
+		return x.Details
+	}
+	return ""
+}
+
+func (x *SavedAddress) GetNoteForDriver() string {
+	if x != nil {
+		return x.NoteForDriver
+	}
+	return ""
+}
+
+func (x *SavedAddress) GetPhotoMediaId() string {
+	if x != nil {
+		return x.PhotoMediaId
+	}
+	return ""
+}
+
+func (x *SavedAddress) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *SavedAddress) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type CreateSavedAddressRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	Kind          SavedAddressKind       `protobuf:"varint,2,opt,name=kind,proto3,enum=ride.rider.v1.SavedAddressKind" json:"kind,omitempty"`
+	Label         string                 `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
+	Coordinates   *Coordinates           `protobuf:"bytes,4,opt,name=coordinates,proto3" json:"coordinates,omitempty"`
+	Address       string                 `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
+	Details       string                 `protobuf:"bytes,6,opt,name=details,proto3" json:"details,omitempty"`
+	NoteForDriver string                 `protobuf:"bytes,7,opt,name=note_for_driver,json=noteForDriver,proto3" json:"note_for_driver,omitempty"`
+	// Optional: a READY upload of the caller's with purpose ADDRESS_PHOTO. It is
+	// then kept by the address (the owner can no longer delete it on its own) and
+	// deleted with it.
+	PhotoMediaId  string `protobuf:"bytes,8,opt,name=photo_media_id,json=photoMediaId,proto3" json:"photo_media_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateSavedAddressRequest) Reset() {
+	*x = CreateSavedAddressRequest{}
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSavedAddressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSavedAddressRequest) ProtoMessage() {}
+
+func (x *CreateSavedAddressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSavedAddressRequest.ProtoReflect.Descriptor instead.
+func (*CreateSavedAddressRequest) Descriptor() ([]byte, []int) {
+	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *CreateSavedAddressRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *CreateSavedAddressRequest) GetKind() SavedAddressKind {
+	if x != nil {
+		return x.Kind
+	}
+	return SavedAddressKind_SAVED_ADDRESS_KIND_UNSPECIFIED
+}
+
+func (x *CreateSavedAddressRequest) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *CreateSavedAddressRequest) GetCoordinates() *Coordinates {
+	if x != nil {
+		return x.Coordinates
+	}
+	return nil
+}
+
+func (x *CreateSavedAddressRequest) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *CreateSavedAddressRequest) GetDetails() string {
+	if x != nil {
+		return x.Details
+	}
+	return ""
+}
+
+func (x *CreateSavedAddressRequest) GetNoteForDriver() string {
+	if x != nil {
+		return x.NoteForDriver
+	}
+	return ""
+}
+
+func (x *CreateSavedAddressRequest) GetPhotoMediaId() string {
+	if x != nil {
+		return x.PhotoMediaId
+	}
+	return ""
+}
+
+type ListSavedAddressesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSavedAddressesRequest) Reset() {
+	*x = ListSavedAddressesRequest{}
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSavedAddressesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSavedAddressesRequest) ProtoMessage() {}
+
+func (x *ListSavedAddressesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSavedAddressesRequest.ProtoReflect.Descriptor instead.
+func (*ListSavedAddressesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ListSavedAddressesRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+type ListSavedAddressesResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Home, then work, then the others by label.
+	Addresses     []*SavedAddress `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSavedAddressesResponse) Reset() {
+	*x = ListSavedAddressesResponse{}
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSavedAddressesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSavedAddressesResponse) ProtoMessage() {}
+
+func (x *ListSavedAddressesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSavedAddressesResponse.ProtoReflect.Descriptor instead.
+func (*ListSavedAddressesResponse) Descriptor() ([]byte, []int) {
+	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ListSavedAddressesResponse) GetAddresses() []*SavedAddress {
+	if x != nil {
+		return x.Addresses
+	}
+	return nil
+}
+
+type GetSavedAddressRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	AddressId     string                 `protobuf:"bytes,2,opt,name=address_id,json=addressId,proto3" json:"address_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSavedAddressRequest) Reset() {
+	*x = GetSavedAddressRequest{}
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSavedAddressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSavedAddressRequest) ProtoMessage() {}
+
+func (x *GetSavedAddressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSavedAddressRequest.ProtoReflect.Descriptor instead.
+func (*GetSavedAddressRequest) Descriptor() ([]byte, []int) {
+	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetSavedAddressRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *GetSavedAddressRequest) GetAddressId() string {
+	if x != nil {
+		return x.AddressId
+	}
+	return ""
+}
+
+type SavedAddressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Address       *SavedAddress          `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SavedAddressResponse) Reset() {
+	*x = SavedAddressResponse{}
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SavedAddressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SavedAddressResponse) ProtoMessage() {}
+
+func (x *SavedAddressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SavedAddressResponse.ProtoReflect.Descriptor instead.
+func (*SavedAddressResponse) Descriptor() ([]byte, []int) {
+	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *SavedAddressResponse) GetAddress() *SavedAddress {
+	if x != nil {
+		return x.Address
+	}
+	return nil
+}
+
+// UpdateSavedAddress replaces kind, label, coordinates, address, details and
+// note. The photo changes only when photo_media_id is set (the old one is
+// deleted) or remove_photo is true.
+type UpdateSavedAddressRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	AddressId     string                 `protobuf:"bytes,2,opt,name=address_id,json=addressId,proto3" json:"address_id,omitempty"`
+	Kind          SavedAddressKind       `protobuf:"varint,3,opt,name=kind,proto3,enum=ride.rider.v1.SavedAddressKind" json:"kind,omitempty"`
+	Label         string                 `protobuf:"bytes,4,opt,name=label,proto3" json:"label,omitempty"`
+	Coordinates   *Coordinates           `protobuf:"bytes,5,opt,name=coordinates,proto3" json:"coordinates,omitempty"`
+	Address       string                 `protobuf:"bytes,6,opt,name=address,proto3" json:"address,omitempty"`
+	Details       string                 `protobuf:"bytes,7,opt,name=details,proto3" json:"details,omitempty"`
+	NoteForDriver string                 `protobuf:"bytes,8,opt,name=note_for_driver,json=noteForDriver,proto3" json:"note_for_driver,omitempty"`
+	PhotoMediaId  string                 `protobuf:"bytes,9,opt,name=photo_media_id,json=photoMediaId,proto3" json:"photo_media_id,omitempty"`
+	RemovePhoto   bool                   `protobuf:"varint,10,opt,name=remove_photo,json=removePhoto,proto3" json:"remove_photo,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSavedAddressRequest) Reset() {
+	*x = UpdateSavedAddressRequest{}
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSavedAddressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSavedAddressRequest) ProtoMessage() {}
+
+func (x *UpdateSavedAddressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSavedAddressRequest.ProtoReflect.Descriptor instead.
+func (*UpdateSavedAddressRequest) Descriptor() ([]byte, []int) {
+	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *UpdateSavedAddressRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *UpdateSavedAddressRequest) GetAddressId() string {
+	if x != nil {
+		return x.AddressId
+	}
+	return ""
+}
+
+func (x *UpdateSavedAddressRequest) GetKind() SavedAddressKind {
+	if x != nil {
+		return x.Kind
+	}
+	return SavedAddressKind_SAVED_ADDRESS_KIND_UNSPECIFIED
+}
+
+func (x *UpdateSavedAddressRequest) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *UpdateSavedAddressRequest) GetCoordinates() *Coordinates {
+	if x != nil {
+		return x.Coordinates
+	}
+	return nil
+}
+
+func (x *UpdateSavedAddressRequest) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *UpdateSavedAddressRequest) GetDetails() string {
+	if x != nil {
+		return x.Details
+	}
+	return ""
+}
+
+func (x *UpdateSavedAddressRequest) GetNoteForDriver() string {
+	if x != nil {
+		return x.NoteForDriver
+	}
+	return ""
+}
+
+func (x *UpdateSavedAddressRequest) GetPhotoMediaId() string {
+	if x != nil {
+		return x.PhotoMediaId
+	}
+	return ""
+}
+
+func (x *UpdateSavedAddressRequest) GetRemovePhoto() bool {
+	if x != nil {
+		return x.RemovePhoto
+	}
+	return false
+}
+
+type DeleteSavedAddressRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	AddressId     string                 `protobuf:"bytes,2,opt,name=address_id,json=addressId,proto3" json:"address_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSavedAddressRequest) Reset() {
+	*x = DeleteSavedAddressRequest{}
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSavedAddressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSavedAddressRequest) ProtoMessage() {}
+
+func (x *DeleteSavedAddressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSavedAddressRequest.ProtoReflect.Descriptor instead.
+func (*DeleteSavedAddressRequest) Descriptor() ([]byte, []int) {
+	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *DeleteSavedAddressRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *DeleteSavedAddressRequest) GetAddressId() string {
+	if x != nil {
+		return x.AddressId
+	}
+	return ""
+}
+
+type DeleteSavedAddressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSavedAddressResponse) Reset() {
+	*x = DeleteSavedAddressResponse{}
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSavedAddressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSavedAddressResponse) ProtoMessage() {}
+
+func (x *DeleteSavedAddressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_rider_v1_rider_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSavedAddressResponse.ProtoReflect.Descriptor instead.
+func (*DeleteSavedAddressResponse) Descriptor() ([]byte, []int) {
+	return file_ride_rider_v1_rider_proto_rawDescGZIP(), []int{17}
+}
+
 var File_ride_rider_v1_rider_proto protoreflect.FileDescriptor
 
 const file_ride_rider_v1_rider_proto_rawDesc = "" +
@@ -530,17 +1261,83 @@ const file_ride_rider_v1_rider_proto_rawDesc = "" +
 	"\brider_id\x18\x01 \x01(\tR\ariderId\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\"H\n" +
 	"\x1aUpdateRiderProfileResponse\x12*\n" +
-	"\x05rider\x18\x01 \x01(\v2\x14.ride.rider.v1.RiderR\x05rider*`\n" +
+	"\x05rider\x18\x01 \x01(\v2\x14.ride.rider.v1.RiderR\x05rider\"G\n" +
+	"\vCoordinates\x12\x1a\n" +
+	"\blatitude\x18\x01 \x01(\x01R\blatitude\x12\x1c\n" +
+	"\tlongitude\x18\x02 \x01(\x01R\tlongitude\"\xba\x03\n" +
+	"\fSavedAddress\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
+	"\brider_id\x18\x02 \x01(\tR\ariderId\x123\n" +
+	"\x04kind\x18\x03 \x01(\x0e2\x1f.ride.rider.v1.SavedAddressKindR\x04kind\x12\x14\n" +
+	"\x05label\x18\x04 \x01(\tR\x05label\x12<\n" +
+	"\vcoordinates\x18\x05 \x01(\v2\x1a.ride.rider.v1.CoordinatesR\vcoordinates\x12\x18\n" +
+	"\aaddress\x18\x06 \x01(\tR\aaddress\x12\x18\n" +
+	"\adetails\x18\a \x01(\tR\adetails\x12&\n" +
+	"\x0fnote_for_driver\x18\b \x01(\tR\rnoteForDriver\x12$\n" +
+	"\x0ephoto_media_id\x18\t \x01(\tR\fphotoMediaId\x129\n" +
+	"\n" +
+	"created_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xc1\x02\n" +
+	"\x19CreateSavedAddressRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\x123\n" +
+	"\x04kind\x18\x02 \x01(\x0e2\x1f.ride.rider.v1.SavedAddressKindR\x04kind\x12\x14\n" +
+	"\x05label\x18\x03 \x01(\tR\x05label\x12<\n" +
+	"\vcoordinates\x18\x04 \x01(\v2\x1a.ride.rider.v1.CoordinatesR\vcoordinates\x12\x18\n" +
+	"\aaddress\x18\x05 \x01(\tR\aaddress\x12\x18\n" +
+	"\adetails\x18\x06 \x01(\tR\adetails\x12&\n" +
+	"\x0fnote_for_driver\x18\a \x01(\tR\rnoteForDriver\x12$\n" +
+	"\x0ephoto_media_id\x18\b \x01(\tR\fphotoMediaId\"6\n" +
+	"\x19ListSavedAddressesRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\"W\n" +
+	"\x1aListSavedAddressesResponse\x129\n" +
+	"\taddresses\x18\x01 \x03(\v2\x1b.ride.rider.v1.SavedAddressR\taddresses\"R\n" +
+	"\x16GetSavedAddressRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\x12\x1d\n" +
+	"\n" +
+	"address_id\x18\x02 \x01(\tR\taddressId\"M\n" +
+	"\x14SavedAddressResponse\x125\n" +
+	"\aaddress\x18\x01 \x01(\v2\x1b.ride.rider.v1.SavedAddressR\aaddress\"\x83\x03\n" +
+	"\x19UpdateSavedAddressRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\x12\x1d\n" +
+	"\n" +
+	"address_id\x18\x02 \x01(\tR\taddressId\x123\n" +
+	"\x04kind\x18\x03 \x01(\x0e2\x1f.ride.rider.v1.SavedAddressKindR\x04kind\x12\x14\n" +
+	"\x05label\x18\x04 \x01(\tR\x05label\x12<\n" +
+	"\vcoordinates\x18\x05 \x01(\v2\x1a.ride.rider.v1.CoordinatesR\vcoordinates\x12\x18\n" +
+	"\aaddress\x18\x06 \x01(\tR\aaddress\x12\x18\n" +
+	"\adetails\x18\a \x01(\tR\adetails\x12&\n" +
+	"\x0fnote_for_driver\x18\b \x01(\tR\rnoteForDriver\x12$\n" +
+	"\x0ephoto_media_id\x18\t \x01(\tR\fphotoMediaId\x12!\n" +
+	"\fremove_photo\x18\n" +
+	" \x01(\bR\vremovePhoto\"U\n" +
+	"\x19DeleteSavedAddressRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\x12\x1d\n" +
+	"\n" +
+	"address_id\x18\x02 \x01(\tR\taddressId\"\x1c\n" +
+	"\x1aDeleteSavedAddressResponse*`\n" +
 	"\vRiderStatus\x12\x1c\n" +
 	"\x18RIDER_STATUS_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13RIDER_STATUS_ACTIVE\x10\x01\x12\x1a\n" +
-	"\x16RIDER_STATUS_SUSPENDED\x10\x022\x83\x04\n" +
+	"\x16RIDER_STATUS_SUSPENDED\x10\x02*\x8e\x01\n" +
+	"\x10SavedAddressKind\x12\"\n" +
+	"\x1eSAVED_ADDRESS_KIND_UNSPECIFIED\x10\x00\x12\x1b\n" +
+	"\x17SAVED_ADDRESS_KIND_HOME\x10\x01\x12\x1b\n" +
+	"\x17SAVED_ADDRESS_KIND_WORK\x10\x02\x12\x1c\n" +
+	"\x18SAVED_ADDRESS_KIND_OTHER\x10\x032\x81\n" +
+	"\n" +
 	"\fRiderService\x12k\n" +
 	"\vCreateRider\x12!.ride.rider.v1.CreateRiderRequest\x1a\".ride.rider.v1.CreateRiderResponse\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\"\n" +
 	"/v1/riders\x12j\n" +
 	"\bGetRider\x12\x1e.ride.rider.v1.GetRiderRequest\x1a\x1f.ride.rider.v1.GetRiderResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/v1/riders/{rider_id}\x12\x8b\x01\n" +
 	"\x12GetRiderByIdentity\x12(.ride.rider.v1.GetRiderByIdentityRequest\x1a\x1f.ride.rider.v1.GetRiderResponse\"*\x82\xd3\xe4\x93\x02$\x12\"/v1/identities/{identity_id}/rider\x12\x8b\x01\n" +
-	"\x12UpdateRiderProfile\x12(.ride.rider.v1.UpdateRiderProfileRequest\x1a).ride.rider.v1.UpdateRiderProfileResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*2\x15/v1/riders/{rider_id}B>Z<github.com/7akoom/ride-platform/gen/go/ride/rider/v1;riderv1b\x06proto3"
+	"\x12UpdateRiderProfile\x12(.ride.rider.v1.UpdateRiderProfileRequest\x1a).ride.rider.v1.UpdateRiderProfileResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*2\x15/v1/riders/{rider_id}\x12\x8f\x01\n" +
+	"\x12CreateSavedAddress\x12(.ride.rider.v1.CreateSavedAddressRequest\x1a#.ride.rider.v1.SavedAddressResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/v1/riders/{rider_id}/addresses\x12\x92\x01\n" +
+	"\x12ListSavedAddresses\x12(.ride.rider.v1.ListSavedAddressesRequest\x1a).ride.rider.v1.ListSavedAddressesResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/riders/{rider_id}/addresses\x12\x93\x01\n" +
+	"\x0fGetSavedAddress\x12%.ride.rider.v1.GetSavedAddressRequest\x1a#.ride.rider.v1.SavedAddressResponse\"4\x82\xd3\xe4\x93\x02.\x12,/v1/riders/{rider_id}/addresses/{address_id}\x12\x9c\x01\n" +
+	"\x12UpdateSavedAddress\x12(.ride.rider.v1.UpdateSavedAddressRequest\x1a#.ride.rider.v1.SavedAddressResponse\"7\x82\xd3\xe4\x93\x021:\x01*2,/v1/riders/{rider_id}/addresses/{address_id}\x12\x9f\x01\n" +
+	"\x12DeleteSavedAddress\x12(.ride.rider.v1.DeleteSavedAddressRequest\x1a).ride.rider.v1.DeleteSavedAddressResponse\"4\x82\xd3\xe4\x93\x02.*,/v1/riders/{rider_id}/addresses/{address_id}B>Z<github.com/7akoom/ride-platform/gen/go/ride/rider/v1;riderv1b\x06proto3"
 
 var (
 	file_ride_rider_v1_rider_proto_rawDescOnce sync.Once
@@ -554,40 +1351,71 @@ func file_ride_rider_v1_rider_proto_rawDescGZIP() []byte {
 	return file_ride_rider_v1_rider_proto_rawDescData
 }
 
-var file_ride_rider_v1_rider_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ride_rider_v1_rider_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_ride_rider_v1_rider_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_ride_rider_v1_rider_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_ride_rider_v1_rider_proto_goTypes = []any{
 	(RiderStatus)(0),                   // 0: ride.rider.v1.RiderStatus
-	(*Rider)(nil),                      // 1: ride.rider.v1.Rider
-	(*CreateRiderRequest)(nil),         // 2: ride.rider.v1.CreateRiderRequest
-	(*CreateRiderResponse)(nil),        // 3: ride.rider.v1.CreateRiderResponse
-	(*GetRiderRequest)(nil),            // 4: ride.rider.v1.GetRiderRequest
-	(*GetRiderByIdentityRequest)(nil),  // 5: ride.rider.v1.GetRiderByIdentityRequest
-	(*GetRiderResponse)(nil),           // 6: ride.rider.v1.GetRiderResponse
-	(*UpdateRiderProfileRequest)(nil),  // 7: ride.rider.v1.UpdateRiderProfileRequest
-	(*UpdateRiderProfileResponse)(nil), // 8: ride.rider.v1.UpdateRiderProfileResponse
-	(*timestamppb.Timestamp)(nil),      // 9: google.protobuf.Timestamp
+	(SavedAddressKind)(0),              // 1: ride.rider.v1.SavedAddressKind
+	(*Rider)(nil),                      // 2: ride.rider.v1.Rider
+	(*CreateRiderRequest)(nil),         // 3: ride.rider.v1.CreateRiderRequest
+	(*CreateRiderResponse)(nil),        // 4: ride.rider.v1.CreateRiderResponse
+	(*GetRiderRequest)(nil),            // 5: ride.rider.v1.GetRiderRequest
+	(*GetRiderByIdentityRequest)(nil),  // 6: ride.rider.v1.GetRiderByIdentityRequest
+	(*GetRiderResponse)(nil),           // 7: ride.rider.v1.GetRiderResponse
+	(*UpdateRiderProfileRequest)(nil),  // 8: ride.rider.v1.UpdateRiderProfileRequest
+	(*UpdateRiderProfileResponse)(nil), // 9: ride.rider.v1.UpdateRiderProfileResponse
+	(*Coordinates)(nil),                // 10: ride.rider.v1.Coordinates
+	(*SavedAddress)(nil),               // 11: ride.rider.v1.SavedAddress
+	(*CreateSavedAddressRequest)(nil),  // 12: ride.rider.v1.CreateSavedAddressRequest
+	(*ListSavedAddressesRequest)(nil),  // 13: ride.rider.v1.ListSavedAddressesRequest
+	(*ListSavedAddressesResponse)(nil), // 14: ride.rider.v1.ListSavedAddressesResponse
+	(*GetSavedAddressRequest)(nil),     // 15: ride.rider.v1.GetSavedAddressRequest
+	(*SavedAddressResponse)(nil),       // 16: ride.rider.v1.SavedAddressResponse
+	(*UpdateSavedAddressRequest)(nil),  // 17: ride.rider.v1.UpdateSavedAddressRequest
+	(*DeleteSavedAddressRequest)(nil),  // 18: ride.rider.v1.DeleteSavedAddressRequest
+	(*DeleteSavedAddressResponse)(nil), // 19: ride.rider.v1.DeleteSavedAddressResponse
+	(*timestamppb.Timestamp)(nil),      // 20: google.protobuf.Timestamp
 }
 var file_ride_rider_v1_rider_proto_depIdxs = []int32{
 	0,  // 0: ride.rider.v1.Rider.status:type_name -> ride.rider.v1.RiderStatus
-	9,  // 1: ride.rider.v1.Rider.created_at:type_name -> google.protobuf.Timestamp
-	9,  // 2: ride.rider.v1.Rider.updated_at:type_name -> google.protobuf.Timestamp
-	1,  // 3: ride.rider.v1.CreateRiderResponse.rider:type_name -> ride.rider.v1.Rider
-	1,  // 4: ride.rider.v1.GetRiderResponse.rider:type_name -> ride.rider.v1.Rider
-	1,  // 5: ride.rider.v1.UpdateRiderProfileResponse.rider:type_name -> ride.rider.v1.Rider
-	2,  // 6: ride.rider.v1.RiderService.CreateRider:input_type -> ride.rider.v1.CreateRiderRequest
-	4,  // 7: ride.rider.v1.RiderService.GetRider:input_type -> ride.rider.v1.GetRiderRequest
-	5,  // 8: ride.rider.v1.RiderService.GetRiderByIdentity:input_type -> ride.rider.v1.GetRiderByIdentityRequest
-	7,  // 9: ride.rider.v1.RiderService.UpdateRiderProfile:input_type -> ride.rider.v1.UpdateRiderProfileRequest
-	3,  // 10: ride.rider.v1.RiderService.CreateRider:output_type -> ride.rider.v1.CreateRiderResponse
-	6,  // 11: ride.rider.v1.RiderService.GetRider:output_type -> ride.rider.v1.GetRiderResponse
-	6,  // 12: ride.rider.v1.RiderService.GetRiderByIdentity:output_type -> ride.rider.v1.GetRiderResponse
-	8,  // 13: ride.rider.v1.RiderService.UpdateRiderProfile:output_type -> ride.rider.v1.UpdateRiderProfileResponse
-	10, // [10:14] is the sub-list for method output_type
-	6,  // [6:10] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	20, // 1: ride.rider.v1.Rider.created_at:type_name -> google.protobuf.Timestamp
+	20, // 2: ride.rider.v1.Rider.updated_at:type_name -> google.protobuf.Timestamp
+	2,  // 3: ride.rider.v1.CreateRiderResponse.rider:type_name -> ride.rider.v1.Rider
+	2,  // 4: ride.rider.v1.GetRiderResponse.rider:type_name -> ride.rider.v1.Rider
+	2,  // 5: ride.rider.v1.UpdateRiderProfileResponse.rider:type_name -> ride.rider.v1.Rider
+	1,  // 6: ride.rider.v1.SavedAddress.kind:type_name -> ride.rider.v1.SavedAddressKind
+	10, // 7: ride.rider.v1.SavedAddress.coordinates:type_name -> ride.rider.v1.Coordinates
+	20, // 8: ride.rider.v1.SavedAddress.created_at:type_name -> google.protobuf.Timestamp
+	20, // 9: ride.rider.v1.SavedAddress.updated_at:type_name -> google.protobuf.Timestamp
+	1,  // 10: ride.rider.v1.CreateSavedAddressRequest.kind:type_name -> ride.rider.v1.SavedAddressKind
+	10, // 11: ride.rider.v1.CreateSavedAddressRequest.coordinates:type_name -> ride.rider.v1.Coordinates
+	11, // 12: ride.rider.v1.ListSavedAddressesResponse.addresses:type_name -> ride.rider.v1.SavedAddress
+	11, // 13: ride.rider.v1.SavedAddressResponse.address:type_name -> ride.rider.v1.SavedAddress
+	1,  // 14: ride.rider.v1.UpdateSavedAddressRequest.kind:type_name -> ride.rider.v1.SavedAddressKind
+	10, // 15: ride.rider.v1.UpdateSavedAddressRequest.coordinates:type_name -> ride.rider.v1.Coordinates
+	3,  // 16: ride.rider.v1.RiderService.CreateRider:input_type -> ride.rider.v1.CreateRiderRequest
+	5,  // 17: ride.rider.v1.RiderService.GetRider:input_type -> ride.rider.v1.GetRiderRequest
+	6,  // 18: ride.rider.v1.RiderService.GetRiderByIdentity:input_type -> ride.rider.v1.GetRiderByIdentityRequest
+	8,  // 19: ride.rider.v1.RiderService.UpdateRiderProfile:input_type -> ride.rider.v1.UpdateRiderProfileRequest
+	12, // 20: ride.rider.v1.RiderService.CreateSavedAddress:input_type -> ride.rider.v1.CreateSavedAddressRequest
+	13, // 21: ride.rider.v1.RiderService.ListSavedAddresses:input_type -> ride.rider.v1.ListSavedAddressesRequest
+	15, // 22: ride.rider.v1.RiderService.GetSavedAddress:input_type -> ride.rider.v1.GetSavedAddressRequest
+	17, // 23: ride.rider.v1.RiderService.UpdateSavedAddress:input_type -> ride.rider.v1.UpdateSavedAddressRequest
+	18, // 24: ride.rider.v1.RiderService.DeleteSavedAddress:input_type -> ride.rider.v1.DeleteSavedAddressRequest
+	4,  // 25: ride.rider.v1.RiderService.CreateRider:output_type -> ride.rider.v1.CreateRiderResponse
+	7,  // 26: ride.rider.v1.RiderService.GetRider:output_type -> ride.rider.v1.GetRiderResponse
+	7,  // 27: ride.rider.v1.RiderService.GetRiderByIdentity:output_type -> ride.rider.v1.GetRiderResponse
+	9,  // 28: ride.rider.v1.RiderService.UpdateRiderProfile:output_type -> ride.rider.v1.UpdateRiderProfileResponse
+	16, // 29: ride.rider.v1.RiderService.CreateSavedAddress:output_type -> ride.rider.v1.SavedAddressResponse
+	14, // 30: ride.rider.v1.RiderService.ListSavedAddresses:output_type -> ride.rider.v1.ListSavedAddressesResponse
+	16, // 31: ride.rider.v1.RiderService.GetSavedAddress:output_type -> ride.rider.v1.SavedAddressResponse
+	16, // 32: ride.rider.v1.RiderService.UpdateSavedAddress:output_type -> ride.rider.v1.SavedAddressResponse
+	19, // 33: ride.rider.v1.RiderService.DeleteSavedAddress:output_type -> ride.rider.v1.DeleteSavedAddressResponse
+	25, // [25:34] is the sub-list for method output_type
+	16, // [16:25] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_ride_rider_v1_rider_proto_init() }
@@ -600,8 +1428,8 @@ func file_ride_rider_v1_rider_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_rider_v1_rider_proto_rawDesc), len(file_ride_rider_v1_rider_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   8,
+			NumEnums:      2,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

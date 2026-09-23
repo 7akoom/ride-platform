@@ -2779,6 +2779,224 @@
         ]
       }
     },
+    "/v1/riders/{riderId}/addresses": {
+      "get": {
+        "operationId": "RiderService_ListSavedAddresses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSavedAddressesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      },
+      "post": {
+        "summary": "Saved addresses: the caller's own home, work and other places, with what\nhelps the captain find them (building, floor, a note, a photo). At most 20,\none home and one work. Services (trip-service, with the internal token)\nread them when a trip is requested from one.",
+        "operationId": "RiderService_CreateSavedAddress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SavedAddressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RiderServiceCreateSavedAddressBody"
+            }
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      }
+    },
+    "/v1/riders/{riderId}/addresses/{addressId}": {
+      "get": {
+        "operationId": "RiderService_GetSavedAddress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SavedAddressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "addressId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      },
+      "delete": {
+        "operationId": "RiderService_DeleteSavedAddress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteSavedAddressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "addressId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      },
+      "patch": {
+        "operationId": "RiderService_UpdateSavedAddress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SavedAddressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "addressId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RiderServiceUpdateSavedAddressBody"
+            }
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      }
+    },
+    "/v1/riders/{riderId}/recent-destinations": {
+      "get": {
+        "summary": "ListRecentDestinations lists where the rider's completed trips ended,\nmost recent first, each place once.",
+        "operationId": "TripService_ListRecentDestinations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListRecentDestinationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "description": "5 by default, at most 10.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/routes:compute": {
       "post": {
         "summary": "GetRoute returns the best route by road between two points: how far, how long, and\nthe line to draw on a map. Any signed-in user may ask.",
@@ -3053,6 +3271,37 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/v1GetTripPathResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}/pickup-photo": {
+      "get": {
+        "summary": "GetPickupPhoto gives a short-lived link to the photo of the saved pickup\naddress, to the rider and the driver of the trip while it is accepted or\nin progress.",
+        "operationId": "TripService_GetPickupPhoto",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetPickupPhotoResponse"
             }
           },
           "default": {
@@ -3889,6 +4138,33 @@
     "MediaServiceCompleteUploadBody": {
       "type": "object"
     },
+    "RiderServiceCreateSavedAddressBody": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/v1SavedAddressKind"
+        },
+        "label": {
+          "type": "string"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/rideRiderV1Coordinates"
+        },
+        "address": {
+          "type": "string"
+        },
+        "details": {
+          "type": "string"
+        },
+        "noteForDriver": {
+          "type": "string"
+        },
+        "photoMediaId": {
+          "type": "string",
+          "description": "Optional: a READY upload of the caller's with purpose ADDRESS_PHOTO. It is\nthen kept by the address (the owner can no longer delete it on its own) and\ndeleted with it."
+        }
+      }
+    },
     "RiderServiceUpdateRiderProfileBody": {
       "type": "object",
       "properties": {
@@ -3896,6 +4172,36 @@
           "type": "string"
         }
       }
+    },
+    "RiderServiceUpdateSavedAddressBody": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/v1SavedAddressKind"
+        },
+        "label": {
+          "type": "string"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/rideRiderV1Coordinates"
+        },
+        "address": {
+          "type": "string"
+        },
+        "details": {
+          "type": "string"
+        },
+        "noteForDriver": {
+          "type": "string"
+        },
+        "photoMediaId": {
+          "type": "string"
+        },
+        "removePhoto": {
+          "type": "boolean"
+        }
+      },
+      "description": "UpdateSavedAddress replaces kind, label, coordinates, address, details and\nnote. The photo changes only when photo_media_id is set (the old one is\ndeleted) or remove_photo is true."
     },
     "StaffServiceReactivateStaffMemberBody": {
       "type": "object"
@@ -4046,6 +4352,19 @@
       }
     },
     "ridePricingV1Coordinates": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "format": "double"
+        },
+        "longitude": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "rideRiderV1Coordinates": {
       "type": "object",
       "properties": {
         "latitude": {
@@ -4573,6 +4892,9 @@
     "v1DeleteRoleResponse": {
       "type": "object"
     },
+    "v1DeleteSavedAddressResponse": {
+      "type": "object"
+    },
     "v1DiscountType": {
       "type": "string",
       "enum": [
@@ -4874,6 +5196,18 @@
       "properties": {
         "offer": {
           "$ref": "#/definitions/v1TripOffer"
+        }
+      }
+    },
+    "v1GetPickupPhotoResponse": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -5207,6 +5541,18 @@
         }
       }
     },
+    "v1ListRecentDestinationsResponse": {
+      "type": "object",
+      "properties": {
+        "destinations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1RecentDestination"
+          }
+        }
+      }
+    },
     "v1ListRolesResponse": {
       "type": "object",
       "properties": {
@@ -5216,6 +5562,19 @@
             "type": "object",
             "$ref": "#/definitions/v1Role"
           }
+        }
+      }
+    },
+    "v1ListSavedAddressesResponse": {
+      "type": "object",
+      "properties": {
+        "addresses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SavedAddress"
+          },
+          "description": "Home, then work, then the others by label."
         }
       }
     },
@@ -5577,6 +5936,22 @@
       ],
       "default": "RATED_BY_UNSPECIFIED"
     },
+    "v1RecentDestination": {
+      "type": "object",
+      "properties": {
+        "coordinates": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "address": {
+          "type": "string",
+          "description": "As the rider picked it; may be empty for trips from before addresses."
+        },
+        "lastTripAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "v1RecipientType": {
       "type": "string",
       "enum": [
@@ -5766,10 +6141,12 @@
           "type": "string"
         },
         "pickup": {
-          "$ref": "#/definitions/rideTripV1Coordinates"
+          "$ref": "#/definitions/rideTripV1Coordinates",
+          "description": "Ignored when pickup_saved_address_id is set."
         },
         "dropoff": {
-          "$ref": "#/definitions/rideTripV1Coordinates"
+          "$ref": "#/definitions/rideTripV1Coordinates",
+          "description": "Ignored when dropoff_saved_address_id is set."
         },
         "vehicleClass": {
           "type": "string",
@@ -5778,6 +6155,20 @@
         "paymentMethod": {
           "type": "string",
           "description": "cash (default when empty) or wallet. card is not supported yet."
+        },
+        "pickupAddress": {
+          "type": "string",
+          "description": "The addresses as the rider picked them (\"Family Mall, Erbil\"); at most\n300 characters each. Taken from the saved address when one is named."
+        },
+        "dropoffAddress": {
+          "type": "string"
+        },
+        "pickupSavedAddressId": {
+          "type": "string",
+          "description": "One of the rider's saved addresses: its point, address, details, note\nfor the captain and photo are copied into the trip."
+        },
+        "dropoffSavedAddressId": {
+          "type": "string"
         }
       }
     },
@@ -5925,6 +6316,71 @@
       "properties": {
         "role": {
           "$ref": "#/definitions/v1Role"
+        }
+      }
+    },
+    "v1SavedAddress": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "riderId": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/v1SavedAddressKind"
+        },
+        "label": {
+          "type": "string",
+          "description": "Required for OTHER; optional otherwise. At most 60 characters."
+        },
+        "coordinates": {
+          "$ref": "#/definitions/rideRiderV1Coordinates",
+          "description": "The exact point to be picked up or dropped at."
+        },
+        "address": {
+          "type": "string",
+          "description": "The address as shown (\"Gulan Street, Erbil\"); at most 300 characters."
+        },
+        "details": {
+          "type": "string",
+          "description": "Building, floor, apartment; at most 200 characters."
+        },
+        "noteForDriver": {
+          "type": "string",
+          "description": "For the captain (\"Blue gate, ring twice\"); at most 300 characters."
+        },
+        "photoMediaId": {
+          "type": "string",
+          "description": "A photo of the entrance (media-service, purpose ADDRESS_PHOTO), or empty."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1SavedAddressKind": {
+      "type": "string",
+      "enum": [
+        "SAVED_ADDRESS_KIND_UNSPECIFIED",
+        "SAVED_ADDRESS_KIND_HOME",
+        "SAVED_ADDRESS_KIND_WORK",
+        "SAVED_ADDRESS_KIND_OTHER"
+      ],
+      "default": "SAVED_ADDRESS_KIND_UNSPECIFIED",
+      "description": " - SAVED_ADDRESS_KIND_HOME: At most one of each per rider.\n - SAVED_ADDRESS_KIND_OTHER: Needs a label (\"Gym\", \"Mum's\")."
+    },
+    "v1SavedAddressResponse": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/v1SavedAddress"
         }
       }
     },
@@ -6198,6 +6654,23 @@
         "paymentMethod": {
           "type": "string",
           "description": "cash or wallet."
+        },
+        "pickupAddress": {
+          "type": "string"
+        },
+        "dropoffAddress": {
+          "type": "string"
+        },
+        "pickupDetails": {
+          "type": "string",
+          "description": "Copied from the saved pickup address: building/floor, and the note for\nthe captain."
+        },
+        "pickupNote": {
+          "type": "string"
+        },
+        "hasPickupPhoto": {
+          "type": "boolean",
+          "description": "The saved pickup address has a photo: GetPickupPhoto gives a link."
         }
       }
     },
@@ -6246,6 +6719,12 @@
           "type": "string",
           "format": "date-time",
           "description": "The last moment the driver can accept."
+        },
+        "pickupAddress": {
+          "type": "string"
+        },
+        "dropoffAddress": {
+          "type": "string"
         }
       },
       "description": "TripOffer is what a driver sees to decide. The rider is not identified."

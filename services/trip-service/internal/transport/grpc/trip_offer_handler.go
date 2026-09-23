@@ -170,5 +170,9 @@ func toProtoOffer(offer trip.Offer) *tripv1.TripOffer {
 		PaymentMethod: offer.Trip.PaymentMethod,
 		OfferedAt:     timestamppb.New(offer.OfferedAt),
 		ExpiresAt:     timestamppb.New(offer.ExpiresAt),
+		// Where, not what the rider told the captain: the note and the photo
+		// come with the trip once the driver has accepted it.
+		PickupAddress:  offer.Trip.PickupAddress,
+		DropoffAddress: offer.Trip.DropoffAddress,
 	}
 }

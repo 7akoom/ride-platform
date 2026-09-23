@@ -51,8 +51,16 @@ func TestHistoryQueryReadsTheColumnsScanTripExpects(t *testing.T) {
 		t.Errorf("the query must select historyColumns:\n%s", got)
 	}
 
-	// The same list findOneWhere selects, so scanTrip reads both the same way.
-	want := "id, rider_id, driver_id, status, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, cancellation_reason, vehicle_class, payment_method, requested_at, accepted_at, started_at, completed_at, cancelled_at, created_at, updated_at"
+	// The same list every other trip query selects, so scanTrip reads them all
+	// the same way.
+	if historyColumns != tripColumns {
+		t.Error("historyColumns must be tripColumns")
+	}
+
+	want := "id, rider_id, driver_id, status, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, " +
+		"cancellation_reason, vehicle_class, payment_method, requested_at, accepted_at, started_at, completed_at, " +
+		"cancelled_at, created_at, updated_at, pickup_address, dropoff_address, pickup_details, pickup_note, " +
+		"COALESCE(pickup_photo_media_id::text, '')"
 	if normalized(historyColumns) != want {
 		t.Errorf("historyColumns changed:\n%s", normalized(historyColumns))
 	}

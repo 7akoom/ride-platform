@@ -39,6 +39,22 @@ manually" milestone this was built for.
 change. These are what Dispatch, Wallet, and Notification will eventually
 subscribe to; none of them consume anything yet.
 
+## Addresses, the pickup photo and recent destinations
+
+- A trip keeps the pickup and dropoff addresses as the rider picked them.
+- `pickup_saved_address_id` / `dropoff_saved_address_id` name one of the
+  rider's saved addresses (read from rider-service with the internal token):
+  its point and address are used, and for the pickup its details, note for
+  the captain and photo are copied into the trip, so a later edit of the
+  address does not change the trip. Only a saved address brings a note or a
+  photo.
+- `GetPickupPhoto` gives the rider or the driver of the trip a short-lived
+  link to that photo (asked of media-service with the internal token), only
+  while the trip is accepted or in progress. The offer a driver sees has the
+  addresses but not the note or the photo.
+- `ListRecentDestinations` lists where the rider's completed trips ended,
+  newest first, each place once (drop-offs within about 10 m are one).
+
 ## What's intentionally NOT done yet
 
 Same list as the other services (observability, auth interceptor, tests,

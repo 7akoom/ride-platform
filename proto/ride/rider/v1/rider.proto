@@ -33,6 +33,38 @@ service RiderService {
       body: "*"
     };
   }
+
+  // Saved addresses: the caller's own home, work and other places, with what
+  // helps the captain find them (building, floor, a note, a photo). At most 20,
+  // one home and one work. Services (trip-service, with the internal token)
+  // read them when a trip is requested from one.
+  rpc CreateSavedAddress(CreateSavedAddressRequest) returns (SavedAddressResponse) {
+    option (google.api.http) = {
+      post: "/v1/riders/{rider_id}/addresses"
+      body: "*"
+    };
+  }
+  rpc ListSavedAddresses(ListSavedAddressesRequest) returns (ListSavedAddressesResponse) {
+    option (google.api.http) = {
+      get: "/v1/riders/{rider_id}/addresses"
+    };
+  }
+  rpc GetSavedAddress(GetSavedAddressRequest) returns (SavedAddressResponse) {
+    option (google.api.http) = {
+      get: "/v1/riders/{rider_id}/addresses/{address_id}"
+    };
+  }
+  rpc UpdateSavedAddress(UpdateSavedAddressRequest) returns (SavedAddressResponse) {
+    option (google.api.http) = {
+      patch: "/v1/riders/{rider_id}/addresses/{address_id}"
+      body: "*"
+    };
+  }
+  rpc DeleteSavedAddress(DeleteSavedAddressRequest) returns (DeleteSavedAddressResponse) {
+    option (google.api.http) = {
+      delete: "/v1/riders/{rider_id}/addresses/{address_id}"
+    };
+  }
 }
 
 enum RiderStatus {
@@ -81,3 +113,92 @@ message UpdateRiderProfileRequest {
 message UpdateRiderProfileResponse {
   Rider rider = 1;
 }
+
+message Coordinates {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+enum SavedAddressKind {
+  SAVED_ADDRESS_KIND_UNSPECIFIED = 0;
+  // At most one of each per rider.
+  SAVED_ADDRESS_KIND_HOME = 1;
+  SAVED_ADDRESS_KIND_WORK = 2;
+  // Needs a label ("Gym", "Mum's").
+  SAVED_ADDRESS_KIND_OTHER = 3;
+}
+
+message SavedAddress {
+  string id = 1;
+  string rider_id = 2;
+  SavedAddressKind kind = 3;
+  // Required for OTHER; optional otherwise. At most 60 characters.
+  string label = 4;
+  // The exact point to be picked up or dropped at.
+  Coordinates coordinates = 5;
+  // The address as shown ("Gulan Street, Erbil"); at most 300 characters.
+  string address = 6;
+  // Building, floor, apartment; at most 200 characters.
+  string details = 7;
+  // For the captain ("Blue gate, ring twice"); at most 300 characters.
+  string note_for_driver = 8;
+  // A photo of the entrance (media-service, purpose ADDRESS_PHOTO), or empty.
+  string photo_media_id = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+message CreateSavedAddressRequest {
+  string rider_id = 1;
+  SavedAddressKind kind = 2;
+  string label = 3;
+  Coordinates coordinates = 4;
+  string address = 5;
+  string details = 6;
+  string note_for_driver = 7;
+  // Optional: a READY upload of the caller's with purpose ADDRESS_PHOTO. It is
+  // then kept by the address (the owner can no longer delete it on its own) and
+  // deleted with it.
+  string photo_media_id = 8;
+}
+
+message ListSavedAddressesRequest {
+  string rider_id = 1;
+}
+
+message ListSavedAddressesResponse {
+  // Home, then work, then the others by label.
+  repeated SavedAddress addresses = 1;
+}
+
+message GetSavedAddressRequest {
+  string rider_id = 1;
+  string address_id = 2;
+}
+
+message SavedAddressResponse {
+  SavedAddress address = 1;
+}
+
+// UpdateSavedAddress replaces kind, label, coordinates, address, details and
+// note. The photo changes only when photo_media_id is set (the old one is
+// deleted) or remove_photo is true.
+message UpdateSavedAddressRequest {
+  string rider_id = 1;
+  string address_id = 2;
+  SavedAddressKind kind = 3;
+  string label = 4;
+  Coordinates coordinates = 5;
+  string address = 6;
+  string details = 7;
+  string note_for_driver = 8;
+  string photo_media_id = 9;
+  bool remove_photo = 10;
+}
+
+message DeleteSavedAddressRequest {
+  string rider_id = 1;
+  string address_id = 2;
+}
+
+message DeleteSavedAddressResponse {}

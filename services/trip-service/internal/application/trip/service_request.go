@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 )
 
 func (s *service) RequestTrip(
@@ -22,6 +23,15 @@ func (s *service) RequestTrip(
 	}
 
 	paymentMethod, err := NormalizePaymentMethod(input.PaymentMethod)
+	if err != nil {
+		return Trip{}, err
+	}
+
+	if input.PickupSavedAddressID != "" || input.DropoffSavedAddressID != "" {
+		return Trip{}, ErrSavedAddressesUnavailable
+	}
+
+	texts, err := tripTexts(input)
 	if err != nil {
 		return Trip{}, err
 	}
@@ -64,6 +74,12 @@ func (s *service) RequestTrip(
 			Dropoff:       dropoff,
 			VehicleClass:  vehicleClass,
 			PaymentMethod: paymentMethod,
+
+			PickupAddress:      texts.PickupAddress,
+			DropoffAddress:     texts.DropoffAddress,
+			PickupDetails:      texts.PickupDetails,
+			PickupNote:         texts.PickupNote,
+			PickupPhotoMediaID: texts.PickupPhotoMediaID,
 		},
 	)
 	if err != nil {
@@ -71,4 +87,35 @@ func (s *service) RequestTrip(
 	}
 
 	return created, nil
+}
+
+// Longest texts a trip keeps, the same as a saved address allows.
+const (
+	maxAddressLength = 300
+	maxDetailsLength = 200
+	maxNoteLength    = 300
+)
+
+// tripTexts trims the addresses and the pickup details and note, and refuses
+// ones too long to keep.
+func tripTexts(input RequestTripInput) (CreateInput, error) {
+	out := CreateInput{
+		PickupAddress:      strings.TrimSpace(input.PickupAddress),
+		DropoffAddress:     strings.TrimSpace(input.DropoffAddress),
+		PickupDetails:      strings.TrimSpace(input.PickupDetails),
+		PickupNote:         strings.TrimSpace(input.PickupNote),
+		PickupPhotoMediaID: strings.TrimSpace(input.PickupPhotoMediaID),
+	}
+
+	switch {
+	case utf8.RuneCountInString(out.PickupAddress) > maxAddressLength,
+		utf8.RuneCountInString(out.DropoffAddress) > maxAddressLength,
+		utf8.RuneCountInString(out.PickupDetails) > maxDetailsLength,
+		utf8.RuneCountInString(out.PickupNote) > maxNoteLength:
+		return CreateInput{}, ErrAddressTooLong
+	case out.PickupPhotoMediaID != "" && !looksLikeUUID(out.PickupPhotoMediaID):
+		return CreateInput{}, ErrSavedAddressNotFound
+	}
+
+	return out, nil
 }

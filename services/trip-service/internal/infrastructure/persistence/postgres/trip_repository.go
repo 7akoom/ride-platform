@@ -47,17 +47,12 @@ func (r *TripRepository) Create(
 		ctx,
 		`INSERT INTO trips
 		    (id, rider_id, pickup_latitude, pickup_longitude,
-		     dropoff_latitude, dropoff_longitude, vehicle_class, payment_method)
+		     dropoff_latitude, dropoff_longitude, vehicle_class, payment_method,
+		     pickup_address, dropoff_address, pickup_details, pickup_note, pickup_photo_media_id)
 		 VALUES ($1, $2, $3, $4, $5, $6, COALESCE(NULLIF($7::text, ''), 'economy'),
-                         COALESCE(NULLIF($8::text, ''), 'cash'))
-		 RETURNING id, rider_id, driver_id, status,
-		           pickup_latitude, pickup_longitude,
-		           dropoff_latitude, dropoff_longitude,
-		           cancellation_reason,
-		           vehicle_class,
-		           payment_method,
-		           requested_at, accepted_at, started_at, completed_at, cancelled_at,
-		           created_at, updated_at`,
+                         COALESCE(NULLIF($8::text, ''), 'cash'),
+		         $9, $10, $11, $12, NULLIF($13::text, '')::uuid)
+		 RETURNING `+tripColumns,
 		input.ID,
 		input.RiderID,
 		input.Pickup.Latitude,
@@ -66,6 +61,11 @@ func (r *TripRepository) Create(
 		input.Dropoff.Longitude,
 		input.VehicleClass,
 		input.PaymentMethod,
+		input.PickupAddress,
+		input.DropoffAddress,
+		input.PickupDetails,
+		input.PickupNote,
+		input.PickupPhotoMediaID,
 	)
 
 	if err := scanTrip(row, &created); err != nil {
@@ -112,14 +112,7 @@ func (r *TripRepository) findOneWhere(
 	whereClause string,
 	args ...any,
 ) (trip.Trip, error) {
-	query := `SELECT id, rider_id, driver_id, status,
-	                 pickup_latitude, pickup_longitude,
-	                 dropoff_latitude, dropoff_longitude,
-	                 cancellation_reason,
-	                 vehicle_class,
-	                 payment_method,
-	                 requested_at, accepted_at, started_at, completed_at, cancelled_at,
-	                 created_at, updated_at
+	query := `SELECT ` + tripColumns + `
 	          FROM trips
 	          WHERE ` + whereClause + `
 	          ORDER BY created_at DESC
@@ -156,14 +149,7 @@ func (r *TripRepository) Accept(
 			     accepted_at = CURRENT_TIMESTAMP,
 			     updated_at = CURRENT_TIMESTAMP
 			 WHERE id = $1
-			 RETURNING id, rider_id, driver_id, status,
-			           pickup_latitude, pickup_longitude,
-			           dropoff_latitude, dropoff_longitude,
-			           cancellation_reason,
-			           vehicle_class,
-			           payment_method,
-			           requested_at, accepted_at, started_at, completed_at, cancelled_at,
-			           created_at, updated_at`,
+			 RETURNING `+tripColumns,
 			tripID,
 			driverID,
 		)
@@ -193,14 +179,7 @@ func (r *TripRepository) Start(
 			     started_at = CURRENT_TIMESTAMP,
 			     updated_at = CURRENT_TIMESTAMP
 			 WHERE id = $1
-			 RETURNING id, rider_id, driver_id, status,
-			           pickup_latitude, pickup_longitude,
-			           dropoff_latitude, dropoff_longitude,
-			           cancellation_reason,
-			           vehicle_class,
-			           payment_method,
-			           requested_at, accepted_at, started_at, completed_at, cancelled_at,
-			           created_at, updated_at`,
+			 RETURNING `+tripColumns,
 			tripID,
 		)
 
@@ -228,14 +207,7 @@ func (r *TripRepository) Complete(
 			     completed_at = CURRENT_TIMESTAMP,
 			     updated_at = CURRENT_TIMESTAMP
 			 WHERE id = $1
-			 RETURNING id, rider_id, driver_id, status,
-			           pickup_latitude, pickup_longitude,
-			           dropoff_latitude, dropoff_longitude,
-			           cancellation_reason,
-			           vehicle_class,
-			           payment_method,
-			           requested_at, accepted_at, started_at, completed_at, cancelled_at,
-			           created_at, updated_at`,
+			 RETURNING `+tripColumns,
 			tripID,
 		)
 
@@ -267,14 +239,7 @@ func (r *TripRepository) Cancel(
 			     cancelled_at = CURRENT_TIMESTAMP,
 			     updated_at = CURRENT_TIMESTAMP
 			 WHERE id = $1
-			 RETURNING id, rider_id, driver_id, status,
-			           pickup_latitude, pickup_longitude,
-			           dropoff_latitude, dropoff_longitude,
-			           cancellation_reason,
-			           vehicle_class,
-			           payment_method,
-			           requested_at, accepted_at, started_at, completed_at, cancelled_at,
-			           created_at, updated_at`,
+			 RETURNING `+tripColumns,
 			tripID,
 			reason,
 		)
@@ -312,14 +277,7 @@ func (r *TripRepository) transition(
 
 	lockRow := tx.QueryRow(
 		ctx,
-		`SELECT id, rider_id, driver_id, status,
-		        pickup_latitude, pickup_longitude,
-		        dropoff_latitude, dropoff_longitude,
-		        cancellation_reason,
-		        vehicle_class,
-		        payment_method,
-		        requested_at, accepted_at, started_at, completed_at, cancelled_at,
-		        created_at, updated_at
+		`SELECT `+tripColumns+`
 		 FROM trips
 		 WHERE id = $1
 		 FOR UPDATE`,
@@ -383,6 +341,18 @@ func writeOutboxEvent(
 	return nil
 }
 
+// tripColumns is the column list scanTrip reads, in its order.
+const tripColumns = `id, rider_id, driver_id, status,
+	pickup_latitude, pickup_longitude,
+	dropoff_latitude, dropoff_longitude,
+	cancellation_reason,
+	vehicle_class,
+	payment_method,
+	requested_at, accepted_at, started_at, completed_at, cancelled_at,
+	created_at, updated_at,
+	pickup_address, dropoff_address, pickup_details, pickup_note,
+	COALESCE(pickup_photo_media_id::text, '')`
+
 func scanTrip(row pgx.Row, dest *trip.Trip) error {
 	var status string
 	var driverID, cancellationReason *string
@@ -406,6 +376,11 @@ func scanTrip(row pgx.Row, dest *trip.Trip) error {
 		&dest.CancelledAt,
 		&dest.CreatedAt,
 		&dest.UpdatedAt,
+		&dest.PickupAddress,
+		&dest.DropoffAddress,
+		&dest.PickupDetails,
+		&dest.PickupNote,
+		&dest.PickupPhotoMediaID,
 	)
 	if err != nil {
 		return err

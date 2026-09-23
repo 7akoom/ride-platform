@@ -162,6 +162,24 @@ service TripService {
       body: "*"
     };
   }
+
+  // GetPickupPhoto gives a short-lived link to the photo of the saved pickup
+  // address, to the rider and the driver of the trip while it is accepted or
+  // in progress.
+  rpc GetPickupPhoto(GetPickupPhotoRequest) returns (GetPickupPhotoResponse) {
+    option (google.api.http) = {
+      get: "/v1/trips/{trip_id}/pickup-photo"
+    };
+  }
+
+  // ListRecentDestinations lists where the rider's completed trips ended,
+  // most recent first, each place once.
+  rpc ListRecentDestinations(ListRecentDestinationsRequest) returns (ListRecentDestinationsResponse) {
+    option (google.api.http) = {
+      get: "/v1/riders/{rider_id}/recent-destinations"
+    };
+  }
+
   // RateTrip is how one side rates the other after a trip: the rider rates the driver and
   // the driver rates the rider. rated_by names who is speaking and must be the caller's
   // own side of that trip. Only a COMPLETED trip, within 24 hours of completing, once per
@@ -207,16 +225,34 @@ message Trip {
   string vehicle_class = 13;
   // cash or wallet.
   string payment_method = 14;
+  string pickup_address = 15;
+  string dropoff_address = 16;
+  // Copied from the saved pickup address: building/floor, and the note for
+  // the captain.
+  string pickup_details = 17;
+  string pickup_note = 18;
+  // The saved pickup address has a photo: GetPickupPhoto gives a link.
+  bool has_pickup_photo = 19;
 }
 
 message RequestTripRequest {
   string rider_id = 1;
+  // Ignored when pickup_saved_address_id is set.
   Coordinates pickup = 2;
+  // Ignored when dropoff_saved_address_id is set.
   Coordinates dropoff = 3;
   // economy (default when empty) or comfort.
   string vehicle_class = 4;
   // cash (default when empty) or wallet. card is not supported yet.
   string payment_method = 5;
+  // The addresses as the rider picked them ("Family Mall, Erbil"); at most
+  // 300 characters each. Taken from the saved address when one is named.
+  string pickup_address = 6;
+  string dropoff_address = 7;
+  // One of the rider's saved addresses: its point, address, details, note
+  // for the captain and photo are copied into the trip.
+  string pickup_saved_address_id = 8;
+  string dropoff_saved_address_id = 9;
 }
 
 message RequestTripResponse {
@@ -363,6 +399,8 @@ message TripOffer {
   google.protobuf.Timestamp offered_at = 6;
   // The last moment the driver can accept.
   google.protobuf.Timestamp expires_at = 7;
+  string pickup_address = 8;
+  string dropoff_address = 9;
 }
 
 message OfferTripRequest {
@@ -447,4 +485,30 @@ message TripVehicle {
   string color = 3;
   string plate_number = 4;
   string vehicle_class = 5;
+}
+
+message GetPickupPhotoRequest {
+  string trip_id = 1;
+}
+
+message GetPickupPhotoResponse {
+  string url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message ListRecentDestinationsRequest {
+  string rider_id = 1;
+  // 5 by default, at most 10.
+  int32 limit = 2;
+}
+
+message RecentDestination {
+  Coordinates coordinates = 1;
+  // As the rider picked it; may be empty for trips from before addresses.
+  string address = 2;
+  google.protobuf.Timestamp last_trip_at = 3;
+}
+
+message ListRecentDestinationsResponse {
+  repeated RecentDestination destinations = 1;
 }

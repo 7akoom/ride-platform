@@ -59,8 +59,10 @@ per-source OTP limit counts every user as one source.
 
 | Method | Path | Who | Notes |
 |---|---|---|---|
-| POST | `/v1/trips` | rider | `riderId` must be the caller's rider profile |
-| GET | `/v1/trips/{tripId}` | rider or driver of the trip | poll for status |
+| POST | `/v1/trips` | rider | `riderId` must be the caller's rider profile. `pickupAddress` and `dropoffAddress` (at most 300 characters) are kept with the trip as the rider picked them. `pickupSavedAddressId` / `dropoffSavedAddressId` name one of the rider's saved addresses: its point and address replace `pickup` / `dropoff`, and for the pickup its details, note for the captain and photo are copied into the trip (404 for an address that is not the rider's) |
+| GET | `/v1/trips/{tripId}` | rider or driver of the trip | poll for status; has `pickupAddress`, `dropoffAddress`, `pickupDetails`, `pickupNote` and `hasPickupPhoto` |
+| GET | `/v1/trips/{tripId}/pickup-photo` | rider or driver of the trip | a short-lived `url` to the photo of the saved pickup address, while the trip is accepted or in progress (400 otherwise, 404 without a photo) |
+| GET | `/v1/riders/{riderId}/recent-destinations?limit=` | the rider | where their completed trips ended, newest first, each place once (points within about 10 m are one): `coordinates`, `address`, `lastTripAt`; `limit` 5 by default, at most 10 |
 | POST | `/v1/trips/{tripId}:start` | driver of the trip | |
 | POST | `/v1/trips/{tripId}:complete` | driver of the trip | |
 | POST | `/v1/trips/{tripId}:cancel` | rider or driver of the trip | |
@@ -70,7 +72,7 @@ per-source OTP limit counts every user as one source.
 | GET | `/v1/trips/{tripId}/driver-location` | **rider** of the trip | only while accepted or in progress; 404 means the driver has not reported for 30 s, keep polling |
 | GET | `/v1/trips:active?rider_id=` or `?driver_id=` | the profile's owner | the requested, accepted or in-progress trip; 404 `no active trip` when there is none. Call it when the app opens, to resume a trip |
 | GET | `/v1/trips?rider_id=` or `?driver_id=` | the profile's owner | history, newest first: `page_size` (1-50, default 20) and `page_token`; the response's `nextPageToken` is empty on the last page |
-| GET | `/v1/drivers/{driverId}/offer` | the driver | the trip currently offered to them: `tripId`, `pickup`, `dropoff`, `vehicleClass`, `paymentMethod`, `offeredAt`, `expiresAt` (not who the rider is); 404 when there is none. Poll about every 2 s while online |
+| GET | `/v1/drivers/{driverId}/offer` | the driver | the trip currently offered to them: `tripId`, `pickup`, `dropoff`, `pickupAddress`, `dropoffAddress`, `vehicleClass`, `paymentMethod`, `offeredAt`, `expiresAt` (not who the rider is, nor the pickup note and photo, which come with the trip once accepted); 404 when there is none. Poll about every 2 s while online |
 | POST | `/v1/trips/{tripId}:accept-offer` | the driver | body `{"driverId": ...}`; makes them the driver of the trip. 404: no live offer; 400: the offer expired, the trip was cancelled, or they are on another trip |
 | POST | `/v1/trips/{tripId}:reject-offer` | the driver | body `{"driverId": ...}`; the trip goes on to the next driver and is not offered to them again |
 
@@ -94,6 +96,26 @@ gateway it always answers 403 to a user, and the internal token is refused with 
 | PATCH | `/v1/drivers/{driverId}` | the driver |
 | PUT | `/v1/drivers/{driverId}/availability` | the driver |
 | GET | `/v1/identities/{identityId}/driver` | the identity's owner |
+
+### Saved addresses (rider)
+
+A rider keeps up to 20 addresses: at most one home and one work, and others
+with a label. Each has the exact point, the address as shown, `details`
+(building, floor: at most 200 characters), a `noteForDriver` (at most 300) and
+optionally a photo of the entrance. To add a photo, upload it first
+(`/v1/media:upload` with `MEDIA_PURPOSE_ADDRESS_PHOTO`, then `:complete`) and
+pass its id as `photoMediaId`; the address then keeps it (the rider can no
+longer delete it on its own) and deletes it when it is replaced, removed or the
+address is deleted. The captain of a trip requested from the address sees the
+note and the photo.
+
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| POST | `/v1/riders/{riderId}/addresses` | the rider | `kind` (`SAVED_ADDRESS_KIND_HOME`, `_WORK`, `_OTHER`), `label` (required for other, at most 60), `coordinates`, `address`, `details`, `noteForDriver`, `photoMediaId`. 409 for a second home or work, 429 past 20, 400 (precondition) when the photo is not a ready address photo of the rider |
+| GET | `/v1/riders/{riderId}/addresses` | the rider | home, then work, then the others by label |
+| GET | `/v1/riders/{riderId}/addresses/{addressId}` | the rider | 404 for an address that is not theirs |
+| PATCH | `/v1/riders/{riderId}/addresses/{addressId}` | the rider | replaces everything but the photo; `photoMediaId` replaces the photo, `removePhoto: true` removes it |
+| DELETE | `/v1/riders/{riderId}/addresses/{addressId}` | the rider | deletes its photo too |
 
 ### Positions, cities and zones
 

@@ -67,6 +67,13 @@ type Trip struct {
 	CancellationReason string
 	VehicleClass       string
 	PaymentMethod      string
+	// The addresses as the rider picked them, and what the saved pickup
+	// address tells the captain.
+	PickupAddress      string
+	DropoffAddress     string
+	PickupDetails      string
+	PickupNote         string
+	PickupPhotoMediaID string
 	RequestedAt        time.Time
 	AcceptedAt         *time.Time
 	StartedAt          *time.Time

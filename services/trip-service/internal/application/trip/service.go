@@ -13,6 +13,20 @@ type RequestTripInput struct {
 	DropoffLng    float64
 	VehicleClass  string
 	PaymentMethod string
+
+	// As the rider picked them; at most 300 characters each.
+	PickupAddress  string
+	DropoffAddress string
+
+	// A saved address of the rider's. WithSavedAddresses turns them into the
+	// fields above and below; the base service refuses them.
+	PickupSavedAddressID  string
+	DropoffSavedAddressID string
+
+	// Copied from the saved pickup address.
+	PickupDetails      string
+	PickupNote         string
+	PickupPhotoMediaID string
 }
 
 type Service interface {

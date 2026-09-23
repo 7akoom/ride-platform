@@ -59,6 +59,11 @@ func (h *TripHandler) RequestTrip(
 			DropoffLng:    dropoff.GetLongitude(),
 			VehicleClass:  request.GetVehicleClass(),
 			PaymentMethod: request.GetPaymentMethod(),
+
+			PickupAddress:         request.GetPickupAddress(),
+			DropoffAddress:        request.GetDropoffAddress(),
+			PickupSavedAddressID:  request.GetPickupSavedAddressId(),
+			DropoffSavedAddressID: request.GetDropoffSavedAddressId(),
 		},
 	)
 	if err != nil {
@@ -287,6 +292,25 @@ func (h *TripHandler) mapTripError(err error) error {
 	case errors.Is(err, trip.ErrPickupOutsideServiceZone):
 		return status.Error(codes.InvalidArgument, err.Error())
 
+	case errors.Is(err, trip.ErrAddressTooLong),
+		errors.Is(err, trip.ErrInvalidLimit):
+		return status.Error(codes.InvalidArgument, err.Error())
+
+	case errors.Is(err, trip.ErrSavedAddressNotFound),
+		errors.Is(err, trip.ErrNoPickupPhoto):
+		return status.Error(codes.NotFound, err.Error())
+
+	case errors.Is(err, trip.ErrPickupPhotoNotAvailableNow):
+		return status.Error(codes.FailedPrecondition, err.Error())
+
+	case errors.Is(err, trip.ErrSavedAddressesUnavailable):
+		return status.Error(codes.Unimplemented, err.Error())
+
+	case errors.Is(err, trip.ErrUpstreamUnavailable):
+		h.logger.Warn("a service trip-service depends on is not available", "error", err)
+
+		return status.Error(codes.Unavailable, "a service this needs is not available, try again")
+
 	default:
 		h.logger.Error("unclassified trip request failure", "error", err)
 
@@ -341,5 +365,10 @@ func toProtoTrip(t trip.Trip) *tripv1.Trip {
 		StartedAt:          optionalTimestamp(t.StartedAt),
 		CompletedAt:        optionalTimestamp(t.CompletedAt),
 		CancelledAt:        optionalTimestamp(t.CancelledAt),
+		PickupAddress:      t.PickupAddress,
+		DropoffAddress:     t.DropoffAddress,
+		PickupDetails:      t.PickupDetails,
+		PickupNote:         t.PickupNote,
+		HasPickupPhoto:     t.PickupPhotoMediaID != "",
 	}
 }

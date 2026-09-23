@@ -19,24 +19,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TripService_RequestTrip_FullMethodName       = "/ride.trip.v1.TripService/RequestTrip"
-	TripService_AcceptTrip_FullMethodName        = "/ride.trip.v1.TripService/AcceptTrip"
-	TripService_StartTrip_FullMethodName         = "/ride.trip.v1.TripService/StartTrip"
-	TripService_CompleteTrip_FullMethodName      = "/ride.trip.v1.TripService/CompleteTrip"
-	TripService_CancelTrip_FullMethodName        = "/ride.trip.v1.TripService/CancelTrip"
-	TripService_GetTrip_FullMethodName           = "/ride.trip.v1.TripService/GetTrip"
-	TripService_TriggerSOS_FullMethodName        = "/ride.trip.v1.TripService/TriggerSOS"
-	TripService_RecordWaypoint_FullMethodName    = "/ride.trip.v1.TripService/RecordWaypoint"
-	TripService_GetTripPath_FullMethodName       = "/ride.trip.v1.TripService/GetTripPath"
-	TripService_GetDriverLocation_FullMethodName = "/ride.trip.v1.TripService/GetDriverLocation"
-	TripService_GetTripDriver_FullMethodName     = "/ride.trip.v1.TripService/GetTripDriver"
-	TripService_GetActiveTrip_FullMethodName     = "/ride.trip.v1.TripService/GetActiveTrip"
-	TripService_ListTrips_FullMethodName         = "/ride.trip.v1.TripService/ListTrips"
-	TripService_OfferTrip_FullMethodName         = "/ride.trip.v1.TripService/OfferTrip"
-	TripService_GetPendingOffer_FullMethodName   = "/ride.trip.v1.TripService/GetPendingOffer"
-	TripService_AcceptOffer_FullMethodName       = "/ride.trip.v1.TripService/AcceptOffer"
-	TripService_RejectOffer_FullMethodName       = "/ride.trip.v1.TripService/RejectOffer"
-	TripService_RateTrip_FullMethodName          = "/ride.trip.v1.TripService/RateTrip"
+	TripService_RequestTrip_FullMethodName            = "/ride.trip.v1.TripService/RequestTrip"
+	TripService_AcceptTrip_FullMethodName             = "/ride.trip.v1.TripService/AcceptTrip"
+	TripService_StartTrip_FullMethodName              = "/ride.trip.v1.TripService/StartTrip"
+	TripService_CompleteTrip_FullMethodName           = "/ride.trip.v1.TripService/CompleteTrip"
+	TripService_CancelTrip_FullMethodName             = "/ride.trip.v1.TripService/CancelTrip"
+	TripService_GetTrip_FullMethodName                = "/ride.trip.v1.TripService/GetTrip"
+	TripService_TriggerSOS_FullMethodName             = "/ride.trip.v1.TripService/TriggerSOS"
+	TripService_RecordWaypoint_FullMethodName         = "/ride.trip.v1.TripService/RecordWaypoint"
+	TripService_GetTripPath_FullMethodName            = "/ride.trip.v1.TripService/GetTripPath"
+	TripService_GetDriverLocation_FullMethodName      = "/ride.trip.v1.TripService/GetDriverLocation"
+	TripService_GetTripDriver_FullMethodName          = "/ride.trip.v1.TripService/GetTripDriver"
+	TripService_GetActiveTrip_FullMethodName          = "/ride.trip.v1.TripService/GetActiveTrip"
+	TripService_ListTrips_FullMethodName              = "/ride.trip.v1.TripService/ListTrips"
+	TripService_OfferTrip_FullMethodName              = "/ride.trip.v1.TripService/OfferTrip"
+	TripService_GetPendingOffer_FullMethodName        = "/ride.trip.v1.TripService/GetPendingOffer"
+	TripService_AcceptOffer_FullMethodName            = "/ride.trip.v1.TripService/AcceptOffer"
+	TripService_RejectOffer_FullMethodName            = "/ride.trip.v1.TripService/RejectOffer"
+	TripService_GetPickupPhoto_FullMethodName         = "/ride.trip.v1.TripService/GetPickupPhoto"
+	TripService_ListRecentDestinations_FullMethodName = "/ride.trip.v1.TripService/ListRecentDestinations"
+	TripService_RateTrip_FullMethodName               = "/ride.trip.v1.TripService/RateTrip"
 )
 
 // TripServiceClient is the client API for TripService service.
@@ -116,6 +118,13 @@ type TripServiceClient interface {
 	// RejectOffer declines the offer; the trip goes on to the next driver, and this
 	// driver is not offered it again. driver_id must be the caller's own profile.
 	RejectOffer(ctx context.Context, in *RejectOfferRequest, opts ...grpc.CallOption) (*RejectOfferResponse, error)
+	// GetPickupPhoto gives a short-lived link to the photo of the saved pickup
+	// address, to the rider and the driver of the trip while it is accepted or
+	// in progress.
+	GetPickupPhoto(ctx context.Context, in *GetPickupPhotoRequest, opts ...grpc.CallOption) (*GetPickupPhotoResponse, error)
+	// ListRecentDestinations lists where the rider's completed trips ended,
+	// most recent first, each place once.
+	ListRecentDestinations(ctx context.Context, in *ListRecentDestinationsRequest, opts ...grpc.CallOption) (*ListRecentDestinationsResponse, error)
 	// RateTrip is how one side rates the other after a trip: the rider rates the driver and
 	// the driver rates the rider. rated_by names who is speaking and must be the caller's
 	// own side of that trip. Only a COMPLETED trip, within 24 hours of completing, once per
@@ -303,6 +312,26 @@ func (c *tripServiceClient) RejectOffer(ctx context.Context, in *RejectOfferRequ
 	return out, nil
 }
 
+func (c *tripServiceClient) GetPickupPhoto(ctx context.Context, in *GetPickupPhotoRequest, opts ...grpc.CallOption) (*GetPickupPhotoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPickupPhotoResponse)
+	err := c.cc.Invoke(ctx, TripService_GetPickupPhoto_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) ListRecentDestinations(ctx context.Context, in *ListRecentDestinationsRequest, opts ...grpc.CallOption) (*ListRecentDestinationsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRecentDestinationsResponse)
+	err := c.cc.Invoke(ctx, TripService_ListRecentDestinations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tripServiceClient) RateTrip(ctx context.Context, in *RateTripRequest, opts ...grpc.CallOption) (*RateTripResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RateTripResponse)
@@ -390,6 +419,13 @@ type TripServiceServer interface {
 	// RejectOffer declines the offer; the trip goes on to the next driver, and this
 	// driver is not offered it again. driver_id must be the caller's own profile.
 	RejectOffer(context.Context, *RejectOfferRequest) (*RejectOfferResponse, error)
+	// GetPickupPhoto gives a short-lived link to the photo of the saved pickup
+	// address, to the rider and the driver of the trip while it is accepted or
+	// in progress.
+	GetPickupPhoto(context.Context, *GetPickupPhotoRequest) (*GetPickupPhotoResponse, error)
+	// ListRecentDestinations lists where the rider's completed trips ended,
+	// most recent first, each place once.
+	ListRecentDestinations(context.Context, *ListRecentDestinationsRequest) (*ListRecentDestinationsResponse, error)
 	// RateTrip is how one side rates the other after a trip: the rider rates the driver and
 	// the driver rates the rider. rated_by names who is speaking and must be the caller's
 	// own side of that trip. Only a COMPLETED trip, within 24 hours of completing, once per
@@ -457,6 +493,12 @@ func (UnimplementedTripServiceServer) AcceptOffer(context.Context, *AcceptOfferR
 }
 func (UnimplementedTripServiceServer) RejectOffer(context.Context, *RejectOfferRequest) (*RejectOfferResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RejectOffer not implemented")
+}
+func (UnimplementedTripServiceServer) GetPickupPhoto(context.Context, *GetPickupPhotoRequest) (*GetPickupPhotoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPickupPhoto not implemented")
+}
+func (UnimplementedTripServiceServer) ListRecentDestinations(context.Context, *ListRecentDestinationsRequest) (*ListRecentDestinationsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListRecentDestinations not implemented")
 }
 func (UnimplementedTripServiceServer) RateTrip(context.Context, *RateTripRequest) (*RateTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RateTrip not implemented")
@@ -788,6 +830,42 @@ func _TripService_RejectOffer_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_GetPickupPhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPickupPhotoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetPickupPhoto(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetPickupPhoto_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetPickupPhoto(ctx, req.(*GetPickupPhotoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_ListRecentDestinations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRecentDestinationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).ListRecentDestinations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_ListRecentDestinations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).ListRecentDestinations(ctx, req.(*ListRecentDestinationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TripService_RateTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RateTripRequest)
 	if err := dec(in); err != nil {
@@ -880,6 +958,14 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RejectOffer",
 			Handler:    _TripService_RejectOffer_Handler,
+		},
+		{
+			MethodName: "GetPickupPhoto",
+			Handler:    _TripService_GetPickupPhoto_Handler,
+		},
+		{
+			MethodName: "ListRecentDestinations",
+			Handler:    _TripService_ListRecentDestinations_Handler,
 		},
 		{
 			MethodName: "RateTrip",

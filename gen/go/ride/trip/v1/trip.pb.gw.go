@@ -675,6 +675,98 @@ func local_request_TripService_RejectOffer_0(ctx context.Context, marshaler runt
 	return msg, metadata, err
 }
 
+func request_TripService_GetPickupPhoto_0(ctx context.Context, marshaler runtime.Marshaler, client TripServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetPickupPhotoRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["trip_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "trip_id")
+	}
+	protoReq.TripId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "trip_id", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.GetPickupPhoto(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_TripService_GetPickupPhoto_0(ctx context.Context, marshaler runtime.Marshaler, server TripServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetPickupPhotoRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["trip_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "trip_id")
+	}
+	protoReq.TripId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "trip_id", err)
+	}
+	msg, err := server.GetPickupPhoto(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+var filter_TripService_ListRecentDestinations_0 = &utilities.DoubleArray{Encoding: map[string]int{"rider_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+
+func request_TripService_ListRecentDestinations_0(ctx context.Context, marshaler runtime.Marshaler, client TripServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListRecentDestinationsRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["rider_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "rider_id")
+	}
+	protoReq.RiderId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "rider_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TripService_ListRecentDestinations_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.ListRecentDestinations(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_TripService_ListRecentDestinations_0(ctx context.Context, marshaler runtime.Marshaler, server TripServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListRecentDestinationsRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["rider_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "rider_id")
+	}
+	protoReq.RiderId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "rider_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TripService_ListRecentDestinations_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.ListRecentDestinations(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 func request_TripService_RateTrip_0(ctx context.Context, marshaler runtime.Marshaler, client TripServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq RateTripRequest
@@ -1046,6 +1138,46 @@ func RegisterTripServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		}
 		forward_TripService_RejectOffer_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_TripService_GetPickupPhoto_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ride.trip.v1.TripService/GetPickupPhoto", runtime.WithHTTPPathPattern("/v1/trips/{trip_id}/pickup-photo"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_TripService_GetPickupPhoto_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_TripService_GetPickupPhoto_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_TripService_ListRecentDestinations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ride.trip.v1.TripService/ListRecentDestinations", runtime.WithHTTPPathPattern("/v1/riders/{rider_id}/recent-destinations"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_TripService_ListRecentDestinations_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_TripService_ListRecentDestinations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodPost, pattern_TripService_RateTrip_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1378,6 +1510,40 @@ func RegisterTripServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		}
 		forward_TripService_RejectOffer_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_TripService_GetPickupPhoto_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ride.trip.v1.TripService/GetPickupPhoto", runtime.WithHTTPPathPattern("/v1/trips/{trip_id}/pickup-photo"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TripService_GetPickupPhoto_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_TripService_GetPickupPhoto_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_TripService_ListRecentDestinations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ride.trip.v1.TripService/ListRecentDestinations", runtime.WithHTTPPathPattern("/v1/riders/{rider_id}/recent-destinations"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TripService_ListRecentDestinations_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_TripService_ListRecentDestinations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodPost, pattern_TripService_RateTrip_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1399,41 +1565,45 @@ func RegisterTripServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 }
 
 var (
-	pattern_TripService_RequestTrip_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "trips"}, ""))
-	pattern_TripService_AcceptTrip_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "accept"))
-	pattern_TripService_StartTrip_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "start"))
-	pattern_TripService_CompleteTrip_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "complete"))
-	pattern_TripService_CancelTrip_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "cancel"))
-	pattern_TripService_GetTrip_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, ""))
-	pattern_TripService_TriggerSOS_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "sos"))
-	pattern_TripService_RecordWaypoint_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "waypoint"))
-	pattern_TripService_GetTripPath_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "trips", "trip_id", "path"}, ""))
-	pattern_TripService_GetDriverLocation_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "trips", "trip_id", "driver-location"}, ""))
-	pattern_TripService_GetTripDriver_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "trips", "trip_id", "driver"}, ""))
-	pattern_TripService_GetActiveTrip_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "trips"}, "active"))
-	pattern_TripService_ListTrips_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "trips"}, ""))
-	pattern_TripService_GetPendingOffer_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "drivers", "driver_id", "offer"}, ""))
-	pattern_TripService_AcceptOffer_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "accept-offer"))
-	pattern_TripService_RejectOffer_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "reject-offer"))
-	pattern_TripService_RateTrip_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "rate"))
+	pattern_TripService_RequestTrip_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "trips"}, ""))
+	pattern_TripService_AcceptTrip_0             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "accept"))
+	pattern_TripService_StartTrip_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "start"))
+	pattern_TripService_CompleteTrip_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "complete"))
+	pattern_TripService_CancelTrip_0             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "cancel"))
+	pattern_TripService_GetTrip_0                = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, ""))
+	pattern_TripService_TriggerSOS_0             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "sos"))
+	pattern_TripService_RecordWaypoint_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "waypoint"))
+	pattern_TripService_GetTripPath_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "trips", "trip_id", "path"}, ""))
+	pattern_TripService_GetDriverLocation_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "trips", "trip_id", "driver-location"}, ""))
+	pattern_TripService_GetTripDriver_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "trips", "trip_id", "driver"}, ""))
+	pattern_TripService_GetActiveTrip_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "trips"}, "active"))
+	pattern_TripService_ListTrips_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "trips"}, ""))
+	pattern_TripService_GetPendingOffer_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "drivers", "driver_id", "offer"}, ""))
+	pattern_TripService_AcceptOffer_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "accept-offer"))
+	pattern_TripService_RejectOffer_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "reject-offer"))
+	pattern_TripService_GetPickupPhoto_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "trips", "trip_id", "pickup-photo"}, ""))
+	pattern_TripService_ListRecentDestinations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "riders", "rider_id", "recent-destinations"}, ""))
+	pattern_TripService_RateTrip_0               = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "trips", "trip_id"}, "rate"))
 )
 
 var (
-	forward_TripService_RequestTrip_0       = runtime.ForwardResponseMessage
-	forward_TripService_AcceptTrip_0        = runtime.ForwardResponseMessage
-	forward_TripService_StartTrip_0         = runtime.ForwardResponseMessage
-	forward_TripService_CompleteTrip_0      = runtime.ForwardResponseMessage
-	forward_TripService_CancelTrip_0        = runtime.ForwardResponseMessage
-	forward_TripService_GetTrip_0           = runtime.ForwardResponseMessage
-	forward_TripService_TriggerSOS_0        = runtime.ForwardResponseMessage
-	forward_TripService_RecordWaypoint_0    = runtime.ForwardResponseMessage
-	forward_TripService_GetTripPath_0       = runtime.ForwardResponseMessage
-	forward_TripService_GetDriverLocation_0 = runtime.ForwardResponseMessage
-	forward_TripService_GetTripDriver_0     = runtime.ForwardResponseMessage
-	forward_TripService_GetActiveTrip_0     = runtime.ForwardResponseMessage
-	forward_TripService_ListTrips_0         = runtime.ForwardResponseMessage
-	forward_TripService_GetPendingOffer_0   = runtime.ForwardResponseMessage
-	forward_TripService_AcceptOffer_0       = runtime.ForwardResponseMessage
-	forward_TripService_RejectOffer_0       = runtime.ForwardResponseMessage
-	forward_TripService_RateTrip_0          = runtime.ForwardResponseMessage
+	forward_TripService_RequestTrip_0            = runtime.ForwardResponseMessage
+	forward_TripService_AcceptTrip_0             = runtime.ForwardResponseMessage
+	forward_TripService_StartTrip_0              = runtime.ForwardResponseMessage
+	forward_TripService_CompleteTrip_0           = runtime.ForwardResponseMessage
+	forward_TripService_CancelTrip_0             = runtime.ForwardResponseMessage
+	forward_TripService_GetTrip_0                = runtime.ForwardResponseMessage
+	forward_TripService_TriggerSOS_0             = runtime.ForwardResponseMessage
+	forward_TripService_RecordWaypoint_0         = runtime.ForwardResponseMessage
+	forward_TripService_GetTripPath_0            = runtime.ForwardResponseMessage
+	forward_TripService_GetDriverLocation_0      = runtime.ForwardResponseMessage
+	forward_TripService_GetTripDriver_0          = runtime.ForwardResponseMessage
+	forward_TripService_GetActiveTrip_0          = runtime.ForwardResponseMessage
+	forward_TripService_ListTrips_0              = runtime.ForwardResponseMessage
+	forward_TripService_GetPendingOffer_0        = runtime.ForwardResponseMessage
+	forward_TripService_AcceptOffer_0            = runtime.ForwardResponseMessage
+	forward_TripService_RejectOffer_0            = runtime.ForwardResponseMessage
+	forward_TripService_GetPickupPhoto_0         = runtime.ForwardResponseMessage
+	forward_TripService_ListRecentDestinations_0 = runtime.ForwardResponseMessage
+	forward_TripService_RateTrip_0               = runtime.ForwardResponseMessage
 )

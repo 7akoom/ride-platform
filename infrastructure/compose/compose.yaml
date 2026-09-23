@@ -652,6 +652,7 @@ services:
       METRICS_ADDRESS: ":9092"
       DATABASE_URL: postgres://${RIDER_DB_USER}:${RIDER_DB_PASSWORD}@rider-postgres:5432/${RIDER_DB_NAME}?sslmode=disable
       NATS_URL: nats://nats:4222
+      MEDIA_SERVICE_ADDRESS: media-service:50062
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -661,6 +662,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
+      media-service:
+        condition: service_started
 
     ports:
       - "127.0.0.1:50052:50052"
@@ -769,6 +772,7 @@ services:
       LOCATION_SERVICE_ADDRESS: location-service:50054
       RIDER_SERVICE_ADDRESS: rider-service:50052
       DRIVER_SERVICE_ADDRESS: driver-service:50053
+      MEDIA_SERVICE_ADDRESS: media-service:50062
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -783,6 +787,8 @@ services:
       rider-service:
         condition: service_started
       driver-service:
+        condition: service_started
+      media-service:
         condition: service_started
 
     ports:

@@ -12,6 +12,12 @@ type CreateInput struct {
 	Dropoff       Coordinates
 	VehicleClass  string
 	PaymentMethod string
+
+	PickupAddress      string
+	DropoffAddress     string
+	PickupDetails      string
+	PickupNote         string
+	PickupPhotoMediaID string
 }
 
 // Repository is the persistence port for the trip aggregate. Every

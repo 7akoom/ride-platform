@@ -8,10 +8,15 @@ import (
 	"syscall"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/7akoom/ride-platform/services/rider-service/internal/application/address"
 	outboxapp "github.com/7akoom/ride-platform/services/rider-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/application/ratings"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/application/rider"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/config"
+	"github.com/7akoom/ride-platform/services/rider-service/internal/infrastructure/clients"
 	clockinfra "github.com/7akoom/ride-platform/services/rider-service/internal/infrastructure/clock"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/infrastructure/database"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/infrastructure/identifier"
@@ -144,7 +149,31 @@ func run() int {
 	idGenerator := identifier.NewUUIDGenerator()
 
 	riderService := rider.NewService(riderRepository, idGenerator)
-	riderHandler := grpcserver.NewRiderHandler(riderService, logger)
+
+	// Saved-address photos live in media-service; this service holds and
+	// deletes them as a service (internal token).
+	mediaConn, err := grpc.NewClient(
+		cfg.MediaServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken)),
+	)
+	if err != nil {
+		logger.Error("failed to connect to media-service", "error", err)
+
+		return 1
+	}
+	defer mediaConn.Close()
+
+	addressRepository := postgresrepo.NewAddressRepository(pool)
+	addressService := address.NewService(
+		addressRepository,
+		addressRepository,
+		clients.NewMediaPhotos(mediaConn),
+		idGenerator,
+		logger,
+	)
+
+	riderHandler := grpcserver.NewRiderHandler(riderService, logger).WithAddresses(addressService)
 
 	ratingSubscription, err := subscribeTripRatings(
 		ctx,
