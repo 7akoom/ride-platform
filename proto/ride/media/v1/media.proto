@@ -1,0 +1,161 @@
+syntax = "proto3";
+
+package ride.media.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/media/v1;mediav1";
+
+// MediaService stores the files people upload: driver documents, profile and
+// address photos, support attachments.
+//
+// A file never passes through the backend. The app asks CreateUpload for a
+// short-lived signed URL, sends the bytes straight to the object store with it,
+// then calls CompleteUpload. Only then is the file checked (size, real type from
+// its bytes, image dimensions); images are re-encoded, which drops their metadata
+// (camera, GPS position) and anything hidden in them. A file that fails is
+// deleted and REJECTED.
+//
+// Files are private. They are read through GetDownloadURL (a signed URL valid a
+// few minutes): by their owner, by staff with media.read, or by a service.
+service MediaService {
+  // CreateUpload reserves a file of a purpose and returns where to PUT it.
+  rpc CreateUpload(CreateUploadRequest) returns (CreateUploadResponse) {
+    option (google.api.http) = {
+      post: "/v1/media:upload"
+      body: "*"
+    };
+  }
+  // CompleteUpload checks the uploaded bytes and makes the file READY or REJECTED.
+  rpc CompleteUpload(CompleteUploadRequest) returns (MediaResponse) {
+    option (google.api.http) = {
+      post: "/v1/media/{media_id}:complete"
+      body: "*"
+    };
+  }
+  // GetMedia reads a file's details. Its owner, staff with media.read, or a service.
+  rpc GetMedia(GetMediaRequest) returns (MediaResponse) {
+    option (google.api.http) = {
+      get: "/v1/media/{media_id}"
+    };
+  }
+  // GetDownloadURL returns a short-lived URL to read a READY file.
+  rpc GetDownloadURL(GetDownloadURLRequest) returns (GetDownloadURLResponse) {
+    option (google.api.http) = {
+      get: "/v1/media/{media_id}:download"
+    };
+  }
+  // DeleteMedia removes the caller's own file, unless a service holds it.
+  rpc DeleteMedia(DeleteMediaRequest) returns (DeleteMediaResponse) {
+    option (google.api.http) = {
+      delete: "/v1/media/{media_id}"
+    };
+  }
+
+  // HoldMedia is called by the service a file is given to (a driver document,
+  // a ticket): it checks the file is READY, of that purpose and that owner, and
+  // stops the owner from deleting it. Internal only.
+  rpc HoldMedia(HoldMediaRequest) returns (MediaResponse);
+  // ReleaseMedia lets the owner delete a held file again. Internal only.
+  rpc ReleaseMedia(ReleaseMediaRequest) returns (MediaResponse);
+}
+
+enum MediaPurpose {
+  MEDIA_PURPOSE_UNSPECIFIED = 0;
+  // Licence, vehicle papers, ID: JPEG, PNG, WebP or PDF, up to 10 MB.
+  MEDIA_PURPOSE_DRIVER_DOCUMENT = 1;
+  // A rider's or driver's picture: JPEG, PNG or WebP, up to 5 MB.
+  MEDIA_PURPOSE_PROFILE_PHOTO = 2;
+  // A photo that helps the captain find a saved address: up to 8 MB.
+  MEDIA_PURPOSE_ADDRESS_PHOTO = 3;
+  // Attached to a support ticket: JPEG, PNG, WebP or PDF, up to 10 MB.
+  MEDIA_PURPOSE_SUPPORT_ATTACHMENT = 4;
+}
+
+enum MediaStatus {
+  MEDIA_STATUS_UNSPECIFIED = 0;
+  // Reserved, waiting for the bytes and CompleteUpload.
+  MEDIA_STATUS_PENDING = 1;
+  MEDIA_STATUS_READY = 2;
+  // The bytes failed the checks; the object was deleted.
+  MEDIA_STATUS_REJECTED = 3;
+  MEDIA_STATUS_DELETED = 4;
+  // Never completed in time; the reservation was dropped.
+  MEDIA_STATUS_EXPIRED = 5;
+}
+
+message Media {
+  string id = 1;
+  string owner_identity_id = 2;
+  MediaPurpose purpose = 3;
+  MediaStatus status = 4;
+  // What is stored, once READY (a WebP photo is stored as JPEG).
+  string content_type = 5;
+  int64 size_bytes = 6;
+  // Hex SHA-256 of the stored bytes, once READY.
+  string sha256 = 7;
+  int32 width = 8;
+  int32 height = 9;
+  // Why a file was REJECTED.
+  string rejection_reason = 10;
+  // A service holds it: the owner cannot delete it.
+  bool held = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp completed_at = 13;
+}
+
+message CreateUploadRequest {
+  MediaPurpose purpose = 1;
+  // image/jpeg, image/png, image/webp or application/pdf.
+  string content_type = 2;
+  // The exact size of the file; the upload URL only accepts that many bytes.
+  int64 size_bytes = 3;
+}
+
+message CreateUploadResponse {
+  Media media = 1;
+  // PUT the file here, with exactly the headers below.
+  string upload_url = 2;
+  string upload_method = 3;
+  map<string, string> upload_headers = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+message CompleteUploadRequest {
+  string media_id = 1;
+}
+
+message MediaResponse {
+  Media media = 1;
+}
+
+message GetMediaRequest {
+  string media_id = 1;
+}
+
+message GetDownloadURLRequest {
+  string media_id = 1;
+}
+
+message GetDownloadURLResponse {
+  string url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message DeleteMediaRequest {
+  string media_id = 1;
+}
+
+message DeleteMediaResponse {}
+
+message HoldMediaRequest {
+  string media_id = 1;
+  // The file must belong to this identity...
+  string owner_identity_id = 2;
+  // ...and be of this purpose.
+  MediaPurpose purpose = 3;
+}
+
+message ReleaseMediaRequest {
+  string media_id = 1;
+}

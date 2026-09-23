@@ -8,6 +8,7 @@ use (
 	./services/driver-service
 	./services/identity-service
 	./services/location-service
+	./services/media-service
 	./services/notification-service
 	./services/pricing-service
 	./services/rider-service

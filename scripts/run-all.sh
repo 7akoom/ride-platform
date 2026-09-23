@@ -31,6 +31,7 @@ ALL_SERVICES=(
 	notification-service
 	analytics
 	staff-service
+	media-service
 )
 
 if [ "$#" -gt 0 ]; then

@@ -146,6 +146,33 @@ Searching is limited to the country set by `MAPS_COUNTRY_CODES` (Iraq by default
 `owner_type` is a query parameter because an enum cannot be bound in a URL path.
 Top-ups of a rider's wallet and trip settlement are internal: no route.
 
+### Files (media)
+
+Files never go through the gateway. The app asks for an upload URL, sends the
+bytes straight to the object store, then asks the service to check them. See
+`services/media-service/README.md` for what the check does.
+
+1. `POST /v1/media:upload` with `purpose`, `contentType` and `sizeBytes`
+   (the exact size). The answer has `media.id`, `uploadUrl`, `uploadMethod`
+   (`PUT`), `uploadHeaders` and `expiresAt`.
+2. `PUT` the file to `uploadUrl` with exactly `uploadHeaders`. Another type
+   or size is refused by the store (403).
+3. `POST /v1/media/{mediaId}:complete`. `media.status` is then
+   `MEDIA_STATUS_READY`, or `MEDIA_STATUS_REJECTED` with `rejectionReason`
+   (the file was not what it said, is damaged, or is a PDF with scripts).
+   Before the bytes arrive it answers 400 (precondition failed).
+4. `GET /v1/media/{mediaId}:download` for a short-lived `url`.
+
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| POST | `/v1/media:upload` | any signed-in user | `purpose`: `MEDIA_PURPOSE_DRIVER_DOCUMENT` (JPEG/PNG/WebP/PDF, 10 MB), `MEDIA_PURPOSE_PROFILE_PHOTO` (JPEG/PNG/WebP, 5 MB), `MEDIA_PURPOSE_ADDRESS_PHOTO` (8 MB), `MEDIA_PURPOSE_SUPPORT_ATTACHMENT` (JPEG/PNG/WebP/PDF, 10 MB); 429 with too many uploads not completed |
+| POST | `/v1/media/{mediaId}:complete` | the owner | calling it again on a READY file returns it unchanged |
+| GET | `/v1/media/{mediaId}` | the owner, or `media.read` | |
+| GET | `/v1/media/{mediaId}:download` | the owner, or `media.read` | READY files only |
+| DELETE | `/v1/media/{mediaId}` | the owner | 400 while a service holds the file (a driver's submitted document) |
+
+A file that does not exist answers 403, like someone else's file.
+
 ### Staff and admin
 
 Staff sign in with an email OTP like anyone else. What they may do comes from
@@ -171,6 +198,7 @@ before it runs. A caller who is not staff, or lacks the permission, gets 403.
 | POST | `/v1/admin/zones` | `zones.manage` | `city`, `name`, `boundary` |
 | PATCH | `/v1/admin/zones/{zoneId}` | `zones.manage` | `name`, `boundary` |
 | POST | `/v1/admin/zones/{zoneId}:setActive` | `zones.manage` | `active` |
+| GET | `/v1/media/{mediaId}` · `/v1/media/{mediaId}:download` | `media.read` | any user's file (see Files) |
 
 ## Not exposed yet
 

@@ -13,6 +13,7 @@ import (
 	driverv1 "github.com/7akoom/ride-platform/gen/go/ride/driver/v1"
 	identityv1 "github.com/7akoom/ride-platform/gen/go/ride/identity/v1"
 	locationv1 "github.com/7akoom/ride-platform/gen/go/ride/location/v1"
+	mediav1 "github.com/7akoom/ride-platform/gen/go/ride/media/v1"
 	notificationv1 "github.com/7akoom/ride-platform/gen/go/ride/notification/v1"
 	pricingv1 "github.com/7akoom/ride-platform/gen/go/ride/pricing/v1"
 	riderv1 "github.com/7akoom/ride-platform/gen/go/ride/rider/v1"
@@ -171,6 +172,20 @@ func run() int {
 
 	if err := staffv1.RegisterStaffServiceHandler(ctx, mux, staffConn); err != nil {
 		logger.Error("failed to register staff-service gateway handler", "error", err)
+
+		return 1
+	}
+
+	mediaConn, err := dialBackend(cfg.MediaServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to media-service", "error", err)
+
+		return 1
+	}
+	defer mediaConn.Close()
+
+	if err := mediav1.RegisterMediaServiceHandler(ctx, mux, mediaConn); err != nil {
+		logger.Error("failed to register media-service gateway handler", "error", err)
 
 		return 1
 	}

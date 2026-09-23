@@ -281,6 +281,74 @@ services:
 
     restart: unless-stopped
 
+  media-postgres:
+    image: postgres:17-alpine3.24
+    container_name: ride-media-postgres
+
+    environment:
+      POSTGRES_DB: ${MEDIA_DB_NAME:?MEDIA_DB_NAME is required}
+      POSTGRES_USER: ${MEDIA_DB_USER:?MEDIA_DB_USER is required}
+      POSTGRES_PASSWORD: ${MEDIA_DB_PASSWORD:?MEDIA_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:5443:5432"
+
+    volumes:
+      - media-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${MEDIA_DB_USER} -d ${MEDIA_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+  # Object store for uploaded files (S3 API on 127.0.0.1:8333). The apps send
+  # and read files here directly with URLs media-service signs; the S3 API
+  # refuses anything unsigned. In production put it behind the HTTPS proxy
+  # (passing the Host header unchanged) and set S3_PUBLIC_ENDPOINT to that
+  # address. -volume.max=0 lets volumes grow with the disk.
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.47
+    container_name: ride-seaweedfs
+
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY is required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY is required}
+
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        umask 077
+        cat > /tmp/s3.json <<EOF
+        {"identities":[{"name":"media-service","credentials":[{"accessKey":"$${S3_ACCESS_KEY}","secretKey":"$${S3_SECRET_KEY}"}],"actions":["Admin","Read","Write","List","Tagging"]}]}
+        EOF
+        exec weed server -dir=/data -ip=seaweedfs -ip.bind=0.0.0.0 \
+          -master.volumeSizeLimitMB=1024 -volume.max=0 \
+          -s3 -s3.port=8333 -s3.config=/tmp/s3.json
+
+    ports:
+      - "127.0.0.1:8333:8333"
+
+    volumes:
+      - seaweedfs-data:/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+    restart: unless-stopped
+
   # Road routing for pricing-service. Requires a one-time dataset build:
   # see infrastructure/osrm/README.md. Starts only once that's done.
   osrm:
@@ -959,6 +1027,47 @@ services:
 
     restart: unless-stopped
 
+  # Uploaded files: driver documents, photos, support attachments. Keeps the
+  # records; the bytes are in seaweedfs.
+  media-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: media-service
+    image: ride-platform/media-service:dev
+    container_name: ride-media-service
+
+    env_file:
+      - ../../services/media-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50062"
+      METRICS_ADDRESS: ":9102"
+      DATABASE_URL: postgres://${MEDIA_DB_USER}:${MEDIA_DB_PASSWORD}@media-postgres:5432/${MEDIA_DB_NAME}?sslmode=disable
+      S3_ENDPOINT: http://seaweedfs:8333
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://127.0.0.1:8333}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      STAFF_SERVICE_ADDRESS: staff-service:50061
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      media-postgres:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+      staff-service:
+        condition: service_started
+
+    ports:
+      - "127.0.0.1:50062:50062"
+      - "127.0.0.1:9102:9102"
+
+    restart: unless-stopped
+
   gateway:
     build:
       context: ../..
@@ -977,6 +1086,7 @@ services:
       NOTIFICATION_SERVICE_ADDRESS: notification-service:50059
       IDENTITY_SERVICE_ADDRESS: identity-service:50051
       STAFF_SERVICE_ADDRESS: staff-service:50061
+      MEDIA_SERVICE_ADDRESS: media-service:50062
       ALLOWED_ORIGINS: http://localhost:3000
 
     depends_on:
@@ -997,6 +1107,8 @@ services:
       identity-service:
         condition: service_started
       staff-service:
+        condition: service_started
+      media-service:
         condition: service_started
 
     ports:
@@ -1060,6 +1172,8 @@ volumes:
   location-postgres-data:
   analytics-postgres-data:
   staff-postgres-data:
+  media-postgres-data:
+  seaweedfs-data:
   identity-valkey-data:
   location-valkey-data:
   nats-jetstream-data:

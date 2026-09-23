@@ -29,7 +29,7 @@ func newFakeRepository() *fakeRepository {
 			ownerRoleID: {ID: ownerRoleID, Key: RoleKeyOwner, Name: "Owner", System: true},
 			operationsRoleID: {
 				ID: operationsRoleID, Key: "operations", Name: "Operations", System: true,
-				Permissions: []string{PermissionDriversRead, PermissionDriversReview, PermissionZonesManage},
+				Permissions: []string{PermissionDriversRead, PermissionDriversReview, PermissionMediaRead, PermissionZonesManage},
 			},
 		},
 	}

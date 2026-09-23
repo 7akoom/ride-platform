@@ -75,6 +75,7 @@ jobs:
           - services/notification-service
           - services/analytics
           - services/staff-service
+          - services/media-service
     steps:
       - uses: actions/checkout@v4
 
@@ -125,6 +126,7 @@ jobs:
           - notification-service
           - analytics
           - staff-service
+          - media-service
     steps:
       - uses: actions/checkout@v4
 

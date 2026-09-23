@@ -25,6 +25,7 @@ type Config struct {
 	NotificationServiceAddress string
 	IdentityServiceAddress     string
 	StaffServiceAddress        string
+	MediaServiceAddress        string
 
 	// Comma-separated browser origins allowed to call this gateway
 	// (the Admin web app). Mobile apps don't send an Origin header and
@@ -70,6 +71,10 @@ func Load() Config {
 		StaffServiceAddress: getEnv(
 			"STAFF_SERVICE_ADDRESS",
 			"localhost:50061",
+		),
+		MediaServiceAddress: getEnv(
+			"MEDIA_SERVICE_ADDRESS",
+			"localhost:50062",
 		),
 
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:3000"),

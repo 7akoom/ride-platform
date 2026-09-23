@@ -21,6 +21,10 @@
       "name": "LocationService"
     },
     {
+      "name": "MediaService",
+      "description": "MediaService stores the files people upload: driver documents, profile and\naddress photos, support attachments.\n\nA file never passes through the backend. The app asks CreateUpload for a\nshort-lived signed URL, sends the bytes straight to the object store with it,\nthen calls CompleteUpload. Only then is the file checked (size, real type from\nits bytes, image dimensions); images are re-encoded, which drops their metadata\n(camera, GPS position) and anything hidden in them. A file that fails is\ndeleted and REJECTED.\n\nFiles are private. They are read through GetDownloadURL (a signed URL valid a\nfew minutes): by their owner, by staff with media.read, or by a service."
+    },
+    {
       "name": "NotificationService"
     },
     {
@@ -1854,6 +1858,169 @@
         ]
       }
     },
+    "/v1/media/{mediaId}": {
+      "get": {
+        "summary": "GetMedia reads a file's details. Its owner, staff with media.read, or a service.",
+        "operationId": "MediaService_GetMedia",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MediaResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "MediaService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteMedia removes the caller's own file, unless a service holds it.",
+        "operationId": "MediaService_DeleteMedia",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteMediaResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "MediaService"
+        ]
+      }
+    },
+    "/v1/media/{mediaId}:complete": {
+      "post": {
+        "summary": "CompleteUpload checks the uploaded bytes and makes the file READY or REJECTED.",
+        "operationId": "MediaService_CompleteUpload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MediaResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/MediaServiceCompleteUploadBody"
+            }
+          }
+        ],
+        "tags": [
+          "MediaService"
+        ]
+      }
+    },
+    "/v1/media/{mediaId}:download": {
+      "get": {
+        "summary": "GetDownloadURL returns a short-lived URL to read a READY file.",
+        "operationId": "MediaService_GetDownloadURL",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDownloadURLResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "MediaService"
+        ]
+      }
+    },
+    "/v1/media:upload": {
+      "post": {
+        "summary": "CreateUpload reserves a file of a purpose and returns where to PUT it.",
+        "operationId": "MediaService_CreateUpload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateUploadResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateUploadRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MediaService"
+        ]
+      }
+    },
     "/v1/notifications": {
       "get": {
         "summary": "ListNotifications returns the caller's own inbox; recipient_type and recipient_id are query parameters.",
@@ -3192,6 +3359,9 @@
         }
       }
     },
+    "MediaServiceCompleteUploadBody": {
+      "type": "object"
+    },
     "RiderServiceUpdateRiderProfileBody": {
       "type": "object",
       "properties": {
@@ -3635,6 +3805,48 @@
         }
       }
     },
+    "v1CreateUploadRequest": {
+      "type": "object",
+      "properties": {
+        "purpose": {
+          "$ref": "#/definitions/v1MediaPurpose"
+        },
+        "contentType": {
+          "type": "string",
+          "description": "image/jpeg, image/png, image/webp or application/pdf."
+        },
+        "sizeBytes": {
+          "type": "string",
+          "format": "int64",
+          "description": "The exact size of the file; the upload URL only accepts that many bytes."
+        }
+      }
+    },
+    "v1CreateUploadResponse": {
+      "type": "object",
+      "properties": {
+        "media": {
+          "$ref": "#/definitions/v1Media"
+        },
+        "uploadUrl": {
+          "type": "string",
+          "description": "PUT the file here, with exactly the headers below."
+        },
+        "uploadMethod": {
+          "type": "string"
+        },
+        "uploadHeaders": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "v1CreateZoneRequest": {
       "type": "object",
       "properties": {
@@ -3665,6 +3877,9 @@
           "format": "date-time"
         }
       }
+    },
+    "v1DeleteMediaResponse": {
+      "type": "object"
     },
     "v1DeleteRoleResponse": {
       "type": "object"
@@ -3884,6 +4099,18 @@
         "cancellationRatePercent": {
           "type": "string",
           "title": "decimal string"
+        }
+      }
+    },
+    "v1GetDownloadURLResponse": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -4379,6 +4606,92 @@
           "format": "int32"
         }
       }
+    },
+    "v1Media": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "ownerIdentityId": {
+          "type": "string"
+        },
+        "purpose": {
+          "$ref": "#/definitions/v1MediaPurpose"
+        },
+        "status": {
+          "$ref": "#/definitions/v1MediaStatus"
+        },
+        "contentType": {
+          "type": "string",
+          "description": "What is stored, once READY (a WebP photo is stored as JPEG)."
+        },
+        "sizeBytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "sha256": {
+          "type": "string",
+          "description": "Hex SHA-256 of the stored bytes, once READY."
+        },
+        "width": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "height": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "rejectionReason": {
+          "type": "string",
+          "description": "Why a file was REJECTED."
+        },
+        "held": {
+          "type": "boolean",
+          "description": "A service holds it: the owner cannot delete it."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1MediaPurpose": {
+      "type": "string",
+      "enum": [
+        "MEDIA_PURPOSE_UNSPECIFIED",
+        "MEDIA_PURPOSE_DRIVER_DOCUMENT",
+        "MEDIA_PURPOSE_PROFILE_PHOTO",
+        "MEDIA_PURPOSE_ADDRESS_PHOTO",
+        "MEDIA_PURPOSE_SUPPORT_ATTACHMENT"
+      ],
+      "default": "MEDIA_PURPOSE_UNSPECIFIED",
+      "description": " - MEDIA_PURPOSE_DRIVER_DOCUMENT: Licence, vehicle papers, ID: JPEG, PNG, WebP or PDF, up to 10 MB.\n - MEDIA_PURPOSE_PROFILE_PHOTO: A rider's or driver's picture: JPEG, PNG or WebP, up to 5 MB.\n - MEDIA_PURPOSE_ADDRESS_PHOTO: A photo that helps the captain find a saved address: up to 8 MB.\n - MEDIA_PURPOSE_SUPPORT_ATTACHMENT: Attached to a support ticket: JPEG, PNG, WebP or PDF, up to 10 MB."
+    },
+    "v1MediaResponse": {
+      "type": "object",
+      "properties": {
+        "media": {
+          "$ref": "#/definitions/v1Media"
+        }
+      }
+    },
+    "v1MediaStatus": {
+      "type": "string",
+      "enum": [
+        "MEDIA_STATUS_UNSPECIFIED",
+        "MEDIA_STATUS_PENDING",
+        "MEDIA_STATUS_READY",
+        "MEDIA_STATUS_REJECTED",
+        "MEDIA_STATUS_DELETED",
+        "MEDIA_STATUS_EXPIRED"
+      ],
+      "default": "MEDIA_STATUS_UNSPECIFIED",
+      "description": " - MEDIA_STATUS_PENDING: Reserved, waiting for the bytes and CompleteUpload.\n - MEDIA_STATUS_REJECTED: The bytes failed the checks; the object was deleted.\n - MEDIA_STATUS_EXPIRED: Never completed in time; the reservation was dropped."
     },
     "v1Notification": {
       "type": "object",

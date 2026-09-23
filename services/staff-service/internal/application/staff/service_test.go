@@ -210,7 +210,7 @@ func TestAcceptInviteBindsTheVerifiedEmail(t *testing.T) {
 		t.Fatalf("unexpected member %+v", member)
 	}
 
-	if len(permissions) != 3 {
+	if len(permissions) != 4 {
 		t.Fatalf("permissions = %v", permissions)
 	}
 

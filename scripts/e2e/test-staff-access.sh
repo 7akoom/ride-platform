@@ -179,7 +179,7 @@ expect "an invitation without a role" 400 POST /v1/admin/staff "$OWNER" "{\"emai
 OPS="$(login "$OPS_EMAIL")"
 expect "the operator accepts" 200 POST /v1/staff/me:accept "$OPS" '{}'
 check "the operator is active" STAFF_STATUS_ACTIVE "$(body_field 'd["staffMember"]["status"]')"
-check "the operator holds the operations permissions" "drivers.approve,drivers.read,zones.manage" "$(body_field '",".join(d.get("permissions", []))')"
+check "the operator holds the operations permissions" "drivers.approve,drivers.read,media.read,zones.manage" "$(body_field '",".join(d.get("permissions", []))')"
 expect "accepting twice" 409 POST /v1/staff/me:accept "$OPS" '{}'
 
 echo "==> [3/7] the operator reviews a driver"
