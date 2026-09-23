@@ -45,6 +45,9 @@ type Config struct {
 	// media-service: links to the photo of a saved pickup address.
 	MediaServiceAddress string
 
+	// pricing-service: claiming the fare quote a trip is requested with.
+	PricingServiceAddress string
+
 	// Per-caller token-bucket rate limit (see
 	// transport/grpc/rate_limit_interceptor.go). Defaults are generous
 	// for a single mobile-app client under normal use, tight enough to
@@ -154,6 +157,11 @@ func Load() Config {
 		MediaServiceAddress: getEnv(
 			"MEDIA_SERVICE_ADDRESS",
 			"localhost:50062",
+		),
+
+		PricingServiceAddress: getEnv(
+			"PRICING_SERVICE_ADDRESS",
+			"localhost:50057",
 		),
 
 		RateLimitRequestsPerSecond: getEnv(

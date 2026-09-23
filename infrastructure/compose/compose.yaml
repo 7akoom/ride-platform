@@ -773,6 +773,9 @@ services:
       RIDER_SERVICE_ADDRESS: rider-service:50052
       DRIVER_SERVICE_ADDRESS: driver-service:50053
       MEDIA_SERVICE_ADDRESS: media-service:50062
+      # pricing-service depends on this service, so this one does not wait
+      # for it: quotes are claimed over a lazy connection.
+      PRICING_SERVICE_ADDRESS: pricing-service:50057
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -860,6 +863,8 @@ services:
       LOCATION_SERVICE_ADDRESS: location-service:50054
       TRIP_SERVICE_ADDRESS: trip-service:50055
       RIDER_SERVICE_ADDRESS: rider-service:50052
+      DRIVER_SERVICE_ADDRESS: driver-service:50053
+      STAFF_SERVICE_ADDRESS: staff-service:50061
       OSRM_BASE_URL: http://osrm:5000
 
     volumes:
@@ -875,6 +880,10 @@ services:
       trip-service:
         condition: service_started
       rider-service:
+        condition: service_started
+      driver-service:
+        condition: service_started
+      staff-service:
         condition: service_started
 
     ports:

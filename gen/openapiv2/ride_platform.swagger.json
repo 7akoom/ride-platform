@@ -576,6 +576,107 @@
         ]
       }
     },
+    "/v1/admin/rate-cards": {
+      "get": {
+        "summary": "Rate cards (staff, pricing.manage). A card applies to a zone, a city or\neverywhere, for one vehicle class or all of them; the most specific one\nprices a trip: zone, then city, then everywhere, and within each a\nclass's own card before the one for all classes. Setting a card adds a\nnew version, so what past fares were priced with stays on file.",
+        "operationId": "PricingService_ListRateCards",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListRateCardsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cityId",
+            "description": "Optional filters: only cards for this city (and its zones' cards are not\nincluded), or only this zone's.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "zoneId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      },
+      "post": {
+        "operationId": "PricingService_SetRateCard",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RateCardResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1SetRateCardRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/admin/rate-cards:retire": {
+      "post": {
+        "summary": "RetireRateCard removes a zone's or city's card (or a class's card\neverywhere), so trips there fall back to the next one. The card for\nevery class everywhere cannot be retired.",
+        "operationId": "PricingService_RetireRateCard",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RetireRateCardResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RetireRateCardRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
     "/v1/admin/roles": {
       "get": {
         "summary": "ListRoles lists system and custom roles. Needs staff.read.",
@@ -966,6 +1067,256 @@
         ],
         "tags": [
           "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/surge-rules": {
+      "get": {
+        "summary": "Surge rules by the hour (staff, pricing.manage), read in the local time\nof the city the pickup is in.",
+        "operationId": "PricingService_ListSurgeRules",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSurgeRulesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cityId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "zoneId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      },
+      "post": {
+        "operationId": "PricingService_CreateSurgeRule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SurgeRuleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateSurgeRuleRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/admin/surge-rules/{ruleId}": {
+      "patch": {
+        "operationId": "PricingService_UpdateSurgeRule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SurgeRuleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PricingServiceUpdateSurgeRuleBody"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/admin/surge-rules/{ruleId}:setActive": {
+      "post": {
+        "operationId": "PricingService_SetSurgeRuleActive",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SurgeRuleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PricingServiceSetSurgeRuleActiveBody"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/admin/zone-surges": {
+      "get": {
+        "summary": "A surge staff put on one zone for a while (a concert, a storm), on top\nof what the hour and the demand add (staff, pricing.manage).",
+        "operationId": "PricingService_ListZoneSurges",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListZoneSurgesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "zoneId",
+            "description": "Optional: one zone's.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "includePast",
+            "description": "Also the ones that are over (the latest 100).",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      },
+      "post": {
+        "operationId": "PricingService_CreateZoneSurge",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ZoneSurgeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateZoneSurgeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/admin/zone-surges/{zoneSurgeId}:end": {
+      "post": {
+        "operationId": "PricingService_EndZoneSurge",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ZoneSurgeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "zoneSurgeId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PricingServiceEndZoneSurgeBody"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
         ]
       }
     },
@@ -1851,6 +2202,39 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/v1EstimateFareRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/fare-quotes": {
+      "post": {
+        "summary": "QuoteTrip prices a trip for every vehicle class at once, with how far\nthe nearest free driver of each class is. Each quote holds its price for\na few minutes: a trip requested with its quote_id pays exactly that.\nrider_id must be the caller's own rider profile.",
+        "operationId": "PricingService_QuoteTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1QuoteTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1QuoteTripRequest"
             }
           }
         ],
@@ -4138,6 +4522,39 @@
     "MediaServiceCompleteUploadBody": {
       "type": "object"
     },
+    "PricingServiceEndZoneSurgeBody": {
+      "type": "object"
+    },
+    "PricingServiceSetSurgeRuleActiveBody": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean"
+        }
+      }
+    },
+    "PricingServiceUpdateSurgeRuleBody": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "dayOfWeek": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "startTime": {
+          "type": "string"
+        },
+        "endTime": {
+          "type": "string"
+        },
+        "surgePercent": {
+          "type": "string"
+        }
+      },
+      "description": "Replaces the rule's label, days, hours and percent (not where it applies)."
+    },
     "RiderServiceCreateSavedAddressBody": {
       "type": "object",
       "properties": {
@@ -4755,6 +5172,33 @@
         }
       }
     },
+    "v1CreateSurgeRuleRequest": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "zoneId": {
+          "type": "string"
+        },
+        "cityId": {
+          "type": "string"
+        },
+        "dayOfWeek": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "startTime": {
+          "type": "string"
+        },
+        "endTime": {
+          "type": "string"
+        },
+        "surgePercent": {
+          "type": "string"
+        }
+      }
+    },
     "v1CreateUploadRequest": {
       "type": "object",
       "properties": {
@@ -4813,6 +5257,30 @@
         "cityId": {
           "type": "string",
           "description": "The city the zone is in (see CreateCity)."
+        }
+      }
+    },
+    "v1CreateZoneSurgeRequest": {
+      "type": "object",
+      "properties": {
+        "zoneId": {
+          "type": "string"
+        },
+        "surgePercent": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "startsAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "From now unless set; up to 7 days ahead."
+        },
+        "durationMinutes": {
+          "type": "integer",
+          "format": "int32",
+          "description": "1 to 1440 (a day)."
         }
       }
     },
@@ -5048,6 +5516,14 @@
         "vehicleClass": {
           "type": "string",
           "description": "The vehicle class this fare was priced for."
+        },
+        "minimumFareAdjustment": {
+          "type": "string",
+          "description": "What was added to bring base + distance + duration up to the rate\ncard's minimum fare; included in subtotal."
+        },
+        "cityId": {
+          "type": "string",
+          "description": "The city the pickup is in."
         }
       },
       "description": "Money fields are decimal strings (e.g. \"2451.6\"), never double —\nfloat64 in protobuf would reintroduce exactly the precision problem\nthe underlying NUMERIC columns exist to avoid (same convention as\nwallet.proto). distance_km/duration_minutes stay double: physical\nmeasurements from OSRM, not currency."
@@ -5541,6 +6017,19 @@
         }
       }
     },
+    "v1ListRateCardsResponse": {
+      "type": "object",
+      "properties": {
+        "rateCards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1RateCard"
+          },
+          "description": "The card in force for each place and class."
+        }
+      }
+    },
     "v1ListRecentDestinationsResponse": {
       "type": "object",
       "properties": {
@@ -5593,6 +6082,18 @@
         }
       }
     },
+    "v1ListSurgeRulesResponse": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SurgeRule"
+          }
+        }
+      }
+    },
     "v1ListTransactionsResponse": {
       "type": "object",
       "properties": {
@@ -5619,6 +6120,18 @@
         "nextPageToken": {
           "type": "string",
           "description": "Empty on the last page."
+        }
+      }
+    },
+    "v1ListZoneSurgesResponse": {
+      "type": "object",
+      "properties": {
+        "zoneSurges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ZoneSurge"
+          }
         }
       }
     },
@@ -5924,6 +6437,124 @@
     "v1ProcessZainCashWebhookResponse": {
       "type": "object"
     },
+    "v1QuoteTripRequest": {
+      "type": "object",
+      "properties": {
+        "riderId": {
+          "type": "string"
+        },
+        "pickup": {
+          "$ref": "#/definitions/ridePricingV1Coordinates"
+        },
+        "dropoff": {
+          "$ref": "#/definitions/ridePricingV1Coordinates"
+        },
+        "couponCode": {
+          "type": "string"
+        }
+      }
+    },
+    "v1QuoteTripResponse": {
+      "type": "object",
+      "properties": {
+        "quotes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TripQuote"
+          },
+          "description": "One per vehicle class, cheapest class first."
+        },
+        "zoneId": {
+          "type": "string"
+        },
+        "cityId": {
+          "type": "string"
+        }
+      }
+    },
+    "v1RateCard": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "zoneId": {
+          "type": "string",
+          "description": "Where it applies: a zone, a city, or everywhere (both empty). Never both."
+        },
+        "cityId": {
+          "type": "string"
+        },
+        "vehicleClass": {
+          "type": "string",
+          "description": "economy or comfort; empty for every class."
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "baseFare": {
+          "type": "string"
+        },
+        "perKmRate": {
+          "type": "string"
+        },
+        "perMinuteRate": {
+          "type": "string"
+        },
+        "minimumFare": {
+          "type": "string",
+          "description": "The least a trip costs before surge and discounts."
+        },
+        "freeWaitingMinutes": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Minutes a driver waits at the pickup for free, then the price of each\nfurther minute."
+        },
+        "waitingPerMinute": {
+          "type": "string"
+        },
+        "cancellationFee": {
+          "type": "string",
+          "description": "What a rider pays for cancelling once cancellation_grace_minutes have\npassed since a driver accepted, and for not showing up."
+        },
+        "cancellationGraceMinutes": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "noShowFee": {
+          "type": "string"
+        },
+        "maxSurgePercent": {
+          "type": "string",
+          "description": "The most surge can add, in percent (0 turns surge off)."
+        },
+        "demandSurge": {
+          "type": "boolean",
+          "description": "Whether demand near the pickup and the weather add surge."
+        },
+        "weatherSurge": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The staff member's identity id; empty for the starting card."
+        }
+      },
+      "description": "Money fields are decimal strings in the deployment's currency."
+    },
+    "v1RateCardResponse": {
+      "type": "object",
+      "properties": {
+        "rateCard": {
+          "$ref": "#/definitions/v1RateCard"
+        }
+      }
+    },
     "v1RateTripResponse": {
       "type": "object"
     },
@@ -6169,6 +6800,10 @@
         },
         "dropoffSavedAddressId": {
           "type": "string"
+        },
+        "quoteId": {
+          "type": "string",
+          "description": "A quote from pricing-service QuoteTrip that is the rider's and has not\nexpired or been used. The trip keeps its price, and is for its vehicle\nclass; pickup and dropoff (or the saved addresses) must be within 50\nmetres of the quoted points."
         }
       }
     },
@@ -6199,6 +6834,23 @@
           "title": "decimal strings, week 0..N"
         }
       }
+    },
+    "v1RetireRateCardRequest": {
+      "type": "object",
+      "properties": {
+        "zoneId": {
+          "type": "string"
+        },
+        "cityId": {
+          "type": "string"
+        },
+        "vehicleClass": {
+          "type": "string"
+        }
+      }
+    },
+    "v1RetireRateCardResponse": {
+      "type": "object"
     },
     "v1RevenueDayPoint": {
       "type": "object",
@@ -6440,6 +7092,58 @@
         }
       }
     },
+    "v1SetRateCardRequest": {
+      "type": "object",
+      "properties": {
+        "zoneId": {
+          "type": "string"
+        },
+        "cityId": {
+          "type": "string"
+        },
+        "vehicleClass": {
+          "type": "string"
+        },
+        "baseFare": {
+          "type": "string"
+        },
+        "perKmRate": {
+          "type": "string"
+        },
+        "perMinuteRate": {
+          "type": "string"
+        },
+        "minimumFare": {
+          "type": "string"
+        },
+        "freeWaitingMinutes": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "waitingPerMinute": {
+          "type": "string"
+        },
+        "cancellationFee": {
+          "type": "string"
+        },
+        "cancellationGraceMinutes": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "noShowFee": {
+          "type": "string"
+        },
+        "maxSurgePercent": {
+          "type": "string"
+        },
+        "demandSurge": {
+          "type": "boolean"
+        },
+        "weatherSurge": {
+          "type": "boolean"
+        }
+      }
+    },
     "v1SosTriggeredBy": {
       "type": "string",
       "enum": [
@@ -6541,9 +7245,69 @@
         },
         "multiplier": {
           "type": "string"
+        },
+        "zonePercent": {
+          "type": "string",
+          "description": "A surge staff put on the pickup's zone."
+        },
+        "label": {
+          "type": "string",
+          "description": "What staff called the surge that applies (a rule's label or a zone\nsurge's reason), for the app to show; empty when none does."
         }
       },
-      "description": "SurgeBreakdown makes each contributing factor visible instead of just a\nfinal multiplier — useful for support/debugging (\"why was my fare\nhigher\") and for the rider-facing app to show \"+20% due to demand\".\nPercent/multiplier fields are decimal strings, not double — they feed\ndirectly into fare math (see FareBreakdown below) and float64 would\nreintroduce the same rounding drift the decimal fare fields exist to\navoid."
+      "description": "SurgeBreakdown makes each contributing factor visible instead of just a\nfinal multiplier — useful for support/debugging (\"why was my fare\nhigher\") and for the rider-facing app to show \"+20% due to demand\".\nPercent/multiplier fields are decimal strings, not double — they feed\ndirectly into fare math (see FareBreakdown below) and float64 would\nreintroduce the same rounding drift the decimal fare fields exist to\navoid.\n\ntotal_percent = the larger of time_of_day_percent and zone_percent (both\nset by staff; they never add up) + demand_percent + weather_percent,\ncapped by the rate card's max_surge_percent."
+    },
+    "v1SurgeRule": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "zoneId": {
+          "type": "string",
+          "description": "Where it applies: a zone, a city, or everywhere (both empty)."
+        },
+        "cityId": {
+          "type": "string"
+        },
+        "dayOfWeek": {
+          "type": "integer",
+          "format": "int32",
+          "description": "0 = Sunday .. 6 = Saturday; unset for every day."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Local time in the city, \"HH:MM\". A window that ends before it starts\nruns past midnight (23:00 to 04:00)."
+        },
+        "endTime": {
+          "type": "string"
+        },
+        "surgePercent": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1SurgeRuleResponse": {
+      "type": "object",
+      "properties": {
+        "rule": {
+          "$ref": "#/definitions/v1SurgeRule"
+        }
+      }
     },
     "v1Transaction": {
       "type": "object",
@@ -6671,6 +7435,16 @@
         "hasPickupPhoto": {
           "type": "boolean",
           "description": "The saved pickup address has a photo: GetPickupPhoto gives a link."
+        },
+        "quoteId": {
+          "type": "string",
+          "description": "The fare quote the trip was requested with (pricing-service QuoteTrip),\nand the price it fixed: a decimal string in currency_code. All three are\nempty for a trip requested without a quote, which is priced when it\ncompletes."
+        },
+        "quotedFare": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
         }
       }
     },
@@ -6725,9 +7499,43 @@
         },
         "dropoffAddress": {
           "type": "string"
+        },
+        "quotedFare": {
+          "type": "string",
+          "description": "The quoted price, when the trip has one (a decimal string)."
+        },
+        "currencyCode": {
+          "type": "string"
         }
       },
       "description": "TripOffer is what a driver sees to decide. The rider is not identified."
+    },
+    "v1TripQuote": {
+      "type": "object",
+      "properties": {
+        "quoteId": {
+          "type": "string"
+        },
+        "vehicleClass": {
+          "type": "string"
+        },
+        "fare": {
+          "$ref": "#/definitions/v1FareBreakdown"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Request the trip before this; after it, ask for a new quote."
+        },
+        "driversAvailable": {
+          "type": "boolean",
+          "description": "Whether a free driver of this class is near the pickup right now, and\nhow many minutes away the nearest one is by road (0 when unknown)."
+        },
+        "pickupEtaMinutes": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
     },
     "v1TripStatus": {
       "type": "string",
@@ -7003,6 +7811,52 @@
       "properties": {
         "zone": {
           "$ref": "#/definitions/v1Zone"
+        }
+      }
+    },
+    "v1ZoneSurge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "zoneId": {
+          "type": "string"
+        },
+        "surgePercent": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Shown to riders as why the price is higher."
+        },
+        "startsAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endsAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Set when staff ended it early."
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1ZoneSurgeResponse": {
+      "type": "object",
+      "properties": {
+        "zoneSurge": {
+          "$ref": "#/definitions/v1ZoneSurge"
         }
       }
     }

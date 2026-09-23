@@ -27,6 +27,10 @@ type RequestTripInput struct {
 	PickupDetails      string
 	PickupNote         string
 	PickupPhotoMediaID string
+
+	// A fare quote of the rider's (see WithQuotes): the trip pays its price
+	// and is for its class.
+	QuoteID string
 }
 
 type Service interface {
@@ -90,12 +94,16 @@ type service struct {
 	repository  Repository
 	idGenerator IDGenerator
 	zoneChecker ZoneChecker
+
+	// quotes claims fare quotes; nil refuses them.
+	quotes QuoteBook
 }
 
 func NewService(
 	repository Repository,
 	idGenerator IDGenerator,
 	zoneChecker ZoneChecker,
+	options ...Option,
 ) Service {
 	if repository == nil {
 		panic("trip repository is required")
@@ -109,9 +117,15 @@ func NewService(
 		panic("trip zone checker is required")
 	}
 
-	return &service{
+	s := &service{
 		repository:  repository,
 		idGenerator: idGenerator,
 		zoneChecker: zoneChecker,
 	}
+
+	for _, option := range options {
+		option(s)
+	}
+
+	return s
 }

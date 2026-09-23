@@ -19,10 +19,23 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PricingService_EstimateFare_FullMethodName  = "/ride.pricing.v1.PricingService/EstimateFare"
-	PricingService_CalculateFare_FullMethodName = "/ride.pricing.v1.PricingService/CalculateFare"
-	PricingService_CreateCoupon_FullMethodName  = "/ride.pricing.v1.PricingService/CreateCoupon"
-	PricingService_GetCoupon_FullMethodName     = "/ride.pricing.v1.PricingService/GetCoupon"
+	PricingService_EstimateFare_FullMethodName       = "/ride.pricing.v1.PricingService/EstimateFare"
+	PricingService_CalculateFare_FullMethodName      = "/ride.pricing.v1.PricingService/CalculateFare"
+	PricingService_CreateCoupon_FullMethodName       = "/ride.pricing.v1.PricingService/CreateCoupon"
+	PricingService_GetCoupon_FullMethodName          = "/ride.pricing.v1.PricingService/GetCoupon"
+	PricingService_QuoteTrip_FullMethodName          = "/ride.pricing.v1.PricingService/QuoteTrip"
+	PricingService_ClaimQuote_FullMethodName         = "/ride.pricing.v1.PricingService/ClaimQuote"
+	PricingService_ReleaseQuote_FullMethodName       = "/ride.pricing.v1.PricingService/ReleaseQuote"
+	PricingService_ListRateCards_FullMethodName      = "/ride.pricing.v1.PricingService/ListRateCards"
+	PricingService_SetRateCard_FullMethodName        = "/ride.pricing.v1.PricingService/SetRateCard"
+	PricingService_RetireRateCard_FullMethodName     = "/ride.pricing.v1.PricingService/RetireRateCard"
+	PricingService_ListSurgeRules_FullMethodName     = "/ride.pricing.v1.PricingService/ListSurgeRules"
+	PricingService_CreateSurgeRule_FullMethodName    = "/ride.pricing.v1.PricingService/CreateSurgeRule"
+	PricingService_UpdateSurgeRule_FullMethodName    = "/ride.pricing.v1.PricingService/UpdateSurgeRule"
+	PricingService_SetSurgeRuleActive_FullMethodName = "/ride.pricing.v1.PricingService/SetSurgeRuleActive"
+	PricingService_ListZoneSurges_FullMethodName     = "/ride.pricing.v1.PricingService/ListZoneSurges"
+	PricingService_CreateZoneSurge_FullMethodName    = "/ride.pricing.v1.PricingService/CreateZoneSurge"
+	PricingService_EndZoneSurge_FullMethodName       = "/ride.pricing.v1.PricingService/EndZoneSurge"
 )
 
 // PricingServiceClient is the client API for PricingService service.
@@ -34,6 +47,39 @@ type PricingServiceClient interface {
 	CalculateFare(ctx context.Context, in *CalculateFareRequest, opts ...grpc.CallOption) (*CalculateFareResponse, error)
 	CreateCoupon(ctx context.Context, in *CreateCouponRequest, opts ...grpc.CallOption) (*CreateCouponResponse, error)
 	GetCoupon(ctx context.Context, in *GetCouponRequest, opts ...grpc.CallOption) (*GetCouponResponse, error)
+	// QuoteTrip prices a trip for every vehicle class at once, with how far
+	// the nearest free driver of each class is. Each quote holds its price for
+	// a few minutes: a trip requested with its quote_id pays exactly that.
+	// rider_id must be the caller's own rider profile.
+	QuoteTrip(ctx context.Context, in *QuoteTripRequest, opts ...grpc.CallOption) (*QuoteTripResponse, error)
+	// ClaimQuote ties a quote to the trip being requested with it (internal:
+	// trip-service). A quote is claimed once; claiming it again for the same
+	// trip returns it again.
+	ClaimQuote(ctx context.Context, in *ClaimQuoteRequest, opts ...grpc.CallOption) (*ClaimQuoteResponse, error)
+	// ReleaseQuote frees a quote whose trip could not be created (internal).
+	ReleaseQuote(ctx context.Context, in *ReleaseQuoteRequest, opts ...grpc.CallOption) (*ReleaseQuoteResponse, error)
+	// Rate cards (staff, pricing.manage). A card applies to a zone, a city or
+	// everywhere, for one vehicle class or all of them; the most specific one
+	// prices a trip: zone, then city, then everywhere, and within each a
+	// class's own card before the one for all classes. Setting a card adds a
+	// new version, so what past fares were priced with stays on file.
+	ListRateCards(ctx context.Context, in *ListRateCardsRequest, opts ...grpc.CallOption) (*ListRateCardsResponse, error)
+	SetRateCard(ctx context.Context, in *SetRateCardRequest, opts ...grpc.CallOption) (*RateCardResponse, error)
+	// RetireRateCard removes a zone's or city's card (or a class's card
+	// everywhere), so trips there fall back to the next one. The card for
+	// every class everywhere cannot be retired.
+	RetireRateCard(ctx context.Context, in *RetireRateCardRequest, opts ...grpc.CallOption) (*RetireRateCardResponse, error)
+	// Surge rules by the hour (staff, pricing.manage), read in the local time
+	// of the city the pickup is in.
+	ListSurgeRules(ctx context.Context, in *ListSurgeRulesRequest, opts ...grpc.CallOption) (*ListSurgeRulesResponse, error)
+	CreateSurgeRule(ctx context.Context, in *CreateSurgeRuleRequest, opts ...grpc.CallOption) (*SurgeRuleResponse, error)
+	UpdateSurgeRule(ctx context.Context, in *UpdateSurgeRuleRequest, opts ...grpc.CallOption) (*SurgeRuleResponse, error)
+	SetSurgeRuleActive(ctx context.Context, in *SetSurgeRuleActiveRequest, opts ...grpc.CallOption) (*SurgeRuleResponse, error)
+	// A surge staff put on one zone for a while (a concert, a storm), on top
+	// of what the hour and the demand add (staff, pricing.manage).
+	ListZoneSurges(ctx context.Context, in *ListZoneSurgesRequest, opts ...grpc.CallOption) (*ListZoneSurgesResponse, error)
+	CreateZoneSurge(ctx context.Context, in *CreateZoneSurgeRequest, opts ...grpc.CallOption) (*ZoneSurgeResponse, error)
+	EndZoneSurge(ctx context.Context, in *EndZoneSurgeRequest, opts ...grpc.CallOption) (*ZoneSurgeResponse, error)
 }
 
 type pricingServiceClient struct {
@@ -84,6 +130,136 @@ func (c *pricingServiceClient) GetCoupon(ctx context.Context, in *GetCouponReque
 	return out, nil
 }
 
+func (c *pricingServiceClient) QuoteTrip(ctx context.Context, in *QuoteTripRequest, opts ...grpc.CallOption) (*QuoteTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QuoteTripResponse)
+	err := c.cc.Invoke(ctx, PricingService_QuoteTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) ClaimQuote(ctx context.Context, in *ClaimQuoteRequest, opts ...grpc.CallOption) (*ClaimQuoteResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ClaimQuoteResponse)
+	err := c.cc.Invoke(ctx, PricingService_ClaimQuote_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) ReleaseQuote(ctx context.Context, in *ReleaseQuoteRequest, opts ...grpc.CallOption) (*ReleaseQuoteResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReleaseQuoteResponse)
+	err := c.cc.Invoke(ctx, PricingService_ReleaseQuote_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) ListRateCards(ctx context.Context, in *ListRateCardsRequest, opts ...grpc.CallOption) (*ListRateCardsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRateCardsResponse)
+	err := c.cc.Invoke(ctx, PricingService_ListRateCards_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) SetRateCard(ctx context.Context, in *SetRateCardRequest, opts ...grpc.CallOption) (*RateCardResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RateCardResponse)
+	err := c.cc.Invoke(ctx, PricingService_SetRateCard_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) RetireRateCard(ctx context.Context, in *RetireRateCardRequest, opts ...grpc.CallOption) (*RetireRateCardResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RetireRateCardResponse)
+	err := c.cc.Invoke(ctx, PricingService_RetireRateCard_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) ListSurgeRules(ctx context.Context, in *ListSurgeRulesRequest, opts ...grpc.CallOption) (*ListSurgeRulesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSurgeRulesResponse)
+	err := c.cc.Invoke(ctx, PricingService_ListSurgeRules_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) CreateSurgeRule(ctx context.Context, in *CreateSurgeRuleRequest, opts ...grpc.CallOption) (*SurgeRuleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SurgeRuleResponse)
+	err := c.cc.Invoke(ctx, PricingService_CreateSurgeRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) UpdateSurgeRule(ctx context.Context, in *UpdateSurgeRuleRequest, opts ...grpc.CallOption) (*SurgeRuleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SurgeRuleResponse)
+	err := c.cc.Invoke(ctx, PricingService_UpdateSurgeRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) SetSurgeRuleActive(ctx context.Context, in *SetSurgeRuleActiveRequest, opts ...grpc.CallOption) (*SurgeRuleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SurgeRuleResponse)
+	err := c.cc.Invoke(ctx, PricingService_SetSurgeRuleActive_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) ListZoneSurges(ctx context.Context, in *ListZoneSurgesRequest, opts ...grpc.CallOption) (*ListZoneSurgesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListZoneSurgesResponse)
+	err := c.cc.Invoke(ctx, PricingService_ListZoneSurges_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) CreateZoneSurge(ctx context.Context, in *CreateZoneSurgeRequest, opts ...grpc.CallOption) (*ZoneSurgeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ZoneSurgeResponse)
+	err := c.cc.Invoke(ctx, PricingService_CreateZoneSurge_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) EndZoneSurge(ctx context.Context, in *EndZoneSurgeRequest, opts ...grpc.CallOption) (*ZoneSurgeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ZoneSurgeResponse)
+	err := c.cc.Invoke(ctx, PricingService_EndZoneSurge_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PricingServiceServer is the server API for PricingService service.
 // All implementations must embed UnimplementedPricingServiceServer
 // for forward compatibility.
@@ -93,6 +269,39 @@ type PricingServiceServer interface {
 	CalculateFare(context.Context, *CalculateFareRequest) (*CalculateFareResponse, error)
 	CreateCoupon(context.Context, *CreateCouponRequest) (*CreateCouponResponse, error)
 	GetCoupon(context.Context, *GetCouponRequest) (*GetCouponResponse, error)
+	// QuoteTrip prices a trip for every vehicle class at once, with how far
+	// the nearest free driver of each class is. Each quote holds its price for
+	// a few minutes: a trip requested with its quote_id pays exactly that.
+	// rider_id must be the caller's own rider profile.
+	QuoteTrip(context.Context, *QuoteTripRequest) (*QuoteTripResponse, error)
+	// ClaimQuote ties a quote to the trip being requested with it (internal:
+	// trip-service). A quote is claimed once; claiming it again for the same
+	// trip returns it again.
+	ClaimQuote(context.Context, *ClaimQuoteRequest) (*ClaimQuoteResponse, error)
+	// ReleaseQuote frees a quote whose trip could not be created (internal).
+	ReleaseQuote(context.Context, *ReleaseQuoteRequest) (*ReleaseQuoteResponse, error)
+	// Rate cards (staff, pricing.manage). A card applies to a zone, a city or
+	// everywhere, for one vehicle class or all of them; the most specific one
+	// prices a trip: zone, then city, then everywhere, and within each a
+	// class's own card before the one for all classes. Setting a card adds a
+	// new version, so what past fares were priced with stays on file.
+	ListRateCards(context.Context, *ListRateCardsRequest) (*ListRateCardsResponse, error)
+	SetRateCard(context.Context, *SetRateCardRequest) (*RateCardResponse, error)
+	// RetireRateCard removes a zone's or city's card (or a class's card
+	// everywhere), so trips there fall back to the next one. The card for
+	// every class everywhere cannot be retired.
+	RetireRateCard(context.Context, *RetireRateCardRequest) (*RetireRateCardResponse, error)
+	// Surge rules by the hour (staff, pricing.manage), read in the local time
+	// of the city the pickup is in.
+	ListSurgeRules(context.Context, *ListSurgeRulesRequest) (*ListSurgeRulesResponse, error)
+	CreateSurgeRule(context.Context, *CreateSurgeRuleRequest) (*SurgeRuleResponse, error)
+	UpdateSurgeRule(context.Context, *UpdateSurgeRuleRequest) (*SurgeRuleResponse, error)
+	SetSurgeRuleActive(context.Context, *SetSurgeRuleActiveRequest) (*SurgeRuleResponse, error)
+	// A surge staff put on one zone for a while (a concert, a storm), on top
+	// of what the hour and the demand add (staff, pricing.manage).
+	ListZoneSurges(context.Context, *ListZoneSurgesRequest) (*ListZoneSurgesResponse, error)
+	CreateZoneSurge(context.Context, *CreateZoneSurgeRequest) (*ZoneSurgeResponse, error)
+	EndZoneSurge(context.Context, *EndZoneSurgeRequest) (*ZoneSurgeResponse, error)
 	mustEmbedUnimplementedPricingServiceServer()
 }
 
@@ -114,6 +323,45 @@ func (UnimplementedPricingServiceServer) CreateCoupon(context.Context, *CreateCo
 }
 func (UnimplementedPricingServiceServer) GetCoupon(context.Context, *GetCouponRequest) (*GetCouponResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCoupon not implemented")
+}
+func (UnimplementedPricingServiceServer) QuoteTrip(context.Context, *QuoteTripRequest) (*QuoteTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method QuoteTrip not implemented")
+}
+func (UnimplementedPricingServiceServer) ClaimQuote(context.Context, *ClaimQuoteRequest) (*ClaimQuoteResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ClaimQuote not implemented")
+}
+func (UnimplementedPricingServiceServer) ReleaseQuote(context.Context, *ReleaseQuoteRequest) (*ReleaseQuoteResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReleaseQuote not implemented")
+}
+func (UnimplementedPricingServiceServer) ListRateCards(context.Context, *ListRateCardsRequest) (*ListRateCardsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListRateCards not implemented")
+}
+func (UnimplementedPricingServiceServer) SetRateCard(context.Context, *SetRateCardRequest) (*RateCardResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetRateCard not implemented")
+}
+func (UnimplementedPricingServiceServer) RetireRateCard(context.Context, *RetireRateCardRequest) (*RetireRateCardResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RetireRateCard not implemented")
+}
+func (UnimplementedPricingServiceServer) ListSurgeRules(context.Context, *ListSurgeRulesRequest) (*ListSurgeRulesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSurgeRules not implemented")
+}
+func (UnimplementedPricingServiceServer) CreateSurgeRule(context.Context, *CreateSurgeRuleRequest) (*SurgeRuleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateSurgeRule not implemented")
+}
+func (UnimplementedPricingServiceServer) UpdateSurgeRule(context.Context, *UpdateSurgeRuleRequest) (*SurgeRuleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateSurgeRule not implemented")
+}
+func (UnimplementedPricingServiceServer) SetSurgeRuleActive(context.Context, *SetSurgeRuleActiveRequest) (*SurgeRuleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetSurgeRuleActive not implemented")
+}
+func (UnimplementedPricingServiceServer) ListZoneSurges(context.Context, *ListZoneSurgesRequest) (*ListZoneSurgesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListZoneSurges not implemented")
+}
+func (UnimplementedPricingServiceServer) CreateZoneSurge(context.Context, *CreateZoneSurgeRequest) (*ZoneSurgeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateZoneSurge not implemented")
+}
+func (UnimplementedPricingServiceServer) EndZoneSurge(context.Context, *EndZoneSurgeRequest) (*ZoneSurgeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EndZoneSurge not implemented")
 }
 func (UnimplementedPricingServiceServer) mustEmbedUnimplementedPricingServiceServer() {}
 func (UnimplementedPricingServiceServer) testEmbeddedByValue()                        {}
@@ -208,6 +456,240 @@ func _PricingService_GetCoupon_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PricingService_QuoteTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuoteTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).QuoteTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_QuoteTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).QuoteTrip(ctx, req.(*QuoteTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_ClaimQuote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClaimQuoteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).ClaimQuote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_ClaimQuote_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).ClaimQuote(ctx, req.(*ClaimQuoteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_ReleaseQuote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReleaseQuoteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).ReleaseQuote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_ReleaseQuote_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).ReleaseQuote(ctx, req.(*ReleaseQuoteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_ListRateCards_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRateCardsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).ListRateCards(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_ListRateCards_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).ListRateCards(ctx, req.(*ListRateCardsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_SetRateCard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetRateCardRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).SetRateCard(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_SetRateCard_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).SetRateCard(ctx, req.(*SetRateCardRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_RetireRateCard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetireRateCardRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).RetireRateCard(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_RetireRateCard_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).RetireRateCard(ctx, req.(*RetireRateCardRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_ListSurgeRules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSurgeRulesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).ListSurgeRules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_ListSurgeRules_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).ListSurgeRules(ctx, req.(*ListSurgeRulesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_CreateSurgeRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSurgeRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).CreateSurgeRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_CreateSurgeRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).CreateSurgeRule(ctx, req.(*CreateSurgeRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_UpdateSurgeRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSurgeRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).UpdateSurgeRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_UpdateSurgeRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).UpdateSurgeRule(ctx, req.(*UpdateSurgeRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_SetSurgeRuleActive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetSurgeRuleActiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).SetSurgeRuleActive(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_SetSurgeRuleActive_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).SetSurgeRuleActive(ctx, req.(*SetSurgeRuleActiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_ListZoneSurges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListZoneSurgesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).ListZoneSurges(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_ListZoneSurges_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).ListZoneSurges(ctx, req.(*ListZoneSurgesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_CreateZoneSurge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateZoneSurgeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).CreateZoneSurge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_CreateZoneSurge_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).CreateZoneSurge(ctx, req.(*CreateZoneSurgeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_EndZoneSurge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EndZoneSurgeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).EndZoneSurge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_EndZoneSurge_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).EndZoneSurge(ctx, req.(*EndZoneSurgeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PricingService_ServiceDesc is the grpc.ServiceDesc for PricingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -230,6 +712,58 @@ var PricingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCoupon",
 			Handler:    _PricingService_GetCoupon_Handler,
+		},
+		{
+			MethodName: "QuoteTrip",
+			Handler:    _PricingService_QuoteTrip_Handler,
+		},
+		{
+			MethodName: "ClaimQuote",
+			Handler:    _PricingService_ClaimQuote_Handler,
+		},
+		{
+			MethodName: "ReleaseQuote",
+			Handler:    _PricingService_ReleaseQuote_Handler,
+		},
+		{
+			MethodName: "ListRateCards",
+			Handler:    _PricingService_ListRateCards_Handler,
+		},
+		{
+			MethodName: "SetRateCard",
+			Handler:    _PricingService_SetRateCard_Handler,
+		},
+		{
+			MethodName: "RetireRateCard",
+			Handler:    _PricingService_RetireRateCard_Handler,
+		},
+		{
+			MethodName: "ListSurgeRules",
+			Handler:    _PricingService_ListSurgeRules_Handler,
+		},
+		{
+			MethodName: "CreateSurgeRule",
+			Handler:    _PricingService_CreateSurgeRule_Handler,
+		},
+		{
+			MethodName: "UpdateSurgeRule",
+			Handler:    _PricingService_UpdateSurgeRule_Handler,
+		},
+		{
+			MethodName: "SetSurgeRuleActive",
+			Handler:    _PricingService_SetSurgeRuleActive_Handler,
+		},
+		{
+			MethodName: "ListZoneSurges",
+			Handler:    _PricingService_ListZoneSurges_Handler,
+		},
+		{
+			MethodName: "CreateZoneSurge",
+			Handler:    _PricingService_CreateZoneSurge_Handler,
+		},
+		{
+			MethodName: "EndZoneSurge",
+			Handler:    _PricingService_EndZoneSurge_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

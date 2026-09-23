@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -48,10 +49,12 @@ func (r *TripRepository) Create(
 		`INSERT INTO trips
 		    (id, rider_id, pickup_latitude, pickup_longitude,
 		     dropoff_latitude, dropoff_longitude, vehicle_class, payment_method,
-		     pickup_address, dropoff_address, pickup_details, pickup_note, pickup_photo_media_id)
+		     pickup_address, dropoff_address, pickup_details, pickup_note, pickup_photo_media_id,
+		     quote_id, quoted_fare, currency_code)
 		 VALUES ($1, $2, $3, $4, $5, $6, COALESCE(NULLIF($7::text, ''), 'economy'),
-                         COALESCE(NULLIF($8::text, ''), 'cash'),
-		         $9, $10, $11, $12, NULLIF($13::text, '')::uuid)
+		         COALESCE(NULLIF($8::text, ''), 'cash'),
+		         $9, $10, $11, $12, NULLIF($13::text, '')::uuid,
+		         NULLIF($14::text, '')::uuid, NULLIF($15::text, '')::numeric, NULLIF($16::text, ''))
 		 RETURNING `+tripColumns,
 		input.ID,
 		input.RiderID,
@@ -66,6 +69,9 @@ func (r *TripRepository) Create(
 		input.PickupDetails,
 		input.PickupNote,
 		input.PickupPhotoMediaID,
+		input.QuoteID,
+		input.QuotedFare,
+		input.CurrencyCode,
 	)
 
 	if err := scanTrip(row, &created); err != nil {
@@ -351,11 +357,13 @@ const tripColumns = `id, rider_id, driver_id, status,
 	requested_at, accepted_at, started_at, completed_at, cancelled_at,
 	created_at, updated_at,
 	pickup_address, dropoff_address, pickup_details, pickup_note,
-	COALESCE(pickup_photo_media_id::text, '')`
+	COALESCE(pickup_photo_media_id::text, ''),
+	COALESCE(quote_id::text, ''), COALESCE(quoted_fare::text, ''), COALESCE(currency_code, '')`
 
 func scanTrip(row pgx.Row, dest *trip.Trip) error {
 	var status string
 	var driverID, cancellationReason *string
+	var quotedFare string
 
 	err := row.Scan(
 		&dest.ID,
@@ -381,12 +389,16 @@ func scanTrip(row pgx.Row, dest *trip.Trip) error {
 		&dest.PickupDetails,
 		&dest.PickupNote,
 		&dest.PickupPhotoMediaID,
+		&dest.QuoteID,
+		&quotedFare,
+		&dest.CurrencyCode,
 	)
 	if err != nil {
 		return err
 	}
 
 	dest.Status = trip.Status(status)
+	dest.QuotedFare = trimDecimal(quotedFare)
 
 	if driverID != nil {
 		dest.DriverID = *driverID
@@ -397,4 +409,16 @@ func scanTrip(row pgx.Row, dest *trip.Trip) error {
 	}
 
 	return nil
+}
+
+// trimDecimal shows a NUMERIC(12, 4) amount without the trailing zeros of
+// its scale: "4500.0000" as "4500", "4500.5000" as "4500.5".
+func trimDecimal(value string) string {
+	if !strings.Contains(value, ".") {
+		return value
+	}
+
+	value = strings.TrimRight(value, "0")
+
+	return strings.TrimSuffix(value, ".")
 }

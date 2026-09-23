@@ -1,6 +1,10 @@
 package pricing
 
-import "github.com/shopspring/decimal"
+import (
+	"time"
+
+	"github.com/shopspring/decimal"
+)
 
 // Option customises a service at construction time.
 type Option func(*service)
@@ -11,6 +15,16 @@ type Option func(*service)
 func WithFareRounding(increment decimal.Decimal) Option {
 	return func(s *service) {
 		s.fareRoundingIncrement = increment
+	}
+}
+
+// WithQuoteTTL sets how long a quote holds its price (DefaultQuoteTTL when
+// not positive).
+func WithQuoteTTL(ttl time.Duration) Option {
+	return func(s *service) {
+		if ttl > 0 {
+			s.quoteTTL = ttl
+		}
 	}
 }
 

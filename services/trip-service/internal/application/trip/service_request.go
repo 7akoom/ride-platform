@@ -31,6 +31,17 @@ func (s *service) RequestTrip(
 		return Trip{}, ErrSavedAddressesUnavailable
 	}
 
+	quoteID := strings.TrimSpace(input.QuoteID)
+	if quoteID != "" {
+		if s.quotes == nil {
+			return Trip{}, ErrQuotesUnavailable
+		}
+
+		if !looksLikeUUID(quoteID) {
+			return Trip{}, ErrQuoteNotFound
+		}
+	}
+
 	texts, err := tripTexts(input)
 	if err != nil {
 		return Trip{}, err
@@ -65,28 +76,55 @@ func (s *service) RequestTrip(
 		return Trip{}, fmt.Errorf("check rider's active trip: %w", err)
 	}
 
-	created, err := s.repository.Create(
-		ctx,
-		CreateInput{
-			ID:            s.idGenerator.NewID(),
-			RiderID:       riderID,
-			Pickup:        pickup,
-			Dropoff:       dropoff,
-			VehicleClass:  vehicleClass,
-			PaymentMethod: paymentMethod,
+	create := CreateInput{
+		ID:            s.idGenerator.NewID(),
+		RiderID:       riderID,
+		Pickup:        pickup,
+		Dropoff:       dropoff,
+		VehicleClass:  vehicleClass,
+		PaymentMethod: paymentMethod,
 
-			PickupAddress:      texts.PickupAddress,
-			DropoffAddress:     texts.DropoffAddress,
-			PickupDetails:      texts.PickupDetails,
-			PickupNote:         texts.PickupNote,
-			PickupPhotoMediaID: texts.PickupPhotoMediaID,
-		},
-	)
+		PickupAddress:      texts.PickupAddress,
+		DropoffAddress:     texts.DropoffAddress,
+		PickupDetails:      texts.PickupDetails,
+		PickupNote:         texts.PickupNote,
+		PickupPhotoMediaID: texts.PickupPhotoMediaID,
+	}
+
+	if quoteID != "" {
+		quote, err := s.quotes.Claim(ctx, quoteID, riderID, create.ID)
+		if err != nil {
+			return Trip{}, fmt.Errorf("claim quote: %w", err)
+		}
+
+		if !matchesQuote(quote, pickup, dropoff, input.VehicleClass) {
+			s.releaseQuote(ctx, quoteID, create.ID)
+
+			return Trip{}, ErrQuoteMismatch
+		}
+
+		create.VehicleClass = quote.VehicleClass
+		create.QuoteID = quote.ID
+		create.QuotedFare = quote.Total
+		create.CurrencyCode = quote.CurrencyCode
+	}
+
+	created, err := s.repository.Create(ctx, create)
 	if err != nil {
+		if quoteID != "" {
+			s.releaseQuote(ctx, quoteID, create.ID)
+		}
+
 		return Trip{}, fmt.Errorf("create trip: %w", err)
 	}
 
 	return created, nil
+}
+
+// releaseQuote frees a quote whose trip will not be created, so the rider
+// can still use it. Best effort: if it fails, the rider asks for a new quote.
+func (s *service) releaseQuote(ctx context.Context, quoteID, tripID string) {
+	_ = s.quotes.Release(context.WithoutCancel(ctx), quoteID, tripID)
 }
 
 // Longest texts a trip keeps, the same as a saved address allows.

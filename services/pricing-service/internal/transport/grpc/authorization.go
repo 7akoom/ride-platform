@@ -15,6 +15,9 @@ const (
 	accessInternal accessLevel = iota + 1
 	accessOwner
 	accessAuthenticated
+	// accessStaff methods are for staff holding the permission named in
+	// staffPermissions (and for the internal token).
+	accessStaff
 )
 
 // ownerCheck reports whether the calling identity owns what the request
@@ -27,21 +30,58 @@ var exemptMethods = map[string]struct{}{
 
 // methodAccess classifies every RPC. Methods missing from it are denied to
 // end users, and so are accessOwner methods without an entry in ownerChecks.
+//
+// ClaimQuote and ReleaseQuote are trip-service's: a rider takes a quote by
+// requesting a trip with it, never by claiming it directly.
 var methodAccess = map[string]accessLevel{
 	"/ride.pricing.v1.PricingService/EstimateFare":  accessOwner,
 	"/ride.pricing.v1.PricingService/CalculateFare": accessInternal,
 	"/ride.pricing.v1.PricingService/CreateCoupon":  accessInternal,
 	"/ride.pricing.v1.PricingService/GetCoupon":     accessInternal,
+
+	"/ride.pricing.v1.PricingService/QuoteTrip":    accessOwner,
+	"/ride.pricing.v1.PricingService/ClaimQuote":   accessInternal,
+	"/ride.pricing.v1.PricingService/ReleaseQuote": accessInternal,
+
+	"/ride.pricing.v1.PricingService/ListRateCards":      accessStaff,
+	"/ride.pricing.v1.PricingService/SetRateCard":        accessStaff,
+	"/ride.pricing.v1.PricingService/RetireRateCard":     accessStaff,
+	"/ride.pricing.v1.PricingService/ListSurgeRules":     accessStaff,
+	"/ride.pricing.v1.PricingService/CreateSurgeRule":    accessStaff,
+	"/ride.pricing.v1.PricingService/UpdateSurgeRule":    accessStaff,
+	"/ride.pricing.v1.PricingService/SetSurgeRuleActive": accessStaff,
+	"/ride.pricing.v1.PricingService/ListZoneSurges":     accessStaff,
+	"/ride.pricing.v1.PricingService/CreateZoneSurge":    accessStaff,
+	"/ride.pricing.v1.PricingService/EndZoneSurge":       accessStaff,
 }
 
-func NewAuthorizationUnaryInterceptor(resolver CallerResolver) googlegrpc.UnaryServerInterceptor {
-	return newAuthorizationInterceptor(methodAccess, ownerChecks, resolver)
+// staffPermissions names the staff permission for every accessStaff method.
+// Prices are one permission: whoever may see them may also set them.
+var staffPermissions = map[string]string{
+	"/ride.pricing.v1.PricingService/ListRateCards":      permissionPricingManage,
+	"/ride.pricing.v1.PricingService/SetRateCard":        permissionPricingManage,
+	"/ride.pricing.v1.PricingService/RetireRateCard":     permissionPricingManage,
+	"/ride.pricing.v1.PricingService/ListSurgeRules":     permissionPricingManage,
+	"/ride.pricing.v1.PricingService/CreateSurgeRule":    permissionPricingManage,
+	"/ride.pricing.v1.PricingService/UpdateSurgeRule":    permissionPricingManage,
+	"/ride.pricing.v1.PricingService/SetSurgeRuleActive": permissionPricingManage,
+	"/ride.pricing.v1.PricingService/ListZoneSurges":     permissionPricingManage,
+	"/ride.pricing.v1.PricingService/CreateZoneSurge":    permissionPricingManage,
+	"/ride.pricing.v1.PricingService/EndZoneSurge":       permissionPricingManage,
+}
+
+const permissionPricingManage = "pricing.manage"
+
+func NewAuthorizationUnaryInterceptor(resolver CallerResolver, staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {
+	return newAuthorizationInterceptor(methodAccess, ownerChecks, staffPermissions, resolver, staff)
 }
 
 func newAuthorizationInterceptor(
 	levels map[string]accessLevel,
 	checks map[string]ownerCheck,
+	permissions map[string]string,
 	resolver CallerResolver,
+	staff StaffAuthorizer,
 ) googlegrpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -84,6 +124,9 @@ func newAuthorizationInterceptor(
 			if allowed {
 				return handler(ctx, request)
 			}
+
+		case accessStaff:
+			return runAsStaff(ctx, staff, principal.IdentityID, permissions[info.FullMethod], info, request, handler)
 		}
 
 		return nil, status.Error(codes.PermissionDenied, "permission denied")

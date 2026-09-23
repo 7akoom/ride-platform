@@ -63,6 +63,7 @@ func (h *TripHandler) RequestTrip(
 			PickupAddress:         request.GetPickupAddress(),
 			DropoffAddress:        request.GetDropoffAddress(),
 			PickupSavedAddressID:  request.GetPickupSavedAddressId(),
+			QuoteID:               request.GetQuoteId(),
 			DropoffSavedAddressID: request.GetDropoffSavedAddressId(),
 		},
 	)
@@ -297,13 +298,21 @@ func (h *TripHandler) mapTripError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	case errors.Is(err, trip.ErrSavedAddressNotFound),
-		errors.Is(err, trip.ErrNoPickupPhoto):
+		errors.Is(err, trip.ErrNoPickupPhoto),
+		errors.Is(err, trip.ErrQuoteNotFound):
 		return status.Error(codes.NotFound, err.Error())
+
+	case errors.Is(err, trip.ErrQuoteNotUsable):
+		return status.Error(codes.FailedPrecondition, err.Error())
+
+	case errors.Is(err, trip.ErrQuoteMismatch):
+		return status.Error(codes.InvalidArgument, err.Error())
 
 	case errors.Is(err, trip.ErrPickupPhotoNotAvailableNow):
 		return status.Error(codes.FailedPrecondition, err.Error())
 
-	case errors.Is(err, trip.ErrSavedAddressesUnavailable):
+	case errors.Is(err, trip.ErrSavedAddressesUnavailable),
+		errors.Is(err, trip.ErrQuotesUnavailable):
 		return status.Error(codes.Unimplemented, err.Error())
 
 	case errors.Is(err, trip.ErrUpstreamUnavailable):
@@ -370,5 +379,8 @@ func toProtoTrip(t trip.Trip) *tripv1.Trip {
 		PickupDetails:      t.PickupDetails,
 		PickupNote:         t.PickupNote,
 		HasPickupPhoto:     t.PickupPhotoMediaID != "",
+		QuoteId:            t.QuoteID,
+		QuotedFare:         t.QuotedFare,
+		CurrencyCode:       t.CurrencyCode,
 	}
 }

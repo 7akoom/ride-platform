@@ -18,6 +18,11 @@ type CreateInput struct {
 	PickupDetails      string
 	PickupNote         string
 	PickupPhotoMediaID string
+
+	// The quote the trip was requested with and its price; empty without one.
+	QuoteID      string
+	QuotedFare   string
+	CurrencyCode string
 }
 
 // Repository is the persistence port for the trip aggregate. Every

@@ -30,27 +30,41 @@ type PersistFareInput struct {
 	RiderID   string
 	Breakdown FareBreakdown
 	Coupon    *AppliedCoupon // nil if no coupon was applied
+	// QuoteID is the quote the fare came from (empty when priced on
+	// completion); ConfigID the rate card used.
+	QuoteID  string
+	ConfigID string
 }
 
 // Repository is the persistence port. It intentionally groups config,
-// surge rules, coupons, rider stats, and fares behind one interface —
+// surge rules, coupons, rider stats, quotes and fares behind one interface —
 // they're all in the same Postgres database and PersistFare needs to
 // touch several of them atomically in a single transaction (fare row +
 // rider stats increment + coupon redemption), the same "one repository,
 // one transaction boundary" reasoning trip-service uses.
 type Repository interface {
-	// GetActiveConfig returns the newest config row for zoneID if one
-	// exists, otherwise the newest global-default row (zone_id NULL).
-	// zoneID is always a real zone id here — callers only reach this
-	// after CheckServiceZone has confirmed the pickup is served.
-	// vehicleClass narrows the lookup further: a rate card for that class wins
-	// over one that applies to any class. Order, most specific first: (zone,
-	// class), (zone, any class), (no zone, class), the global default.
-	GetActiveConfig(ctx context.Context, zoneID, vehicleClass string) (Config, error)
+	// GetActiveConfig returns the rate card in force for a pickup in the
+	// scope's zone and city, for its vehicle class. Most specific first:
+	// the zone's card, the city's, the one for everywhere; within each, the
+	// class's own card before the one for every class. A retired newest
+	// version takes its place out of the running.
+	GetActiveConfig(ctx context.Context, scope Scope) (Config, error)
 
+	// ListActiveSurgeTimeRules returns every active rule, wherever it
+	// applies; the service keeps the ones for the pickup's zone and city.
 	ListActiveSurgeTimeRules(ctx context.Context) ([]SurgeTimeRule, error)
 
+	// ActiveZoneSurge returns the highest surge staff put on the zone that
+	// is running at the given moment, if any.
+	ActiveZoneSurge(ctx context.Context, zoneID string, at time.Time) (ZoneSurge, bool, error)
+
+	// CountQuotingRiders counts the other riders who asked for a quote in
+	// the zone since the given moment: the demand side of demand surge.
+	CountQuotingRiders(ctx context.Context, zoneID, excludeRiderID string, since time.Time) (int, error)
+
 	FindCouponByCode(ctx context.Context, code string) (Coupon, error)
+
+	FindCouponByID(ctx context.Context, couponID string) (Coupon, error)
 
 	CreateCoupon(ctx context.Context, input CreateCouponInput) (Coupon, error)
 
@@ -68,27 +82,64 @@ type Repository interface {
 	// already exists for this trip, return it instead of recalculating.
 	FindFareByTripID(ctx context.Context, tripID string) (Fare, bool, error)
 
+	// PersistFare returns ErrFareAlreadyRecorded when the trip already has a
+	// fare (a concurrent call recorded it first).
 	PersistFare(ctx context.Context, input PersistFareInput) (Fare, error)
+
+	// SaveQuotes stores the quotes of one QuoteTrip call and returns them
+	// with their ids.
+	SaveQuotes(ctx context.Context, quotes []Quote) ([]Quote, error)
+
+	// FindQuote returns ErrQuoteNotFound for an unknown id.
+	FindQuote(ctx context.Context, quoteID string) (Quote, error)
+
+	// ClaimQuote gives the quote to the trip if it is the rider's, has not
+	// expired at now and no other trip has it; claiming it again for the same
+	// trip returns it. Errors: ErrQuoteNotFound (unknown, or another
+	// rider's), ErrQuoteExpired, ErrQuoteAlreadyUsed.
+	ClaimQuote(ctx context.Context, quoteID, riderID, tripID string, now time.Time) (Quote, error)
+
+	// ReleaseQuote frees the quote if that trip holds it; otherwise nothing.
+	ReleaseQuote(ctx context.Context, quoteID, tripID string) error
+
+	// DeleteUnclaimedQuotes removes quotes no trip claimed that expired
+	// before the given moment, and returns how many.
+	DeleteUnclaimedQuotes(ctx context.Context, expiredBefore time.Time) (int, error)
 }
 
-// LocationClient is pricing-service's view of location-service — used
-// only to count nearby available drivers for the demand-based surge
-// component (see the demand-surge design note in service_surge.go).
-type LocationClient interface {
-	CountNearbyAvailableDrivers(
-		ctx context.Context,
-		latitude, longitude, radiusMeters float64,
-	) (int, error)
+// ServiceZone is where a point is served: its zone, the zone's city and the
+// city's IANA time zone.
+type ServiceZone struct {
+	Served   bool
+	ZoneID   string
+	CityID   string
+	TimeZone string
+}
 
+// LocationClient is pricing-service's view of location-service.
+type LocationClient interface {
 	// CheckServiceZone reports whether a point falls inside any active
 	// service zone and, if so, which one — the same check trip-service
 	// runs before accepting a trip request, reused here to pick the
-	// right rate card and to refuse a quote for a location that could
-	// never become a real trip.
-	CheckServiceZone(
-		ctx context.Context,
-		latitude, longitude float64,
-	) (served bool, zoneID string, err error)
+	// right rate card and surge rules and to refuse a quote for a location
+	// that could never become a real trip.
+	CheckServiceZone(ctx context.Context, latitude, longitude float64) (ServiceZone, error)
+}
+
+// NearbyDriver is a driver who could take a trip right now: active,
+// available, and seen near the pickup in the last few seconds.
+type NearbyDriver struct {
+	DriverID       string
+	VehicleClass   string
+	Location       Point
+	DistanceMeters float64
+}
+
+// DriverFinder finds the free drivers near a point, nearest first. It is
+// the supply side of demand surge and gives each quote how far the nearest
+// driver of its class is.
+type DriverFinder interface {
+	AvailableDriversNear(ctx context.Context, latitude, longitude, radiusMeters float64) ([]NearbyDriver, error)
 }
 
 // RoutingClient is a thin abstraction over OSRM (self-hosted,

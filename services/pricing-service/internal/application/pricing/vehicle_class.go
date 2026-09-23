@@ -31,3 +31,18 @@ func NormalizeVehicleClass(raw string) (string, error) {
 		return "", ErrInvalidVehicleClass
 	}
 }
+
+// VehicleClasses lists every class a trip can be priced for.
+func VehicleClasses() []string {
+	return []string{VehicleClassEconomy, VehicleClassComfort}
+}
+
+// effectiveClass maps a driver with no class on file to economy, the same
+// way dispatch does.
+func effectiveClass(class string) string {
+	if normalized, err := NormalizeVehicleClass(class); err == nil {
+		return normalized
+	}
+
+	return class
+}

@@ -14,6 +14,8 @@ type Config struct {
 	LocationServiceAddress string
 	TripServiceAddress     string
 	RiderServiceAddress    string
+	DriverServiceAddress   string
+	StaffServiceAddress    string
 	OSRMBaseURL            string
 	RoutingTimeout         time.Duration
 	WeatherTimeout         time.Duration
@@ -38,6 +40,9 @@ type Config struct {
 	// FareRoundingIncrement rounds every fare total to a multiple of it
 	// (250 = the smallest Iraqi dinar banknote). 0 disables rounding.
 	FareRoundingIncrement string
+
+	// QuoteTTL is how long a fare quote holds its price (a Go duration).
+	QuoteTTL string
 
 	// Verifies access tokens issued by identity-service. The public key
 	// must be copied from identity-service's own .local/keys directory —
@@ -72,6 +77,8 @@ func Load() Config {
 		LocationServiceAddress: getEnv("LOCATION_SERVICE_ADDRESS", "localhost:50054"),
 		TripServiceAddress:     getEnv("TRIP_SERVICE_ADDRESS", "localhost:50055"),
 		RiderServiceAddress:    getEnv("RIDER_SERVICE_ADDRESS", "localhost:50052"),
+		DriverServiceAddress:   getEnv("DRIVER_SERVICE_ADDRESS", "localhost:50053"),
+		StaffServiceAddress:    getEnv("STAFF_SERVICE_ADDRESS", "localhost:50061"),
 		OSRMBaseURL:            getEnv("OSRM_BASE_URL", "http://localhost:5000"),
 		RoutingTimeout:         3 * time.Second,
 		WeatherTimeout:         3 * time.Second,
@@ -139,6 +146,11 @@ func Load() Config {
 		FareRoundingIncrement: getEnv(
 			"FARE_ROUNDING_INCREMENT",
 			"250",
+		),
+
+		QuoteTTL: getEnv(
+			"QUOTE_TTL",
+			"5m",
 		),
 
 		AccessTokenPublicKeyPath: getEnv(

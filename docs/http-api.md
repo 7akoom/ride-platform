@@ -59,8 +59,8 @@ per-source OTP limit counts every user as one source.
 
 | Method | Path | Who | Notes |
 |---|---|---|---|
-| POST | `/v1/trips` | rider | `riderId` must be the caller's rider profile. `pickupAddress` and `dropoffAddress` (at most 300 characters) are kept with the trip as the rider picked them. `pickupSavedAddressId` / `dropoffSavedAddressId` name one of the rider's saved addresses: its point and address replace `pickup` / `dropoff`, and for the pickup its details, note for the captain and photo are copied into the trip (404 for an address that is not the rider's) |
-| GET | `/v1/trips/{tripId}` | rider or driver of the trip | poll for status; has `pickupAddress`, `dropoffAddress`, `pickupDetails`, `pickupNote` and `hasPickupPhoto` |
+| POST | `/v1/trips` | rider | `riderId` must be the caller's rider profile. `pickupAddress` and `dropoffAddress` (at most 300 characters) are kept with the trip as the rider picked them. `pickupSavedAddressId` / `dropoffSavedAddressId` name one of the rider's saved addresses: its point and address replace `pickup` / `dropoff`, and for the pickup its details, note for the captain and photo are copied into the trip (404 for an address that is not the rider's). `quoteId` (from `/v1/fare-quotes`) fixes the price: the trip gets `quotedFare` and `currencyCode` and the quote's `vehicleClass`; 404 for another rider's or unknown quote, 400 `FAILED_PRECONDITION` when it expired, was used or its coupon ended (ask for a new quote), 400 when pickup or dropoff is more than 50 m from the quoted one or another class is named |
+| GET | `/v1/trips/{tripId}` | rider or driver of the trip | poll for status; has `pickupAddress`, `dropoffAddress`, `pickupDetails`, `pickupNote`, `hasPickupPhoto`, and for a quoted trip `quoteId`, `quotedFare`, `currencyCode` |
 | GET | `/v1/trips/{tripId}/pickup-photo` | rider or driver of the trip | a short-lived `url` to the photo of the saved pickup address, while the trip is accepted or in progress (400 otherwise, 404 without a photo) |
 | GET | `/v1/riders/{riderId}/recent-destinations?limit=` | the rider | where their completed trips ended, newest first, each place once (points within about 10 m are one): `coordinates`, `address`, `lastTripAt`; `limit` 5 by default, at most 10 |
 | POST | `/v1/trips/{tripId}:start` | driver of the trip | |
@@ -72,7 +72,7 @@ per-source OTP limit counts every user as one source.
 | GET | `/v1/trips/{tripId}/driver-location` | **rider** of the trip | only while accepted or in progress; 404 means the driver has not reported for 30 s, keep polling |
 | GET | `/v1/trips:active?rider_id=` or `?driver_id=` | the profile's owner | the requested, accepted or in-progress trip; 404 `no active trip` when there is none. Call it when the app opens, to resume a trip |
 | GET | `/v1/trips?rider_id=` or `?driver_id=` | the profile's owner | history, newest first: `page_size` (1-50, default 20) and `page_token`; the response's `nextPageToken` is empty on the last page |
-| GET | `/v1/drivers/{driverId}/offer` | the driver | the trip currently offered to them: `tripId`, `pickup`, `dropoff`, `pickupAddress`, `dropoffAddress`, `vehicleClass`, `paymentMethod`, `offeredAt`, `expiresAt` (not who the rider is, nor the pickup note and photo, which come with the trip once accepted); 404 when there is none. Poll about every 2 s while online |
+| GET | `/v1/drivers/{driverId}/offer` | the driver | the trip currently offered to them: `tripId`, `pickup`, `dropoff`, `pickupAddress`, `dropoffAddress`, `vehicleClass`, `paymentMethod`, `quotedFare` and `currencyCode` (for a quoted trip), `offeredAt`, `expiresAt` (not who the rider is, nor the pickup note and photo, which come with the trip once accepted); 404 when there is none. Poll about every 2 s while online |
 | POST | `/v1/trips/{tripId}:accept-offer` | the driver | body `{"driverId": ...}`; makes them the driver of the trip. 404: no live offer; 400: the offer expired, the trip was cancelled, or they are on another trip |
 | POST | `/v1/trips/{tripId}:reject-offer` | the driver | body `{"driverId": ...}`; the trip goes on to the next driver and is not offered to them again |
 
@@ -158,9 +158,15 @@ Searching is limited to the country set by `MAPS_COUNTRY_CODES` (Iraq by default
 
 ### Fares
 
-| Method | Path | Who |
-|---|---|---|
-| POST | `/v1/fare-estimates` | rider, for their own `riderId` |
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| POST | `/v1/fare-quotes` | rider, for their own `riderId` | body `riderId`, `pickup`, `dropoff`, optional `couponCode`. `quotes`: one per vehicle class, cheapest first, each with `quoteId`, `vehicleClass`, `fare` (the breakdown), `expiresAt` (5 minutes), `driversAvailable` and `pickupEtaMinutes` (the nearest free driver of that class by road; 0 when none). Request the trip with the `quoteId` to pay exactly that fare |
+| POST | `/v1/fare-estimates` | rider, for their own `riderId` | one class, nothing held |
+
+A fare breakdown's `surge` has `timeOfDayPercent`, `zonePercent`, `demandPercent`,
+`weatherPercent`, `totalPercent`, `multiplier` and `label` (the name staff gave the
+rush-hour rule or zone surge in force, to show the rider). `minimumFareAdjustment`
+is what raised the trip to the minimum fare. Money is a decimal string.
 
 ### Push devices and inbox
 
@@ -246,6 +252,15 @@ before it runs. A caller who is not staff, or lacks the permission, gets 403.
 | PATCH | `/v1/admin/places/{placeId}` | `places.manage` | replaces everything but the city |
 | POST | `/v1/admin/places/{placeId}:setActive` | `places.manage` | `active` |
 | GET | `/v1/media/{mediaId}` · `/v1/media/{mediaId}:download` | `media.read` | any user's file (see Files) |
+| GET | `/v1/admin/rate-cards?city_id=&zone_id=` | `pricing.manage` | the card in force for each place and class |
+| POST | `/v1/admin/rate-cards` | `pricing.manage` | a whole card for a place (`zoneId`, `cityId` or neither for everywhere; never both) and class (`vehicleClass`, empty for every class): `baseFare`, `perKmRate`, `perMinuteRate` (required), `minimumFare`, `freeWaitingMinutes`, `waitingPerMinute`, `cancellationFee`, `cancellationGraceMinutes`, `noShowFee`, `maxSurgePercent` (0-300, empty = 150, 0 turns surge off), `demandSurge`, `weatherSurge`. Adds a version; the most specific card prices a trip: zone, city, everywhere |
+| POST | `/v1/admin/rate-cards:retire` | `pricing.manage` | `zoneId` / `cityId` / `vehicleClass`: trips there use the next card; the card for every class everywhere cannot be retired |
+| GET · POST | `/v1/admin/surge-rules?city_id=&zone_id=` | `pricing.manage` | `label`, `zoneId` or `cityId` (or neither), `dayOfWeek` (0 Sunday-6, unset = every day), `startTime`, `endTime` ("HH:MM", the city's local time; past midnight when the end is earlier), `surgePercent` (up to 300) |
+| PATCH | `/v1/admin/surge-rules/{ruleId}` | `pricing.manage` | replaces label, day, hours and percent |
+| POST | `/v1/admin/surge-rules/{ruleId}:setActive` | `pricing.manage` | `active` |
+| GET | `/v1/admin/zone-surges?zone_id=&include_past=` | `pricing.manage` | running and coming ones (with `include_past`, the latest 100) |
+| POST | `/v1/admin/zone-surges` | `pricing.manage` | `zoneId`, `surgePercent` (up to 300), `reason` (shown to riders), `durationMinutes` (1-1440), optional `startsAt` (up to 7 days ahead). The larger of it and the hour's rule applies, they never add up |
+| POST | `/v1/admin/zone-surges/{zoneSurgeId}:end` | `pricing.manage` | ends it now, or calls off one not started yet |
 
 ## Not exposed yet
 

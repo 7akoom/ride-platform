@@ -15,6 +15,7 @@ const (
 	PermissionZonesManage   = "zones.manage"
 	PermissionMediaRead     = "media.read"
 	PermissionPlacesManage  = "places.manage"
+	PermissionPricingManage = "pricing.manage"
 )
 
 // RoleKeyOwner is the system role that always holds every permission,
@@ -31,6 +32,7 @@ var permissionCatalog = map[string]string{
 	PermissionZonesManage:   "Create and change cities and service zones",
 	PermissionMediaRead:     "View files users uploaded (driver documents, photos, attachments)",
 	PermissionPlacesManage:  "Create and change curated places (airports, malls, hotels...)",
+	PermissionPricingManage: "See and set prices: rate cards, surge rules and zone surges",
 }
 
 // PermissionInfo describes one grantable permission.

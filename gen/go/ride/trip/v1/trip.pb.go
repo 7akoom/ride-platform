@@ -257,8 +257,15 @@ type Trip struct {
 	PickupNote    string `protobuf:"bytes,18,opt,name=pickup_note,json=pickupNote,proto3" json:"pickup_note,omitempty"`
 	// The saved pickup address has a photo: GetPickupPhoto gives a link.
 	HasPickupPhoto bool `protobuf:"varint,19,opt,name=has_pickup_photo,json=hasPickupPhoto,proto3" json:"has_pickup_photo,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// The fare quote the trip was requested with (pricing-service QuoteTrip),
+	// and the price it fixed: a decimal string in currency_code. All three are
+	// empty for a trip requested without a quote, which is priced when it
+	// completes.
+	QuoteId       string `protobuf:"bytes,20,opt,name=quote_id,json=quoteId,proto3" json:"quote_id,omitempty"`
+	QuotedFare    string `protobuf:"bytes,21,opt,name=quoted_fare,json=quotedFare,proto3" json:"quoted_fare,omitempty"`
+	CurrencyCode  string `protobuf:"bytes,22,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Trip) Reset() {
@@ -424,6 +431,27 @@ func (x *Trip) GetHasPickupPhoto() bool {
 	return false
 }
 
+func (x *Trip) GetQuoteId() string {
+	if x != nil {
+		return x.QuoteId
+	}
+	return ""
+}
+
+func (x *Trip) GetQuotedFare() string {
+	if x != nil {
+		return x.QuotedFare
+	}
+	return ""
+}
+
+func (x *Trip) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
+	}
+	return ""
+}
+
 type RequestTripRequest struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	RiderId string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
@@ -443,8 +471,13 @@ type RequestTripRequest struct {
 	// for the captain and photo are copied into the trip.
 	PickupSavedAddressId  string `protobuf:"bytes,8,opt,name=pickup_saved_address_id,json=pickupSavedAddressId,proto3" json:"pickup_saved_address_id,omitempty"`
 	DropoffSavedAddressId string `protobuf:"bytes,9,opt,name=dropoff_saved_address_id,json=dropoffSavedAddressId,proto3" json:"dropoff_saved_address_id,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// A quote from pricing-service QuoteTrip that is the rider's and has not
+	// expired or been used. The trip keeps its price, and is for its vehicle
+	// class; pickup and dropoff (or the saved addresses) must be within 50
+	// metres of the quoted points.
+	QuoteId       string `protobuf:"bytes,10,opt,name=quote_id,json=quoteId,proto3" json:"quote_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RequestTripRequest) Reset() {
@@ -536,6 +569,13 @@ func (x *RequestTripRequest) GetPickupSavedAddressId() string {
 func (x *RequestTripRequest) GetDropoffSavedAddressId() string {
 	if x != nil {
 		return x.DropoffSavedAddressId
+	}
+	return ""
+}
+
+func (x *RequestTripRequest) GetQuoteId() string {
+	if x != nil {
+		return x.QuoteId
 	}
 	return ""
 }
@@ -1715,8 +1755,11 @@ type TripOffer struct {
 	ExpiresAt      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	PickupAddress  string                 `protobuf:"bytes,8,opt,name=pickup_address,json=pickupAddress,proto3" json:"pickup_address,omitempty"`
 	DropoffAddress string                 `protobuf:"bytes,9,opt,name=dropoff_address,json=dropoffAddress,proto3" json:"dropoff_address,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// The quoted price, when the trip has one (a decimal string).
+	QuotedFare    string `protobuf:"bytes,10,opt,name=quoted_fare,json=quotedFare,proto3" json:"quoted_fare,omitempty"`
+	CurrencyCode  string `protobuf:"bytes,11,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TripOffer) Reset() {
@@ -1808,6 +1851,20 @@ func (x *TripOffer) GetPickupAddress() string {
 func (x *TripOffer) GetDropoffAddress() string {
 	if x != nil {
 		return x.DropoffAddress
+	}
+	return ""
+}
+
+func (x *TripOffer) GetQuotedFare() string {
+	if x != nil {
+		return x.QuotedFare
+	}
+	return ""
+}
+
+func (x *TripOffer) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
 	}
 	return ""
 }
@@ -2814,7 +2871,7 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x17ride/trip/v1/trip.proto\x12\fride.trip.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\"G\n" +
 	"\vCoordinates\x12\x1a\n" +
 	"\blatitude\x18\x01 \x01(\x01R\blatitude\x12\x1c\n" +
-	"\tlongitude\x18\x02 \x01(\x01R\tlongitude\"\xdc\x06\n" +
+	"\tlongitude\x18\x02 \x01(\x01R\tlongitude\"\xbd\a\n" +
 	"\x04Trip\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\brider_id\x18\x02 \x01(\tR\ariderId\x12\x1b\n" +
@@ -2838,7 +2895,11 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x0epickup_details\x18\x11 \x01(\tR\rpickupDetails\x12\x1f\n" +
 	"\vpickup_note\x18\x12 \x01(\tR\n" +
 	"pickupNote\x12(\n" +
-	"\x10has_pickup_photo\x18\x13 \x01(\bR\x0ehasPickupPhoto\"\xa3\x03\n" +
+	"\x10has_pickup_photo\x18\x13 \x01(\bR\x0ehasPickupPhoto\x12\x19\n" +
+	"\bquote_id\x18\x14 \x01(\tR\aquoteId\x12\x1f\n" +
+	"\vquoted_fare\x18\x15 \x01(\tR\n" +
+	"quotedFare\x12#\n" +
+	"\rcurrency_code\x18\x16 \x01(\tR\fcurrencyCode\"\xbe\x03\n" +
 	"\x12RequestTripRequest\x12\x19\n" +
 	"\brider_id\x18\x01 \x01(\tR\ariderId\x121\n" +
 	"\x06pickup\x18\x02 \x01(\v2\x19.ride.trip.v1.CoordinatesR\x06pickup\x123\n" +
@@ -2848,7 +2909,9 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x0epickup_address\x18\x06 \x01(\tR\rpickupAddress\x12'\n" +
 	"\x0fdropoff_address\x18\a \x01(\tR\x0edropoffAddress\x125\n" +
 	"\x17pickup_saved_address_id\x18\b \x01(\tR\x14pickupSavedAddressId\x127\n" +
-	"\x18dropoff_saved_address_id\x18\t \x01(\tR\x15dropoffSavedAddressId\"=\n" +
+	"\x18dropoff_saved_address_id\x18\t \x01(\tR\x15dropoffSavedAddressId\x12\x19\n" +
+	"\bquote_id\x18\n" +
+	" \x01(\tR\aquoteId\"=\n" +
 	"\x13RequestTripResponse\x12&\n" +
 	"\x04trip\x18\x01 \x01(\v2\x12.ride.trip.v1.TripR\x04trip\"I\n" +
 	"\x11AcceptTripRequest\x12\x17\n" +
@@ -2911,7 +2974,7 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"page_token\x18\x04 \x01(\tR\tpageToken\"e\n" +
 	"\x11ListTripsResponse\x12(\n" +
 	"\x05trips\x18\x01 \x03(\v2\x12.ride.trip.v1.TripR\x05trips\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x9e\x03\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xe4\x03\n" +
 	"\tTripOffer\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x121\n" +
 	"\x06pickup\x18\x02 \x01(\v2\x19.ride.trip.v1.CoordinatesR\x06pickup\x123\n" +
@@ -2923,7 +2986,11 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12%\n" +
 	"\x0epickup_address\x18\b \x01(\tR\rpickupAddress\x12'\n" +
-	"\x0fdropoff_address\x18\t \x01(\tR\x0edropoffAddress\"i\n" +
+	"\x0fdropoff_address\x18\t \x01(\tR\x0edropoffAddress\x12\x1f\n" +
+	"\vquoted_fare\x18\n" +
+	" \x01(\tR\n" +
+	"quotedFare\x12#\n" +
+	"\rcurrency_code\x18\v \x01(\tR\fcurrencyCode\"i\n" +
 	"\x10OfferTripRequest\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12\x1b\n" +
 	"\tdriver_id\x18\x02 \x01(\tR\bdriverId\x12\x1f\n" +

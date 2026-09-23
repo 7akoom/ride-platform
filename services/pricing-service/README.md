@@ -1,55 +1,95 @@
 # Pricing Service
 
-Calculates what a trip costs — both as an upfront estimate and as the
-final, durable fare when a trip completes.
+Calculates what a trip costs: quotes for every vehicle class before the
+rider books, a single-class estimate, and the final, durable fare when a
+trip completes. Staff set the prices here too: rate cards, surge rules and
+surges on one zone.
 
 ## The pricing pipeline
 
-Both `EstimateFare` and `CalculateFare` run the exact same pipeline
-(shared in `service_fare.go`) so an estimate can never quietly disagree
-with what the rider is actually charged:
+`QuoteTrip`, `EstimateFare` and `CalculateFare` run the exact same pipeline
+(`service_fare.go`), so a quote can never quietly disagree with what the
+rider is actually charged:
 
 ```
-rate card -> distance & duration -> surge -> discount -> total
+rate card -> distance & duration -> minimum fare -> surge -> discount -> total
 ```
 
-## Distance: real road routing
+What does not depend on the vehicle class is gathered once per request, at
+the same time: whether the pickup is served (its zone, city and the city's
+time zone), the OSRM route, the free drivers nearby, the weather, the
+demand and the staff surge.
 
-Distance and duration come from **OSRM**, a self-hosted open-source
-routing engine — real road-network values, not straight-line guesses.
-No API keys, no usage limits, no per-request cost.
+## Quotes: the price is fixed before the trip
 
-OSRM needs a one-time dataset build for your region before it'll run:
-see `infrastructure/osrm/README.md`. The region is configurable per
-deployment.
+`POST /v1/fare-quotes` (the rider, for their own profile) prices the trip
+for every class at once, cheapest first. Each quote has:
 
-**If OSRM is unreachable**, pricing falls back to a Haversine estimate
-(straight-line distance × a correction factor, duration from an assumed
-average speed) and flags the `Route` as estimated. A rider should never
-be unable to get a price because the routing engine is down — they get a
-slightly less accurate one instead.
+- the full fare breakdown and its `quote_id`;
+- `expires_at` (`QUOTE_TTL`, 5 minutes by default);
+- whether a free driver of that class is near the pickup and how many
+  minutes away by road the nearest one is (`pickup_eta_minutes`).
 
-Because duration now comes from real routing, the `average_speed_kmh`
-and `distance_correction_factor` columns in `pricing_configs` only
-affect the fallback path.
+A trip requested with a `quote_id` (trip-service `RequestTrip`) claims it:
+trip-service calls `ClaimQuote` with the internal token. A quote is claimed
+once, only by its rider and only before it expires; the trip must start and
+end within 50 m of the quoted points and be for the quoted class. If the
+quote used a coupon that has since ended or been used up, the claim is
+refused and the rider asks for a new quote. When the trip completes, its
+fare is exactly the quoted one (with the quote's coupon redemption).
 
-## Surge: three independent sources
+A trip requested without a quote is priced when it completes, as before.
 
-Each contributes an **additive percentage**, summed then capped at +150%
-total. The breakdown is returned to the caller (not just the final
-multiplier) so an app can show "+25% evening rush" and support can
-answer "why was my fare higher".
+Quotes nobody claimed are removed a day after they expire.
+
+## Rate cards
+
+A card applies to a **zone**, a **city**, or **everywhere**, for **one
+vehicle class** or **all of them**. The most specific card prices a trip:
+
+```
+zone+class, zone, city+class, city, everywhere+class, everywhere
+```
+
+A card holds base fare, per km, per minute, minimum fare, the waiting,
+cancellation and no-show fees (charged by the trip lifecycle), the most
+surge may add (`max_surge_percent`, 0 turns surge off), and whether demand
+and weather count.
+
+Cards are **versioned**: setting one inserts a new row and the newest one
+for a place and class is in force, so what past fares were priced with
+stays on file. Retiring a card inserts a retired version, and trips there
+fall back to the next card. The card for every class everywhere always
+exists and cannot be retired. The currency, and the average speed and road
+correction used when OSRM is down, come from that card: one deployment, one
+currency.
+
+Every fare records the rate card version (`config_id`) and, when there is
+one, the quote it came from.
+
+## Surge
+
+```
+staff  = the larger of the hour's rule and the zone's surge
+total  = staff + demand + weather, capped by the rate card
+```
+
+The two staff sources never add up: a zone surge for a concert during rush
+hour means "this much", not "this much more". The breakdown is returned
+with every price (with `label`, what staff called the rule or surge), so an
+app can show "+25% Evening rush" and support can answer "why was my fare
+higher".
 
 | Source | How it's determined |
 |---|---|
-| Time of day | Configurable rules in `surge_time_rules` (seeded with rush hours + late night). Overlapping rules take the **highest** match, never the sum. |
-| Demand | Scarcity of available drivers near the pickup point, via location-service. Fewer drivers → higher surge. |
+| Hour | `surge_time_rules`, for everywhere, a city or a zone, read in the **local time of the pickup's city**. Overlapping rules take the highest match. |
+| Zone surge | Staff put a percent on one zone for a while (up to a day, starting up to a week ahead), with a reason riders see. |
+| Demand | Riders who asked for a quote in the zone in the last 10 minutes against the free drivers within 5 km: no driver +50%, 3 riders per driver +50%, 2 +30%, 1.5 +15%. |
 | Weather | Open-Meteo current conditions, mapped from WMO weather codes to tiers (thunderstorm > snow > rain > drizzle/fog), plus a wind bump. |
 
-Both demand and weather **fail open**: if location-service or Open-Meteo
-is unreachable, that component contributes 0% rather than failing the
-whole fare. A rider should never be unable to get a price because a
-weather API had a bad day.
+Demand and weather **fail open**: if driver-service or Open-Meteo cannot be
+reached, that part adds 0% rather than failing the price (an unreachable
+driver-service never looks like an empty street).
 
 ### On Open-Meteo and the no-paid-services rule
 
@@ -62,92 +102,95 @@ in the project. Two things worth knowing:
    paid commercial tier, and they also publish their API as open-source
    software you can self-host if you'd rather keep the zero-dependency
    posture.
-2. Because it fails open, you can simply not configure it and everything
-   else keeps working — weather surge just stays at 0%.
+2. Because it fails open, and a rate card can turn it off
+   (`weather_surge`), everything else keeps working without it.
+
+## Distance: real road routing
+
+Distance and duration come from **OSRM**, a self-hosted open-source
+routing engine. OSRM needs a one-time dataset build for your region: see
+`infrastructure/osrm/README.md`.
+
+**If OSRM is unreachable**, pricing falls back to a Haversine estimate
+(straight-line distance × the card's correction factor, duration from its
+average speed) and flags the `Route` as estimated. A quote's driver ETA
+falls back the same way (at 25 km/h).
 
 ## Discounts: best one wins, never stacked
 
 Three sources are evaluated — coupon code, first-ride, and loyalty
-(every 10th ride) — and only the **single largest** is applied.
-Stacking is deliberately not allowed: it would let a promo-hunting rider
-combine a coupon with a first-ride discount for a near-free trip.
+(every 10th ride) — and only the **single largest** is applied. Discounts
+apply to the **surged** amount. An invalid or unknown coupon code doesn't
+fail the request — the rider still gets a valid price, just without the
+discount.
 
-Discounts apply to the **surged** amount, not the pre-surge subtotal, so
-a percentage coupon isn't worth less exactly when the rider is paying
-most.
+## Staff endpoints (`pricing.manage`)
 
-An invalid or unknown coupon code doesn't fail the request — the rider
-still gets a valid price, just without the discount.
+| | |
+|---|---|
+| `GET /v1/admin/rate-cards` | The card in force for each place and class (filter by `city_id` or `zone_id`). |
+| `POST /v1/admin/rate-cards` | Set a card (a whole card; `base_fare`, `per_km_rate`, `per_minute_rate` are required, empty `max_surge_percent` means 150). |
+| `POST /v1/admin/rate-cards:retire` | Retire a zone's, city's or class's card. |
+| `GET/POST /v1/admin/surge-rules`, `PATCH /v1/admin/surge-rules/{id}`, `POST …:setActive` | Surge by the hour ("HH:MM", local time; a window that ends before it starts runs past midnight). |
+| `GET/POST /v1/admin/zone-surges`, `POST /v1/admin/zone-surges/{id}:end` | Surge on one zone for a while. |
+
+Every call asks staff-service first (fail closed) and is audited there.
+`pricing.manage` is not given to the operations role: only owners hold it
+until they give it to a role of their own.
 
 ## Idempotency
 
 `CalculateFare` writes one immutable `fares` row per trip. Calling it
 again for the same `trip_id` returns the original fare instead of
-recalculating — a trip's price must not change after the fact just
-because surge conditions differ on a retry.
+recalculating; when two calls race, the second returns the first one's
+fare.
 
 The write is one transaction covering: the fare row, the rider's
 completed-trip counter, the coupon redemption (if any), and the
-`fare.calculated` outbox event.
+`fare.calculated` outbox event (which carries the `quote_id`).
 
 ## Rider trip counter — why it's local
 
 Pricing keeps its own `rider_trip_stats` counter rather than asking
-trip-service "how many rides has this rider completed". That avoids
-adding a cross-service dependency purely for a discount-eligibility
-check. It's incremented exactly once per `CalculateFare`, which happens
-exactly once per completed trip.
+trip-service "how many rides has this rider completed". It's incremented
+exactly once per `CalculateFare`, which happens exactly once per completed
+trip.
 
 ## Configuration
 
-`pricing_configs` is **versioned** — changing rates means inserting a new
-row, and the newest wins. Old rows stay as an audit trail of what past
-fares were calculated from. Currency is per-deployment (one row, one
-`currency_code`), matching the "sell a separate instance per client"
-model.
+| Variable | |
+|---|---|
+| `LOCATION_SERVICE_ADDRESS` | Service zones, cities, nearby drivers. |
+| `DRIVER_SERVICE_ADDRESS` | Which nearby drivers are free, and their class. |
+| `STAFF_SERVICE_ADDRESS` | Permissions for the staff endpoints. |
+| `TRIP_SERVICE_ADDRESS` | Reading a completed trip to price it. |
+| `RIDER_SERVICE_ADDRESS` | Ownership: a rider prices only for their own profile. |
+| `QUOTE_TTL` | How long a quote holds its price (1m–30m, default 5m). |
+| `FARE_ROUNDING_INCREMENT` | Every total is rounded once to a multiple of it (250 IQD). |
 
-Migration `00008` seeds a usable IQD rate card and rush-hour rules so the
-service works immediately. Replace them for a real deployment.
+Migration `00008` seeds a usable IQD rate card and rush-hour rules.
+Migration `00012` adds city cards, fees, quotes and zone surges; existing
+cards keep working with no minimum and no fees until staff set them.
 
-## What's intentionally NOT done yet
+## Tests
 
-Beyond the shared deferred list (observability, auth, tests, NATS
-worker):
-
-- **Money is `float64`**, matching the codebase's existing convention.
-  A payments-critical system would normally use fixed-point or integer
-  minor units to avoid rounding drift. Worth revisiting before real
-  money moves through Wallet service.
-- **Demand surge uses driver scarcity only** — it doesn't yet weigh how
-  many riders are requesting trips in the area, which would need a new
-  trip-service endpoint.
-- **No admin RPCs for rates or surge rules** — change them with SQL for
-  now.
-- **No search radius expansion** if no drivers are found nearby.
+```bash
+go test ./...
+# Repository tests against an empty, throw-away database (psql on PATH):
+PRICING_TEST_DATABASE_URL=postgres://.../empty_db \
+  go test ./internal/infrastructure/persistence/postgres/
+```
 
 ## Running locally
-
-location-service should be running (pricing dials it for demand surge —
-though it fails open if absent).
 
 ```bash
 cd services/pricing-service
 cp .env.example .env   # adjust DATABASE_URL
-go mod tidy
 goose -dir migrations postgres "$DATABASE_URL" up
 go run ./cmd/pricing-service
 ```
 
 ## Trying it
 
-```bash
-# Estimate a fare
-grpcurl -plaintext -import-path ./proto -proto ride/pricing/v1/pricing.proto \
-  -d '{"rider_id": "<rider-id>", "pickup": {"latitude": 36.19, "longitude": 44.01}, "dropoff": {"latitude": 36.20, "longitude": 44.05}}' \
-  localhost:50057 ride.pricing.v1.PricingService/EstimateFare
-
-# Create a coupon
-grpcurl -plaintext -import-path ./proto -proto ride/pricing/v1/pricing.proto \
-  -d '{"code": "WELCOME20", "discount_type": "DISCOUNT_TYPE_PERCENTAGE", "discount_value": 20, "valid_from": "2026-01-01T00:00:00Z", "valid_until": "2027-01-01T00:00:00Z", "per_rider_limit": 1}' \
-  localhost:50057 ride.pricing.v1.PricingService/CreateCoupon
-```
+`scripts/e2e/test-fare-quotes.sh` walks through rate cards, surge, quotes
+and a trip that pays its quote on the real stack.

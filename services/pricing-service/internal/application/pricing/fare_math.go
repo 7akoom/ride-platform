@@ -52,23 +52,31 @@ func fallbackRoute(config Config, pickupLat, pickupLng, dropoffLat, dropoffLng f
 }
 
 // baseFareBreakdown turns a route into the pre-surge, pre-discount
-// subtotal using the active rate card. Surge and discounts are applied
-// on top of this by the caller. Route's distance/duration are float64
-// (physical measurements); they're converted to decimal only at the
-// point they're multiplied against a decimal rate, exactly like
-// wallet-service converts a wire decimal string at its own boundary.
+// subtotal using the rate card, raised to the card's minimum fare. Surge
+// and discounts are applied on top of this by the caller. Route's
+// distance/duration are float64 (physical measurements); they're converted
+// to decimal only at the point they're multiplied against a decimal rate,
+// exactly like wallet-service converts a wire decimal string at its own
+// boundary.
 func baseFareBreakdown(config Config, route Route) FareBreakdown {
 	distanceFare := decimal.NewFromFloat(route.DistanceKm).Mul(config.PerKmRate)
 	durationFare := decimal.NewFromFloat(route.DurationMinutes).Mul(config.PerMinuteRate)
 	subtotal := config.BaseFare.Add(distanceFare).Add(durationFare)
 
+	adjustment := decimal.Zero
+	if config.MinimumFare.GreaterThan(subtotal) {
+		adjustment = config.MinimumFare.Sub(subtotal)
+		subtotal = config.MinimumFare
+	}
+
 	return FareBreakdown{
-		CurrencyCode:    config.CurrencyCode,
-		BaseFare:        config.BaseFare,
-		DistanceKm:      route.DistanceKm,
-		DistanceFare:    distanceFare,
-		DurationMinutes: route.DurationMinutes,
-		DurationFare:    durationFare,
-		Subtotal:        subtotal,
+		CurrencyCode:          config.CurrencyCode,
+		BaseFare:              config.BaseFare,
+		DistanceKm:            route.DistanceKm,
+		DistanceFare:          distanceFare,
+		DurationMinutes:       route.DurationMinutes,
+		DurationFare:          durationFare,
+		MinimumFareAdjustment: adjustment,
+		Subtotal:              subtotal,
 	}
 }

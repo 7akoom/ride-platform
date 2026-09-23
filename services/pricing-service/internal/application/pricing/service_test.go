@@ -6,6 +6,7 @@ package pricing
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -18,16 +19,24 @@ type fakeRepository struct {
 	config    Config
 	configErr error
 
-	// lastVehicleClass is the class GetActiveConfig was last asked for.
+	// lastVehicleClass is the class GetActiveConfig was last asked for, and
+	// lastScope the whole scope.
 	lastVehicleClass string
+	lastScope        Scope
 
-	// configsByZone lets a test give one specific zone its own rate
-	// card; GetActiveConfig falls back to config (the global default)
-	// for any zone not present here — mirrors the real repository's
-	// zone-then-global lookup.
+	// configsByZone / configsByCity let a test give one zone or city its
+	// own rate card; GetActiveConfig falls back to config (the global
+	// default) otherwise — mirrors the real repository's zone, then city,
+	// then everywhere lookup.
 	configsByZone map[string]Config
+	configsByCity map[string]Config
 
 	surgeRules []SurgeTimeRule
+
+	zoneSurge      ZoneSurge
+	zoneSurgeFound bool
+
+	quotingRiders int
 
 	couponsByCode map[string]Coupon
 	createCoupon  *Coupon
@@ -43,6 +52,11 @@ type fakeRepository struct {
 
 	persistFareCalls []PersistFareInput
 	persistFareErr   error
+
+	quotes     map[string]Quote
+	savedCount int
+	claimErr   error
+	released   []string
 }
 
 func newFakeRepository() *fakeRepository {
@@ -50,20 +64,25 @@ func newFakeRepository() *fakeRepository {
 		couponsByCode:    map[string]Coupon{},
 		riderRedemptions: map[string]int{},
 		configsByZone:    map[string]Config{},
+		configsByCity:    map[string]Config{},
+		quotes:           map[string]Quote{},
 	}
 }
 
-func (r *fakeRepository) GetActiveConfig(_ context.Context, zoneID, vehicleClass string) (Config, error) {
-	r.lastVehicleClass = vehicleClass
+func (r *fakeRepository) GetActiveConfig(_ context.Context, scope Scope) (Config, error) {
+	r.lastVehicleClass = scope.VehicleClass
+	r.lastScope = scope
 
 	if r.configErr != nil {
 		return Config{}, r.configErr
 	}
 
-	if zoneID != "" {
-		if cfg, ok := r.configsByZone[zoneID]; ok {
-			return cfg, nil
-		}
+	if cfg, ok := r.configsByZone[scope.ZoneID]; ok && scope.ZoneID != "" {
+		return cfg, nil
+	}
+
+	if cfg, ok := r.configsByCity[scope.CityID]; ok && scope.CityID != "" {
+		return cfg, nil
 	}
 
 	return r.config, nil
@@ -73,9 +92,26 @@ func (r *fakeRepository) ListActiveSurgeTimeRules(_ context.Context) ([]SurgeTim
 	return r.surgeRules, nil
 }
 
+func (r *fakeRepository) ActiveZoneSurge(_ context.Context, _ string, _ time.Time) (ZoneSurge, bool, error) {
+	return r.zoneSurge, r.zoneSurgeFound, nil
+}
+
+func (r *fakeRepository) CountQuotingRiders(_ context.Context, _, _ string, _ time.Time) (int, error) {
+	return r.quotingRiders, nil
+}
+
 func (r *fakeRepository) FindCouponByCode(_ context.Context, code string) (Coupon, error) {
 	if c, ok := r.couponsByCode[code]; ok {
 		return c, nil
+	}
+	return Coupon{}, ErrCouponNotFound
+}
+
+func (r *fakeRepository) FindCouponByID(_ context.Context, id string) (Coupon, error) {
+	for _, c := range r.couponsByCode {
+		if c.ID == id {
+			return c, nil
+		}
 	}
 	return Coupon{}, ErrCouponNotFound
 }
@@ -110,33 +146,99 @@ func (r *fakeRepository) PersistFare(_ context.Context, input PersistFareInput) 
 	if r.persistFareErr != nil {
 		return Fare{}, r.persistFareErr
 	}
-	return Fare{TripID: input.TripID, RiderID: input.RiderID, Breakdown: input.Breakdown}, nil
+	return Fare{TripID: input.TripID, RiderID: input.RiderID, Breakdown: input.Breakdown, QuoteID: input.QuoteID}, nil
+}
+
+func (r *fakeRepository) SaveQuotes(_ context.Context, quotes []Quote) ([]Quote, error) {
+	out := make([]Quote, 0, len(quotes))
+	for _, q := range quotes {
+		r.savedCount++
+		q.ID = fmt.Sprintf("00000000-0000-4000-8000-%012d", r.savedCount)
+		r.quotes[q.ID] = q
+		out = append(out, q)
+	}
+	return out, nil
+}
+
+func (r *fakeRepository) FindQuote(_ context.Context, id string) (Quote, error) {
+	q, ok := r.quotes[id]
+	if !ok {
+		return Quote{}, ErrQuoteNotFound
+	}
+	return q, nil
+}
+
+func (r *fakeRepository) ClaimQuote(_ context.Context, id, riderID, tripID string, now time.Time) (Quote, error) {
+	if r.claimErr != nil {
+		return Quote{}, r.claimErr
+	}
+	q, ok := r.quotes[id]
+	switch {
+	case !ok || q.RiderID != riderID:
+		return Quote{}, ErrQuoteNotFound
+	case q.ClaimedTripID == tripID:
+		return q, nil
+	case q.ClaimedTripID != "":
+		return Quote{}, ErrQuoteAlreadyUsed
+	case !now.Before(q.ExpiresAt):
+		return Quote{}, ErrQuoteExpired
+	}
+	q.ClaimedTripID = tripID
+	r.quotes[id] = q
+	return q, nil
+}
+
+func (r *fakeRepository) ReleaseQuote(_ context.Context, id, tripID string) error {
+	r.released = append(r.released, id+"/"+tripID)
+	if q, ok := r.quotes[id]; ok && q.ClaimedTripID == tripID {
+		q.ClaimedTripID = ""
+		r.quotes[id] = q
+	}
+	return nil
+}
+
+func (r *fakeRepository) DeleteUnclaimedQuotes(_ context.Context, _ time.Time) (int, error) {
+	return 0, nil
 }
 
 type fakeLocationClient struct {
-	count int
-	err   error
-
-	// served/zoneID/zoneErr back CheckServiceZone — kept separate from
-	// count/err (CountNearbyAvailableDrivers) so a test can fail one
-	// call without affecting the other.
-	served  bool
-	zoneID  string
-	zoneErr error
+	served   bool
+	zoneID   string
+	cityID   string
+	timeZone string
+	zoneErr  error
 }
 
-func (c *fakeLocationClient) CountNearbyAvailableDrivers(_ context.Context, _, _, _ float64) (int, error) {
-	if c.err != nil {
-		return 0, c.err
-	}
-	return c.count, nil
-}
-
-func (c *fakeLocationClient) CheckServiceZone(_ context.Context, _, _ float64) (bool, string, error) {
+func (c *fakeLocationClient) CheckServiceZone(_ context.Context, _, _ float64) (ServiceZone, error) {
 	if c.zoneErr != nil {
-		return false, "", c.zoneErr
+		return ServiceZone{}, c.zoneErr
 	}
-	return c.served, c.zoneID, nil
+	return ServiceZone{Served: c.served, ZoneID: c.zoneID, CityID: c.cityID, TimeZone: c.timeZone}, nil
+}
+
+type fakeDriverFinder struct {
+	drivers []NearbyDriver
+	err     error
+}
+
+func (f *fakeDriverFinder) AvailableDriversNear(_ context.Context, _, _, _ float64) ([]NearbyDriver, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.drivers, nil
+}
+
+// someDrivers is n free economy drivers about a kilometre from the pickup.
+func someDrivers(n int) []NearbyDriver {
+	drivers := make([]NearbyDriver, n)
+	for i := range drivers {
+		drivers[i] = NearbyDriver{
+			DriverID:     fmt.Sprintf("driver-%d", i),
+			VehicleClass: VehicleClassEconomy,
+			Location:     Point{Latitude: 36.2, Longitude: 44.01},
+		}
+	}
+	return drivers
 }
 
 type fakeRoutingClient struct {
@@ -168,14 +270,16 @@ type harness struct {
 	location *fakeLocationClient
 	routing  *fakeRoutingClient
 	weather  *fakeWeatherClient
+	drivers  *fakeDriverFinder
 }
 
 func newHarness() *harness {
 	h := &harness{
 		repo:     newFakeRepository(),
-		location: &fakeLocationClient{count: 10, served: true, zoneID: "zone-1"}, // plenty of drivers -> no demand surge by default; pickup served by default
+		location: &fakeLocationClient{served: true, zoneID: "zone-1", cityID: "city-1"}, // pickup served by default
 		routing:  &fakeRoutingClient{route: Route{DistanceKm: 10, DurationMinutes: 20}},
 		weather:  &fakeWeatherClient{},
+		drivers:  &fakeDriverFinder{drivers: someDrivers(10)}, // plenty of drivers -> no demand surge by default
 	}
 
 	// Set once here (not in service()) so a test can tweak individual
@@ -183,17 +287,21 @@ func newHarness() *harness {
 	// on top of these defaults before calling service(), without a
 	// later full-struct overwrite silently discarding the tweak.
 	h.repo.config = Config{
-		CurrencyCode:  "IQD",
-		BaseFare:      decimal.NewFromInt(1000),
-		PerKmRate:     decimal.NewFromInt(250),
-		PerMinuteRate: decimal.NewFromInt(100),
+		ID:              "config-global",
+		CurrencyCode:    "IQD",
+		BaseFare:        decimal.NewFromInt(1000),
+		PerKmRate:       decimal.NewFromInt(250),
+		PerMinuteRate:   decimal.NewFromInt(100),
+		MaxSurgePercent: decimal.NewFromInt(150),
+		DemandSurge:     true,
+		WeatherSurge:    true,
 	}
 
 	return h
 }
 
-func (h *harness) service() Service {
-	return NewService(h.repo, h.location, h.routing, h.weather)
+func (h *harness) service(options ...Option) Service {
+	return NewService(h.repo, h.location, h.routing, h.weather, h.drivers, options...)
 }
 
 func withFrozenTime(t *testing.T, when time.Time) {
@@ -219,10 +327,11 @@ func TestNewService_PanicsOnMissingDependencies(t *testing.T) {
 	h := newHarness()
 
 	cases := []func(){
-		func() { NewService(nil, h.location, h.routing, h.weather) },
-		func() { NewService(h.repo, nil, h.routing, h.weather) },
-		func() { NewService(h.repo, h.location, nil, h.weather) },
-		func() { NewService(h.repo, h.location, h.routing, nil) },
+		func() { NewService(nil, h.location, h.routing, h.weather, h.drivers) },
+		func() { NewService(h.repo, nil, h.routing, h.weather, h.drivers) },
+		func() { NewService(h.repo, h.location, nil, h.weather, h.drivers) },
+		func() { NewService(h.repo, h.location, h.routing, nil, h.drivers) },
+		func() { NewService(h.repo, h.location, h.routing, h.weather, nil) },
 	}
 
 	for i, fn := range cases {
@@ -354,9 +463,9 @@ func TestService_EstimateFare_FallsBackToGlobalConfigForAZoneWithoutItsOwnRateCa
 
 // --- Surge: fail-open and capping -----------------------------------------
 
-func TestService_EstimateFare_SurgeFailsOpenOnLocationError(t *testing.T) {
+func TestService_EstimateFare_SurgeFailsOpenWhenDriversCannotBeLookedUp(t *testing.T) {
 	h := newHarness()
-	h.location.err = errors.New("location service unreachable")
+	h.drivers.err = errors.New("driver service unreachable")
 	svc := h.service()
 
 	got, err := svc.EstimateFare(context.Background(), validEstimateInput())
@@ -386,7 +495,7 @@ func TestService_EstimateFare_SurgeFailsOpenOnWeatherError(t *testing.T) {
 
 func TestService_EstimateFare_SurgeIsCappedAtMax(t *testing.T) {
 	h := newHarness()
-	h.location.count = 0 // demand: 100%
+	h.drivers.drivers = nil // no free driver: demand 50%
 	h.weather.conditions = WeatherConditions{SurgePercent: decimal.NewFromInt(100)}
 	now := time.Date(2026, 9, 15, 8, 0, 0, 0, time.UTC)
 	h.repo.surgeRules = []SurgeTimeRule{
@@ -400,6 +509,7 @@ func TestService_EstimateFare_SurgeIsCappedAtMax(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
+	maxSurgePercent := h.repo.config.MaxSurgePercent
 	if !got.Surge.TotalPercent.Equal(maxSurgePercent) {
 		t.Fatalf("got total surge %v, want capped at %v", got.Surge.TotalPercent, maxSurgePercent)
 	}

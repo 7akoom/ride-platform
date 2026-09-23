@@ -19,4 +19,19 @@ var (
 	ErrInvalidDiscountType   = errors.New("invalid discount type")
 	ErrInvalidDiscountValue  = errors.New("discount value must be positive (and at most 100 for percentage discounts)")
 	ErrInvalidValidityWindow = errors.New("valid_until must be after valid_from")
+
+	// ErrFareAlreadyRecorded: the trip already has a fare (a concurrent
+	// CalculateFare recorded it first).
+	ErrFareAlreadyRecorded = errors.New("the trip already has a fare")
+
+	ErrQuoteIDRequired  = errors.New("quote id is required")
+	ErrQuoteNotFound    = errors.New("quote not found")
+	ErrQuoteExpired     = errors.New("the quote has expired; ask for a new one")
+	ErrQuoteAlreadyUsed = errors.New("the quote was already used for another trip; ask for a new one")
+	// ErrQuoteCouponUnavailable: the coupon the quote used can no longer be
+	// used (ended, used up, or the rider's limit reached).
+	ErrQuoteCouponUnavailable = errors.New("the quote's coupon can no longer be used; ask for a new quote")
+	// ErrQuoteNotForTrip: the trip names a quote another trip holds, or one
+	// that is not its rider's.
+	ErrQuoteNotForTrip = errors.New("the quote does not belong to this trip")
 )

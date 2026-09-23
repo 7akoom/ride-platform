@@ -46,47 +46,55 @@ func (r *PricingRepository) ListActiveSurgeTimeRules(
 ) ([]pricing.SurgeTimeRule, error) {
 	rows, err := r.pool.Query(
 		ctx,
-		`SELECT id, label, day_of_week, start_time::text, end_time::text,
-		        surge_percent, active
+		`SELECT `+surgeRuleColumns+`
 		 FROM surge_time_rules
 		 WHERE active = true`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("select surge time rules: %w", err)
 	}
-	defer rows.Close()
 
-	var rules []pricing.SurgeTimeRule
-
-	for rows.Next() {
-		var rule pricing.SurgeTimeRule
-		var dayOfWeek *int16
-
-		if err := rows.Scan(
-			&rule.ID,
-			&rule.Label,
-			&dayOfWeek,
-			&rule.StartTime,
-			&rule.EndTime,
-			&rule.SurgePercent,
-			&rule.Active,
-		); err != nil {
-			return nil, fmt.Errorf("scan surge time rule: %w", err)
-		}
-
-		if dayOfWeek != nil {
-			day := int(*dayOfWeek)
-			rule.DayOfWeek = &day
-		}
-
-		rules = append(rules, rule)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate surge time rules: %w", err)
+	rules, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (pricing.SurgeTimeRule, error) {
+		return scanSurgeRule(row)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("read surge time rules: %w", err)
 	}
 
 	return rules, nil
+}
+
+// surgeRuleColumns is every surge rule column, in scanSurgeRule's order.
+const surgeRuleColumns = `id, label, COALESCE(zone_id::text, ''), COALESCE(city_id::text, ''),
+        day_of_week, start_time::text, end_time::text, surge_percent, active,
+        created_at, updated_at`
+
+func scanSurgeRule(row pgx.Row) (pricing.SurgeTimeRule, error) {
+	var rule pricing.SurgeTimeRule
+	var dayOfWeek *int16
+
+	if err := row.Scan(
+		&rule.ID,
+		&rule.Label,
+		&rule.ZoneID,
+		&rule.CityID,
+		&dayOfWeek,
+		&rule.StartTime,
+		&rule.EndTime,
+		&rule.SurgePercent,
+		&rule.Active,
+		&rule.CreatedAt,
+		&rule.UpdatedAt,
+	); err != nil {
+		return pricing.SurgeTimeRule{}, err
+	}
+
+	if dayOfWeek != nil {
+		day := int(*dayOfWeek)
+		rule.DayOfWeek = &day
+	}
+
+	return rule, nil
 }
 
 func (r *PricingRepository) FindCouponByCode(
@@ -101,6 +109,32 @@ func (r *PricingRepository) FindCouponByCode(
 		 FROM coupons
 		 WHERE code = $1`,
 		code,
+	)
+
+	coupon, err := scanCoupon(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return pricing.Coupon{}, pricing.ErrCouponNotFound
+		}
+
+		return pricing.Coupon{}, fmt.Errorf("select coupon: %w", err)
+	}
+
+	return coupon, nil
+}
+
+func (r *PricingRepository) FindCouponByID(
+	ctx context.Context,
+	couponID string,
+) (pricing.Coupon, error) {
+	row := r.pool.QueryRow(
+		ctx,
+		`SELECT id, code, discount_type, discount_value,
+		        valid_from, valid_until, max_redemptions, redemption_count,
+		        per_rider_limit, minimum_fare_amount, active
+		 FROM coupons
+		 WHERE id = $1`,
+		couponID,
 	)
 
 	coupon, err := scanCoupon(row)
@@ -205,13 +239,7 @@ func (r *PricingRepository) FindFareByTripID(
 ) (pricing.Fare, bool, error) {
 	row := r.pool.QueryRow(
 		ctx,
-		`SELECT id, trip_id, rider_id, currency_code,
-		        base_fare, distance_km, distance_fare,
-		        duration_minutes, duration_fare, subtotal,
-		        surge_time_percent, surge_demand_percent, surge_weather_percent,
-		        surge_total_percent, surge_amount,
-		        applied_discount_type, applied_discount_label, discount_amount,
-		        total, COALESCE(zone_id::text, ''), COALESCE(vehicle_class, ''), created_at
+		`SELECT 		        `+fareColumns+`
 		 FROM fares
 		 WHERE trip_id = $1`,
 		tripID,
@@ -262,16 +290,13 @@ func (r *PricingRepository) PersistFare(
 		     surge_time_percent, surge_demand_percent, surge_weather_percent,
 		     surge_total_percent, surge_amount,
 		     applied_discount_type, applied_discount_label, discount_amount,
-		     total, zone_id, vehicle_class)
+		     total, zone_id, vehicle_class,
+		     city_id, surge_zone_percent, surge_label, minimum_fare_adjustment,
+		     quote_id, config_id)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
-		         $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
-		 RETURNING id, trip_id, rider_id, currency_code,
-		           base_fare, distance_km, distance_fare,
-		           duration_minutes, duration_fare, subtotal,
-		           surge_time_percent, surge_demand_percent, surge_weather_percent,
-		           surge_total_percent, surge_amount,
-		           applied_discount_type, applied_discount_label, discount_amount,
-		           total, COALESCE(zone_id::text, ''), COALESCE(vehicle_class, ''), created_at`,
+		         $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+		         $21, $22, NULLIF($23, ''), $24, $25, $26)
+		 RETURNING `+fareColumns,
 		input.TripID,
 		input.RiderID,
 		b.CurrencyCode,
@@ -292,6 +317,12 @@ func (r *PricingRepository) PersistFare(
 		b.Total,
 		nullableUUID(b.ZoneID),
 		b.VehicleClass,
+		nullableUUID(b.CityID),
+		b.Surge.ZonePercent,
+		b.Surge.Label,
+		b.MinimumFareAdjustment,
+		nullableUUID(input.QuoteID),
+		nullableUUID(input.ConfigID),
 	)
 
 	fare, err := scanFare(row)
@@ -302,7 +333,7 @@ func (r *PricingRepository) PersistFare(
 			// A concurrent call beat us to it. Since fares are
 			// immutable per trip, the other one's result is just as
 			// valid — roll back and let the caller re-read it.
-			return pricing.Fare{}, pricing.ErrTripIDRequired
+			return pricing.Fare{}, pricing.ErrFareAlreadyRecorded
 		}
 
 		return pricing.Fare{}, fmt.Errorf("insert fare: %w", err)
@@ -350,6 +381,7 @@ func (r *PricingRepository) PersistFare(
 		"rider_id":      input.RiderID,
 		"currency_code": b.CurrencyCode,
 		"total":         b.Total,
+		"quote_id":      input.QuoteID,
 	})
 	if err != nil {
 		return pricing.Fare{}, fmt.Errorf("marshal fare.calculated payload: %w", err)
@@ -410,6 +442,18 @@ func scanCoupon(row pgx.Row) (pricing.Coupon, error) {
 	return coupon, nil
 }
 
+// fareColumns is every fare column, in scanFare's order.
+const fareColumns = `id, trip_id, rider_id, currency_code,
+        base_fare, distance_km, distance_fare,
+        duration_minutes, duration_fare, subtotal,
+        surge_time_percent, surge_demand_percent, surge_weather_percent,
+        surge_total_percent, surge_amount,
+        applied_discount_type, applied_discount_label, discount_amount,
+        total, COALESCE(zone_id::text, ''), COALESCE(vehicle_class, ''),
+        COALESCE(city_id::text, ''), surge_zone_percent, COALESCE(surge_label, ''),
+        minimum_fare_adjustment, COALESCE(quote_id::text, ''), COALESCE(config_id::text, ''),
+        created_at`
+
 func scanFare(row pgx.Row) (pricing.Fare, error) {
 	var fare pricing.Fare
 	var b pricing.FareBreakdown
@@ -437,6 +481,12 @@ func scanFare(row pgx.Row) (pricing.Fare, error) {
 		&b.Total,
 		&b.ZoneID,
 		&b.VehicleClass,
+		&b.CityID,
+		&b.Surge.ZonePercent,
+		&b.Surge.Label,
+		&b.MinimumFareAdjustment,
+		&fare.QuoteID,
+		&fare.ConfigID,
 		&fare.CreatedAt,
 	)
 	if err != nil {

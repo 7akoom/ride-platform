@@ -17,6 +17,95 @@ service PricingService {
   rpc CalculateFare(CalculateFareRequest) returns (CalculateFareResponse);
   rpc CreateCoupon(CreateCouponRequest) returns (CreateCouponResponse);
   rpc GetCoupon(GetCouponRequest) returns (GetCouponResponse);
+
+  // QuoteTrip prices a trip for every vehicle class at once, with how far
+  // the nearest free driver of each class is. Each quote holds its price for
+  // a few minutes: a trip requested with its quote_id pays exactly that.
+  // rider_id must be the caller's own rider profile.
+  rpc QuoteTrip(QuoteTripRequest) returns (QuoteTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/fare-quotes"
+      body: "*"
+    };
+  }
+  // ClaimQuote ties a quote to the trip being requested with it (internal:
+  // trip-service). A quote is claimed once; claiming it again for the same
+  // trip returns it again.
+  rpc ClaimQuote(ClaimQuoteRequest) returns (ClaimQuoteResponse);
+  // ReleaseQuote frees a quote whose trip could not be created (internal).
+  rpc ReleaseQuote(ReleaseQuoteRequest) returns (ReleaseQuoteResponse);
+
+  // Rate cards (staff, pricing.manage). A card applies to a zone, a city or
+  // everywhere, for one vehicle class or all of them; the most specific one
+  // prices a trip: zone, then city, then everywhere, and within each a
+  // class's own card before the one for all classes. Setting a card adds a
+  // new version, so what past fares were priced with stays on file.
+  rpc ListRateCards(ListRateCardsRequest) returns (ListRateCardsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/rate-cards"
+    };
+  }
+  rpc SetRateCard(SetRateCardRequest) returns (RateCardResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/rate-cards"
+      body: "*"
+    };
+  }
+  // RetireRateCard removes a zone's or city's card (or a class's card
+  // everywhere), so trips there fall back to the next one. The card for
+  // every class everywhere cannot be retired.
+  rpc RetireRateCard(RetireRateCardRequest) returns (RetireRateCardResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/rate-cards:retire"
+      body: "*"
+    };
+  }
+
+  // Surge rules by the hour (staff, pricing.manage), read in the local time
+  // of the city the pickup is in.
+  rpc ListSurgeRules(ListSurgeRulesRequest) returns (ListSurgeRulesResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/surge-rules"
+    };
+  }
+  rpc CreateSurgeRule(CreateSurgeRuleRequest) returns (SurgeRuleResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/surge-rules"
+      body: "*"
+    };
+  }
+  rpc UpdateSurgeRule(UpdateSurgeRuleRequest) returns (SurgeRuleResponse) {
+    option (google.api.http) = {
+      patch: "/v1/admin/surge-rules/{rule_id}"
+      body: "*"
+    };
+  }
+  rpc SetSurgeRuleActive(SetSurgeRuleActiveRequest) returns (SurgeRuleResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/surge-rules/{rule_id}:setActive"
+      body: "*"
+    };
+  }
+
+  // A surge staff put on one zone for a while (a concert, a storm), on top
+  // of what the hour and the demand add (staff, pricing.manage).
+  rpc ListZoneSurges(ListZoneSurgesRequest) returns (ListZoneSurgesResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/zone-surges"
+    };
+  }
+  rpc CreateZoneSurge(CreateZoneSurgeRequest) returns (ZoneSurgeResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/zone-surges"
+      body: "*"
+    };
+  }
+  rpc EndZoneSurge(EndZoneSurgeRequest) returns (ZoneSurgeResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/zone-surges/{zone_surge_id}:end"
+      body: "*"
+    };
+  }
 }
 
 enum DiscountType {
@@ -37,12 +126,21 @@ message Coordinates {
 // directly into fare math (see FareBreakdown below) and float64 would
 // reintroduce the same rounding drift the decimal fare fields exist to
 // avoid.
+//
+// total_percent = the larger of time_of_day_percent and zone_percent (both
+// set by staff; they never add up) + demand_percent + weather_percent,
+// capped by the rate card's max_surge_percent.
 message SurgeBreakdown {
   string time_of_day_percent = 1;
   string demand_percent = 2;
   string weather_percent = 3;
   string total_percent = 4;
   string multiplier = 5;
+  // A surge staff put on the pickup's zone.
+  string zone_percent = 6;
+  // What staff called the surge that applies (a rule's label or a zone
+  // surge's reason), for the app to show; empty when none does.
+  string label = 7;
 }
 
 // Money fields are decimal strings (e.g. "2451.6"), never double —
@@ -70,6 +168,11 @@ message FareBreakdown {
   string total = 13;
   // The vehicle class this fare was priced for.
   string vehicle_class = 15;
+  // What was added to bring base + distance + duration up to the rate
+  // card's minimum fare; included in subtotal.
+  string minimum_fare_adjustment = 16;
+  // The city the pickup is in.
+  string city_id = 17;
 }
 
 message EstimateFareRequest {
@@ -92,6 +195,9 @@ message CalculateFareRequest {
   Coordinates dropoff = 4;
   string coupon_code = 5;
   string vehicle_class = 6;
+  // The quote the trip was requested with: the fare is the quoted one, and
+  // the other fields are not used.
+  string quote_id = 7;
 }
 
 message CalculateFareResponse {
@@ -132,4 +238,235 @@ message GetCouponRequest {
 
 message GetCouponResponse {
   Coupon coupon = 1;
+}
+
+// --- Quotes ----------------------------------------------------------------
+
+message QuoteTripRequest {
+  string rider_id = 1;
+  Coordinates pickup = 2;
+  Coordinates dropoff = 3;
+  string coupon_code = 4;
+}
+
+message TripQuote {
+  string quote_id = 1;
+  string vehicle_class = 2;
+  FareBreakdown fare = 3;
+  // Request the trip before this; after it, ask for a new quote.
+  google.protobuf.Timestamp expires_at = 4;
+  // Whether a free driver of this class is near the pickup right now, and
+  // how many minutes away the nearest one is by road (0 when unknown).
+  bool drivers_available = 5;
+  int32 pickup_eta_minutes = 6;
+}
+
+message QuoteTripResponse {
+  // One per vehicle class, cheapest class first.
+  repeated TripQuote quotes = 1;
+  string zone_id = 2;
+  string city_id = 3;
+}
+
+message ClaimQuoteRequest {
+  string quote_id = 1;
+  string rider_id = 2;
+  string trip_id = 3;
+}
+
+message ClaimQuoteResponse {
+  string quote_id = 1;
+  string vehicle_class = 2;
+  Coordinates pickup = 3;
+  Coordinates dropoff = 4;
+  string total = 5;
+  string currency_code = 6;
+  string zone_id = 7;
+}
+
+message ReleaseQuoteRequest {
+  string quote_id = 1;
+  string trip_id = 2;
+}
+
+message ReleaseQuoteResponse {}
+
+// --- Rate cards ------------------------------------------------------------
+
+// Money fields are decimal strings in the deployment's currency.
+message RateCard {
+  string id = 1;
+  // Where it applies: a zone, a city, or everywhere (both empty). Never both.
+  string zone_id = 2;
+  string city_id = 3;
+  // economy or comfort; empty for every class.
+  string vehicle_class = 4;
+  string currency_code = 5;
+  string base_fare = 6;
+  string per_km_rate = 7;
+  string per_minute_rate = 8;
+  // The least a trip costs before surge and discounts.
+  string minimum_fare = 9;
+  // Minutes a driver waits at the pickup for free, then the price of each
+  // further minute.
+  int32 free_waiting_minutes = 10;
+  string waiting_per_minute = 11;
+  // What a rider pays for cancelling once cancellation_grace_minutes have
+  // passed since a driver accepted, and for not showing up.
+  string cancellation_fee = 12;
+  int32 cancellation_grace_minutes = 13;
+  string no_show_fee = 14;
+  // The most surge can add, in percent (0 turns surge off).
+  string max_surge_percent = 15;
+  // Whether demand near the pickup and the weather add surge.
+  bool demand_surge = 16;
+  bool weather_surge = 17;
+  google.protobuf.Timestamp created_at = 18;
+  // The staff member's identity id; empty for the starting card.
+  string created_by = 19;
+}
+
+message ListRateCardsRequest {
+  // Optional filters: only cards for this city (and its zones' cards are not
+  // included), or only this zone's.
+  string city_id = 1;
+  string zone_id = 2;
+}
+
+message ListRateCardsResponse {
+  // The card in force for each place and class.
+  repeated RateCard rate_cards = 1;
+}
+
+message SetRateCardRequest {
+  string zone_id = 1;
+  string city_id = 2;
+  string vehicle_class = 3;
+  string base_fare = 4;
+  string per_km_rate = 5;
+  string per_minute_rate = 6;
+  string minimum_fare = 7;
+  int32 free_waiting_minutes = 8;
+  string waiting_per_minute = 9;
+  string cancellation_fee = 10;
+  int32 cancellation_grace_minutes = 11;
+  string no_show_fee = 12;
+  string max_surge_percent = 13;
+  bool demand_surge = 14;
+  bool weather_surge = 15;
+}
+
+message RateCardResponse {
+  RateCard rate_card = 1;
+}
+
+message RetireRateCardRequest {
+  string zone_id = 1;
+  string city_id = 2;
+  string vehicle_class = 3;
+}
+
+message RetireRateCardResponse {}
+
+// --- Surge rules -----------------------------------------------------------
+
+message SurgeRule {
+  string id = 1;
+  string label = 2;
+  // Where it applies: a zone, a city, or everywhere (both empty).
+  string zone_id = 3;
+  string city_id = 4;
+  // 0 = Sunday .. 6 = Saturday; unset for every day.
+  optional int32 day_of_week = 5;
+  // Local time in the city, "HH:MM". A window that ends before it starts
+  // runs past midnight (23:00 to 04:00).
+  string start_time = 6;
+  string end_time = 7;
+  string surge_percent = 8;
+  bool active = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+message ListSurgeRulesRequest {
+  string city_id = 1;
+  string zone_id = 2;
+}
+
+message ListSurgeRulesResponse {
+  repeated SurgeRule rules = 1;
+}
+
+message CreateSurgeRuleRequest {
+  string label = 1;
+  string zone_id = 2;
+  string city_id = 3;
+  optional int32 day_of_week = 4;
+  string start_time = 5;
+  string end_time = 6;
+  string surge_percent = 7;
+}
+
+// Replaces the rule's label, days, hours and percent (not where it applies).
+message UpdateSurgeRuleRequest {
+  string rule_id = 1;
+  string label = 2;
+  optional int32 day_of_week = 3;
+  string start_time = 4;
+  string end_time = 5;
+  string surge_percent = 6;
+}
+
+message SetSurgeRuleActiveRequest {
+  string rule_id = 1;
+  bool active = 2;
+}
+
+message SurgeRuleResponse {
+  SurgeRule rule = 1;
+}
+
+// --- Zone surges -----------------------------------------------------------
+
+message ZoneSurge {
+  string id = 1;
+  string zone_id = 2;
+  string surge_percent = 3;
+  // Shown to riders as why the price is higher.
+  string reason = 4;
+  google.protobuf.Timestamp starts_at = 5;
+  google.protobuf.Timestamp ends_at = 6;
+  // Set when staff ended it early.
+  google.protobuf.Timestamp ended_at = 7;
+  string created_by = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+message ListZoneSurgesRequest {
+  // Optional: one zone's.
+  string zone_id = 1;
+  // Also the ones that are over (the latest 100).
+  bool include_past = 2;
+}
+
+message ListZoneSurgesResponse {
+  repeated ZoneSurge zone_surges = 1;
+}
+
+message CreateZoneSurgeRequest {
+  string zone_id = 1;
+  string surge_percent = 2;
+  string reason = 3;
+  // From now unless set; up to 7 days ahead.
+  google.protobuf.Timestamp starts_at = 4;
+  // 1 to 1440 (a day).
+  int32 duration_minutes = 5;
+}
+
+message EndZoneSurgeRequest {
+  string zone_surge_id = 1;
+}
+
+message ZoneSurgeResponse {
+  ZoneSurge zone_surge = 1;
 }

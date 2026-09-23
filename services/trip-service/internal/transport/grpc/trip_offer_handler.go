@@ -174,5 +174,8 @@ func toProtoOffer(offer trip.Offer) *tripv1.TripOffer {
 		// come with the trip once the driver has accepted it.
 		PickupAddress:  offer.Trip.PickupAddress,
 		DropoffAddress: offer.Trip.DropoffAddress,
+		// What the trip pays, when it was quoted.
+		QuotedFare:   offer.Trip.QuotedFare,
+		CurrencyCode: offer.Trip.CurrencyCode,
 	}
 }

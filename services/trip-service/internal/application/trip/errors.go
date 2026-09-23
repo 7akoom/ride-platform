@@ -30,4 +30,18 @@ var (
 	// ErrUpstreamUnavailable: another service this needs (rider-service,
 	// media-service) did not answer.
 	ErrUpstreamUnavailable = errors.New("a service this needs is not available")
+
+	// ErrQuotesUnavailable: a quote was named but this service cannot claim
+	// quotes.
+	ErrQuotesUnavailable = errors.New("fare quotes are not available")
+
+	// ErrQuoteNotFound: the quote is unknown or not the rider's.
+	ErrQuoteNotFound = errors.New("quote not found")
+
+	// ErrQuoteNotUsable: the quote expired, was used for another trip, or its
+	// coupon can no longer be used. The rider asks for a new one.
+	ErrQuoteNotUsable = errors.New("the quote can no longer be used; ask for a new one")
+
+	// ErrQuoteMismatch: the trip's points or class are not the quoted ones.
+	ErrQuoteMismatch = errors.New("the trip does not match its quote")
 )

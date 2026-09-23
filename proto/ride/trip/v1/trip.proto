@@ -233,6 +233,13 @@ message Trip {
   string pickup_note = 18;
   // The saved pickup address has a photo: GetPickupPhoto gives a link.
   bool has_pickup_photo = 19;
+  // The fare quote the trip was requested with (pricing-service QuoteTrip),
+  // and the price it fixed: a decimal string in currency_code. All three are
+  // empty for a trip requested without a quote, which is priced when it
+  // completes.
+  string quote_id = 20;
+  string quoted_fare = 21;
+  string currency_code = 22;
 }
 
 message RequestTripRequest {
@@ -253,6 +260,11 @@ message RequestTripRequest {
   // for the captain and photo are copied into the trip.
   string pickup_saved_address_id = 8;
   string dropoff_saved_address_id = 9;
+  // A quote from pricing-service QuoteTrip that is the rider's and has not
+  // expired or been used. The trip keeps its price, and is for its vehicle
+  // class; pickup and dropoff (or the saved addresses) must be within 50
+  // metres of the quoted points.
+  string quote_id = 10;
 }
 
 message RequestTripResponse {
@@ -401,6 +413,9 @@ message TripOffer {
   google.protobuf.Timestamp expires_at = 7;
   string pickup_address = 8;
   string dropoff_address = 9;
+  // The quoted price, when the trip has one (a decimal string).
+  string quoted_fare = 10;
+  string currency_code = 11;
 }
 
 message OfferTripRequest {

@@ -14,37 +14,92 @@ const (
 	DiscountFixed      DiscountType = "fixed_amount"
 )
 
-// Config is the active rate card for this deployment. One deployment =
-// one currency (matches the "sell a separate instance per client"
-// business model — no need for multi-currency inside one instance).
+// Config is a rate card. One deployment = one currency (matches the "sell
+// a separate instance per client" business model — no need for
+// multi-currency inside one instance).
+//
+// Cards are versioned: setting one inserts a new row and the newest row for
+// a place and class is the one in force, so the numbers past fares were
+// priced with stay on file. A place is a zone, a city, or everywhere (both
+// empty); the card for every class everywhere always exists.
 type Config struct {
 	ID string
-	// Empty means this is the deployment's global default rate card,
-	// not tied to any specific service zone.
+	// At most one of ZoneID and CityID is set; neither means everywhere.
 	ZoneID string
+	CityID string
 	// Empty means this rate card applies to any vehicle class; otherwise it
 	// is specific to that class (economy, comfort).
-	VehicleClass             string
-	CurrencyCode             string
-	BaseFare                 decimal.Decimal
-	PerKmRate                decimal.Decimal
-	PerMinuteRate            decimal.Decimal
+	VehicleClass  string
+	CurrencyCode  string
+	BaseFare      decimal.Decimal
+	PerKmRate     decimal.Decimal
+	PerMinuteRate decimal.Decimal
+	// MinimumFare is the least base + distance + duration comes to.
+	MinimumFare decimal.Decimal
+
+	// Waiting at the pickup, cancelling and not showing up (charged by the
+	// trip lifecycle; kept on the card so staff set every price in one
+	// place).
+	FreeWaitingMinutes       int
+	WaitingPerMinute         decimal.Decimal
+	CancellationFee          decimal.Decimal
+	CancellationGraceMinutes int
+	NoShowFee                decimal.Decimal
+
+	// MaxSurgePercent caps the surge (0 turns it off). DemandSurge and
+	// WeatherSurge say whether those two sources count at all.
+	MaxSurgePercent decimal.Decimal
+	DemandSurge     bool
+	WeatherSurge    bool
+
 	AverageSpeedKmh          float64
 	DistanceCorrectionFactor float64
-	CreatedAt                time.Time
+
+	// Retired marks a version that takes the place's card away, so trips
+	// there fall back to the next card.
+	Retired bool
+	// CreatedBy is the staff member's identity id; empty for seeded cards.
+	CreatedBy string
+	CreatedAt time.Time
+}
+
+// Scope says where a rate card or surge rule applies.
+type Scope struct {
+	ZoneID       string
+	CityID       string
+	VehicleClass string
 }
 
 // SurgeTimeRule is one entry in the configurable peak-hours schedule.
 // DayOfWeek is nil for "every day" (matches Postgres EXTRACT(DOW...):
-// 0=Sunday..6=Saturday).
+// 0=Sunday..6=Saturday). The day and the times are the local ones of the
+// city the pickup is in. A rule applies everywhere, in one city, or in one
+// zone.
 type SurgeTimeRule struct {
 	ID           string
 	Label        string
+	ZoneID       string
+	CityID       string
 	DayOfWeek    *int
 	StartTime    string // "HH:MM:SS", kept as string — no calendar date involved
 	EndTime      string
 	SurgePercent decimal.Decimal
 	Active       bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+// ZoneSurge is a surge staff put on one zone for a while.
+type ZoneSurge struct {
+	ID           string
+	ZoneID       string
+	SurgePercent decimal.Decimal
+	Reason       string
+	StartsAt     time.Time
+	EndsAt       time.Time
+	EndedAt      *time.Time
+	CreatedBy    string
+	CreatedAt    time.Time
 }
 
 // SurgeBreakdown lets each contributing factor stay visible instead of
@@ -52,12 +107,19 @@ type SurgeTimeRule struct {
 // same as every other value that feeds directly into money math below
 // (see FareBreakdown) — a percentage that multiplies a fare is exactly
 // as precision-sensitive as the fare itself.
+//
+// TotalPercent is the larger of TimeOfDayPercent and ZonePercent (both set
+// by staff, never added up) plus DemandPercent and WeatherPercent, capped by
+// the rate card.
 type SurgeBreakdown struct {
 	TimeOfDayPercent decimal.Decimal
+	ZonePercent      decimal.Decimal
 	DemandPercent    decimal.Decimal
 	WeatherPercent   decimal.Decimal
 	TotalPercent     decimal.Decimal
 	Multiplier       decimal.Decimal
+	// Label is what staff called the rule or zone surge that applies.
+	Label string
 }
 
 type Coupon struct {
@@ -104,19 +166,23 @@ type FareBreakdown struct {
 	// The service zone the pickup actually resolved to (see
 	// CheckServiceZone) — set even when that zone has no rate card of
 	// its own and pricing fell back to the global default.
-	ZoneID               string
-	BaseFare             decimal.Decimal
-	DistanceKm           float64
-	DistanceFare         decimal.Decimal
-	DurationMinutes      float64
-	DurationFare         decimal.Decimal
-	Subtotal             decimal.Decimal
-	Surge                SurgeBreakdown
-	SurgeAmount          decimal.Decimal
-	AppliedDiscountType  DiscountType
-	AppliedDiscountLabel string
-	DiscountAmount       decimal.Decimal
-	Total                decimal.Decimal
+	ZoneID          string
+	CityID          string
+	BaseFare        decimal.Decimal
+	DistanceKm      float64
+	DistanceFare    decimal.Decimal
+	DurationMinutes float64
+	DurationFare    decimal.Decimal
+	// MinimumFareAdjustment is what brought base + distance + duration up to
+	// the rate card's minimum; it is part of Subtotal.
+	MinimumFareAdjustment decimal.Decimal
+	Subtotal              decimal.Decimal
+	Surge                 SurgeBreakdown
+	SurgeAmount           decimal.Decimal
+	AppliedDiscountType   DiscountType
+	AppliedDiscountLabel  string
+	DiscountAmount        decimal.Decimal
+	Total                 decimal.Decimal
 }
 
 // Fare is the durable record of a calculated (not estimated) fare —
@@ -126,5 +192,39 @@ type Fare struct {
 	TripID    string
 	RiderID   string
 	Breakdown FareBreakdown
+	// QuoteID is the quote the fare came from; empty when the trip was
+	// priced when it completed. ConfigID is the rate card used.
+	QuoteID   string
+	ConfigID  string
 	CreatedAt time.Time
+}
+
+// Point is a latitude and longitude.
+type Point struct {
+	Latitude  float64
+	Longitude float64
+}
+
+// Quote is a price for one vehicle class, held until ExpiresAt: a trip
+// requested with it pays Breakdown.Total. Once a trip claims it, it is that
+// trip's and no other's.
+type Quote struct {
+	ID           string
+	RiderID      string
+	ZoneID       string
+	CityID       string
+	VehicleClass string
+	Pickup       Point
+	Dropoff      Point
+	Breakdown    FareBreakdown
+	ConfigID     string
+	// Coupon is the coupon the price used, if one did.
+	Coupon *AppliedCoupon
+
+	DriversAvailable bool
+	PickupETAMinutes int
+
+	CreatedAt     time.Time
+	ExpiresAt     time.Time
+	ClaimedTripID string
 }

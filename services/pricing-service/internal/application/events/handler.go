@@ -25,6 +25,9 @@ type TripInfo struct {
 	DropoffLat   float64
 	DropoffLng   float64
 	VehicleClass string
+	// QuoteID is the quote the trip was requested with, if any: its fare
+	// is the quoted one.
+	QuoteID string
 }
 
 // TripReader is pricing-service's view of trip-service.
@@ -176,6 +179,7 @@ func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error
 		DropoffLat:   trip.DropoffLat,
 		DropoffLng:   trip.DropoffLng,
 		VehicleClass: trip.VehicleClass,
+		QuoteID:      trip.QuoteID,
 	})
 	if err == nil {
 		h.logger.InfoContext(ctx, "fare calculated for completed trip", "trip_id", tripID)
@@ -214,7 +218,9 @@ func isPermanent(err error) bool {
 		errors.Is(err, pricing.ErrInvalidLongitude) ||
 		errors.Is(err, pricing.ErrRiderIDRequired) ||
 		errors.Is(err, pricing.ErrTripIDRequired) ||
-		errors.Is(err, pricing.ErrInvalidVehicleClass)
+		errors.Is(err, pricing.ErrInvalidVehicleClass) ||
+		errors.Is(err, pricing.ErrQuoteNotFound) ||
+		errors.Is(err, pricing.ErrQuoteNotForTrip)
 }
 
 // tripIDFrom prefers the envelope's aggregate id (the trip itself) and

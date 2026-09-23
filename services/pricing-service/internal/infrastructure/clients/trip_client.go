@@ -42,5 +42,6 @@ func (c *TripClient) GetTrip(
 		DropoffLat:   trip.GetDropoff().GetLatitude(),
 		DropoffLng:   trip.GetDropoff().GetLongitude(),
 		VehicleClass: trip.GetVehicleClass(),
+		QuoteID:      trip.GetQuoteId(),
 	}, nil
 }

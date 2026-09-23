@@ -74,13 +74,18 @@ type Trip struct {
 	PickupDetails      string
 	PickupNote         string
 	PickupPhotoMediaID string
-	RequestedAt        time.Time
-	AcceptedAt         *time.Time
-	StartedAt          *time.Time
-	CompletedAt        *time.Time
-	CancelledAt        *time.Time
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	// The fare quote the trip was requested with and the price it fixed
+	// (a decimal string in CurrencyCode); empty without one.
+	QuoteID      string
+	QuotedFare   string
+	CurrencyCode string
+	RequestedAt  time.Time
+	AcceptedAt   *time.Time
+	StartedAt    *time.Time
+	CompletedAt  *time.Time
+	CancelledAt  *time.Time
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 // SosTriggeredBy is who pressed the SOS button — the rider or the

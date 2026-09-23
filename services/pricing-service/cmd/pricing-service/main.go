@@ -8,9 +8,14 @@ import (
 	"syscall"
 	"time"
 
+	// Cities' time zones (surge hours are local): the runtime image has no
+	// zoneinfo of its own.
+	_ "time/tzdata"
+
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/events"
 	outboxapp "github.com/7akoom/ride-platform/services/pricing-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
+	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/tariffs"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/config"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/infrastructure/clients"
 	clockinfra "github.com/7akoom/ride-platform/services/pricing-service/internal/infrastructure/clock"
@@ -80,6 +85,13 @@ func run() int {
 	fareRoundingIncrement, err := config.ParseFareRoundingIncrement(cfg)
 	if err != nil {
 		logger.Error("invalid fare rounding configuration", "error", err)
+
+		return 1
+	}
+
+	quoteTTL, err := config.ParseQuoteTTL(cfg)
+	if err != nil {
+		logger.Error("invalid quote configuration", "error", err)
 
 		return 1
 	}
@@ -157,6 +169,36 @@ func run() int {
 
 	riderResolver := grpcserver.NewCachingResolver(clients.NewRiderResolver(riderConn))
 
+	driverConn, err := grpc.NewClient(
+		cfg.DriverServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to driver-service", "error", err)
+
+		return 1
+	}
+	defer driverConn.Close()
+
+	// Staff permissions for the price admin endpoints: every call asks
+	// staff-service (with the internal token), which audits it.
+	staffConn, err := grpc.NewClient(
+		cfg.StaffServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to staff-service", "error", err)
+
+		return 1
+	}
+	defer staffConn.Close()
+
 	natsConnection, err := natsinfra.OpenConnection(
 		natsinfra.ConnectionConfig{
 			URL:            natsConfig.URL,
@@ -212,14 +254,20 @@ func run() int {
 		},
 	)
 
+	pricingRepository := postgresrepo.NewPricingRepository(pool)
+	locationClient := clients.NewLocationClient(locationConn)
+
 	pricingService := pricing.NewService(
-		postgresrepo.NewPricingRepository(pool),
-		clients.NewLocationClient(locationConn),
+		pricingRepository,
+		locationClient,
 		routing.NewOSRMClient(cfg.OSRMBaseURL, cfg.RoutingTimeout),
 		weather.NewClient(cfg.WeatherTimeout),
+		clients.NewDriverFinder(locationClient, driverConn),
 		pricing.WithFareRounding(fareRoundingIncrement),
+		pricing.WithQuoteTTL(quoteTTL),
 	)
-	pricingHandler := grpcserver.NewPricingHandler(pricingService, logger)
+	tariffService := tariffs.NewService(pricingRepository, locationClient)
+	pricingHandler := grpcserver.NewPricingHandler(pricingService, tariffService, logger)
 
 	eventHandler := events.NewHandler(
 		pricingService,
@@ -269,7 +317,7 @@ func run() int {
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
-		grpcserver.NewAuthorizationUnaryInterceptor(riderResolver),
+		grpcserver.NewAuthorizationUnaryInterceptor(riderResolver, clients.NewStaffAuthorizer(staffConn, logger)),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterPricingService(pricingHandler)
@@ -283,6 +331,10 @@ func run() int {
 			logger.Error("outbox worker stopped with error", "error", err)
 		}
 	}()
+
+	// Quotes nobody requested a trip with are kept a day (demand counts the
+	// last minutes of them), then removed.
+	go runQuoteCleanup(ctx, pricingService, logger)
 
 	serverErrors := make(chan error, 1)
 
@@ -340,4 +392,27 @@ func run() int {
 	<-outboxDone
 
 	return 0
+}
+
+// quoteCleanupInterval is how often expired, unclaimed quotes are removed.
+const quoteCleanupInterval = time.Hour
+
+func runQuoteCleanup(ctx context.Context, service pricing.Service, logger *slog.Logger) {
+	ticker := time.NewTicker(quoteCleanupInterval)
+	defer ticker.Stop()
+
+	for {
+		removed, err := service.DeleteUnclaimedQuotes(ctx)
+		if err != nil && ctx.Err() == nil {
+			logger.Warn("failed to remove old quotes", "error", err)
+		} else if removed > 0 {
+			logger.Info("removed old quotes", "count", removed)
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }

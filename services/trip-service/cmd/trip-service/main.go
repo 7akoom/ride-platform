@@ -174,6 +174,16 @@ func run() int {
 	}
 	defer mediaConn.Close()
 
+	// pricing-service calls back into this service (GetTrip) when a trip
+	// completes; the connection is lazy, so neither has to start first.
+	pricingConn, err := dialService(cfg.PricingServiceAddress, cfg.InternalServiceToken)
+	if err != nil {
+		logger.Error("failed to connect to pricing-service", "error", err)
+
+		return 1
+	}
+	defer pricingConn.Close()
+
 	profileResolver := grpcserver.NewCachingResolver(clients.NewProfileResolver(riderConn, driverConn))
 
 	locationClient := clients.NewLocationClient(locationConn)
@@ -185,7 +195,7 @@ func run() int {
 	// WithSavedAddresses wraps the base service directly, so every other
 	// decorator's RequestTrip reaches it.
 	baseService := trip.WithSavedAddresses(
-		trip.NewService(tripRepository, idGenerator, locationClient),
+		trip.NewService(tripRepository, idGenerator, locationClient, trip.WithQuotes(clients.NewQuoteBook(pricingConn))),
 		clients.NewAddressBook(riderConn),
 	)
 

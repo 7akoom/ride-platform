@@ -55,6 +55,24 @@ subscribe to; none of them consume anything yet.
 - `ListRecentDestinations` lists where the rider's completed trips ended,
   newest first, each place once (drop-offs within about 10 m are one).
 
+## Fare quotes
+
+A trip may be requested with a `quote_id` from pricing-service
+(`POST /v1/fare-quotes`). trip-service claims it (`ClaimQuote`, internal
+token, `PRICING_SERVICE_ADDRESS`) before creating the trip: the quote must be
+the rider's, not expired and not used, and the trip's pickup and dropoff
+(after any saved address) within 50 m of the quoted ones; a named vehicle
+class must be the quoted one, and an empty one becomes it. The trip keeps
+`quote_id`, `quoted_fare` and `currency_code`, and the captain's offer shows
+the fare. If the trip cannot be created after the claim, the quote is
+released. When the trip completes, pricing charges exactly the quoted fare.
+
+A trip without a quote is priced when it completes.
+
+pricing-service calls this service (`GetTrip`) and this one calls pricing,
+so compose starts pricing after trip-service and trip-service connects to
+pricing lazily.
+
 ## What's intentionally NOT done yet
 
 Same list as the other services (observability, auth interceptor, tests,

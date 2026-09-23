@@ -7,6 +7,7 @@ import (
 
 	pricingv1 "github.com/7akoom/ride-platform/gen/go/ride/pricing/v1"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
+	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/tariffs"
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,22 +18,28 @@ type PricingHandler struct {
 	pricingv1.UnimplementedPricingServiceServer
 
 	pricingService pricing.Service
+	tariffs        *tariffs.Service
 	logger         *slog.Logger
 }
 
 func NewPricingHandler(
 	pricingService pricing.Service,
+	tariffService *tariffs.Service,
 	logger *slog.Logger,
 ) *PricingHandler {
 	if pricingService == nil {
 		panic("pricing service is required")
 	}
 
+	if tariffService == nil {
+		panic("tariff service is required")
+	}
+
 	if logger == nil {
 		panic("logger is required")
 	}
 
-	return &PricingHandler{pricingService: pricingService, logger: logger}
+	return &PricingHandler{pricingService: pricingService, tariffs: tariffService, logger: logger}
 }
 
 func (h *PricingHandler) EstimateFare(
@@ -84,6 +91,7 @@ func (h *PricingHandler) CalculateFare(
 		DropoffLng:   dropoff.GetLongitude(),
 		CouponCode:   request.GetCouponCode(),
 		VehicleClass: request.GetVehicleClass(),
+		QuoteID:      request.GetQuoteId(),
 	})
 	if err != nil {
 		return nil, h.mapPricingError(err)
@@ -176,6 +184,15 @@ func (h *PricingHandler) mapPricingError(err error) error {
 	case errors.Is(err, pricing.ErrPickupOutsideServiceZone):
 		return status.Error(codes.InvalidArgument, err.Error())
 
+	case errors.Is(err, pricing.ErrQuoteNotFound):
+		return status.Error(codes.NotFound, err.Error())
+
+	case errors.Is(err, pricing.ErrQuoteExpired),
+		errors.Is(err, pricing.ErrQuoteAlreadyUsed),
+		errors.Is(err, pricing.ErrQuoteCouponUnavailable),
+		errors.Is(err, pricing.ErrQuoteNotForTrip):
+		return status.Error(codes.FailedPrecondition, err.Error())
+
 	case errors.Is(err, pricing.ErrRiderIDRequired),
 		errors.Is(err, pricing.ErrTripIDRequired),
 		errors.Is(err, pricing.ErrInvalidLatitude),
@@ -184,13 +201,30 @@ func (h *PricingHandler) mapPricingError(err error) error {
 		errors.Is(err, pricing.ErrInvalidDiscountType),
 		errors.Is(err, pricing.ErrInvalidDiscountValue),
 		errors.Is(err, pricing.ErrInvalidValidityWindow),
-		errors.Is(err, pricing.ErrInvalidVehicleClass):
+		errors.Is(err, pricing.ErrInvalidVehicleClass),
+		errors.Is(err, pricing.ErrQuoteIDRequired):
 		return status.Error(codes.InvalidArgument, err.Error())
+
+	case upstreamUnavailable(err):
+		h.logger.Warn("a service pricing depends on is unavailable", "error", err)
+
+		return status.Error(codes.Unavailable, "pricing is unavailable right now; try again")
 
 	default:
 		h.logger.Error("unclassified pricing request failure", "error", err)
 
 		return status.Error(codes.Internal, "failed to process pricing request")
+	}
+}
+
+// upstreamUnavailable reports an error that came from another service
+// (location, driver, staff) being down or slow: the caller may retry.
+func upstreamUnavailable(err error) bool {
+	switch status.Code(err) {
+	case codes.Unavailable, codes.DeadlineExceeded:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -231,21 +265,25 @@ func parseMoney(value string) (decimal.Decimal, error) {
 
 func toProtoFareBreakdown(b pricing.FareBreakdown) *pricingv1.FareBreakdown {
 	return &pricingv1.FareBreakdown{
-		CurrencyCode:    b.CurrencyCode,
-		ZoneId:          b.ZoneID,
-		VehicleClass:    b.VehicleClass,
-		BaseFare:        b.BaseFare.String(),
-		DistanceKm:      b.DistanceKm,
-		DistanceFare:    b.DistanceFare.String(),
-		DurationMinutes: b.DurationMinutes,
-		DurationFare:    b.DurationFare.String(),
-		Subtotal:        b.Subtotal.String(),
+		CurrencyCode:          b.CurrencyCode,
+		ZoneId:                b.ZoneID,
+		CityId:                b.CityID,
+		VehicleClass:          b.VehicleClass,
+		BaseFare:              b.BaseFare.String(),
+		DistanceKm:            b.DistanceKm,
+		DistanceFare:          b.DistanceFare.String(),
+		DurationMinutes:       b.DurationMinutes,
+		DurationFare:          b.DurationFare.String(),
+		MinimumFareAdjustment: b.MinimumFareAdjustment.String(),
+		Subtotal:              b.Subtotal.String(),
 		Surge: &pricingv1.SurgeBreakdown{
 			TimeOfDayPercent: b.Surge.TimeOfDayPercent.String(),
+			ZonePercent:      b.Surge.ZonePercent.String(),
 			DemandPercent:    b.Surge.DemandPercent.String(),
 			WeatherPercent:   b.Surge.WeatherPercent.String(),
 			TotalPercent:     b.Surge.TotalPercent.String(),
 			Multiplier:       b.Surge.Multiplier.String(),
+			Label:            b.Surge.Label,
 		},
 		SurgeAmount:          b.SurgeAmount.String(),
 		AppliedDiscountType:  toProtoDiscountType(b.AppliedDiscountType),
