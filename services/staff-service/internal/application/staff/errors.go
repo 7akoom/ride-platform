@@ -1,0 +1,42 @@
+package staff
+
+import "errors"
+
+var (
+	ErrInvalidEmail        = errors.New("email address is not valid")
+	ErrDisplayNameRequired = errors.New("display name is required")
+	ErrDisplayNameTooLong  = errors.New("display name exceeds maximum length")
+	ErrRoleNameRequired    = errors.New("role name is required")
+	ErrRoleNameTooLong     = errors.New("role name exceeds maximum length")
+	ErrDescriptionTooLong  = errors.New("description exceeds maximum length")
+	ErrUnknownPermission   = errors.New("unknown permission")
+	ErrRolesRequired       = errors.New("at least one role is required")
+	ErrInvalidID           = errors.New("id is not valid")
+	ErrInvalidPageSize     = errors.New("page_size must not be negative")
+	ErrInvalidPageToken    = errors.New("page_token is not valid")
+	ErrInvalidStatus       = errors.New("status is not valid")
+	ErrInvalidAuditRequest = errors.New("identity, permission and method are required")
+	ErrInvalidOutcomeCode  = errors.New("outcome code is not a gRPC status code name")
+	ErrInvalidTimeRange    = errors.New("occurred_after must be before occurred_before")
+
+	ErrNotStaff             = errors.New("caller is not staff")
+	ErrMemberNotFound       = errors.New("staff member not found")
+	ErrRoleNotFound         = errors.New("role not found")
+	ErrAuditEntryNotFound   = errors.New("audit entry not found or already completed")
+	ErrEmailAlreadyInvited  = errors.New("this email address is already staff or invited")
+	ErrIdentityAlreadyStaff = errors.New("this identity is already bound to a staff member")
+	ErrNoInvitation         = errors.New("no invitation for the caller's verified email addresses")
+	ErrIdentityNotActive    = errors.New("the caller's identity is not active")
+	ErrIdentityRejected     = errors.New("identity-service did not accept the caller's access token")
+	ErrRoleNameTaken        = errors.New("a role with this name already exists")
+	ErrRoleInUse            = errors.New("role is still held by staff members")
+	ErrSystemRole           = errors.New("system roles cannot be changed")
+
+	ErrInvalidTransition     = errors.New("staff member is not in a state that allows this")
+	ErrSelfAction            = errors.New("staff members cannot do this to themselves")
+	ErrLastOwner             = errors.New("the last active owner cannot lose the owner role or be suspended")
+	ErrPermissionEscalation  = errors.New("cannot grant or remove permissions the caller does not hold")
+	ErrOwnerRoleRequired     = errors.New("only an owner may manage owners or the owner role")
+	ErrPermissionDenied      = errors.New("permission denied")
+	ErrStaffNotAuthenticated = errors.New("staff actor is required")
+)

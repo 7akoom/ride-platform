@@ -30,7 +30,7 @@ func runAuthorizationWith(
 		testInternalMethod: accessInternal,
 		testOwnerMethod:    accessOwner,
 		testPublicMethod:   accessAuthenticated,
-	}, checks, nil)
+	}, checks, nil, nil, nil)
 
 	ctx := context.Background()
 	if principal != nil {

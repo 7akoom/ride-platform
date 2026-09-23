@@ -16,6 +16,7 @@ import (
 	notificationv1 "github.com/7akoom/ride-platform/gen/go/ride/notification/v1"
 	pricingv1 "github.com/7akoom/ride-platform/gen/go/ride/pricing/v1"
 	riderv1 "github.com/7akoom/ride-platform/gen/go/ride/rider/v1"
+	staffv1 "github.com/7akoom/ride-platform/gen/go/ride/staff/v1"
 	tripv1 "github.com/7akoom/ride-platform/gen/go/ride/trip/v1"
 	walletv1 "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1"
 	"github.com/7akoom/ride-platform/infrastructure/gateway/internal/config"
@@ -156,6 +157,20 @@ func run() int {
 
 	if err := identityv1.RegisterIdentityServiceHandler(ctx, mux, identityConn); err != nil {
 		logger.Error("failed to register identity-service gateway handler", "error", err)
+
+		return 1
+	}
+
+	staffConn, err := dialBackend(cfg.StaffServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to staff-service", "error", err)
+
+		return 1
+	}
+	defer staffConn.Close()
+
+	if err := staffv1.RegisterStaffServiceHandler(ctx, mux, staffConn); err != nil {
+		logger.Error("failed to register staff-service gateway handler", "error", err)
 
 		return 1
 	}

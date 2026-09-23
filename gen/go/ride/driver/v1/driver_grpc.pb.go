@@ -26,6 +26,7 @@ const (
 	DriverService_UpdateAvailability_FullMethodName  = "/ride.driver.v1.DriverService/UpdateAvailability"
 	DriverService_ApproveDriver_FullMethodName       = "/ride.driver.v1.DriverService/ApproveDriver"
 	DriverService_RejectDriver_FullMethodName        = "/ride.driver.v1.DriverService/RejectDriver"
+	DriverService_ListDrivers_FullMethodName         = "/ride.driver.v1.DriverService/ListDrivers"
 )
 
 // DriverServiceClient is the client API for DriverService service.
@@ -44,11 +45,15 @@ type DriverServiceClient interface {
 	// UpdateAvailability goes online or offline; only the driver themselves may.
 	// A PENDING or REJECTED driver may only be offline (FAILED_PRECONDITION otherwise).
 	UpdateAvailability(ctx context.Context, in *UpdateAvailabilityRequest, opts ...grpc.CallOption) (*UpdateAvailabilityResponse, error)
-	// ApproveDriver moves a PENDING (or REJECTED) driver to ACTIVE. Internal only:
-	// deliberately no HTTP route, so it cannot be reached from the internet.
+	// ApproveDriver moves a PENDING (or REJECTED) driver to ACTIVE. Staff with
+	// drivers.approve, or the internal token. A driver can never approve themselves.
 	ApproveDriver(ctx context.Context, in *ApproveDriverRequest, opts ...grpc.CallOption) (*ApproveDriverResponse, error)
-	// RejectDriver moves a PENDING driver to REJECTED. Internal only, no HTTP route.
+	// RejectDriver moves a PENDING driver to REJECTED, with the reason the driver
+	// is shown. Staff with drivers.approve, or the internal token.
 	RejectDriver(ctx context.Context, in *RejectDriverRequest, opts ...grpc.CallOption) (*RejectDriverResponse, error)
+	// ListDrivers lists drivers for the review queue and the admin, newest first,
+	// optionally by status. Staff with drivers.read, or the internal token.
+	ListDrivers(ctx context.Context, in *ListDriversRequest, opts ...grpc.CallOption) (*ListDriversResponse, error)
 }
 
 type driverServiceClient struct {
@@ -129,6 +134,16 @@ func (c *driverServiceClient) RejectDriver(ctx context.Context, in *RejectDriver
 	return out, nil
 }
 
+func (c *driverServiceClient) ListDrivers(ctx context.Context, in *ListDriversRequest, opts ...grpc.CallOption) (*ListDriversResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDriversResponse)
+	err := c.cc.Invoke(ctx, DriverService_ListDrivers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DriverServiceServer is the server API for DriverService service.
 // All implementations must embed UnimplementedDriverServiceServer
 // for forward compatibility.
@@ -145,11 +160,15 @@ type DriverServiceServer interface {
 	// UpdateAvailability goes online or offline; only the driver themselves may.
 	// A PENDING or REJECTED driver may only be offline (FAILED_PRECONDITION otherwise).
 	UpdateAvailability(context.Context, *UpdateAvailabilityRequest) (*UpdateAvailabilityResponse, error)
-	// ApproveDriver moves a PENDING (or REJECTED) driver to ACTIVE. Internal only:
-	// deliberately no HTTP route, so it cannot be reached from the internet.
+	// ApproveDriver moves a PENDING (or REJECTED) driver to ACTIVE. Staff with
+	// drivers.approve, or the internal token. A driver can never approve themselves.
 	ApproveDriver(context.Context, *ApproveDriverRequest) (*ApproveDriverResponse, error)
-	// RejectDriver moves a PENDING driver to REJECTED. Internal only, no HTTP route.
+	// RejectDriver moves a PENDING driver to REJECTED, with the reason the driver
+	// is shown. Staff with drivers.approve, or the internal token.
 	RejectDriver(context.Context, *RejectDriverRequest) (*RejectDriverResponse, error)
+	// ListDrivers lists drivers for the review queue and the admin, newest first,
+	// optionally by status. Staff with drivers.read, or the internal token.
+	ListDrivers(context.Context, *ListDriversRequest) (*ListDriversResponse, error)
 	mustEmbedUnimplementedDriverServiceServer()
 }
 
@@ -180,6 +199,9 @@ func (UnimplementedDriverServiceServer) ApproveDriver(context.Context, *ApproveD
 }
 func (UnimplementedDriverServiceServer) RejectDriver(context.Context, *RejectDriverRequest) (*RejectDriverResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RejectDriver not implemented")
+}
+func (UnimplementedDriverServiceServer) ListDrivers(context.Context, *ListDriversRequest) (*ListDriversResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDrivers not implemented")
 }
 func (UnimplementedDriverServiceServer) mustEmbedUnimplementedDriverServiceServer() {}
 func (UnimplementedDriverServiceServer) testEmbeddedByValue()                       {}
@@ -328,6 +350,24 @@ func _DriverService_RejectDriver_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DriverService_ListDrivers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDriversRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ListDrivers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ListDrivers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ListDrivers(ctx, req.(*ListDriversRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DriverService_ServiceDesc is the grpc.ServiceDesc for DriverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -362,6 +402,10 @@ var DriverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RejectDriver",
 			Handler:    _DriverService_RejectDriver_Handler,
+		},
+		{
+			MethodName: "ListDrivers",
+			Handler:    _DriverService_ListDrivers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

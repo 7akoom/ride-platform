@@ -8,10 +8,14 @@ import (
 	"syscall"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
 	outboxapp "github.com/7akoom/ride-platform/services/driver-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/ratings"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/config"
+	"github.com/7akoom/ride-platform/services/driver-service/internal/infrastructure/clients"
 	clockinfra "github.com/7akoom/ride-platform/services/driver-service/internal/infrastructure/clock"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/infrastructure/database"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/infrastructure/identifier"
@@ -171,6 +175,20 @@ func run() int {
 		return 1
 	}
 
+	staffConn, err := grpc.NewClient(
+		cfg.StaffServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to staff-service", "error", err)
+
+		return 1
+	}
+	defer staffConn.Close()
+
 	rateLimitConfig, err := config.ParseRateLimit(cfg)
 	if err != nil {
 		logger.Error("invalid rate limit configuration", "error", err)
@@ -183,7 +201,7 @@ func run() int {
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
-		grpcserver.NewAuthorizationUnaryInterceptor(driverService),
+		grpcserver.NewAuthorizationUnaryInterceptor(driverService, clients.NewStaffAuthorizer(staffConn, logger)),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterDriverService(driverHandler)

@@ -29,9 +29,26 @@ service LocationService {
   // Service zones — the geographic areas the platform actually serves,
   // down to arbitrary polygons (not just a city name). See
   // CheckServiceZone for the query every trip request must pass.
-  rpc CreateZone(CreateZoneRequest) returns (ZoneResponse);
-  rpc UpdateZone(UpdateZoneRequest) returns (ZoneResponse);
-  rpc SetZoneActive(SetZoneActiveRequest) returns (ZoneResponse);
+  // CreateZone, UpdateZone and SetZoneActive change the served map: staff with
+  // zones.manage, or the internal token.
+  rpc CreateZone(CreateZoneRequest) returns (ZoneResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/zones"
+      body: "*"
+    };
+  }
+  rpc UpdateZone(UpdateZoneRequest) returns (ZoneResponse) {
+    option (google.api.http) = {
+      patch: "/v1/admin/zones/{zone_id}"
+      body: "*"
+    };
+  }
+  rpc SetZoneActive(SetZoneActiveRequest) returns (ZoneResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/zones/{zone_id}:setActive"
+      body: "*"
+    };
+  }
   // GetZone reads one service zone.
   rpc GetZone(GetZoneRequest) returns (ZoneResponse) {
     option (google.api.http) = {

@@ -4,7 +4,7 @@ What the Rider app, the Driver app and the Admin web can call, through the API
 gateway (`infrastructure/gateway`, port 8080; TLS terminates in front of it).
 Every route below is a `google.api.http` annotation in `proto/`; an RPC without an
 annotation is **not reachable** from outside (Send, FindNearby, CalculateFare,
-coupons, zone changes, dispatch, analytics...).
+coupons, dispatch, analytics, AuthorizeStaffAction...).
 
 ## Conventions
 
@@ -146,6 +146,32 @@ Searching is limited to the country set by `MAPS_COUNTRY_CODES` (Iraq by default
 `owner_type` is a query parameter because an enum cannot be bound in a URL path.
 Top-ups of a rider's wallet and trip settlement are internal: no route.
 
+### Staff and admin
+
+Staff sign in with an email OTP like anyone else. What they may do comes from
+their roles in staff-service; every admin call is recorded in the audit log
+before it runs. A caller who is not staff, or lacks the permission, gets 403.
+
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| GET | `/v1/staff/me` | any signed-in user | 404 unless staff; the staff record, roles and effective `permissions` |
+| POST | `/v1/staff/me:accept` | the invited person | binds the invitation sent to one of the caller's verified emails |
+| GET | `/v1/admin/staff?status=&page_size=&page_token=` | `staff.read` | newest first |
+| GET | `/v1/admin/staff/{staffId}` | `staff.read` | |
+| POST | `/v1/admin/staff` | `staff.manage` | `email`, `displayName`, `roleIds`; only permissions the inviter holds |
+| PUT | `/v1/admin/staff/{staffId}/roles` | `staff.manage` | `roleIds`; never your own; only owners touch owners |
+| POST | `/v1/admin/staff/{staffId}:suspend` / `:reactivate` / `:revoke` | `staff.manage` | revoke cancels an invitation not accepted yet |
+| GET | `/v1/admin/roles` · `/v1/admin/permissions` | `staff.read` | |
+| POST · PATCH · DELETE | `/v1/admin/roles`, `/v1/admin/roles/{roleId}` | `roles.manage` | custom roles only |
+| GET | `/v1/admin/audit?actor_staff_id=&permission=&target_id=&occurred_after=&occurred_before=&page_size=&page_token=` | `audit.read` | newest first |
+| GET | `/v1/admin/drivers?status=&page_size=&page_token=` | `drivers.read` | the review queue is `status=DRIVER_STATUS_PENDING` |
+| GET | `/v1/drivers/{driverId}` | the driver, or `drivers.read` | |
+| POST | `/v1/admin/drivers/{driverId}:approve` | `drivers.approve` | clears any earlier rejection reason |
+| POST | `/v1/admin/drivers/{driverId}:reject` | `drivers.approve` | `reason` is required and shown to the driver (`rejectionReason`) |
+| POST | `/v1/admin/zones` | `zones.manage` | `city`, `name`, `boundary` |
+| PATCH | `/v1/admin/zones/{zoneId}` | `zones.manage` | `name`, `boundary` |
+| POST | `/v1/admin/zones/{zoneId}:setActive` | `zones.manage` | `active` |
+
 ## Not exposed yet
 
-Ratings, admin and analytics (needs staff roles).
+Ratings and analytics.

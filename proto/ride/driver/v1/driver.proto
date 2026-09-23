@@ -42,11 +42,29 @@ service DriverService {
       body: "*"
     };
   }
-  // ApproveDriver moves a PENDING (or REJECTED) driver to ACTIVE. Internal only:
-  // deliberately no HTTP route, so it cannot be reached from the internet.
-  rpc ApproveDriver(ApproveDriverRequest) returns (ApproveDriverResponse);
-  // RejectDriver moves a PENDING driver to REJECTED. Internal only, no HTTP route.
-  rpc RejectDriver(RejectDriverRequest) returns (RejectDriverResponse);
+  // ApproveDriver moves a PENDING (or REJECTED) driver to ACTIVE. Staff with
+  // drivers.approve, or the internal token. A driver can never approve themselves.
+  rpc ApproveDriver(ApproveDriverRequest) returns (ApproveDriverResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/drivers/{driver_id}:approve"
+      body: "*"
+    };
+  }
+  // RejectDriver moves a PENDING driver to REJECTED, with the reason the driver
+  // is shown. Staff with drivers.approve, or the internal token.
+  rpc RejectDriver(RejectDriverRequest) returns (RejectDriverResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/drivers/{driver_id}:reject"
+      body: "*"
+    };
+  }
+  // ListDrivers lists drivers for the review queue and the admin, newest first,
+  // optionally by status. Staff with drivers.read, or the internal token.
+  rpc ListDrivers(ListDriversRequest) returns (ListDriversResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/drivers"
+    };
+  }
 }
 
 enum DriverStatus {
@@ -85,6 +103,8 @@ message Driver {
   int32 rating_count = 8;
   google.protobuf.Timestamp created_at = 9;
   google.protobuf.Timestamp updated_at = 10;
+  // Why the last review turned the driver down; empty unless REJECTED.
+  string rejection_reason = 11;
 }
 
 message CreateDriverRequest {
@@ -138,8 +158,23 @@ message ApproveDriverResponse {
 
 message RejectDriverRequest {
   string driver_id = 1;
+  // Shown to the driver. Optional for the internal token, required for staff.
+  string reason = 2;
 }
 
 message RejectDriverResponse {
   Driver driver = 1;
+}
+
+message ListDriversRequest {
+  // Optional filter.
+  DriverStatus status = 1;
+  int32 page_size = 2;
+  // The next_page_token of the previous page; empty for the first page.
+  string page_token = 3;
+}
+
+message ListDriversResponse {
+  repeated Driver drivers = 1;
+  string next_page_token = 2;
 }

@@ -32,6 +32,9 @@ type Config struct {
 	RiderServiceAddress  string
 	DriverServiceAddress string
 
+	// staff-service, asked before a staff member changes a service zone.
+	StaffServiceAddress string
+
 	// Per-caller token-bucket rate limit (see
 	// transport/grpc/rate_limit_interceptor.go). Defaults are generous
 	// for a single mobile-app client under normal use, tight enough to
@@ -67,6 +70,7 @@ func Load() Config {
 
 		RiderServiceAddress:  getEnv("RIDER_SERVICE_ADDRESS", "localhost:50052"),
 		DriverServiceAddress: getEnv("DRIVER_SERVICE_ADDRESS", "localhost:50053"),
+		StaffServiceAddress:  getEnv("STAFF_SERVICE_ADDRESS", "localhost:50061"),
 
 		RateLimitRequestsPerSecond: getEnv("RATE_LIMIT_REQUESTS_PER_SECOND", "20"),
 		RateLimitBurst:             getEnv("RATE_LIMIT_BURST", "40"),

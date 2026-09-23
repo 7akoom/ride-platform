@@ -15,6 +15,9 @@ const (
 	accessInternal accessLevel = iota + 1
 	accessOwner
 	accessAuthenticated
+	// accessStaff methods are for staff holding the permission named in
+	// staffPermissions (and for the internal token).
+	accessStaff
 )
 
 // ownerCheck reports whether the calling identity owns what the request
@@ -35,9 +38,9 @@ var methodAccess = map[string]accessLevel{
 	"/ride.location.v1.LocationService/UpdateLocation":   accessOwner,
 	"/ride.location.v1.LocationService/GetLocation":      accessOwner,
 	"/ride.location.v1.LocationService/FindNearby":       accessInternal,
-	"/ride.location.v1.LocationService/CreateZone":       accessInternal,
-	"/ride.location.v1.LocationService/UpdateZone":       accessInternal,
-	"/ride.location.v1.LocationService/SetZoneActive":    accessInternal,
+	"/ride.location.v1.LocationService/CreateZone":       accessStaff,
+	"/ride.location.v1.LocationService/UpdateZone":       accessStaff,
+	"/ride.location.v1.LocationService/SetZoneActive":    accessStaff,
 	"/ride.location.v1.LocationService/GetZone":          accessAuthenticated,
 	"/ride.location.v1.LocationService/ListZones":        accessAuthenticated,
 	"/ride.location.v1.LocationService/CheckServiceZone": accessAuthenticated,
@@ -46,14 +49,23 @@ var methodAccess = map[string]accessLevel{
 	"/ride.location.v1.LocationService/ReverseGeocode":   accessAuthenticated,
 }
 
-func NewAuthorizationUnaryInterceptor(resolver CallerResolver) googlegrpc.UnaryServerInterceptor {
-	return newAuthorizationInterceptor(methodAccess, ownerChecks, resolver)
+// staffPermissions names the staff permission for every accessStaff method.
+var staffPermissions = map[string]string{
+	"/ride.location.v1.LocationService/CreateZone":    "zones.manage",
+	"/ride.location.v1.LocationService/UpdateZone":    "zones.manage",
+	"/ride.location.v1.LocationService/SetZoneActive": "zones.manage",
+}
+
+func NewAuthorizationUnaryInterceptor(resolver CallerResolver, staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {
+	return newAuthorizationInterceptor(methodAccess, ownerChecks, staffPermissions, resolver, staff)
 }
 
 func newAuthorizationInterceptor(
 	levels map[string]accessLevel,
 	checks map[string]ownerCheck,
+	permissions map[string]string,
 	resolver CallerResolver,
+	staff StaffAuthorizer,
 ) googlegrpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -96,6 +108,9 @@ func newAuthorizationInterceptor(
 			if allowed {
 				return handler(ctx, request)
 			}
+
+		case accessStaff:
+			return runAsStaff(ctx, staff, principal.IdentityID, permissions[info.FullMethod], info, request, handler)
 		}
 
 		return nil, status.Error(codes.PermissionDenied, "permission denied")

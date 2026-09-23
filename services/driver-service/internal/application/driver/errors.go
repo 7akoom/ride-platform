@@ -3,13 +3,16 @@ package driver
 import "errors"
 
 var (
-	ErrDisplayNameRequired   = errors.New("driver display name is required")
-	ErrDisplayNameTooLong    = errors.New("driver display name exceeds maximum length")
-	ErrIdentityIDRequired    = errors.New("identity id is required")
-	ErrDriverIDRequired      = errors.New("driver id is required")
-	ErrVehicleFieldsRequired = errors.New("vehicle make, model, and plate number are required")
-	ErrInvalidVehicleClass   = errors.New("invalid vehicle class")
-	ErrInvalidAvailability   = errors.New("invalid availability status")
+	ErrDisplayNameRequired    = errors.New("driver display name is required")
+	ErrDisplayNameTooLong     = errors.New("driver display name exceeds maximum length")
+	ErrIdentityIDRequired     = errors.New("identity id is required")
+	ErrDriverIDRequired       = errors.New("driver id is required")
+	ErrVehicleFieldsRequired  = errors.New("vehicle make, model, and plate number are required")
+	ErrInvalidVehicleClass    = errors.New("invalid vehicle class")
+	ErrInvalidAvailability    = errors.New("invalid availability status")
+	ErrRejectionReasonTooLong = errors.New("rejection reason exceeds maximum length")
+	ErrInvalidListQuery       = errors.New("invalid driver list query")
+	ErrInvalidPageToken       = errors.New("page_token is not valid")
 
 	ErrDriverNotFound      = errors.New("driver not found")
 	ErrDriverAlreadyExists = errors.New("driver already exists for this identity")

@@ -15,6 +15,9 @@ const (
 	accessInternal accessLevel = iota + 1
 	accessOwner
 	accessAuthenticated
+	// accessStaff methods are for staff holding the permission named in
+	// staffPermissions (and for the internal token).
+	accessStaff
 )
 
 // ownerCheck reports whether the calling identity owns what the request
@@ -34,20 +37,32 @@ var methodAccess = map[string]accessLevel{
 	"/ride.driver.v1.DriverService/UpdateDriverProfile": accessOwner,
 	"/ride.driver.v1.DriverService/UpdateAvailability":  accessOwner,
 
-	// Operator actions: only a service holding the internal token may call
-	// them. A driver approving themselves is the exact thing this blocks.
-	"/ride.driver.v1.DriverService/ApproveDriver": accessInternal,
-	"/ride.driver.v1.DriverService/RejectDriver":  accessInternal,
+	// Operator actions: staff with the permission, or the internal token.
+	// A driver approving themselves is the exact thing this blocks.
+	"/ride.driver.v1.DriverService/ApproveDriver": accessStaff,
+	"/ride.driver.v1.DriverService/RejectDriver":  accessStaff,
+	"/ride.driver.v1.DriverService/ListDrivers":   accessStaff,
 }
 
-func NewAuthorizationUnaryInterceptor(drivers DriverReader) googlegrpc.UnaryServerInterceptor {
-	return newAuthorizationInterceptor(methodAccess, ownerChecks, drivers)
+// staffPermissions names the staff permission for every accessStaff method,
+// and for accessOwner methods staff may also use on someone else's data.
+var staffPermissions = map[string]string{
+	"/ride.driver.v1.DriverService/ApproveDriver": "drivers.approve",
+	"/ride.driver.v1.DriverService/RejectDriver":  "drivers.approve",
+	"/ride.driver.v1.DriverService/ListDrivers":   "drivers.read",
+	"/ride.driver.v1.DriverService/GetDriver":     "drivers.read",
+}
+
+func NewAuthorizationUnaryInterceptor(drivers DriverReader, staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {
+	return newAuthorizationInterceptor(methodAccess, ownerChecks, staffPermissions, drivers, staff)
 }
 
 func newAuthorizationInterceptor(
 	levels map[string]accessLevel,
 	checks map[string]ownerCheck,
+	permissions map[string]string,
 	drivers DriverReader,
+	staff StaffAuthorizer,
 ) googlegrpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -90,6 +105,13 @@ func newAuthorizationInterceptor(
 			if allowed {
 				return handler(ctx, request)
 			}
+
+			if permission, staffMay := permissions[info.FullMethod]; staffMay {
+				return runAsStaff(ctx, staff, principal.IdentityID, permission, info, request, handler)
+			}
+
+		case accessStaff:
+			return runAsStaff(ctx, staff, principal.IdentityID, permissions[info.FullMethod], info, request, handler)
 		}
 
 		return nil, status.Error(codes.PermissionDenied, "permission denied")

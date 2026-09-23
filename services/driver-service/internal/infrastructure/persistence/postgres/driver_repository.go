@@ -57,7 +57,8 @@ func (r *DriverRepository) Create(
 		 RETURNING id, identity_id, display_name, status, availability_status,
 		           vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
 		           vehicle_class,
-		           rating_average, rating_count, created_at, updated_at`,
+		           rating_average, rating_count, created_at, updated_at,
+		           rejection_reason`,
 		input.ID,
 		input.IdentityID,
 		input.DisplayName,
@@ -125,7 +126,8 @@ func (r *DriverRepository) FindByID(
 		`SELECT id, identity_id, display_name, status, availability_status,
 		        vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
 		        vehicle_class,
-		        rating_average, rating_count, created_at, updated_at
+		        rating_average, rating_count, created_at, updated_at,
+		           rejection_reason
 		 FROM drivers
 		 WHERE id = $1`,
 		driverID,
@@ -153,7 +155,8 @@ func (r *DriverRepository) FindByIdentityID(
 		`SELECT id, identity_id, display_name, status, availability_status,
 		        vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
 		        vehicle_class,
-		        rating_average, rating_count, created_at, updated_at
+		        rating_average, rating_count, created_at, updated_at,
+		           rejection_reason
 		 FROM drivers
 		 WHERE identity_id = $1`,
 		identityID,
@@ -192,7 +195,8 @@ func (r *DriverRepository) UpdateProfile(
 		 RETURNING id, identity_id, display_name, status, availability_status,
 		           vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
 		           vehicle_class,
-		           rating_average, rating_count, created_at, updated_at`,
+		           rating_average, rating_count, created_at, updated_at,
+		           rejection_reason`,
 		input.DriverID,
 		input.DisplayName,
 		input.Vehicle.Make,
@@ -234,7 +238,8 @@ func (r *DriverRepository) UpdateAvailability(
 		 RETURNING id, identity_id, display_name, status, availability_status,
 		           vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
 		           vehicle_class,
-		           rating_average, rating_count, created_at, updated_at`,
+		           rating_average, rating_count, created_at, updated_at,
+		           rejection_reason`,
 		input.DriverID,
 		string(input.AvailabilityStatus),
 	)
@@ -270,6 +275,7 @@ func scanDriver(row pgx.Row, dest *driver.Driver) error {
 		&dest.RatingCount,
 		&dest.CreatedAt,
 		&dest.UpdatedAt,
+		&dest.RejectionReason,
 	)
 	if err != nil {
 		return err

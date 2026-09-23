@@ -134,4 +134,7 @@ type Driver struct {
 	RatingCount        int32
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
+	// RejectionReason is why the last review turned the driver down; empty
+	// unless the driver is rejected.
+	RejectionReason string
 }

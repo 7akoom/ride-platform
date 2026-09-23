@@ -34,6 +34,10 @@ type Config struct {
 	// no end-user access token to check). Must be identical across every
 	// service in a deployment; treat it like a password — the checked-in
 	// default is for local dev only.
+	// staff-service, asked before an admin RPC (driver approval, the driver
+	// list) runs on behalf of a staff member.
+	StaffServiceAddress string
+
 	InternalServiceToken string
 
 	// Per-caller token-bucket rate limit (see
@@ -121,6 +125,8 @@ func Load() Config {
 			"ACCESS_TOKEN_KEY_ID",
 			"identity-dev-1",
 		),
+
+		StaffServiceAddress: getEnv("STAFF_SERVICE_ADDRESS", "localhost:50061"),
 
 		InternalServiceToken: getEnv(
 			"INTERNAL_SERVICE_TOKEN",

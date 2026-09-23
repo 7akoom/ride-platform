@@ -30,6 +30,10 @@
       "name": "RiderService"
     },
     {
+      "name": "StaffService",
+      "description": "StaffService owns who works on the platform (operators, finance, support),\nwhat each of them may do, and the audit trail of what they did.\n\nStaff sign in like everyone else, through identity-service (an email OTP).\nIdentity only proves who they are; the roles and permissions here decide what\nthey may do. Every admin RPC in any service asks AuthorizeStaffAction first,\nwhich records the attempt before it runs."
+    },
+    {
       "name": "TripService"
     },
     {
@@ -43,6 +47,734 @@
     "application/json"
   ],
   "paths": {
+    "/v1/admin/audit": {
+      "get": {
+        "summary": "ListAuditEntries lists what staff did, newest first. Needs audit.read.",
+        "operationId": "StaffService_ListAuditEntries",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListAuditEntriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "actorStaffId",
+            "description": "Optional filters.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "permission",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "targetId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "occurredAfter",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "occurredBefore",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/drivers": {
+      "get": {
+        "summary": "ListDrivers lists drivers for the review queue and the admin, newest first,\noptionally by status. Staff with drivers.read, or the internal token.",
+        "operationId": "DriverService_ListDrivers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListDriversResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "status",
+            "description": "Optional filter.\n\n - DRIVER_STATUS_PENDING: Registered, waiting for an operator to review the driver.\n - DRIVER_STATUS_REJECTED: Reviewed and turned down by an operator.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "DRIVER_STATUS_UNSPECIFIED",
+              "DRIVER_STATUS_ACTIVE",
+              "DRIVER_STATUS_SUSPENDED",
+              "DRIVER_STATUS_PENDING",
+              "DRIVER_STATUS_REJECTED"
+            ],
+            "default": "DRIVER_STATUS_UNSPECIFIED"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "description": "The next_page_token of the previous page; empty for the first page.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/admin/drivers/{driverId}:approve": {
+      "post": {
+        "summary": "ApproveDriver moves a PENDING (or REJECTED) driver to ACTIVE. Staff with\ndrivers.approve, or the internal token. A driver can never approve themselves.",
+        "operationId": "DriverService_ApproveDriver",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ApproveDriverResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceApproveDriverBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/admin/drivers/{driverId}:reject": {
+      "post": {
+        "summary": "RejectDriver moves a PENDING driver to REJECTED, with the reason the driver\nis shown. Staff with drivers.approve, or the internal token.",
+        "operationId": "DriverService_RejectDriver",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RejectDriverResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceRejectDriverBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/admin/permissions": {
+      "get": {
+        "summary": "ListPermissions lists every permission a role can grant. Needs staff.read.",
+        "operationId": "StaffService_ListPermissions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListPermissionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/roles": {
+      "get": {
+        "summary": "ListRoles lists system and custom roles. Needs staff.read.",
+        "operationId": "StaffService_ListRoles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListRolesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "StaffService"
+        ]
+      },
+      "post": {
+        "summary": "CreateRole adds a custom role. Needs roles.manage, and every permission it grants.",
+        "operationId": "StaffService_CreateRole",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RoleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateRoleRequest"
+            }
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/roles/{roleId}": {
+      "delete": {
+        "summary": "DeleteRole removes a custom role nobody holds. Needs roles.manage.",
+        "operationId": "StaffService_DeleteRole",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteRoleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      },
+      "patch": {
+        "summary": "UpdateRole renames a custom role or changes its permissions. System roles\ncannot change. Needs roles.manage, and every permission added or removed.",
+        "operationId": "StaffService_UpdateRole",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RoleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StaffServiceUpdateRoleBody"
+            }
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/staff": {
+      "get": {
+        "summary": "ListStaffMembers lists staff, optionally by status. Needs staff.read.",
+        "operationId": "StaffService_ListStaffMembers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListStaffMembersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "status",
+            "description": "Optional filter.\n\n - STAFF_STATUS_INVITED: Invited, waiting for the person to sign in and accept.\n - STAFF_STATUS_REVOKED: An invitation cancelled before it was accepted.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "STAFF_STATUS_UNSPECIFIED",
+              "STAFF_STATUS_INVITED",
+              "STAFF_STATUS_ACTIVE",
+              "STAFF_STATUS_SUSPENDED",
+              "STAFF_STATUS_REVOKED"
+            ],
+            "default": "STAFF_STATUS_UNSPECIFIED"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      },
+      "post": {
+        "summary": "InviteStaffMember invites an email address with a set of roles. Needs\nstaff.manage, and every permission the roles grant.",
+        "operationId": "StaffService_InviteStaffMember",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffMemberResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1InviteStaffMemberRequest"
+            }
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/staff/{staffId}": {
+      "get": {
+        "summary": "GetStaffMember reads one staff member. Needs staff.read.",
+        "operationId": "StaffService_GetStaffMember",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffMemberResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "staffId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/staff/{staffId}/roles": {
+      "put": {
+        "summary": "SetStaffRoles replaces a staff member's roles. Needs staff.manage, and\nevery permission of the roles added or removed.",
+        "operationId": "StaffService_SetStaffRoles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffMemberResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "staffId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StaffServiceSetStaffRolesBody"
+            }
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/staff/{staffId}:reactivate": {
+      "post": {
+        "summary": "ReactivateStaffMember lifts a suspension. Needs staff.manage.",
+        "operationId": "StaffService_ReactivateStaffMember",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffMemberResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "staffId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StaffServiceReactivateStaffMemberBody"
+            }
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/staff/{staffId}:revoke": {
+      "post": {
+        "summary": "RevokeStaffInvite cancels an invitation that was not accepted yet. Needs staff.manage.",
+        "operationId": "StaffService_RevokeStaffInvite",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffMemberResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "staffId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StaffServiceRevokeStaffInviteBody"
+            }
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/staff/{staffId}:suspend": {
+      "post": {
+        "summary": "SuspendStaffMember blocks an active staff member at once. Needs staff.manage.",
+        "operationId": "StaffService_SuspendStaffMember",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffMemberResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "staffId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StaffServiceSuspendStaffMemberBody"
+            }
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/zones": {
+      "post": {
+        "summary": "Service zones — the geographic areas the platform actually serves,\ndown to arbitrary polygons (not just a city name). See\nCheckServiceZone for the query every trip request must pass.\nCreateZone, UpdateZone and SetZoneActive change the served map: staff with\nzones.manage, or the internal token.",
+        "operationId": "LocationService_CreateZone",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ZoneResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateZoneRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/admin/zones/{zoneId}": {
+      "patch": {
+        "operationId": "LocationService_UpdateZone",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ZoneResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "zoneId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LocationServiceUpdateZoneBody"
+            }
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/admin/zones/{zoneId}:setActive": {
+      "post": {
+        "operationId": "LocationService_SetZoneActive",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ZoneResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "zoneId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LocationServiceSetZoneActiveBody"
+            }
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
     "/v1/analytics/cancellations": {
       "get": {
         "operationId": "AnalyticsService_GetCancellationBreakdown",
@@ -1451,6 +2183,62 @@
         ]
       }
     },
+    "/v1/staff/me": {
+      "get": {
+        "summary": "GetMyStaffProfile returns the caller's staff record, roles and effective\npermissions. NOT_FOUND when the caller is not staff.",
+        "operationId": "StaffService_GetMyStaffProfile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetMyStaffProfileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
+    "/v1/staff/me:accept": {
+      "post": {
+        "summary": "AcceptStaffInvite binds the caller's identity to the invitation sent to one\nof the caller's verified email addresses, and activates it.",
+        "operationId": "StaffService_AcceptStaffInvite",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AcceptStaffInviteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1AcceptStaffInviteRequest"
+            }
+          }
+        ],
+        "tags": [
+          "StaffService"
+        ]
+      }
+    },
     "/v1/trips": {
       "get": {
         "summary": "ListTrips is the caller's trip history, newest first, one page at a time. Name\nexactly one of rider_id and driver_id, and it must be the caller's own profile.\nPass the previous page's next_page_token to get the following page; an empty\nnext_page_token means that was the last one.",
@@ -2339,6 +3127,18 @@
     }
   },
   "definitions": {
+    "DriverServiceApproveDriverBody": {
+      "type": "object"
+    },
+    "DriverServiceRejectDriverBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "Shown to the driver. Optional for the internal token, required for staff."
+        }
+      }
+    },
     "DriverServiceUpdateAvailabilityBody": {
       "type": "object",
       "properties": {
@@ -2358,6 +3158,14 @@
         }
       }
     },
+    "LocationServiceSetZoneActiveBody": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean"
+        }
+      }
+    },
     "LocationServiceUpdateLocationBody": {
       "type": "object",
       "properties": {
@@ -2369,11 +3177,63 @@
         }
       }
     },
+    "LocationServiceUpdateZoneBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "boundary": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/rideLocationV1Coordinates"
+          }
+        }
+      }
+    },
     "RiderServiceUpdateRiderProfileBody": {
       "type": "object",
       "properties": {
         "displayName": {
           "type": "string"
+        }
+      }
+    },
+    "StaffServiceReactivateStaffMemberBody": {
+      "type": "object"
+    },
+    "StaffServiceRevokeStaffInviteBody": {
+      "type": "object"
+    },
+    "StaffServiceSetStaffRolesBody": {
+      "type": "object",
+      "properties": {
+        "roleIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "StaffServiceSuspendStaffMemberBody": {
+      "type": "object"
+    },
+    "StaffServiceUpdateRoleBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -2541,6 +3401,23 @@
         }
       }
     },
+    "v1AcceptStaffInviteRequest": {
+      "type": "object"
+    },
+    "v1AcceptStaffInviteResponse": {
+      "type": "object",
+      "properties": {
+        "staffMember": {
+          "$ref": "#/definitions/v1StaffMember"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "v1AcceptTripResponse": {
       "type": "object",
       "properties": {
@@ -2548,6 +3425,76 @@
           "$ref": "#/definitions/v1Trip"
         }
       }
+    },
+    "v1ApproveDriverResponse": {
+      "type": "object",
+      "properties": {
+        "driver": {
+          "$ref": "#/definitions/v1Driver"
+        }
+      }
+    },
+    "v1AuditDecision": {
+      "type": "string",
+      "enum": [
+        "AUDIT_DECISION_UNSPECIFIED",
+        "AUDIT_DECISION_ALLOWED",
+        "AUDIT_DECISION_DENIED"
+      ],
+      "default": "AUDIT_DECISION_UNSPECIFIED"
+    },
+    "v1AuditEntry": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "occurredAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actorStaffId": {
+          "type": "string"
+        },
+        "actorIdentityId": {
+          "type": "string"
+        },
+        "permission": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string",
+          "description": "Full gRPC method, e.g. /ride.driver.v1.DriverService/ApproveDriver."
+        },
+        "targetId": {
+          "type": "string"
+        },
+        "decision": {
+          "$ref": "#/definitions/v1AuditDecision"
+        },
+        "outcome": {
+          "$ref": "#/definitions/v1AuditOutcome"
+        },
+        "outcomeCode": {
+          "type": "string",
+          "description": "gRPC status code name the action ended with (OK, NotFound, ...)."
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1AuditOutcome": {
+      "type": "string",
+      "enum": [
+        "AUDIT_OUTCOME_UNSPECIFIED",
+        "AUDIT_OUTCOME_PENDING",
+        "AUDIT_OUTCOME_SUCCEEDED",
+        "AUDIT_OUTCOME_FAILED"
+      ],
+      "default": "AUDIT_OUTCOME_UNSPECIFIED",
+      "description": " - AUDIT_OUTCOME_PENDING: Allowed, and the service has not reported how it ended (yet)."
     },
     "v1AvailabilityStatus": {
       "type": "string",
@@ -2671,6 +3618,41 @@
         }
       }
     },
+    "v1CreateRoleRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1CreateZoneRequest": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "boundary": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/rideLocationV1Coordinates"
+          }
+        }
+      }
+    },
     "v1DateRange": {
       "type": "object",
       "properties": {
@@ -2683,6 +3665,9 @@
           "format": "date-time"
         }
       }
+    },
+    "v1DeleteRoleResponse": {
+      "type": "object"
     },
     "v1DiscountType": {
       "type": "string",
@@ -2729,6 +3714,10 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "rejectionReason": {
+          "type": "string",
+          "description": "Why the last review turned the driver down; empty unless REJECTED."
         }
       }
     },
@@ -2946,6 +3935,21 @@
             "type": "object",
             "$ref": "#/definitions/v1VerifiedIdentifier"
           }
+        }
+      }
+    },
+    "v1GetMyStaffProfileResponse": {
+      "type": "object",
+      "properties": {
+        "staffMember": {
+          "$ref": "#/definitions/v1StaffMember"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Empty unless the staff member is active."
         }
       }
     },
@@ -3172,6 +4176,53 @@
         }
       }
     },
+    "v1InviteStaffMemberRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "roleIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1ListAuditEntriesResponse": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AuditEntry"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListDriversResponse": {
+      "type": "object",
+      "properties": {
+        "drivers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Driver"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListMySessionsResponse": {
       "type": "object",
       "properties": {
@@ -3197,6 +4248,45 @@
         "unreadCount": {
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "v1ListPermissionsResponse": {
+      "type": "object",
+      "properties": {
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Permission"
+          }
+        }
+      }
+    },
+    "v1ListRolesResponse": {
+      "type": "object",
+      "properties": {
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Role"
+          }
+        }
+      }
+    },
+    "v1ListStaffMembersResponse": {
+      "type": "object",
+      "properties": {
+        "staffMembers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1StaffMember"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
         }
       }
     },
@@ -3359,6 +4449,17 @@
       ],
       "default": "PAYMENT_METHOD_UNSPECIFIED"
     },
+    "v1Permission": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
     "v1Place": {
       "type": "object",
       "properties": {
@@ -3510,6 +4611,14 @@
       "properties": {
         "deviceId": {
           "type": "string"
+        }
+      }
+    },
+    "v1RejectDriverResponse": {
+      "type": "object",
+      "properties": {
+        "driver": {
+          "$ref": "#/definitions/v1Driver"
         }
       }
     },
@@ -3725,6 +4834,49 @@
       ],
       "default": "RIDER_STATUS_UNSPECIFIED"
     },
+    "v1Role": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string",
+          "description": "Stable name used in code for system roles (owner, operations); empty for custom roles."
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "system": {
+          "type": "boolean"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1RoleResponse": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "$ref": "#/definitions/v1Role"
+        }
+      }
+    },
     "v1SearchPlacesResponse": {
       "type": "object",
       "properties": {
@@ -3789,6 +4941,73 @@
         "SOS_TRIGGERED_BY_DRIVER"
       ],
       "default": "SOS_TRIGGERED_BY_UNSPECIFIED"
+    },
+    "v1StaffMember": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "identityId": {
+          "type": "string",
+          "description": "Empty until the invitation is accepted."
+        },
+        "email": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1StaffStatus"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Role"
+          }
+        },
+        "invitedByStaffId": {
+          "type": "string"
+        },
+        "invitedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "activatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1StaffMemberResponse": {
+      "type": "object",
+      "properties": {
+        "staffMember": {
+          "$ref": "#/definitions/v1StaffMember"
+        }
+      }
+    },
+    "v1StaffStatus": {
+      "type": "string",
+      "enum": [
+        "STAFF_STATUS_UNSPECIFIED",
+        "STAFF_STATUS_INVITED",
+        "STAFF_STATUS_ACTIVE",
+        "STAFF_STATUS_SUSPENDED",
+        "STAFF_STATUS_REVOKED"
+      ],
+      "default": "STAFF_STATUS_UNSPECIFIED",
+      "description": " - STAFF_STATUS_INVITED: Invited, waiting for the person to sign in and accept.\n - STAFF_STATUS_REVOKED: An invitation cancelled before it was accepted."
     },
     "v1StartTripResponse": {
       "type": "object",

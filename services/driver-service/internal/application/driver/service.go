@@ -60,9 +60,30 @@ type Service interface {
 		driverID string,
 	) (Driver, error)
 
-	// RejectDriver moves a pending driver to rejected.
+	// RejectDriver moves a pending driver to rejected, keeping the reason
+	// the driver is shown.
 	RejectDriver(
 		ctx context.Context,
 		driverID string,
+		reason string,
 	) (Driver, error)
+
+	// ListDrivers returns one page of drivers, newest first.
+	ListDrivers(
+		ctx context.Context,
+		query ListDriversQuery,
+	) (DriversPage, error)
+}
+
+// ListDriversQuery asks for one page of drivers, optionally of one status.
+type ListDriversQuery struct {
+	Status    Status
+	PageSize  int
+	PageToken string
+}
+
+// DriversPage is one page of drivers. NextPageToken is empty on the last page.
+type DriversPage struct {
+	Drivers       []Driver
+	NextPageToken string
 }

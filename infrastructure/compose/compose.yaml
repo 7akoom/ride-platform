@@ -253,6 +253,34 @@ services:
 
     restart: unless-stopped
 
+  staff-postgres:
+    image: postgres:17-alpine3.24
+    container_name: ride-staff-postgres
+
+    environment:
+      POSTGRES_DB: ${STAFF_DB_NAME:?STAFF_DB_NAME is required}
+      POSTGRES_USER: ${STAFF_DB_USER:?STAFF_DB_USER is required}
+      POSTGRES_PASSWORD: ${STAFF_DB_PASSWORD:?STAFF_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:5442:5432"
+
+    volumes:
+      - staff-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${STAFF_DB_USER} -d ${STAFF_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
   # Road routing for pricing-service. Requires a one-time dataset build:
   # see infrastructure/osrm/README.md. Starts only once that's done.
   osrm:
@@ -589,6 +617,7 @@ services:
       METRICS_ADDRESS: ":9093"
       DATABASE_URL: postgres://${DRIVER_DB_USER}:${DRIVER_DB_PASSWORD}@driver-postgres:5432/${DRIVER_DB_NAME}?sslmode=disable
       NATS_URL: nats://nats:4222
+      STAFF_SERVICE_ADDRESS: staff-service:50061
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -598,6 +627,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
+      staff-service:
+        condition: service_started
 
     ports:
       - "127.0.0.1:50053:50053"
@@ -627,6 +658,7 @@ services:
       DATABASE_URL: postgres://${LOCATION_DB_USER}:${LOCATION_DB_PASSWORD}@location-postgres:5432/${LOCATION_DB_NAME}?sslmode=disable
       RIDER_SERVICE_ADDRESS: rider-service:50052
       DRIVER_SERVICE_ADDRESS: driver-service:50053
+      STAFF_SERVICE_ADDRESS: staff-service:50061
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -639,6 +671,8 @@ services:
       rider-service:
         condition: service_started
       driver-service:
+        condition: service_started
+      staff-service:
         condition: service_started
 
     ports:
@@ -890,6 +924,41 @@ services:
 
     restart: unless-stopped
 
+  # Staff accounts, roles and permissions, and the audit log of staff actions.
+  # Every admin RPC in any service asks it first (AuthorizeStaffAction).
+  staff-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: staff-service
+    image: ride-platform/staff-service:dev
+    container_name: ride-staff-service
+
+    env_file:
+      - ../../services/staff-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50061"
+      METRICS_ADDRESS: ":9101"
+      DATABASE_URL: postgres://${STAFF_DB_USER}:${STAFF_DB_PASSWORD}@staff-postgres:5432/${STAFF_DB_NAME}?sslmode=disable
+      IDENTITY_SERVICE_ADDRESS: identity-service:50051
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      staff-postgres:
+        condition: service_healthy
+      identity-service:
+        condition: service_started
+
+    ports:
+      - "127.0.0.1:50061:50061"
+      - "127.0.0.1:9101:9101"
+
+    restart: unless-stopped
+
   gateway:
     build:
       context: ../..
@@ -907,6 +976,7 @@ services:
       PRICING_SERVICE_ADDRESS: pricing-service:50057
       NOTIFICATION_SERVICE_ADDRESS: notification-service:50059
       IDENTITY_SERVICE_ADDRESS: identity-service:50051
+      STAFF_SERVICE_ADDRESS: staff-service:50061
       ALLOWED_ORIGINS: http://localhost:3000
 
     depends_on:
@@ -925,6 +995,8 @@ services:
       notification-service:
         condition: service_started
       identity-service:
+        condition: service_started
+      staff-service:
         condition: service_started
 
     ports:
@@ -987,6 +1059,7 @@ volumes:
   notification-postgres-data:
   location-postgres-data:
   analytics-postgres-data:
+  staff-postgres-data:
   identity-valkey-data:
   location-valkey-data:
   nats-jetstream-data:

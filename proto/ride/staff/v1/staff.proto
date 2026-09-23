@@ -1,0 +1,335 @@
+syntax = "proto3";
+
+package ride.staff.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/staff/v1;staffv1";
+
+// StaffService owns who works on the platform (operators, finance, support),
+// what each of them may do, and the audit trail of what they did.
+//
+// Staff sign in like everyone else, through identity-service (an email OTP).
+// Identity only proves who they are; the roles and permissions here decide what
+// they may do. Every admin RPC in any service asks AuthorizeStaffAction first,
+// which records the attempt before it runs.
+service StaffService {
+  // GetMyStaffProfile returns the caller's staff record, roles and effective
+  // permissions. NOT_FOUND when the caller is not staff.
+  rpc GetMyStaffProfile(GetMyStaffProfileRequest) returns (GetMyStaffProfileResponse) {
+    option (google.api.http) = {
+      get: "/v1/staff/me"
+    };
+  }
+  // AcceptStaffInvite binds the caller's identity to the invitation sent to one
+  // of the caller's verified email addresses, and activates it.
+  rpc AcceptStaffInvite(AcceptStaffInviteRequest) returns (AcceptStaffInviteResponse) {
+    option (google.api.http) = {
+      post: "/v1/staff/me:accept"
+      body: "*"
+    };
+  }
+
+  // ListStaffMembers lists staff, optionally by status. Needs staff.read.
+  rpc ListStaffMembers(ListStaffMembersRequest) returns (ListStaffMembersResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/staff"
+    };
+  }
+  // GetStaffMember reads one staff member. Needs staff.read.
+  rpc GetStaffMember(GetStaffMemberRequest) returns (StaffMemberResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/staff/{staff_id}"
+    };
+  }
+  // InviteStaffMember invites an email address with a set of roles. Needs
+  // staff.manage, and every permission the roles grant.
+  rpc InviteStaffMember(InviteStaffMemberRequest) returns (StaffMemberResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/staff"
+      body: "*"
+    };
+  }
+  // SetStaffRoles replaces a staff member's roles. Needs staff.manage, and
+  // every permission of the roles added or removed.
+  rpc SetStaffRoles(SetStaffRolesRequest) returns (StaffMemberResponse) {
+    option (google.api.http) = {
+      put: "/v1/admin/staff/{staff_id}/roles"
+      body: "*"
+    };
+  }
+  // SuspendStaffMember blocks an active staff member at once. Needs staff.manage.
+  rpc SuspendStaffMember(SuspendStaffMemberRequest) returns (StaffMemberResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/staff/{staff_id}:suspend"
+      body: "*"
+    };
+  }
+  // ReactivateStaffMember lifts a suspension. Needs staff.manage.
+  rpc ReactivateStaffMember(ReactivateStaffMemberRequest) returns (StaffMemberResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/staff/{staff_id}:reactivate"
+      body: "*"
+    };
+  }
+  // RevokeStaffInvite cancels an invitation that was not accepted yet. Needs staff.manage.
+  rpc RevokeStaffInvite(RevokeStaffInviteRequest) returns (StaffMemberResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/staff/{staff_id}:revoke"
+      body: "*"
+    };
+  }
+
+  // ListRoles lists system and custom roles. Needs staff.read.
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/roles"
+    };
+  }
+  // CreateRole adds a custom role. Needs roles.manage, and every permission it grants.
+  rpc CreateRole(CreateRoleRequest) returns (RoleResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/roles"
+      body: "*"
+    };
+  }
+  // UpdateRole renames a custom role or changes its permissions. System roles
+  // cannot change. Needs roles.manage, and every permission added or removed.
+  rpc UpdateRole(UpdateRoleRequest) returns (RoleResponse) {
+    option (google.api.http) = {
+      patch: "/v1/admin/roles/{role_id}"
+      body: "*"
+    };
+  }
+  // DeleteRole removes a custom role nobody holds. Needs roles.manage.
+  rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse) {
+    option (google.api.http) = {
+      delete: "/v1/admin/roles/{role_id}"
+    };
+  }
+  // ListPermissions lists every permission a role can grant. Needs staff.read.
+  rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/permissions"
+    };
+  }
+
+  // ListAuditEntries lists what staff did, newest first. Needs audit.read.
+  rpc ListAuditEntries(ListAuditEntriesRequest) returns (ListAuditEntriesResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/audit"
+    };
+  }
+
+  // AuthorizeStaffAction is asked by a service before it runs an admin RPC.
+  // It records the attempt (allowed or denied) and answers whether it may run.
+  // Internal only: no HTTP route.
+  rpc AuthorizeStaffAction(AuthorizeStaffActionRequest) returns (AuthorizeStaffActionResponse);
+  // CompleteStaffAction records how an allowed action ended. Internal only.
+  rpc CompleteStaffAction(CompleteStaffActionRequest) returns (CompleteStaffActionResponse);
+}
+
+enum StaffStatus {
+  STAFF_STATUS_UNSPECIFIED = 0;
+  // Invited, waiting for the person to sign in and accept.
+  STAFF_STATUS_INVITED = 1;
+  STAFF_STATUS_ACTIVE = 2;
+  STAFF_STATUS_SUSPENDED = 3;
+  // An invitation cancelled before it was accepted.
+  STAFF_STATUS_REVOKED = 4;
+}
+
+enum AuditDecision {
+  AUDIT_DECISION_UNSPECIFIED = 0;
+  AUDIT_DECISION_ALLOWED = 1;
+  AUDIT_DECISION_DENIED = 2;
+}
+
+enum AuditOutcome {
+  AUDIT_OUTCOME_UNSPECIFIED = 0;
+  // Allowed, and the service has not reported how it ended (yet).
+  AUDIT_OUTCOME_PENDING = 1;
+  AUDIT_OUTCOME_SUCCEEDED = 2;
+  AUDIT_OUTCOME_FAILED = 3;
+}
+
+message Role {
+  string id = 1;
+  // Stable name used in code for system roles (owner, operations); empty for custom roles.
+  string key = 2;
+  string name = 3;
+  string description = 4;
+  bool system = 5;
+  repeated string permissions = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message StaffMember {
+  string id = 1;
+  // Empty until the invitation is accepted.
+  string identity_id = 2;
+  string email = 3;
+  string display_name = 4;
+  StaffStatus status = 5;
+  repeated Role roles = 6;
+  string invited_by_staff_id = 7;
+  google.protobuf.Timestamp invited_at = 8;
+  google.protobuf.Timestamp activated_at = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+message Permission {
+  string key = 1;
+  string description = 2;
+}
+
+message AuditEntry {
+  string id = 1;
+  google.protobuf.Timestamp occurred_at = 2;
+  string actor_staff_id = 3;
+  string actor_identity_id = 4;
+  string permission = 5;
+  // Full gRPC method, e.g. /ride.driver.v1.DriverService/ApproveDriver.
+  string method = 6;
+  string target_id = 7;
+  AuditDecision decision = 8;
+  AuditOutcome outcome = 9;
+  // gRPC status code name the action ended with (OK, NotFound, ...).
+  string outcome_code = 10;
+  google.protobuf.Timestamp completed_at = 11;
+}
+
+message GetMyStaffProfileRequest {}
+
+message GetMyStaffProfileResponse {
+  StaffMember staff_member = 1;
+  // Empty unless the staff member is active.
+  repeated string permissions = 2;
+}
+
+message AcceptStaffInviteRequest {}
+
+message AcceptStaffInviteResponse {
+  StaffMember staff_member = 1;
+  repeated string permissions = 2;
+}
+
+message ListStaffMembersRequest {
+  // Optional filter.
+  StaffStatus status = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListStaffMembersResponse {
+  repeated StaffMember staff_members = 1;
+  string next_page_token = 2;
+}
+
+message GetStaffMemberRequest {
+  string staff_id = 1;
+}
+
+message StaffMemberResponse {
+  StaffMember staff_member = 1;
+}
+
+message InviteStaffMemberRequest {
+  string email = 1;
+  string display_name = 2;
+  repeated string role_ids = 3;
+}
+
+message SetStaffRolesRequest {
+  string staff_id = 1;
+  repeated string role_ids = 2;
+}
+
+message SuspendStaffMemberRequest {
+  string staff_id = 1;
+}
+
+message ReactivateStaffMemberRequest {
+  string staff_id = 1;
+}
+
+message RevokeStaffInviteRequest {
+  string staff_id = 1;
+}
+
+message ListRolesRequest {}
+
+message ListRolesResponse {
+  repeated Role roles = 1;
+}
+
+message CreateRoleRequest {
+  string name = 1;
+  string description = 2;
+  repeated string permissions = 3;
+}
+
+message UpdateRoleRequest {
+  string role_id = 1;
+  string name = 2;
+  string description = 3;
+  repeated string permissions = 4;
+}
+
+message RoleResponse {
+  Role role = 1;
+}
+
+message DeleteRoleRequest {
+  string role_id = 1;
+}
+
+message DeleteRoleResponse {}
+
+message ListPermissionsRequest {}
+
+message ListPermissionsResponse {
+  repeated Permission permissions = 1;
+}
+
+message ListAuditEntriesRequest {
+  // Optional filters.
+  string actor_staff_id = 1;
+  string permission = 2;
+  string target_id = 3;
+  google.protobuf.Timestamp occurred_after = 4;
+  google.protobuf.Timestamp occurred_before = 5;
+  int32 page_size = 6;
+  string page_token = 7;
+}
+
+message ListAuditEntriesResponse {
+  repeated AuditEntry entries = 1;
+  string next_page_token = 2;
+}
+
+message AuthorizeStaffActionRequest {
+  // The identity from the caller's verified access token.
+  string identity_id = 1;
+  string permission = 2;
+  string method = 3;
+  // What the action touches (a driver id, a zone id); optional.
+  string target_id = 4;
+}
+
+message AuthorizeStaffActionResponse {
+  bool allowed = 1;
+  // Set when allowed: pass it to CompleteStaffAction.
+  string audit_entry_id = 2;
+  string staff_id = 3;
+}
+
+message CompleteStaffActionRequest {
+  string audit_entry_id = 1;
+  // gRPC status code name: OK, NotFound, FailedPrecondition, ...
+  string outcome_code = 2;
+}
+
+message CompleteStaffActionResponse {}

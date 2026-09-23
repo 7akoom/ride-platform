@@ -119,7 +119,7 @@ func TestRejectDriver(t *testing.T) {
 	repo := &fakeRepository{updateStatusResult: driver.Driver{ID: "d1", Status: driver.StatusRejected}}
 	svc := newService(repo, "id")
 
-	got, err := svc.RejectDriver(context.Background(), "d1")
+	got, err := svc.RejectDriver(context.Background(), "d1", "")
 	if err != nil {
 		t.Fatalf("RejectDriver: %v", err)
 	}
@@ -148,7 +148,7 @@ func TestApproveAndReject_RequireDriverID(t *testing.T) {
 		t.Errorf("ApproveDriver: got %v, want ErrDriverIDRequired", err)
 	}
 
-	if _, err := svc.RejectDriver(context.Background(), ""); !errors.Is(err, driver.ErrDriverIDRequired) {
+	if _, err := svc.RejectDriver(context.Background(), "", ""); !errors.Is(err, driver.ErrDriverIDRequired) {
 		t.Errorf("RejectDriver: got %v, want ErrDriverIDRequired", err)
 	}
 
@@ -166,8 +166,87 @@ func TestApproveAndReject_PassRepositoryErrorsThrough(t *testing.T) {
 			t.Errorf("ApproveDriver: got %v, want %v", err, repoErr)
 		}
 
-		if _, err := svc.RejectDriver(context.Background(), "d1"); !errors.Is(err, repoErr) {
+		if _, err := svc.RejectDriver(context.Background(), "d1", ""); !errors.Is(err, repoErr) {
 			t.Errorf("RejectDriver: got %v, want %v", err, repoErr)
+		}
+	}
+}
+
+func TestRejectDriver_KeepsTheReasonAndApprovalClearsIt(t *testing.T) {
+	repo := &fakeRepository{updateStatusResult: driver.Driver{ID: "d1"}}
+	svc := newService(repo, "id")
+
+	if _, err := svc.RejectDriver(context.Background(), "d1", "  licence photo is blurry  "); err != nil {
+		t.Fatalf("RejectDriver: %v", err)
+	}
+
+	if _, err := svc.ApproveDriver(context.Background(), "d1"); err != nil {
+		t.Fatalf("ApproveDriver: %v", err)
+	}
+
+	if repo.updateStatusCalls[0].Reason != "licence photo is blurry" {
+		t.Errorf("reject reason = %q", repo.updateStatusCalls[0].Reason)
+	}
+
+	if repo.updateStatusCalls[1].Reason != "" {
+		t.Errorf("approve must clear the reason, got %q", repo.updateStatusCalls[1].Reason)
+	}
+
+	long := make([]rune, 501)
+	for i := range long {
+		long[i] = 'x'
+	}
+
+	if _, err := svc.RejectDriver(context.Background(), "d1", string(long)); !errors.Is(err, driver.ErrRejectionReasonTooLong) {
+		t.Errorf("a 501-character reason: got %v", err)
+	}
+}
+
+func TestListDrivers_PagesWithAnOpaqueToken(t *testing.T) {
+	ids := []string{
+		"00000000-0000-4000-8000-000000000003",
+		"00000000-0000-4000-8000-000000000002",
+		"00000000-0000-4000-8000-000000000001",
+	}
+
+	repo := &fakeRepository{}
+	for _, id := range ids {
+		repo.listResult = append(repo.listResult, driver.Driver{ID: id})
+	}
+
+	svc := newService(repo, "id")
+
+	page, err := svc.ListDrivers(context.Background(), driver.ListDriversQuery{Status: driver.StatusPending, PageSize: 2})
+	if err != nil {
+		t.Fatalf("ListDrivers: %v", err)
+	}
+
+	if len(page.Drivers) != 2 || page.NextPageToken == "" {
+		t.Fatalf("page = %d drivers, token %q", len(page.Drivers), page.NextPageToken)
+	}
+
+	if repo.listCalls[0].Limit != 3 || repo.listCalls[0].Status != driver.StatusPending || repo.listCalls[0].AfterID != "" {
+		t.Fatalf("first query = %+v", repo.listCalls[0])
+	}
+
+	repo.listResult = repo.listResult[2:]
+
+	next, err := svc.ListDrivers(context.Background(), driver.ListDriversQuery{PageSize: 2, PageToken: page.NextPageToken})
+	if err != nil || len(next.Drivers) != 1 || next.NextPageToken != "" {
+		t.Fatalf("second page: %+v, %v", next, err)
+	}
+
+	if repo.listCalls[1].AfterID != ids[1] {
+		t.Fatalf("the cursor must be the last driver of the previous page, got %q", repo.listCalls[1].AfterID)
+	}
+
+	for _, bad := range []driver.ListDriversQuery{
+		{PageToken: "not-a-token"},
+		{PageSize: -1},
+		{Status: "flying"},
+	} {
+		if _, err := svc.ListDrivers(context.Background(), bad); err == nil {
+			t.Errorf("%+v was accepted", bad)
 		}
 	}
 }

@@ -49,7 +49,7 @@ func newOwnershipDrivers() *ownershipTestDrivers {
 func callOwnershipAs(t *testing.T, identity string, drivers DriverReader, method string, request any) codes.Code {
 	t.Helper()
 
-	interceptor := NewAuthorizationUnaryInterceptor(drivers)
+	interceptor := NewAuthorizationUnaryInterceptor(drivers, nil)
 
 	ctx := contextWithAuthenticatedPrincipal(context.Background(), authenticatedPrincipal{
 		IdentityID: identity,

@@ -33,6 +33,10 @@ type fakeRepository struct {
 	updateStatusResult driver.Driver
 	updateStatusErr    error
 	updateStatusCalls  []driver.UpdateStatusInput
+
+	listResult []driver.Driver
+	listErr    error
+	listCalls  []driver.ListQuery
 }
 
 func (r *fakeRepository) Create(
@@ -451,6 +455,15 @@ func TestNewVehicle(t *testing.T) {
 			}
 		})
 	}
+}
+
+func (r *fakeRepository) List(
+	_ context.Context,
+	query driver.ListQuery,
+) ([]driver.Driver, error) {
+	r.listCalls = append(r.listCalls, query)
+
+	return r.listResult, r.listErr
 }
 
 func (r *fakeRepository) UpdateStatus(

@@ -133,6 +133,20 @@ func run() int {
 
 	profileResolver := grpcserver.NewCachingResolver(clients.NewProfileResolver(riderConn, driverConn))
 
+	staffConn, err := grpc.NewClient(
+		cfg.StaffServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to staff-service", "error", err)
+
+		return 1
+	}
+	defer staffConn.Close()
+
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,
 		cfg.AccessTokenIssuer,
@@ -157,7 +171,7 @@ func run() int {
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
-		grpcserver.NewAuthorizationUnaryInterceptor(profileResolver),
+		grpcserver.NewAuthorizationUnaryInterceptor(profileResolver, clients.NewStaffAuthorizer(staffConn, logger)),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterLocationService(locationHandler)

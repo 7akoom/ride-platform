@@ -40,7 +40,7 @@ func newOwnershipResolver() *ownershipTestResolver {
 func callOwnershipAs(t *testing.T, identity string, resolver CallerResolver, method string, request any) codes.Code {
 	t.Helper()
 
-	interceptor := NewAuthorizationUnaryInterceptor(resolver)
+	interceptor := NewAuthorizationUnaryInterceptor(resolver, nil)
 
 	ctx := contextWithAuthenticatedPrincipal(context.Background(), authenticatedPrincipal{
 		IdentityID: identity,

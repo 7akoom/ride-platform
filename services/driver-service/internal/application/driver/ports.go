@@ -30,6 +30,15 @@ type UpdateStatusInput struct {
 	DriverID    string
 	To          Status
 	AllowedFrom []Status
+	// Reason is stored with the new status: the rejection reason, cleared on approval.
+	Reason string
+}
+
+// ListQuery selects one page of drivers, newest first, after the driver AfterID.
+type ListQuery struct {
+	Status  Status
+	AfterID string
+	Limit   int
 }
 
 // Repository is the persistence port for the driver aggregate. Create must
@@ -68,6 +77,12 @@ type Repository interface {
 		ctx context.Context,
 		input UpdateStatusInput,
 	) (Driver, error)
+
+	// List returns drivers newest first, optionally of one status.
+	List(
+		ctx context.Context,
+		query ListQuery,
+	) ([]Driver, error)
 }
 
 type IDGenerator interface {

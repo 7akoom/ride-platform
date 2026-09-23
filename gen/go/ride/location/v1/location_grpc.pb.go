@@ -49,6 +49,8 @@ type LocationServiceClient interface {
 	// Service zones — the geographic areas the platform actually serves,
 	// down to arbitrary polygons (not just a city name). See
 	// CheckServiceZone for the query every trip request must pass.
+	// CreateZone, UpdateZone and SetZoneActive change the served map: staff with
+	// zones.manage, or the internal token.
 	CreateZone(ctx context.Context, in *CreateZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
 	UpdateZone(ctx context.Context, in *UpdateZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
 	SetZoneActive(ctx context.Context, in *SetZoneActiveRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
@@ -212,6 +214,8 @@ type LocationServiceServer interface {
 	// Service zones — the geographic areas the platform actually serves,
 	// down to arbitrary polygons (not just a city name). See
 	// CheckServiceZone for the query every trip request must pass.
+	// CreateZone, UpdateZone and SetZoneActive change the served map: staff with
+	// zones.manage, or the internal token.
 	CreateZone(context.Context, *CreateZoneRequest) (*ZoneResponse, error)
 	UpdateZone(context.Context, *UpdateZoneRequest) (*ZoneResponse, error)
 	SetZoneActive(context.Context, *SetZoneActiveRequest) (*ZoneResponse, error)

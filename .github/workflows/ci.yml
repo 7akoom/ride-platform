@@ -74,6 +74,7 @@ jobs:
           - services/wallet-service
           - services/notification-service
           - services/analytics
+          - services/staff-service
     steps:
       - uses: actions/checkout@v4
 
@@ -123,6 +124,7 @@ jobs:
           - wallet-service
           - notification-service
           - analytics
+          - staff-service
     steps:
       - uses: actions/checkout@v4
 

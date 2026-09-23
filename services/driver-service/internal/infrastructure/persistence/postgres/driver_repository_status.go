@@ -25,16 +25,19 @@ func (r *DriverRepository) UpdateStatus(
 		ctx,
 		`UPDATE drivers
          SET status = $2,
+             rejection_reason = $4,
              updated_at = CURRENT_TIMESTAMP
          WHERE id = $1
            AND status = ANY($3::text[])
          RETURNING id, identity_id, display_name, status, availability_status,
                    vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
                    vehicle_class,
-                   rating_average, rating_count, created_at, updated_at`,
+                   rating_average, rating_count, created_at, updated_at,
+		           rejection_reason`,
 		input.DriverID,
 		string(input.To),
 		allowedFrom,
+		input.Reason,
 	)
 
 	var updated driver.Driver

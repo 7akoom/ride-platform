@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strings"
 
 	driverv1 "github.com/7akoom/ride-platform/gen/go/ride/driver/v1"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
@@ -185,7 +186,13 @@ func (h *DriverHandler) RejectDriver(
 		return nil, status.Error(codes.InvalidArgument, "request is required")
 	}
 
-	rejected, err := h.driverService.RejectDriver(ctx, request.GetDriverId())
+	// A staff member must tell the driver why; the internal token (ops
+	// scripts, other services) may leave it empty.
+	if isStaffCall(ctx) && strings.TrimSpace(request.GetReason()) == "" {
+		return nil, status.Error(codes.InvalidArgument, "a rejection reason is required")
+	}
+
+	rejected, err := h.driverService.RejectDriver(ctx, request.GetDriverId(), request.GetReason())
 	if err != nil {
 		return nil, h.mapDriverError(err)
 	}
@@ -193,6 +200,53 @@ func (h *DriverHandler) RejectDriver(
 	return &driverv1.RejectDriverResponse{
 		Driver: toProtoDriver(rejected),
 	}, nil
+}
+
+func (h *DriverHandler) ListDrivers(
+	ctx context.Context,
+	request *driverv1.ListDriversRequest,
+) (*driverv1.ListDriversResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	statusFilter, ok := toDomainStatus(request.GetStatus())
+	if !ok {
+		return nil, status.Error(codes.InvalidArgument, "status is not valid")
+	}
+
+	page, err := h.driverService.ListDrivers(ctx, driver.ListDriversQuery{
+		Status:    statusFilter,
+		PageSize:  int(request.GetPageSize()),
+		PageToken: request.GetPageToken(),
+	})
+	if err != nil {
+		return nil, h.mapDriverError(err)
+	}
+
+	response := &driverv1.ListDriversResponse{NextPageToken: page.NextPageToken}
+	for _, found := range page.Drivers {
+		response.Drivers = append(response.Drivers, toProtoDriver(found))
+	}
+
+	return response, nil
+}
+
+func toDomainStatus(value driverv1.DriverStatus) (driver.Status, bool) {
+	switch value {
+	case driverv1.DriverStatus_DRIVER_STATUS_UNSPECIFIED:
+		return "", true
+	case driverv1.DriverStatus_DRIVER_STATUS_PENDING:
+		return driver.StatusPending, true
+	case driverv1.DriverStatus_DRIVER_STATUS_ACTIVE:
+		return driver.StatusActive, true
+	case driverv1.DriverStatus_DRIVER_STATUS_REJECTED:
+		return driver.StatusRejected, true
+	case driverv1.DriverStatus_DRIVER_STATUS_SUSPENDED:
+		return driver.StatusSuspended, true
+	default:
+		return "", false
+	}
 }
 
 func (h *DriverHandler) mapDriverError(err error) error {
@@ -218,7 +272,10 @@ func (h *DriverHandler) mapDriverError(err error) error {
 		errors.Is(err, driver.ErrDisplayNameTooLong),
 		errors.Is(err, driver.ErrVehicleFieldsRequired),
 		errors.Is(err, driver.ErrInvalidVehicleClass),
-		errors.Is(err, driver.ErrInvalidAvailability):
+		errors.Is(err, driver.ErrInvalidAvailability),
+		errors.Is(err, driver.ErrRejectionReasonTooLong),
+		errors.Is(err, driver.ErrInvalidListQuery),
+		errors.Is(err, driver.ErrInvalidPageToken):
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	default:
@@ -279,9 +336,10 @@ func toProtoDriver(d driver.Driver) *driverv1.Driver {
 			PlateNumber:  d.Vehicle.PlateNumber,
 			VehicleClass: string(d.Vehicle.Class),
 		},
-		RatingAverage: d.RatingAverage,
-		RatingCount:   d.RatingCount,
-		CreatedAt:     timestamppb.New(d.CreatedAt),
-		UpdatedAt:     timestamppb.New(d.UpdatedAt),
+		RatingAverage:   d.RatingAverage,
+		RatingCount:     d.RatingCount,
+		RejectionReason: d.RejectionReason,
+		CreatedAt:       timestamppb.New(d.CreatedAt),
+		UpdatedAt:       timestamppb.New(d.UpdatedAt),
 	}
 }
