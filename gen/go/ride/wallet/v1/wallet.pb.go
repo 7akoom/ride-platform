@@ -1399,7 +1399,12 @@ type GetTripSettlementResponse struct {
 	CommissionAmount string `protobuf:"bytes,7,opt,name=commission_amount,json=commissionAmount,proto3" json:"commission_amount,omitempty"`
 	DriverEarning    string `protobuf:"bytes,8,opt,name=driver_earning,json=driverEarning,proto3" json:"driver_earning,omitempty"`
 	// The change credited to the rider's wallet because the driver had none. "0" if none.
-	ChangeAmount  string `protobuf:"bytes,9,opt,name=change_amount,json=changeAmount,proto3" json:"change_amount,omitempty"`
+	ChangeAmount string `protobuf:"bytes,9,opt,name=change_amount,json=changeAmount,proto3" json:"change_amount,omitempty"`
+	// trip, or cancellation / no_show for the fee of a cancelled trip. A fee
+	// is taken from the rider's wallet; what the wallet could not cover is
+	// due_amount, still owed by the rider.
+	Kind          string `protobuf:"bytes,10,opt,name=kind,proto3" json:"kind,omitempty"`
+	DueAmount     string `protobuf:"bytes,11,opt,name=due_amount,json=dueAmount,proto3" json:"due_amount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1493,6 +1498,20 @@ func (x *GetTripSettlementResponse) GetDriverEarning() string {
 func (x *GetTripSettlementResponse) GetChangeAmount() string {
 	if x != nil {
 		return x.ChangeAmount
+	}
+	return ""
+}
+
+func (x *GetTripSettlementResponse) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *GetTripSettlementResponse) GetDueAmount() string {
+	if x != nil {
+		return x.DueAmount
 	}
 	return ""
 }
@@ -1731,7 +1750,7 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\n" +
 	"owner_type\x18\x01 \x01(\x0e2\x19.ride.wallet.v1.OwnerTypeR\townerType\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x17\n" +
-	"\atrip_id\x18\x03 \x01(\tR\x06tripId\"\xff\x02\n" +
+	"\atrip_id\x18\x03 \x01(\tR\x06tripId\"\xb2\x03\n" +
 	"\x19GetTripSettlementResponse\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12D\n" +
 	"\x0epayment_method\x18\x02 \x01(\x0e2\x1d.ride.wallet.v1.PaymentMethodR\rpaymentMethod\x12#\n" +
@@ -1743,7 +1762,11 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"cashAmount\x12+\n" +
 	"\x11commission_amount\x18\a \x01(\tR\x10commissionAmount\x12%\n" +
 	"\x0edriver_earning\x18\b \x01(\tR\rdriverEarning\x12#\n" +
-	"\rchange_amount\x18\t \x01(\tR\fchangeAmount\"t\n" +
+	"\rchange_amount\x18\t \x01(\tR\fchangeAmount\x12\x12\n" +
+	"\x04kind\x18\n" +
+	" \x01(\tR\x04kind\x12\x1d\n" +
+	"\n" +
+	"due_amount\x18\v \x01(\tR\tdueAmount\"t\n" +
 	"\x17RecordTripChangeRequest\x12\x1b\n" +
 	"\tdriver_id\x18\x01 \x01(\tR\bdriverId\x12\x17\n" +
 	"\atrip_id\x18\x02 \x01(\tR\x06tripId\x12#\n" +

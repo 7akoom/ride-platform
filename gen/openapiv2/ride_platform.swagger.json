@@ -3785,6 +3785,45 @@
         ]
       }
     },
+    "/v1/trips/{tripId}:arrived": {
+      "post": {
+        "summary": "MarkDriverArrived is the driver telling the rider they are at the\npickup. Only while the trip is accepted, and only within 200 metres of\nthe pickup by the driver's last reported position. Waiting time (and\nthe rider no-show) counts from here. Marking again changes nothing.",
+        "operationId": "TripService_MarkDriverArrived",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MarkDriverArrivedResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceMarkDriverArrivedBody"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/trips/{tripId}:cancel": {
       "post": {
         "operationId": "TripService_CancelTrip",
@@ -4678,8 +4717,15 @@
       "properties": {
         "reason": {
           "type": "string"
+        },
+        "riderNoShow": {
+          "type": "boolean",
+          "description": "The driver cancels because the rider did not come to the pickup: only\nthe trip's driver, only after marking arrival and waiting there long\nenough. The rider is charged the no-show fee."
         }
       }
+    },
+    "TripServiceMarkDriverArrivedBody": {
+      "type": "object"
     },
     "TripServiceRateTripBody": {
       "type": "object",
@@ -5524,6 +5570,18 @@
         "cityId": {
           "type": "string",
           "description": "The city the pickup is in."
+        },
+        "waitingMinutes": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Minutes the driver waited at the pickup beyond the free ones, and what\nthey cost (added to total, never discounted)."
+        },
+        "waitingFare": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "trip, or for a cancelled trip cancellation / no_show: then total is the\nfee and the other amounts are zero."
         }
       },
       "description": "Money fields are decimal strings (e.g. \"2451.6\"), never double —\nfloat64 in protobuf would reintroduce exactly the precision problem\nthe underlying NUMERIC columns exist to avoid (same convention as\nwallet.proto). distance_km/duration_minutes stay double: physical\nmeasurements from OSRM, not currency."
@@ -5834,6 +5892,13 @@
         "changeAmount": {
           "type": "string",
           "description": "The change credited to the rider's wallet because the driver had none. \"0\" if none."
+        },
+        "kind": {
+          "type": "string",
+          "description": "trip, or cancellation / no_show for the fee of a cancelled trip. A fee\nis taken from the rider's wallet; what the wallet could not cover is\ndue_amount, still owed by the rider."
+        },
+        "dueAmount": {
+          "type": "string"
         }
       }
     },
@@ -6193,6 +6258,14 @@
         "markedCount": {
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "v1MarkDriverArrivedResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/v1Trip"
         }
       }
     },
@@ -7445,6 +7518,18 @@
         },
         "currencyCode": {
           "type": "string"
+        },
+        "arrivedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the driver said they were at the pickup (MarkDriverArrived)."
+        },
+        "cancelledBy": {
+          "type": "string",
+          "description": "Who cancelled a cancelled trip: rider, driver or system (dispatch found\nno driver, or staff). rider_no_show: the driver cancelled because the\nrider did not come."
+        },
+        "riderNoShow": {
+          "type": "boolean"
         }
       }
     },

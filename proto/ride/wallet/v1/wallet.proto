@@ -254,6 +254,11 @@ message GetTripSettlementResponse {
   string driver_earning = 8;
   // The change credited to the rider's wallet because the driver had none. "0" if none.
   string change_amount = 9;
+  // trip, or cancellation / no_show for the fee of a cancelled trip. A fee
+  // is taken from the rider's wallet; what the wallet could not cover is
+  // due_amount, still owed by the rider.
+  string kind = 10;
+  string due_amount = 11;
 }
 
 message RecordTripChangeRequest {

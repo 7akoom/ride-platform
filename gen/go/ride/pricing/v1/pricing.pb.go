@@ -260,7 +260,14 @@ type FareBreakdown struct {
 	// card's minimum fare; included in subtotal.
 	MinimumFareAdjustment string `protobuf:"bytes,16,opt,name=minimum_fare_adjustment,json=minimumFareAdjustment,proto3" json:"minimum_fare_adjustment,omitempty"`
 	// The city the pickup is in.
-	CityId        string `protobuf:"bytes,17,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	CityId string `protobuf:"bytes,17,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	// Minutes the driver waited at the pickup beyond the free ones, and what
+	// they cost (added to total, never discounted).
+	WaitingMinutes int32  `protobuf:"varint,18,opt,name=waiting_minutes,json=waitingMinutes,proto3" json:"waiting_minutes,omitempty"`
+	WaitingFare    string `protobuf:"bytes,19,opt,name=waiting_fare,json=waitingFare,proto3" json:"waiting_fare,omitempty"`
+	// trip, or for a cancelled trip cancellation / no_show: then total is the
+	// fee and the other amounts are zero.
+	Kind          string `protobuf:"bytes,20,opt,name=kind,proto3" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -410,6 +417,27 @@ func (x *FareBreakdown) GetMinimumFareAdjustment() string {
 func (x *FareBreakdown) GetCityId() string {
 	if x != nil {
 		return x.CityId
+	}
+	return ""
+}
+
+func (x *FareBreakdown) GetWaitingMinutes() int32 {
+	if x != nil {
+		return x.WaitingMinutes
+	}
+	return 0
+}
+
+func (x *FareBreakdown) GetWaitingFare() string {
+	if x != nil {
+		return x.WaitingFare
+	}
+	return ""
+}
+
+func (x *FareBreakdown) GetKind() string {
+	if x != nil {
+		return x.Kind
 	}
 	return ""
 }
@@ -2959,7 +2987,7 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"multiplier\x18\x05 \x01(\tR\n" +
 	"multiplier\x12!\n" +
 	"\fzone_percent\x18\x06 \x01(\tR\vzonePercent\x12\x14\n" +
-	"\x05label\x18\a \x01(\tR\x05label\"\xb4\x05\n" +
+	"\x05label\x18\a \x01(\tR\x05label\"\x94\x06\n" +
 	"\rFareBreakdown\x12#\n" +
 	"\rcurrency_code\x18\x01 \x01(\tR\fcurrencyCode\x12\x17\n" +
 	"\azone_id\x18\x0e \x01(\tR\x06zoneId\x12\x1b\n" +
@@ -2979,7 +3007,10 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\x05total\x18\r \x01(\tR\x05total\x12#\n" +
 	"\rvehicle_class\x18\x0f \x01(\tR\fvehicleClass\x126\n" +
 	"\x17minimum_fare_adjustment\x18\x10 \x01(\tR\x15minimumFareAdjustment\x12\x17\n" +
-	"\acity_id\x18\x11 \x01(\tR\x06cityId\"\xe4\x01\n" +
+	"\acity_id\x18\x11 \x01(\tR\x06cityId\x12'\n" +
+	"\x0fwaiting_minutes\x18\x12 \x01(\x05R\x0ewaitingMinutes\x12!\n" +
+	"\fwaiting_fare\x18\x13 \x01(\tR\vwaitingFare\x12\x12\n" +
+	"\x04kind\x18\x14 \x01(\tR\x04kind\"\xe4\x01\n" +
 	"\x13EstimateFareRequest\x12\x19\n" +
 	"\brider_id\x18\x01 \x01(\tR\ariderId\x124\n" +
 	"\x06pickup\x18\x02 \x01(\v2\x1c.ride.pricing.v1.CoordinatesR\x06pickup\x126\n" +

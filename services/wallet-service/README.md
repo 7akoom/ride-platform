@@ -75,6 +75,15 @@ can't reach into their pocket, so it draws the 2,000 from their deposit.
 Digital trips work the other way: the driver's earning is *credited*, so
 a mix of cash and digital work naturally tops the balance back up.
 
+### Fees of cancelled trips
+
+A cancellation or no-show fee (pricing-service, `fare.calculated` with
+`kind`) is settled like a wallet trip whatever the payment method, since no
+cash changed hands: the rider's wallet pays what it holds (it never goes
+negative), and the rest is recorded on the settlement as `due_amount`,
+still owed by the rider. The driver is credited the fee minus the commission
+in full. Collecting what riders owe is part of the full wallet work (P6).
+
 ### The suspension threshold
 
 `suspension_threshold` (default 50,000 IQD) is how far below zero a

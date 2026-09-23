@@ -167,7 +167,7 @@ func (r *WalletRepository) FindSettlement(
 		        s.payment_method, s.fare_amount, s.commission_rate,
 		        s.commission_amount, s.driver_earning,
 		        s.wallet_amount, s.cash_amount,
-		        COALESCE(cc.change_amount, 0),
+		        COALESCE(cc.change_amount, 0), s.kind, s.due_amount,
 		        COALESCE(rw.balance, 0), COALESCE(dw.balance, 0)
 		 FROM trip_settlements s
 		 LEFT JOIN trip_change_credits cc ON cc.trip_id = s.trip_id
@@ -178,7 +178,7 @@ func (r *WalletRepository) FindSettlement(
 	)
 
 	var settlement wallet.Settlement
-	var paymentMethod string
+	var paymentMethod, kind string
 
 	err := row.Scan(
 		&settlement.TripID,
@@ -193,6 +193,8 @@ func (r *WalletRepository) FindSettlement(
 		&settlement.WalletAmount,
 		&settlement.CashAmount,
 		&settlement.ChangeAmount,
+		&kind,
+		&settlement.DueAmount,
 		&settlement.RiderBalance,
 		&settlement.DriverBalance,
 	)
@@ -205,6 +207,7 @@ func (r *WalletRepository) FindSettlement(
 	}
 
 	settlement.PaymentMethod = wallet.PaymentMethod(paymentMethod)
+	settlement.Kind = wallet.SettlementKind(kind)
 
 	return settlement, true, nil
 }
@@ -237,9 +240,50 @@ func (r *WalletRepository) SettleTrip(
 	zero := input.FareAmount.Sub(input.FareAmount)
 	walletAmount := zero
 	cashAmount := zero
+	dueAmount := zero
 
-	switch input.PaymentMethod {
-	case wallet.PaymentWallet:
+	kind := input.Kind
+	if kind == "" {
+		kind = wallet.SettlementTrip
+	}
+
+	switch {
+	case kind.IsFee():
+		// A fee: the rider's wallet pays what it holds and the rest stays
+		// owed; the driver is paid the fee minus the commission.
+		walletAmount, dueAmount = wallet.SplitWalletPayment(input.FareAmount, riderWallet.Balance)
+
+		description := "Cancellation fee"
+		if kind == wallet.SettlementNoShow {
+			description = "No-show fee"
+		}
+
+		if walletAmount.IsPositive() {
+			riderWallet, _, err = applyMovementTx(ctx, tx, riderWallet, wallet.MovementInput{
+				Type:        wallet.TxTripPayment,
+				Amount:      walletAmount.Neg(),
+				TripID:      input.TripID,
+				Description: description,
+			})
+			if err != nil {
+				return wallet.Settlement{}, err
+			}
+		}
+
+		if input.DriverEarning.IsPositive() {
+			driverWallet, _, err = applyMovementTx(ctx, tx, driverWallet, wallet.MovementInput{
+				Type:            wallet.TxTripEarning,
+				Amount:          input.DriverEarning,
+				TripID:          input.TripID,
+				Description:     description + " (after commission)",
+				SuspensionFloor: &input.SuspensionFloor,
+			})
+			if err != nil {
+				return wallet.Settlement{}, err
+			}
+		}
+
+	case input.PaymentMethod == wallet.PaymentWallet:
 		// The rider's wallet pays what it holds and the rest is cash in the
 		// driver's hand, so a wallet trip can never fail for lack of funds.
 		// The rider row is locked above, so the balance read here is the one
@@ -306,7 +350,7 @@ func (r *WalletRepository) SettleTrip(
 			}
 		}
 
-	case wallet.PaymentCard:
+	case input.PaymentMethod == wallet.PaymentCard:
 		// The card processor collects the fare; the platform keeps its
 		// commission and credits the driver the rest. The rider's
 		// wallet is untouched.
@@ -321,7 +365,7 @@ func (r *WalletRepository) SettleTrip(
 			return wallet.Settlement{}, err
 		}
 
-	case wallet.PaymentCash:
+	case input.PaymentMethod == wallet.PaymentCash:
 		// The driver already holds the entire fare, including the
 		// platform's commission — so the commission is debited from
 		// their digital balance, which is allowed to go negative.
@@ -345,8 +389,8 @@ func (r *WalletRepository) SettleTrip(
 		`INSERT INTO trip_settlements
 		    (trip_id, rider_id, driver_id, currency_code, payment_method,
 		     fare_amount, commission_rate, commission_amount, driver_earning,
-		     wallet_amount, cash_amount)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+		     wallet_amount, cash_amount, kind, due_amount)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
 		input.TripID,
 		input.RiderID,
 		input.DriverID,
@@ -358,6 +402,8 @@ func (r *WalletRepository) SettleTrip(
 		input.DriverEarning,
 		walletAmount,
 		cashAmount,
+		string(kind),
+		dueAmount,
 	); err != nil {
 		var pgErr *pgconn.PgError
 
@@ -379,6 +425,8 @@ func (r *WalletRepository) SettleTrip(
 		"driver_earning":    input.DriverEarning.String(),
 		"wallet_amount":     walletAmount.String(),
 		"cash_amount":       cashAmount.String(),
+		"kind":              string(kind),
+		"due_amount":        dueAmount.String(),
 	})
 	if err != nil {
 		return wallet.Settlement{}, fmt.Errorf("marshal trip.settled payload: %w", err)
@@ -418,6 +466,8 @@ func (r *WalletRepository) SettleTrip(
 		CashAmount:       cashAmount,
 		RiderBalance:     riderWallet.Balance,
 		DriverBalance:    driverWallet.Balance,
+		Kind:             kind,
+		DueAmount:        dueAmount,
 	}, nil
 }
 

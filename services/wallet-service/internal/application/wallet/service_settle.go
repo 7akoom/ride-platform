@@ -47,6 +47,21 @@ func (s *service) SettleTrip(
 		return Settlement{}, ErrDriverIDRequired
 	}
 
+	kind := input.Kind
+	if kind == "" {
+		kind = SettlementTrip
+	}
+
+	if !kind.Valid() {
+		return Settlement{}, ErrInvalidSettlementKind
+	}
+
+	// A fee has no cash in anyone's hand: it comes out of the rider's
+	// wallet (and what the wallet cannot cover stays owed).
+	if kind.IsFee() {
+		input.PaymentMethod = PaymentWallet
+	}
+
 	if !input.PaymentMethod.Valid() {
 		return Settlement{}, ErrInvalidPaymentMethod
 	}
@@ -85,6 +100,7 @@ func (s *service) SettleTrip(
 		CommissionAmount: commission,
 		DriverEarning:    driverEarning,
 		SuspensionFloor:  config.SuspensionFloor(),
+		Kind:             kind,
 	})
 	if err != nil {
 		return Settlement{}, fmt.Errorf("settle trip: %w", err)

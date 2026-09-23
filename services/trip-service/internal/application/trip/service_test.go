@@ -35,9 +35,14 @@ type fakeRepository struct {
 	completeResult trip.Trip
 	completeErr    error
 
-	cancelResult trip.Trip
-	cancelErr    error
-	cancelReason string
+	cancelResult  trip.Trip
+	cancelErr     error
+	cancelReason  string
+	cancelRecord  trip.CancelRecord
+	cancelCurrent trip.Trip
+
+	markArrivedCalls []string
+	markArrivedErr   error
 
 	triggerSOSAlertID string
 	triggerSOSAt      time.Time
@@ -100,12 +105,26 @@ func (r *fakeRepository) Complete(_ context.Context, _ string) (trip.Trip, error
 	return r.completeResult, nil
 }
 
-func (r *fakeRepository) Cancel(_ context.Context, _ string, reason string) (trip.Trip, error) {
-	r.cancelReason = reason
+func (r *fakeRepository) Cancel(_ context.Context, record trip.CancelRecord) (trip.Trip, error) {
+	r.cancelReason = record.Reason
+	r.cancelRecord = record
 	if r.cancelErr != nil {
 		return trip.Trip{}, r.cancelErr
 	}
+	if record.Allow != nil {
+		if err := record.Allow(r.cancelCurrent); err != nil {
+			return trip.Trip{}, err
+		}
+	}
 	return r.cancelResult, nil
+}
+
+func (r *fakeRepository) MarkArrived(_ context.Context, tripID string) (trip.Trip, error) {
+	r.markArrivedCalls = append(r.markArrivedCalls, tripID)
+	arrived := r.findByIDResult
+	now := time.Now()
+	arrived.ArrivedAt = &now
+	return arrived, r.markArrivedErr
 }
 
 func (r *fakeRepository) TriggerSOS(
@@ -490,7 +509,7 @@ func TestService_LifecycleMethods_RequireTripID(t *testing.T) {
 	if _, err := svc.CompleteTrip(context.Background(), ""); !errors.Is(err, trip.ErrTripIDRequired) {
 		t.Fatalf("CompleteTrip: got %v, want ErrTripIDRequired", err)
 	}
-	if _, err := svc.CancelTrip(context.Background(), "", "reason"); !errors.Is(err, trip.ErrTripIDRequired) {
+	if _, err := svc.CancelTrip(context.Background(), trip.CancelInput{Reason: "reason", By: trip.CancelledByRider}); !errors.Is(err, trip.ErrTripIDRequired) {
 		t.Fatalf("CancelTrip: got %v, want ErrTripIDRequired", err)
 	}
 	if _, err := svc.GetTrip(context.Background(), ""); !errors.Is(err, trip.ErrTripIDRequired) {
@@ -526,7 +545,7 @@ func TestService_CancelTrip_PassesTrimmedReason(t *testing.T) {
 	repo := &fakeRepository{cancelResult: trip.Trip{ID: "trip-1", Status: trip.StatusCancelled}}
 	svc := newService(repo)
 
-	_, err := svc.CancelTrip(context.Background(), "trip-1", "  rider changed mind  ")
+	_, err := svc.CancelTrip(context.Background(), trip.CancelInput{TripID: "trip-1", Reason: "  rider changed mind  ", By: trip.CancelledByRider})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

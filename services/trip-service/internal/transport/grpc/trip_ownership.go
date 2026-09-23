@@ -19,6 +19,7 @@ var ownerChecks = map[string]ownerCheck{
 
 		return c.ownsRider(ctx, r.GetRiderId())
 	},
+	tripRPCPrefix + "MarkDriverArrived": driverOfTrip,
 	tripRPCPrefix + "StartTrip":         driverOfTrip,
 	tripRPCPrefix + "CompleteTrip":      driverOfTrip,
 	tripRPCPrefix + "RecordWaypoint":    driverOfTrip,

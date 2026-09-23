@@ -26,8 +26,11 @@ type AppliedCoupon struct {
 }
 
 type PersistFareInput struct {
-	TripID    string
-	RiderID   string
+	TripID  string
+	RiderID string
+	// Kind is FareKindTrip unless it is a cancelled trip's fee: a fee does
+	// not count as a completed trip nor use a coupon.
+	Kind      FareKind
 	Breakdown FareBreakdown
 	Coupon    *AppliedCoupon // nil if no coupon was applied
 	// QuoteID is the quote the fare came from (empty when priced on
@@ -49,6 +52,10 @@ type Repository interface {
 	// class's own card before the one for every class. A retired newest
 	// version takes its place out of the running.
 	GetActiveConfig(ctx context.Context, scope Scope) (Config, error)
+
+	// GetConfigByID returns one rate card version (a quote's), retired or
+	// not; ErrNoActiveConfig when there is none with that id.
+	GetConfigByID(ctx context.Context, configID string) (Config, error)
 
 	// ListActiveSurgeTimeRules returns every active rule, wherever it
 	// applies; the service keeps the ones for the pickup's zone and city.

@@ -42,6 +42,30 @@ func (p PaymentMethod) Valid() bool {
 	}
 }
 
+// SettlementKind is what a settlement pays for: a trip, or the fee of a
+// cancelled trip.
+type SettlementKind string
+
+const (
+	SettlementTrip         SettlementKind = "trip"
+	SettlementCancellation SettlementKind = "cancellation"
+	SettlementNoShow       SettlementKind = "no_show"
+)
+
+func (k SettlementKind) Valid() bool {
+	switch k {
+	case SettlementTrip, SettlementCancellation, SettlementNoShow:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsFee reports a cancelled trip's fee.
+func (k SettlementKind) IsFee() bool {
+	return k == SettlementCancellation || k == SettlementNoShow
+}
+
 type TransactionType string
 
 const (
@@ -107,6 +131,10 @@ type Settlement struct {
 	CashAmount   Money
 	// The change credited to the rider's wallet because the driver had none (zero if none).
 	ChangeAmount Money
+	// Kind is trip or a fee; DueAmount is the part of a fee the rider's
+	// wallet could not cover, still owed.
+	Kind      SettlementKind
+	DueAmount Money
 }
 
 // CommissionFor returns the platform's cut of a fare, rounded to the

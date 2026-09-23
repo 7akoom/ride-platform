@@ -44,4 +44,20 @@ var (
 
 	// ErrQuoteMismatch: the trip's points or class are not the quoted ones.
 	ErrQuoteMismatch = errors.New("the trip does not match its quote")
+
+	ErrInvalidCancelledBy = errors.New("cancelled by must be rider, driver or system")
+
+	// ErrNoShowOnlyByDriver: only the trip's driver cancels for a no-show.
+	ErrNoShowOnlyByDriver = errors.New("only the driver can cancel because the rider did not show up")
+
+	// ErrNoShowTooEarly: the driver has not marked arrival, or has not waited
+	// at the pickup long enough since.
+	ErrNoShowTooEarly = errors.New("a no-show can be reported only after arriving and waiting at the pickup")
+
+	// ErrArrivalPositionUnknown: the driver has not reported a position in
+	// the last few seconds, so their arrival cannot be checked.
+	ErrArrivalPositionUnknown = errors.New("your position is not known; share your location and try again")
+
+	// ErrTooFarFromPickup: the driver's last position is not at the pickup.
+	ErrTooFarFromPickup = errors.New("you are not at the pickup yet")
 )

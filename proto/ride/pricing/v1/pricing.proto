@@ -173,6 +173,13 @@ message FareBreakdown {
   string minimum_fare_adjustment = 16;
   // The city the pickup is in.
   string city_id = 17;
+  // Minutes the driver waited at the pickup beyond the free ones, and what
+  // they cost (added to total, never discounted).
+  int32 waiting_minutes = 18;
+  string waiting_fare = 19;
+  // trip, or for a cancelled trip cancellation / no_show: then total is the
+  // fee and the other amounts are zero.
+  string kind = 20;
 }
 
 message EstimateFareRequest {

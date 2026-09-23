@@ -58,6 +58,13 @@ func run() int {
 		return 1
 	}
 
+	noShowWait, err := config.ParseNoShowWait(cfg)
+	if err != nil {
+		logger.Error("invalid no-show configuration", "error", err)
+
+		return 1
+	}
+
 	metricsRuntime, err := observability.NewMetricsRuntime(cfg.ServiceName, cfg.MetricsAddress)
 	if err != nil {
 		logger.Error("invalid metrics configuration", "error", err)
@@ -195,11 +202,14 @@ func run() int {
 	// WithSavedAddresses wraps the base service directly, so every other
 	// decorator's RequestTrip reaches it.
 	baseService := trip.WithSavedAddresses(
-		trip.NewService(tripRepository, idGenerator, locationClient, trip.WithQuotes(clients.NewQuoteBook(pricingConn))),
+		trip.NewService(tripRepository, idGenerator, locationClient,
+			trip.WithQuotes(clients.NewQuoteBook(pricingConn)),
+			trip.WithNoShowWait(noShowWait),
+		),
 		clients.NewAddressBook(riderConn),
 	)
 
-	tripService := trip.WithRecentDestinations(
+	tripService := trip.WithDriverArrival(trip.WithRecentDestinations(
 		trip.WithPickupPhotos(
 			trip.WithTripOffers(
 				trip.WithTripHistory(
@@ -214,8 +224,8 @@ func run() int {
 			clients.NewPhotoLinks(mediaConn),
 		),
 		tripRepository,
-	)
-	tripHandler := grpcserver.NewTripHandler(tripService, logger)
+	), locationClient, tripRepository)
+	tripHandler := grpcserver.NewTripHandler(tripService, logger, grpcserver.WithParticipants(profileResolver))
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

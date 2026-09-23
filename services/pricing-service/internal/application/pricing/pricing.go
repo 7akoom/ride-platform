@@ -177,20 +177,35 @@ type FareBreakdown struct {
 	// the rate card's minimum; it is part of Subtotal.
 	MinimumFareAdjustment decimal.Decimal
 	Subtotal              decimal.Decimal
-	Surge                 SurgeBreakdown
-	SurgeAmount           decimal.Decimal
-	AppliedDiscountType   DiscountType
-	AppliedDiscountLabel  string
-	DiscountAmount        decimal.Decimal
-	Total                 decimal.Decimal
+	// WaitingMinutes the driver waited at the pickup beyond the free ones,
+	// and WaitingFare what they cost; added to Total, never discounted.
+	WaitingMinutes       int
+	WaitingFare          decimal.Decimal
+	Surge                SurgeBreakdown
+	SurgeAmount          decimal.Decimal
+	AppliedDiscountType  DiscountType
+	AppliedDiscountLabel string
+	DiscountAmount       decimal.Decimal
+	Total                decimal.Decimal
 }
 
 // Fare is the durable record of a calculated (not estimated) fare —
 // written exactly once per trip.
+// FareKind is what a fare is for: the trip itself, or the fee of a trip
+// that was cancelled.
+type FareKind string
+
+const (
+	FareKindTrip         FareKind = "trip"
+	FareKindCancellation FareKind = "cancellation"
+	FareKindNoShow       FareKind = "no_show"
+)
+
 type Fare struct {
 	ID        string
 	TripID    string
 	RiderID   string
+	Kind      FareKind
 	Breakdown FareBreakdown
 	// QuoteID is the quote the fare came from; empty when the trip was
 	// priced when it completed. ConfigID is the rate card used.

@@ -137,4 +137,18 @@ func scanConfig(row pgx.Row) (pricing.Config, error) {
 	return config, nil
 }
 
+// GetConfigByID reads one rate card version.
+func (r *PricingRepository) GetConfigByID(ctx context.Context, configID string) (pricing.Config, error) {
+	config, err := scanConfig(r.pool.QueryRow(ctx, `SELECT `+configColumns+` FROM pricing_configs WHERE id = $1`, configID))
+	if err != nil {
+		if isNoRows(err) {
+			return pricing.Config{}, pricing.ErrNoActiveConfig
+		}
+
+		return pricing.Config{}, fmt.Errorf("select pricing config: %w", err)
+	}
+
+	return config, nil
+}
+
 func isNoRows(err error) bool { return errors.Is(err, pgx.ErrNoRows) }

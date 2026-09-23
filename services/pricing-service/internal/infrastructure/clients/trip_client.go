@@ -3,10 +3,12 @@ package clients
 import (
 	"context"
 	"fmt"
+	"time"
 
 	tripv1 "github.com/7akoom/ride-platform/gen/go/ride/trip/v1"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/events"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // TripClient is pricing-service's view of trip-service: just enough of a
@@ -43,5 +45,40 @@ func (c *TripClient) GetTrip(
 		DropoffLng:   trip.GetDropoff().GetLongitude(),
 		VehicleClass: trip.GetVehicleClass(),
 		QuoteID:      trip.GetQuoteId(),
+		DriverID:     trip.GetDriverId(),
+		Status:       tripStatus(trip.GetStatus()),
+		CancelledBy:  trip.GetCancelledBy(),
+		RiderNoShow:  trip.GetRiderNoShow(),
+		AcceptedAt:   optionalTime(trip.GetAcceptedAt()),
+		ArrivedAt:    optionalTime(trip.GetArrivedAt()),
+		StartedAt:    optionalTime(trip.GetStartedAt()),
+		CancelledAt:  optionalTime(trip.GetCancelledAt()),
 	}, nil
+}
+
+func optionalTime(ts *timestamppb.Timestamp) *time.Time {
+	if ts == nil {
+		return nil
+	}
+
+	at := ts.AsTime()
+
+	return &at
+}
+
+func tripStatus(status tripv1.TripStatus) string {
+	switch status {
+	case tripv1.TripStatus_TRIP_STATUS_REQUESTED:
+		return "requested"
+	case tripv1.TripStatus_TRIP_STATUS_ACCEPTED:
+		return "accepted"
+	case tripv1.TripStatus_TRIP_STATUS_IN_PROGRESS:
+		return "in_progress"
+	case tripv1.TripStatus_TRIP_STATUS_COMPLETED:
+		return "completed"
+	case tripv1.TripStatus_TRIP_STATUS_CANCELLED:
+		return "cancelled"
+	default:
+		return ""
+	}
 }

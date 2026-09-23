@@ -52,15 +52,20 @@ func (s *service) CalculateFare(
 
 	var persist PersistFareInput
 
+	var card Config
+
 	if quoteID := strings.TrimSpace(input.QuoteID); quoteID != "" {
-		persist, err = s.quotedFare(ctx, tripID, quoteID)
+		persist, card, err = s.quotedFare(ctx, tripID, quoteID)
 	} else {
-		persist, err = s.meteredFare(ctx, tripID, input)
+		persist, card, err = s.meteredFare(ctx, tripID, input)
 	}
 
 	if err != nil {
 		return Fare{}, err
 	}
+
+	persist.Kind = FareKindTrip
+	addWaiting(&persist.Breakdown, card, input.ArrivedAt, input.StartedAt, s.fareRoundingIncrement)
 
 	persisted, err := s.repository.PersistFare(ctx, persist)
 	if errors.Is(err, ErrFareAlreadyRecorded) {
@@ -85,18 +90,26 @@ func (s *service) CalculateFare(
 
 // quotedFare is the fare of a trip requested with a quote: exactly what
 // the rider was quoted, with the coupon the quote used.
-func (s *service) quotedFare(ctx context.Context, tripID, quoteID string) (PersistFareInput, error) {
+func (s *service) quotedFare(ctx context.Context, tripID, quoteID string) (PersistFareInput, Config, error) {
 	if !looksLikeUUID(quoteID) {
-		return PersistFareInput{}, ErrQuoteNotFound
+		return PersistFareInput{}, Config{}, ErrQuoteNotFound
 	}
 
 	quote, err := s.repository.FindQuote(ctx, quoteID)
 	if err != nil {
-		return PersistFareInput{}, fmt.Errorf("read quote: %w", err)
+		return PersistFareInput{}, Config{}, fmt.Errorf("read quote: %w", err)
 	}
 
 	if quote.ClaimedTripID != tripID {
-		return PersistFareInput{}, ErrQuoteNotForTrip
+		return PersistFareInput{}, Config{}, ErrQuoteNotForTrip
+	}
+
+	// The waiting fee comes from the card the trip was quoted with.
+	var card Config
+	if quote.ConfigID != "" {
+		if card, err = s.repository.GetConfigByID(ctx, quote.ConfigID); err != nil {
+			return PersistFareInput{}, Config{}, fmt.Errorf("read the quote's rate card: %w", err)
+		}
 	}
 
 	return PersistFareInput{
@@ -106,12 +119,12 @@ func (s *service) quotedFare(ctx context.Context, tripID, quoteID string) (Persi
 		Coupon:    quote.Coupon,
 		QuoteID:   quote.ID,
 		ConfigID:  quote.ConfigID,
-	}, nil
+	}, card, nil
 }
 
 // meteredFare prices a trip requested without a quote, now that it is
 // over, from its planned pickup and dropoff.
-func (s *service) meteredFare(ctx context.Context, tripID string, input CalculateFareInput) (PersistFareInput, error) {
+func (s *service) meteredFare(ctx context.Context, tripID string, input CalculateFareInput) (PersistFareInput, Config, error) {
 	priced, err := s.buildFare(ctx, fareRequest{
 		RiderID:    input.RiderID,
 		PickupLat:  input.PickupLat,
@@ -121,7 +134,7 @@ func (s *service) meteredFare(ctx context.Context, tripID string, input Calculat
 		CouponCode: input.CouponCode,
 	}, input.VehicleClass)
 	if err != nil {
-		return PersistFareInput{}, err
+		return PersistFareInput{}, Config{}, err
 	}
 
 	return PersistFareInput{
@@ -130,7 +143,7 @@ func (s *service) meteredFare(ctx context.Context, tripID string, input Calculat
 		Breakdown: priced.breakdown,
 		Coupon:    priced.coupon,
 		ConfigID:  priced.config.ID,
-	}, nil
+	}, priced.config, nil
 }
 
 // looksLikeUUID is a cheap shape check so a malformed id is "not found"

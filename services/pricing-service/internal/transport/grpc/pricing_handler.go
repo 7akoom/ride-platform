@@ -97,9 +97,10 @@ func (h *PricingHandler) CalculateFare(
 		return nil, h.mapPricingError(err)
 	}
 
-	return &pricingv1.CalculateFareResponse{
-		Fare: toProtoFareBreakdown(fare.Breakdown),
-	}, nil
+	breakdown := toProtoFareBreakdown(fare.Breakdown)
+	breakdown.Kind = string(fare.Kind)
+
+	return &pricingv1.CalculateFareResponse{Fare: breakdown}, nil
 }
 
 func (h *PricingHandler) CreateCoupon(
@@ -276,6 +277,8 @@ func toProtoFareBreakdown(b pricing.FareBreakdown) *pricingv1.FareBreakdown {
 		DurationFare:          b.DurationFare.String(),
 		MinimumFareAdjustment: b.MinimumFareAdjustment.String(),
 		Subtotal:              b.Subtotal.String(),
+		WaitingMinutes:        int32(b.WaitingMinutes),
+		WaitingFare:           b.WaitingFare.String(),
 		Surge: &pricingv1.SurgeBreakdown{
 			TimeOfDayPercent: b.Surge.TimeOfDayPercent.String(),
 			ZonePercent:      b.Surge.ZonePercent.String(),

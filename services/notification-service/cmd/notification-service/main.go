@@ -29,6 +29,10 @@ import (
 const (
 	tripEventsDurable    = "notification-trip-events"
 	pricingEventsDurable = "notification-pricing-events"
+
+	// tripArrivalsDurable is a consumer of its own, so the trip events one's
+	// filter never changes under it.
+	tripArrivalsDurable = "notification-trip-arrivals"
 )
 
 func main() {
@@ -207,6 +211,22 @@ func run() int {
 		return 1
 	}
 	defer offerSubscription.Stop()
+
+	arrivalSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		"TRIP_EVENTS",
+		tripArrivalsDurable,
+		[]string{"trip.driver_arrived"},
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to driver arrivals", "error", err)
+
+		return 1
+	}
+	defer arrivalSubscription.Stop()
 
 	pricingSubscription, err := natsinfra.SubscribeDurable(
 		ctx,

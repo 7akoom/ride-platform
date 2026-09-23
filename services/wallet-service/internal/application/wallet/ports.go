@@ -38,6 +38,7 @@ type SettleInput struct {
 	CommissionAmount Money
 	DriverEarning    Money
 	SuspensionFloor  Money
+	Kind             SettlementKind
 }
 
 type Repository interface {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -231,10 +232,15 @@ func (r *TripRepository) Complete(
 
 func (r *TripRepository) Cancel(
 	ctx context.Context,
-	tripID string,
-	reason string,
+	record trip.CancelRecord,
 ) (trip.Trip, error) {
-	return r.transition(ctx, tripID, trip.StatusCancelled, func(tx pgx.Tx, current trip.Trip) (trip.Trip, error) {
+	return r.transition(ctx, record.TripID, trip.StatusCancelled, func(tx pgx.Tx, current trip.Trip) (trip.Trip, error) {
+		if record.Allow != nil {
+			if err := record.Allow(current); err != nil {
+				return trip.Trip{}, err
+			}
+		}
+
 		var updated trip.Trip
 
 		row := tx.QueryRow(
@@ -242,12 +248,16 @@ func (r *TripRepository) Cancel(
 			`UPDATE trips
 			 SET status = 'cancelled',
 			     cancellation_reason = NULLIF($2, ''),
+			     cancelled_by = $3,
+			     rider_no_show = $4,
 			     cancelled_at = CURRENT_TIMESTAMP,
 			     updated_at = CURRENT_TIMESTAMP
 			 WHERE id = $1
 			 RETURNING `+tripColumns,
-			tripID,
-			reason,
+			record.TripID,
+			record.Reason,
+			string(record.By),
+			record.RiderNoShow,
 		)
 
 		if err := scanTrip(row, &updated); err != nil {
@@ -255,10 +265,64 @@ func (r *TripRepository) Cancel(
 		}
 
 		return updated, writeOutboxEvent(ctx, tx, "trip.cancelled", updated.ID, map[string]string{
-			"trip_id": updated.ID,
-			"reason":  reason,
+			"trip_id":       updated.ID,
+			"reason":        record.Reason,
+			"cancelled_by":  string(record.By),
+			"rider_no_show": strconv.FormatBool(record.RiderNoShow),
 		})
 	})
+}
+
+// MarkArrived sets arrived_at on an accepted trip that has none, with its
+// trip.driver_arrived event, in one statement and transaction.
+func (r *TripRepository) MarkArrived(ctx context.Context, tripID string) (trip.Trip, error) {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return trip.Trip{}, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var updated trip.Trip
+
+	err = scanTrip(tx.QueryRow(
+		ctx,
+		`UPDATE trips
+		 SET arrived_at = CURRENT_TIMESTAMP,
+		     updated_at = CURRENT_TIMESTAMP
+		 WHERE id = $1 AND status = 'accepted' AND arrived_at IS NULL
+		 RETURNING `+tripColumns,
+		tripID,
+	), &updated)
+
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		current, findErr := r.FindByID(ctx, tripID)
+		if findErr != nil {
+			return trip.Trip{}, findErr
+		}
+
+		if current.Status == trip.StatusAccepted && current.ArrivedAt != nil {
+			return current, nil
+		}
+
+		return trip.Trip{}, trip.ErrInvalidTransition
+	case err != nil:
+		return trip.Trip{}, fmt.Errorf("mark arrival: %w", err)
+	}
+
+	if err := writeOutboxEvent(ctx, tx, "trip.driver_arrived", updated.ID, map[string]string{
+		"trip_id":   updated.ID,
+		"rider_id":  updated.RiderID,
+		"driver_id": updated.DriverID,
+	}); err != nil {
+		return trip.Trip{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return trip.Trip{}, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return updated, nil
 }
 
 // transition is the shared skeleton for every state change: open a
@@ -358,12 +422,13 @@ const tripColumns = `id, rider_id, driver_id, status,
 	created_at, updated_at,
 	pickup_address, dropoff_address, pickup_details, pickup_note,
 	COALESCE(pickup_photo_media_id::text, ''),
-	COALESCE(quote_id::text, ''), COALESCE(quoted_fare::text, ''), COALESCE(currency_code, '')`
+	COALESCE(quote_id::text, ''), COALESCE(quoted_fare::text, ''), COALESCE(currency_code, ''),
+	arrived_at, COALESCE(cancelled_by, ''), rider_no_show`
 
 func scanTrip(row pgx.Row, dest *trip.Trip) error {
 	var status string
 	var driverID, cancellationReason *string
-	var quotedFare string
+	var quotedFare, cancelledBy string
 
 	err := row.Scan(
 		&dest.ID,
@@ -392,6 +457,9 @@ func scanTrip(row pgx.Row, dest *trip.Trip) error {
 		&dest.QuoteID,
 		&quotedFare,
 		&dest.CurrencyCode,
+		&dest.ArrivedAt,
+		&cancelledBy,
+		&dest.RiderNoShow,
 	)
 	if err != nil {
 		return err
@@ -399,6 +467,7 @@ func scanTrip(row pgx.Row, dest *trip.Trip) error {
 
 	dest.Status = trip.Status(status)
 	dest.QuotedFare = trimDecimal(quotedFare)
+	dest.CancelledBy = trip.CancelledBy(cancelledBy)
 
 	if driverID != nil {
 		dest.DriverID = *driverID

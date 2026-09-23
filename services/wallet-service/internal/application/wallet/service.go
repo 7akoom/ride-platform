@@ -16,6 +16,9 @@ type SettleTripInput struct {
 	DriverID      string
 	FareAmount    Money
 	PaymentMethod PaymentMethod
+	// Kind is SettlementTrip when empty. A fee is always taken from the
+	// rider's wallet, whatever the trip's payment method.
+	Kind SettlementKind
 }
 
 type PayoutInput struct {

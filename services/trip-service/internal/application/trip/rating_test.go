@@ -49,7 +49,11 @@ func (r *ratingRepoFake) Complete(context.Context, string) (trip.Trip, error) {
 	return trip.Trip{}, nil
 }
 
-func (r *ratingRepoFake) Cancel(context.Context, string, string) (trip.Trip, error) {
+func (r *ratingRepoFake) Cancel(context.Context, trip.CancelRecord) (trip.Trip, error) {
+	return trip.Trip{}, nil
+}
+
+func (r *ratingRepoFake) MarkArrived(context.Context, string) (trip.Trip, error) {
 	return trip.Trip{}, nil
 }
 

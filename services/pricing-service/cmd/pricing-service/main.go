@@ -39,6 +39,10 @@ const (
 	// tripCompletedDurable is this service's own durable consumer name. It
 	// must stay stable across restarts so redelivery resumes where it left off.
 	tripCompletedDurable = "pricing-trip-completed"
+
+	// tripCancelledDurable is a consumer of its own, so the completed one's
+	// filter never changes under it.
+	tripCancelledDurable = "pricing-trip-cancelled"
 )
 
 func main() {
@@ -292,6 +296,22 @@ func run() int {
 		return 1
 	}
 	defer tripSubscription.Stop()
+
+	cancelledSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		tripEventsStream,
+		tripCancelledDurable,
+		[]string{events.SubjectTripCancelled},
+		eventHandler.Handle,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to trip.cancelled events", "error", err)
+
+		return 1
+	}
+	defer cancelledSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

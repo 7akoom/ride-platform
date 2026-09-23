@@ -19,6 +19,16 @@ service TripService {
       body: "*"
     };
   }
+  // MarkDriverArrived is the driver telling the rider they are at the
+  // pickup. Only while the trip is accepted, and only within 200 metres of
+  // the pickup by the driver's last reported position. Waiting time (and
+  // the rider no-show) counts from here. Marking again changes nothing.
+  rpc MarkDriverArrived(MarkDriverArrivedRequest) returns (MarkDriverArrivedResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}:arrived"
+      body: "*"
+    };
+  }
   rpc StartTrip(StartTripRequest) returns (StartTripResponse) {
     option (google.api.http) = {
       post: "/v1/trips/{trip_id}:start"
@@ -240,6 +250,13 @@ message Trip {
   string quote_id = 20;
   string quoted_fare = 21;
   string currency_code = 22;
+  // When the driver said they were at the pickup (MarkDriverArrived).
+  google.protobuf.Timestamp arrived_at = 23;
+  // Who cancelled a cancelled trip: rider, driver or system (dispatch found
+  // no driver, or staff). rider_no_show: the driver cancelled because the
+  // rider did not come.
+  string cancelled_by = 24;
+  bool rider_no_show = 25;
 }
 
 message RequestTripRequest {
@@ -299,6 +316,18 @@ message CompleteTripResponse {
 message CancelTripRequest {
   string trip_id = 1;
   string reason = 2;
+  // The driver cancels because the rider did not come to the pickup: only
+  // the trip's driver, only after marking arrival and waiting there long
+  // enough. The rider is charged the no-show fee.
+  bool rider_no_show = 3;
+}
+
+message MarkDriverArrivedRequest {
+  string trip_id = 1;
+}
+
+message MarkDriverArrivedResponse {
+  Trip trip = 1;
 }
 
 message CancelTripResponse {

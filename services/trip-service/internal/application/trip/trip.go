@@ -34,6 +34,25 @@ func (s Status) CanTransitionTo(target Status) bool {
 	}
 }
 
+// CancelledBy is who cancelled a trip.
+type CancelledBy string
+
+const (
+	CancelledByRider  CancelledBy = "rider"
+	CancelledByDriver CancelledBy = "driver"
+	// CancelledBySystem is a service (dispatch finding no driver) or staff.
+	CancelledBySystem CancelledBy = "system"
+)
+
+func (b CancelledBy) Valid() bool {
+	switch b {
+	case CancelledByRider, CancelledByDriver, CancelledBySystem:
+		return true
+	default:
+		return false
+	}
+}
+
 // Coordinates is a validated lat/lng pair.
 type Coordinates struct {
 	Latitude  float64
@@ -65,8 +84,12 @@ type Trip struct {
 	Pickup             Coordinates
 	Dropoff            Coordinates
 	CancellationReason string
-	VehicleClass       string
-	PaymentMethod      string
+	// Who cancelled, and whether the driver cancelled because the rider did
+	// not come.
+	CancelledBy   CancelledBy
+	RiderNoShow   bool
+	VehicleClass  string
+	PaymentMethod string
 	// The addresses as the rider picked them, and what the saved pickup
 	// address tells the captain.
 	PickupAddress      string
@@ -81,11 +104,13 @@ type Trip struct {
 	CurrencyCode string
 	RequestedAt  time.Time
 	AcceptedAt   *time.Time
-	StartedAt    *time.Time
-	CompletedAt  *time.Time
-	CancelledAt  *time.Time
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	// ArrivedAt is when the driver said they were at the pickup.
+	ArrivedAt   *time.Time
+	StartedAt   *time.Time
+	CompletedAt *time.Time
+	CancelledAt *time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 // SosTriggeredBy is who pressed the SOS button — the rider or the

@@ -75,11 +75,17 @@ type Repository interface {
 		tripID string,
 	) (Trip, error)
 
+	// Cancel stores who cancelled and why, after record.Allow accepts the
+	// locked trip (its error is returned as is).
 	Cancel(
 		ctx context.Context,
-		tripID string,
-		reason string,
+		record CancelRecord,
 	) (Trip, error)
+
+	// MarkArrived records that the driver is at the pickup of an accepted
+	// trip, with its trip.driver_arrived event. A trip already marked is
+	// returned unchanged; one that is not accepted is ErrInvalidTransition.
+	MarkArrived(ctx context.Context, tripID string) (Trip, error)
 
 	// TriggerSOS records a safety alert against a trip and returns its
 	// generated ID and timestamp. Unlike Accept/Start/Complete/Cancel

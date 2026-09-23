@@ -3,12 +3,13 @@ package wallet
 import "errors"
 
 var (
-	ErrOwnerIDRequired      = errors.New("owner id is required")
-	ErrInvalidOwnerType     = errors.New("invalid owner type")
-	ErrInvalidPaymentMethod = errors.New("invalid payment method")
-	ErrTripIDRequired       = errors.New("trip id is required")
-	ErrRiderIDRequired      = errors.New("rider id is required")
-	ErrDriverIDRequired     = errors.New("driver id is required")
+	ErrOwnerIDRequired       = errors.New("owner id is required")
+	ErrInvalidOwnerType      = errors.New("invalid owner type")
+	ErrInvalidPaymentMethod  = errors.New("invalid payment method")
+	ErrInvalidSettlementKind = errors.New("invalid settlement kind")
+	ErrTripIDRequired        = errors.New("trip id is required")
+	ErrRiderIDRequired       = errors.New("rider id is required")
+	ErrDriverIDRequired      = errors.New("driver id is required")
 
 	ErrInvalidAmount     = errors.New("amount must be a positive decimal value")
 	ErrInvalidFareAmount = errors.New("fare amount must be a non-negative decimal value")

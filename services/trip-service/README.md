@@ -34,10 +34,24 @@ manually" milestone this was built for.
 
 ## Outbox events emitted
 
-`trip.requested`, `trip.accepted`, `trip.started`, `trip.completed`,
-`trip.cancelled` — every one written in the same transaction as its state
-change. These are what Dispatch, Wallet, and Notification will eventually
-subscribe to; none of them consume anything yet.
+`trip.requested`, `trip.accepted`, `trip.driver_arrived`, `trip.started`,
+`trip.completed`, `trip.cancelled` (with `cancelled_by` and `rider_no_show`) —
+every one written in the same transaction as its change.
+
+## Arrival, waiting and cancelling
+
+- `MarkDriverArrived` (`:arrived`): the driver of an accepted trip, within
+  200 m of the pickup by their last reported position (location-service,
+  30 s). It sets `arrived_at` once and emits `trip.driver_arrived` (the rider
+  is told). The trip stays `accepted`: arrival is a moment, not a state.
+- The wait from `arrived_at` to `started_at` beyond the rate card's free
+  minutes is charged by pricing-service when the trip completes.
+- `CancelTrip` records who cancelled: the rider or the driver of the trip
+  (told apart from the caller's identity), or `system` for the internal token
+  (dispatch, staff). `rider_no_show` is only the driver's, only after arriving
+  and waiting `TRIP_NO_SHOW_WAIT` (5 minutes, 1 to 30).
+- pricing-service decides the fee of a cancelled trip from these and the rate
+  card, and wallet-service takes it from the rider's wallet.
 
 ## Addresses, the pickup photo and recent destinations
 

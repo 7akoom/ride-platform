@@ -60,12 +60,13 @@ per-source OTP limit counts every user as one source.
 | Method | Path | Who | Notes |
 |---|---|---|---|
 | POST | `/v1/trips` | rider | `riderId` must be the caller's rider profile. `pickupAddress` and `dropoffAddress` (at most 300 characters) are kept with the trip as the rider picked them. `pickupSavedAddressId` / `dropoffSavedAddressId` name one of the rider's saved addresses: its point and address replace `pickup` / `dropoff`, and for the pickup its details, note for the captain and photo are copied into the trip (404 for an address that is not the rider's). `quoteId` (from `/v1/fare-quotes`) fixes the price: the trip gets `quotedFare` and `currencyCode` and the quote's `vehicleClass`; 404 for another rider's or unknown quote, 400 `FAILED_PRECONDITION` when it expired, was used or its coupon ended (ask for a new quote), 400 when pickup or dropoff is more than 50 m from the quoted one or another class is named |
-| GET | `/v1/trips/{tripId}` | rider or driver of the trip | poll for status; has `pickupAddress`, `dropoffAddress`, `pickupDetails`, `pickupNote`, `hasPickupPhoto`, and for a quoted trip `quoteId`, `quotedFare`, `currencyCode` |
+| GET | `/v1/trips/{tripId}` | rider or driver of the trip | poll for status; has `pickupAddress`, `dropoffAddress`, `pickupDetails`, `pickupNote`, `hasPickupPhoto`, for a quoted trip `quoteId`, `quotedFare`, `currencyCode`, and `arrivedAt`, `cancelledBy`, `riderNoShow` |
 | GET | `/v1/trips/{tripId}/pickup-photo` | rider or driver of the trip | a short-lived `url` to the photo of the saved pickup address, while the trip is accepted or in progress (400 otherwise, 404 without a photo) |
 | GET | `/v1/riders/{riderId}/recent-destinations?limit=` | the rider | where their completed trips ended, newest first, each place once (points within about 10 m are one): `coordinates`, `address`, `lastTripAt`; `limit` 5 by default, at most 10 |
+| POST | `/v1/trips/{tripId}:arrived` | driver of the trip | the driver is at the pickup: only while the trip is accepted and within 200 m of the pickup by their last reported position (400 `FAILED_PRECONDITION` when too far, or when no position was reported in the last 30 s). Sets `arrivedAt` and tells the rider; waiting time and a no-show count from here. Again once marked changes nothing |
 | POST | `/v1/trips/{tripId}:start` | driver of the trip | |
 | POST | `/v1/trips/{tripId}:complete` | driver of the trip | |
-| POST | `/v1/trips/{tripId}:cancel` | rider or driver of the trip | |
+| POST | `/v1/trips/{tripId}:cancel` | rider or driver of the trip | `reason`; the trip records `cancelledBy` (rider, driver, or system for dispatch or staff). `riderNoShow: true` is the driver cancelling because the rider did not come: only the driver, only after `:arrived` and waiting 5 minutes (`TRIP_NO_SHOW_WAIT`), else 400; the rider pays the rate card's no-show fee. A rider who cancels once a driver accepted pays the cancellation fee after the card's grace minutes, unless the driver has still not arrived 15 minutes after accepting |
 | POST | `/v1/trips/{tripId}:sos` | rider or driver, as themselves | `triggeredBy` must match the caller's role |
 | POST | `/v1/trips/{tripId}:waypoint` | driver of the trip | every 15-30 s; throttled server-side |
 | GET | `/v1/trips/{tripId}/path` | rider or driver of the trip | |
@@ -168,6 +169,11 @@ A fare breakdown's `surge` has `timeOfDayPercent`, `zonePercent`, `demandPercent
 rush-hour rule or zone surge in force, to show the rider). `minimumFareAdjustment`
 is what raised the trip to the minimum fare. Money is a decimal string.
 
+A completed trip's fare adds `waitingFare` for the `waitingMinutes` the driver
+waited at the pickup (from `:arrived` to `:start`) beyond the card's free minutes;
+it is never discounted. A cancelled trip's fee is a fare of its own `kind`
+(`cancellation` or `no_show`).
+
 ### Push devices and inbox
 
 | Method | Path | Who | Notes |
@@ -183,6 +189,7 @@ is what raised the trip to the minimum fare. Money is a decimal string.
 |---|---|---|---|
 | GET | `/v1/wallets/{ownerId}?owner_type=OWNER_TYPE_DRIVER` | the owner | `ownerId` is the rider or driver id; balances are decimal strings |
 | GET | `/v1/wallets/{ownerId}/transactions?owner_type=&limit=` | the owner | signed decimal `amount`: negative means money left |
+| GET | `/v1/wallets/{ownerId}/trips/{tripId}/settlement?owner_type=` | the rider or driver of the trip | how the trip's money moved: `kind` (`trip`, or `cancellation` / `no_show` for a cancelled trip's fee), `fareAmount`, `walletAmount`, `cashAmount`, `changeAmount`, and for a fee `dueAmount`: what the rider's wallet could not cover and still owes. The driver also sees `commissionAmount` and `driverEarning` |
 | GET | `/v1/drivers/{driverId}/standing` | the driver | can they take trips, and the amount due if suspended |
 | POST | `/v1/drivers/{driverId}/payouts` | the driver | `amount` and `idempotencyKey`; a retry with the same key is safe |
 | POST | `/v1/wallet/topups/zaincash` | the driver | returns the ZainCash `redirectUrl` for the webview |

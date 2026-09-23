@@ -24,8 +24,9 @@ var testNow = time.Date(2026, 9, 19, 12, 0, 0, 0, time.UTC)
 type fakePricer struct {
 	pricing.Service
 
-	calls []pricing.CalculateFareInput
-	err   error
+	calls         []pricing.CalculateFareInput
+	cancellations []pricing.CancellationInput
+	err           error
 }
 
 func (f *fakePricer) CalculateFare(
@@ -35,6 +36,12 @@ func (f *fakePricer) CalculateFare(
 	f.calls = append(f.calls, input)
 
 	return pricing.Fare{}, f.err
+}
+
+func (f *fakePricer) ChargeCancellation(_ context.Context, input pricing.CancellationInput) (pricing.Fare, bool, error) {
+	f.cancellations = append(f.cancellations, input)
+
+	return pricing.Fare{Kind: pricing.FareKindCancellation}, f.err == nil, f.err
 }
 
 type fakeTrips struct {

@@ -273,6 +273,11 @@ func (r *PricingRepository) PersistFare(
 
 	b := input.Breakdown
 
+	kind := input.Kind
+	if kind == "" {
+		kind = pricing.FareKindTrip
+	}
+
 	var discountType, discountLabel *string
 
 	if b.AppliedDiscountType != pricing.DiscountNone {
@@ -292,10 +297,10 @@ func (r *PricingRepository) PersistFare(
 		     applied_discount_type, applied_discount_label, discount_amount,
 		     total, zone_id, vehicle_class,
 		     city_id, surge_zone_percent, surge_label, minimum_fare_adjustment,
-		     quote_id, config_id)
+		     quote_id, config_id, kind, waiting_minutes, waiting_fare)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
 		         $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-		         $21, $22, NULLIF($23, ''), $24, $25, $26)
+		         $21, $22, NULLIF($23, ''), $24, $25, $26, $27, $28, $29)
 		 RETURNING `+fareColumns,
 		input.TripID,
 		input.RiderID,
@@ -323,6 +328,9 @@ func (r *PricingRepository) PersistFare(
 		b.MinimumFareAdjustment,
 		nullableUUID(input.QuoteID),
 		nullableUUID(input.ConfigID),
+		string(kind),
+		b.WaitingMinutes,
+		b.WaitingFare,
 	)
 
 	fare, err := scanFare(row)
@@ -339,7 +347,10 @@ func (r *PricingRepository) PersistFare(
 		return pricing.Fare{}, fmt.Errorf("insert fare: %w", err)
 	}
 
-	if _, err := tx.Exec(
+	// A cancelled trip's fee is not a completed trip, nor a coupon use.
+	if kind != pricing.FareKindTrip {
+		input.Coupon = nil
+	} else if _, err := tx.Exec(
 		ctx,
 		`INSERT INTO rider_trip_stats (rider_id, completed_trip_count, first_completed_at)
 		 VALUES ($1, 1, CURRENT_TIMESTAMP)
@@ -382,6 +393,7 @@ func (r *PricingRepository) PersistFare(
 		"currency_code": b.CurrencyCode,
 		"total":         b.Total,
 		"quote_id":      input.QuoteID,
+		"kind":          string(kind),
 	})
 	if err != nil {
 		return pricing.Fare{}, fmt.Errorf("marshal fare.calculated payload: %w", err)
@@ -452,12 +464,13 @@ const fareColumns = `id, trip_id, rider_id, currency_code,
         total, COALESCE(zone_id::text, ''), COALESCE(vehicle_class, ''),
         COALESCE(city_id::text, ''), surge_zone_percent, COALESCE(surge_label, ''),
         minimum_fare_adjustment, COALESCE(quote_id::text, ''), COALESCE(config_id::text, ''),
-        created_at`
+        kind, waiting_minutes, waiting_fare, created_at`
 
 func scanFare(row pgx.Row) (pricing.Fare, error) {
 	var fare pricing.Fare
 	var b pricing.FareBreakdown
 	var discountType, discountLabel *string
+	var kind string
 
 	err := row.Scan(
 		&fare.ID,
@@ -487,6 +500,9 @@ func scanFare(row pgx.Row) (pricing.Fare, error) {
 		&b.MinimumFareAdjustment,
 		&fare.QuoteID,
 		&fare.ConfigID,
+		&kind,
+		&b.WaitingMinutes,
+		&b.WaitingFare,
 		&fare.CreatedAt,
 	)
 	if err != nil {
@@ -503,6 +519,7 @@ func scanFare(row pgx.Row) (pricing.Fare, error) {
 		b.AppliedDiscountLabel = *discountLabel
 	}
 
+	fare.Kind = pricing.FareKind(kind)
 	fare.Breakdown = b
 
 	return fare, nil

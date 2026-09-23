@@ -109,11 +109,11 @@ func (s *service) gatherMarket(ctx context.Context, request fareRequest, riderID
 	m := market{request: request, riderID: riderID, zone: zone, now: nowFunc()}
 
 	var (
-		wg                              sync.WaitGroup
+		wg                                sync.WaitGroup
 		rulesErr, zoneSurgeErr, demandErr error
-		rules                           []SurgeTimeRule
-		zoneSurge                       ZoneSurge
-		zoneSurgeFound                  bool
+		rules                             []SurgeTimeRule
+		zoneSurge                         ZoneSurge
+		zoneSurgeFound                    bool
 	)
 
 	wg.Add(6)

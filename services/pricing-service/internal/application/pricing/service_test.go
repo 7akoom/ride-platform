@@ -88,6 +88,22 @@ func (r *fakeRepository) GetActiveConfig(_ context.Context, scope Scope) (Config
 	return r.config, nil
 }
 
+func (r *fakeRepository) GetConfigByID(_ context.Context, id string) (Config, error) {
+	if r.config.ID == id {
+		return r.config, nil
+	}
+
+	for _, cards := range []map[string]Config{r.configsByZone, r.configsByCity} {
+		for _, card := range cards {
+			if card.ID == id {
+				return card, nil
+			}
+		}
+	}
+
+	return Config{}, ErrNoActiveConfig
+}
+
 func (r *fakeRepository) ListActiveSurgeTimeRules(_ context.Context) ([]SurgeTimeRule, error) {
 	return r.surgeRules, nil
 }
@@ -146,7 +162,7 @@ func (r *fakeRepository) PersistFare(_ context.Context, input PersistFareInput) 
 	if r.persistFareErr != nil {
 		return Fare{}, r.persistFareErr
 	}
-	return Fare{TripID: input.TripID, RiderID: input.RiderID, Breakdown: input.Breakdown, QuoteID: input.QuoteID}, nil
+	return Fare{TripID: input.TripID, RiderID: input.RiderID, Kind: input.Kind, Breakdown: input.Breakdown, QuoteID: input.QuoteID}, nil
 }
 
 func (r *fakeRepository) SaveQuotes(_ context.Context, quotes []Quote) ([]Quote, error) {

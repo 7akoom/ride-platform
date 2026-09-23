@@ -16,6 +16,10 @@ import (
 // publishes when a trip is completed.
 const SubjectTripCompleted = "trip.completed"
 
+// SubjectTripCancelled is published when a trip is cancelled; a cancelled
+// trip may owe a cancellation or no-show fee.
+const SubjectTripCancelled = "trip.cancelled"
+
 // TripInfo is the slice of a trip pricing needs to calculate its fare.
 type TripInfo struct {
 	ID           string
@@ -28,6 +32,15 @@ type TripInfo struct {
 	// QuoteID is the quote the trip was requested with, if any: its fare
 	// is the quoted one.
 	QuoteID string
+
+	DriverID    string
+	Status      string
+	CancelledBy string
+	RiderNoShow bool
+	AcceptedAt  *time.Time
+	ArrivedAt   *time.Time
+	StartedAt   *time.Time
+	CancelledAt *time.Time
 }
 
 // TripReader is pricing-service's view of trip-service.
@@ -135,7 +148,7 @@ func NewHandler(
 // returned untouched), so redelivery can never double-price a trip or
 // publish a second fare.calculated event.
 func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error {
-	if subject != SubjectTripCompleted {
+	if subject != SubjectTripCompleted && subject != SubjectTripCancelled {
 		return nil
 	}
 
@@ -171,6 +184,10 @@ func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error
 		return h.retryLater(ctx, tripID, fmt.Errorf("get trip: %w", err))
 	}
 
+	if subject == SubjectTripCancelled {
+		return h.chargeCancellation(ctx, tripID, trip)
+	}
+
 	_, err = h.pricer.CalculateFare(ctx, pricing.CalculateFareInput{
 		TripID:       tripID,
 		RiderID:      trip.RiderID,
@@ -180,6 +197,8 @@ func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error
 		DropoffLng:   trip.DropoffLng,
 		VehicleClass: trip.VehicleClass,
 		QuoteID:      trip.QuoteID,
+		ArrivedAt:    trip.ArrivedAt,
+		StartedAt:    trip.StartedAt,
 	})
 	if err == nil {
 		h.logger.InfoContext(ctx, "fare calculated for completed trip", "trip_id", tripID)
@@ -193,6 +212,45 @@ func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error
 			"trip_id", tripID,
 			"error", err,
 		)
+
+		return nil
+	}
+
+	return h.retryLater(ctx, tripID, err)
+}
+
+// chargeCancellation records a cancelled trip's fee, if it owes one.
+func (h *Handler) chargeCancellation(ctx context.Context, tripID string, trip TripInfo) error {
+	if trip.Status != "cancelled" {
+		h.logger.WarnContext(ctx, "trip.cancelled for a trip that is not cancelled", "trip_id", tripID)
+
+		return nil
+	}
+
+	fare, charged, err := h.pricer.ChargeCancellation(ctx, pricing.CancellationInput{
+		TripID:       tripID,
+		RiderID:      trip.RiderID,
+		DriverID:     trip.DriverID,
+		VehicleClass: trip.VehicleClass,
+		QuoteID:      trip.QuoteID,
+		PickupLat:    trip.PickupLat,
+		PickupLng:    trip.PickupLng,
+		CancelledBy:  trip.CancelledBy,
+		RiderNoShow:  trip.RiderNoShow,
+		AcceptedAt:   trip.AcceptedAt,
+		ArrivedAt:    trip.ArrivedAt,
+		CancelledAt:  trip.CancelledAt,
+	})
+	if err == nil {
+		if charged {
+			h.logger.InfoContext(ctx, "fee charged for cancelled trip", "trip_id", tripID, "kind", string(fare.Kind))
+		}
+
+		return nil
+	}
+
+	if isPermanent(err) {
+		h.logger.ErrorContext(ctx, "cannot charge a fee for cancelled trip", "trip_id", tripID, "error", err)
 
 		return nil
 	}

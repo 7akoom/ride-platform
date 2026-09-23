@@ -61,7 +61,7 @@ func TestHistoryQueryReadsTheColumnsScanTripExpects(t *testing.T) {
 		"cancellation_reason, vehicle_class, payment_method, requested_at, accepted_at, started_at, completed_at, " +
 		"cancelled_at, created_at, updated_at, pickup_address, dropoff_address, pickup_details, pickup_note, " +
 		"COALESCE(pickup_photo_media_id::text, ''), COALESCE(quote_id::text, ''), COALESCE(quoted_fare::text, ''), " +
-		"COALESCE(currency_code, '')"
+		"COALESCE(currency_code, ''), arrived_at, COALESCE(cancelled_by, ''), rider_no_show"
 	if normalized(historyColumns) != want {
 		t.Errorf("historyColumns changed:\n%s", normalized(historyColumns))
 	}

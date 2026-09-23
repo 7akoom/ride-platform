@@ -67,6 +67,24 @@ currency.
 Every fare records the rate card version (`config_id`) and, when there is
 one, the quote it came from.
 
+## Waiting, cancelling and not showing up
+
+- **Waiting:** when a trip completes, every whole minute the driver waited
+  at the pickup (from the driver's arrival to the start) beyond the card's
+  free minutes is charged at the card's rate, on top of the fare (quoted or
+  not) and never discounted: `waiting_minutes`, `waiting_fare`.
+- **Cancellation fee:** pricing consumes `trip.cancelled`. A rider who
+  cancels after a driver accepted pays the card's cancellation fee, unless
+  it is within the card's grace minutes, or the driver has still not arrived
+  15 minutes after accepting (the driver is late).
+- **No-show fee:** the driver cancelled because the rider did not come
+  (trip-service only allows it after arriving and waiting).
+- A fee is a fare of its own `kind` (`cancellation`, `no_show`): it does not
+  count as a completed trip nor use a coupon, and `fare.calculated` carries
+  the kind so wallet-service settles it as a fee. A quoted trip's fees and
+  waiting come from the card it was quoted with; otherwise from the card in
+  force at the pickup.
+
 ## Surge
 
 ```

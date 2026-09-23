@@ -29,6 +29,28 @@ type CalculateFareInput struct {
 	// QuoteID, when set, is the quote the trip was requested with: the fare
 	// is the quoted one and the fields above only identify the trip.
 	QuoteID string
+	// When the driver said they were at the pickup and when the trip
+	// started: the wait beyond the rate card's free minutes is charged.
+	ArrivedAt *time.Time
+	StartedAt *time.Time
+}
+
+// CancellationInput is what a cancelled trip's fee depends on.
+type CancellationInput struct {
+	TripID       string
+	RiderID      string
+	DriverID     string
+	VehicleClass string
+	QuoteID      string
+	PickupLat    float64
+	PickupLng    float64
+	// CancelledBy is rider, driver or system; RiderNoShow is the driver
+	// cancelling because the rider did not come.
+	CancelledBy string
+	RiderNoShow bool
+	AcceptedAt  *time.Time
+	ArrivedAt   *time.Time
+	CancelledAt *time.Time
 }
 
 type QuoteTripInput struct {
@@ -64,6 +86,10 @@ type Service interface {
 	// DeleteUnclaimedQuotes removes quotes that expired a while ago without
 	// becoming a trip.
 	DeleteUnclaimedQuotes(ctx context.Context) (int, error)
+
+	// ChargeCancellation records the fee of a cancelled trip, if it owes
+	// one; charged is false when it does not. A trip is charged once.
+	ChargeCancellation(ctx context.Context, input CancellationInput) (fare Fare, charged bool, err error)
 }
 
 // DefaultQuoteTTL is how long a quote holds its price.

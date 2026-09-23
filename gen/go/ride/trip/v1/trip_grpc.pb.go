@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	TripService_RequestTrip_FullMethodName            = "/ride.trip.v1.TripService/RequestTrip"
 	TripService_AcceptTrip_FullMethodName             = "/ride.trip.v1.TripService/AcceptTrip"
+	TripService_MarkDriverArrived_FullMethodName      = "/ride.trip.v1.TripService/MarkDriverArrived"
 	TripService_StartTrip_FullMethodName              = "/ride.trip.v1.TripService/StartTrip"
 	TripService_CompleteTrip_FullMethodName           = "/ride.trip.v1.TripService/CompleteTrip"
 	TripService_CancelTrip_FullMethodName             = "/ride.trip.v1.TripService/CancelTrip"
@@ -47,6 +48,11 @@ const (
 type TripServiceClient interface {
 	RequestTrip(ctx context.Context, in *RequestTripRequest, opts ...grpc.CallOption) (*RequestTripResponse, error)
 	AcceptTrip(ctx context.Context, in *AcceptTripRequest, opts ...grpc.CallOption) (*AcceptTripResponse, error)
+	// MarkDriverArrived is the driver telling the rider they are at the
+	// pickup. Only while the trip is accepted, and only within 200 metres of
+	// the pickup by the driver's last reported position. Waiting time (and
+	// the rider no-show) counts from here. Marking again changes nothing.
+	MarkDriverArrived(ctx context.Context, in *MarkDriverArrivedRequest, opts ...grpc.CallOption) (*MarkDriverArrivedResponse, error)
 	StartTrip(ctx context.Context, in *StartTripRequest, opts ...grpc.CallOption) (*StartTripResponse, error)
 	CompleteTrip(ctx context.Context, in *CompleteTripRequest, opts ...grpc.CallOption) (*CompleteTripResponse, error)
 	CancelTrip(ctx context.Context, in *CancelTripRequest, opts ...grpc.CallOption) (*CancelTripResponse, error)
@@ -156,6 +162,16 @@ func (c *tripServiceClient) AcceptTrip(ctx context.Context, in *AcceptTripReques
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AcceptTripResponse)
 	err := c.cc.Invoke(ctx, TripService_AcceptTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) MarkDriverArrived(ctx context.Context, in *MarkDriverArrivedRequest, opts ...grpc.CallOption) (*MarkDriverArrivedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MarkDriverArrivedResponse)
+	err := c.cc.Invoke(ctx, TripService_MarkDriverArrived_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -348,6 +364,11 @@ func (c *tripServiceClient) RateTrip(ctx context.Context, in *RateTripRequest, o
 type TripServiceServer interface {
 	RequestTrip(context.Context, *RequestTripRequest) (*RequestTripResponse, error)
 	AcceptTrip(context.Context, *AcceptTripRequest) (*AcceptTripResponse, error)
+	// MarkDriverArrived is the driver telling the rider they are at the
+	// pickup. Only while the trip is accepted, and only within 200 metres of
+	// the pickup by the driver's last reported position. Waiting time (and
+	// the rider no-show) counts from here. Marking again changes nothing.
+	MarkDriverArrived(context.Context, *MarkDriverArrivedRequest) (*MarkDriverArrivedResponse, error)
 	StartTrip(context.Context, *StartTripRequest) (*StartTripResponse, error)
 	CompleteTrip(context.Context, *CompleteTripRequest) (*CompleteTripResponse, error)
 	CancelTrip(context.Context, *CancelTripRequest) (*CancelTripResponse, error)
@@ -448,6 +469,9 @@ func (UnimplementedTripServiceServer) RequestTrip(context.Context, *RequestTripR
 }
 func (UnimplementedTripServiceServer) AcceptTrip(context.Context, *AcceptTripRequest) (*AcceptTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AcceptTrip not implemented")
+}
+func (UnimplementedTripServiceServer) MarkDriverArrived(context.Context, *MarkDriverArrivedRequest) (*MarkDriverArrivedResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method MarkDriverArrived not implemented")
 }
 func (UnimplementedTripServiceServer) StartTrip(context.Context, *StartTripRequest) (*StartTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method StartTrip not implemented")
@@ -556,6 +580,24 @@ func _TripService_AcceptTrip_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TripServiceServer).AcceptTrip(ctx, req.(*AcceptTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_MarkDriverArrived_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkDriverArrivedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).MarkDriverArrived(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_MarkDriverArrived_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).MarkDriverArrived(ctx, req.(*MarkDriverArrivedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -898,6 +940,10 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AcceptTrip",
 			Handler:    _TripService_AcceptTrip_Handler,
+		},
+		{
+			MethodName: "MarkDriverArrived",
+			Handler:    _TripService_MarkDriverArrived_Handler,
 		},
 		{
 			MethodName: "StartTrip",

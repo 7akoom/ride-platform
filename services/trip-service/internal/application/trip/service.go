@@ -57,8 +57,7 @@ type Service interface {
 
 	CancelTrip(
 		ctx context.Context,
-		tripID string,
-		reason string,
+		input CancelInput,
 	) (Trip, error)
 
 	GetTrip(
@@ -97,6 +96,11 @@ type service struct {
 
 	// quotes claims fare quotes; nil refuses them.
 	quotes QuoteBook
+
+	// noShowWait is how long a driver waits at the pickup, after marking
+	// arrival, before they may cancel for a rider no-show.
+	noShowWait time.Duration
+	now        func() time.Time
 }
 
 func NewService(
@@ -121,6 +125,8 @@ func NewService(
 		repository:  repository,
 		idGenerator: idGenerator,
 		zoneChecker: zoneChecker,
+		noShowWait:  DefaultNoShowWait,
+		now:         time.Now,
 	}
 
 	for _, option := range options {

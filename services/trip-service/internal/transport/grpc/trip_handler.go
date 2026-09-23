@@ -18,11 +18,25 @@ type TripHandler struct {
 
 	tripService trip.Service
 	logger      *slog.Logger
+
+	// participants tells whether the caller is a trip's rider or driver, to
+	// record who cancelled.
+	participants CallerResolver
+}
+
+// HandlerOption customises a TripHandler.
+type HandlerOption func(*TripHandler)
+
+// WithParticipants lets CancelTrip record whether the rider or the driver
+// cancelled. Without it a user's cancellation is refused.
+func WithParticipants(resolver CallerResolver) HandlerOption {
+	return func(h *TripHandler) { h.participants = resolver }
 }
 
 func NewTripHandler(
 	tripService trip.Service,
 	logger *slog.Logger,
+	options ...HandlerOption,
 ) *TripHandler {
 	if tripService == nil {
 		panic("trip service is required")
@@ -32,10 +46,16 @@ func NewTripHandler(
 		panic("logger is required")
 	}
 
-	return &TripHandler{
+	h := &TripHandler{
 		tripService: tripService,
 		logger:      logger,
 	}
+
+	for _, option := range options {
+		option(h)
+	}
+
+	return h
 }
 
 func (h *TripHandler) RequestTrip(
@@ -138,7 +158,17 @@ func (h *TripHandler) CancelTrip(
 		return nil, status.Error(codes.InvalidArgument, "request is required")
 	}
 
-	cancelled, err := h.tripService.CancelTrip(ctx, request.GetTripId(), request.GetReason())
+	by, err := h.canceller(ctx, request.GetTripId())
+	if err != nil {
+		return nil, err
+	}
+
+	cancelled, err := h.tripService.CancelTrip(ctx, trip.CancelInput{
+		TripID:      request.GetTripId(),
+		Reason:      request.GetReason(),
+		By:          by,
+		RiderNoShow: request.GetRiderNoShow(),
+	})
 	if err != nil {
 		return nil, h.mapTripError(err)
 	}
@@ -146,6 +176,47 @@ func (h *TripHandler) CancelTrip(
 	return &tripv1.CancelTripResponse{
 		Trip: toProtoTrip(cancelled),
 	}, nil
+}
+
+// canceller says who is cancelling: a service (the internal token) is the
+// system, a user is the trip's rider or its driver. Authorization already
+// let only those through.
+func (h *TripHandler) canceller(ctx context.Context, tripID string) (trip.CancelledBy, error) {
+	principal, ok := authenticatedPrincipalFromContext(ctx)
+	if !ok || principal.IdentityID == internalServicePrincipalID {
+		return trip.CancelledBySystem, nil
+	}
+
+	if h.participants == nil {
+		h.logger.Error("a user cancelled a trip but the handler cannot tell rider from driver")
+
+		return "", status.Error(codes.Internal, "failed to process trip request")
+	}
+
+	found, err := h.tripService.GetTrip(ctx, tripID)
+	if err != nil {
+		return "", h.mapTripError(err)
+	}
+
+	riderID, err := h.participants.RiderID(ctx, principal.IdentityID)
+	if err != nil {
+		return "", status.Error(codes.Unavailable, "who is cancelling could not be verified")
+	}
+
+	if riderID != "" && riderID == found.RiderID {
+		return trip.CancelledByRider, nil
+	}
+
+	driverID, err := h.participants.DriverID(ctx, principal.IdentityID)
+	if err != nil {
+		return "", status.Error(codes.Unavailable, "who is cancelling could not be verified")
+	}
+
+	if driverID != "" && driverID == found.DriverID {
+		return trip.CancelledByDriver, nil
+	}
+
+	return "", status.Error(codes.PermissionDenied, "permission denied")
 }
 
 func (h *TripHandler) GetTrip(
@@ -302,8 +373,14 @@ func (h *TripHandler) mapTripError(err error) error {
 		errors.Is(err, trip.ErrQuoteNotFound):
 		return status.Error(codes.NotFound, err.Error())
 
-	case errors.Is(err, trip.ErrQuoteNotUsable):
+	case errors.Is(err, trip.ErrQuoteNotUsable),
+		errors.Is(err, trip.ErrNoShowTooEarly),
+		errors.Is(err, trip.ErrArrivalPositionUnknown),
+		errors.Is(err, trip.ErrTooFarFromPickup):
 		return status.Error(codes.FailedPrecondition, err.Error())
+
+	case errors.Is(err, trip.ErrNoShowOnlyByDriver):
+		return status.Error(codes.PermissionDenied, err.Error())
 
 	case errors.Is(err, trip.ErrQuoteMismatch):
 		return status.Error(codes.InvalidArgument, err.Error())
@@ -382,5 +459,8 @@ func toProtoTrip(t trip.Trip) *tripv1.Trip {
 		QuoteId:            t.QuoteID,
 		QuotedFare:         t.QuotedFare,
 		CurrencyCode:       t.CurrencyCode,
+		ArrivedAt:          optionalTimestamp(t.ArrivedAt),
+		CancelledBy:        string(t.CancelledBy),
+		RiderNoShow:        t.RiderNoShow,
 	}
 }

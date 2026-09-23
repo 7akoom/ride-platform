@@ -116,6 +116,8 @@ func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) err
 		return h.handleTripSOSTriggered(ctx, envelope)
 	case "trip.offered":
 		return h.handleTripOffered(ctx, envelope)
+	case "trip.driver_arrived":
+		return h.handleDriverArrived(ctx, envelope)
 	default:
 		h.logger.WarnContext(ctx, "no notification mapping for subject; skipping", "subject", subject)
 
@@ -242,6 +244,8 @@ type fareCalculatedPayload struct {
 	RiderID      string `json:"rider_id"`
 	CurrencyCode string `json:"currency_code"`
 	Total        string `json:"total"`
+	// Kind is trip, or cancellation / no_show for a cancelled trip's fee.
+	Kind string `json:"kind"`
 }
 
 // handleFareCalculated fires the "trip.completed" notification. It
@@ -262,10 +266,19 @@ func (h *Handler) handleFareCalculated(ctx context.Context, envelope Envelope) e
 		return fmt.Errorf("parse fare.calculated total %q: %w", payload.Total, err)
 	}
 
+	eventKey := "trip.completed"
+
+	switch payload.Kind {
+	case "cancellation":
+		eventKey = "trip.cancellation_fee"
+	case "no_show":
+		eventKey = "trip.no_show_fee"
+	}
+
 	_, err = h.notificationService.Send(ctx, notification.SendInput{
 		RecipientType: notification.RecipientRider,
 		RecipientID:   payload.RiderID,
-		EventKey:      "trip.completed",
+		EventKey:      eventKey,
 		Variables: map[string]string{
 			"total":    total.StringFixed(2),
 			"currency": payload.CurrencyCode,
@@ -273,7 +286,55 @@ func (h *Handler) handleFareCalculated(ctx context.Context, envelope Envelope) e
 		IdempotencyKey: envelope.EventID,
 	})
 	if err != nil {
-		return fmt.Errorf("send trip.completed notification: %w", err)
+		return fmt.Errorf("send %s notification: %w", eventKey, err)
+	}
+
+	return nil
+}
+
+type driverArrivedPayload struct {
+	TripID   string `json:"trip_id"`
+	RiderID  string `json:"rider_id"`
+	DriverID string `json:"driver_id"`
+}
+
+// handleDriverArrived tells the rider their driver is at the pickup.
+func (h *Handler) handleDriverArrived(ctx context.Context, envelope Envelope) error {
+	var payload driverArrivedPayload
+
+	if err := json.Unmarshal(envelope.Payload, &payload); err != nil {
+		return fmt.Errorf("decode trip.driver_arrived payload: %w", err)
+	}
+
+	riderID := payload.RiderID
+	if riderID == "" {
+		trip, err := h.tripClient.GetTrip(ctx, payload.TripID)
+		if err != nil {
+			return fmt.Errorf("look up trip %s: %w", payload.TripID, err)
+		}
+
+		riderID = trip.RiderID
+	}
+
+	driver, err := h.driverClient.GetDriver(ctx, payload.DriverID)
+	if err != nil {
+		return fmt.Errorf("look up driver %s: %w", payload.DriverID, err)
+	}
+
+	_, err = h.notificationService.Send(ctx, notification.SendInput{
+		RecipientType: notification.RecipientRider,
+		RecipientID:   riderID,
+		EventKey:      "trip.driver_arrived",
+		Variables: map[string]string{
+			"driver_name":   driver.DisplayName,
+			"vehicle_color": driver.VehicleColor,
+			"vehicle_model": driver.VehicleModel,
+			"plate_number":  driver.PlateNumber,
+		},
+		IdempotencyKey: envelope.EventID,
+	})
+	if err != nil {
+		return fmt.Errorf("send trip.driver_arrived notification: %w", err)
 	}
 
 	return nil

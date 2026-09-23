@@ -48,6 +48,10 @@ type Config struct {
 	// pricing-service: claiming the fare quote a trip is requested with.
 	PricingServiceAddress string
 
+	// NoShowWait is how long a driver waits at the pickup after marking
+	// arrival before they may cancel for a rider no-show (a Go duration).
+	NoShowWait string
+
 	// Per-caller token-bucket rate limit (see
 	// transport/grpc/rate_limit_interceptor.go). Defaults are generous
 	// for a single mobile-app client under normal use, tight enough to
@@ -162,6 +166,11 @@ func Load() Config {
 		PricingServiceAddress: getEnv(
 			"PRICING_SERVICE_ADDRESS",
 			"localhost:50057",
+		),
+
+		NoShowWait: getEnv(
+			"TRIP_NO_SHOW_WAIT",
+			"5m",
 		),
 
 		RateLimitRequestsPerSecond: getEnv(

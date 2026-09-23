@@ -69,6 +69,9 @@ type farePayload struct {
 	RiderID      string          `json:"rider_id"`
 	CurrencyCode string          `json:"currency_code"`
 	Total        decimal.Decimal `json:"total"`
+	// Kind is trip, or cancellation / no_show for a cancelled trip's fee;
+	// empty (older events) is trip.
+	Kind string `json:"kind"`
 }
 
 // retryLaterError tells the JetStream consumer to redeliver the message
@@ -230,6 +233,7 @@ func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error
 		DriverID:      driverID,
 		PaymentMethod: paymentMethod,
 		FareAmount:    payload.Total,
+		Kind:          wallet.SettlementKind(strings.TrimSpace(payload.Kind)),
 	})
 	if err == nil {
 		h.logger.InfoContext(ctx, "trip settled",
@@ -268,7 +272,8 @@ func (h *Handler) retryLater(ctx context.Context, tripID string, cause error) er
 // isPermanent reports failures that are a property of the trip's own
 // data, so trying again would only fail the same way.
 func isPermanent(err error) bool {
-	return errors.Is(err, wallet.ErrTripIDRequired) ||
+	return errors.Is(err, wallet.ErrInvalidSettlementKind) ||
+		errors.Is(err, wallet.ErrTripIDRequired) ||
 		errors.Is(err, wallet.ErrRiderIDRequired) ||
 		errors.Is(err, wallet.ErrDriverIDRequired) ||
 		errors.Is(err, wallet.ErrInvalidPaymentMethod) ||
