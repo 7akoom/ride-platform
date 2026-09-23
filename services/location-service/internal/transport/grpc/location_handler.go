@@ -6,7 +6,9 @@ import (
 	"log/slog"
 
 	locationv1 "github.com/7akoom/ride-platform/gen/go/ride/location/v1"
+	"github.com/7akoom/ride-platform/services/location-service/internal/application/city"
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/location"
+	"github.com/7akoom/ride-platform/services/location-service/internal/application/place"
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/zone"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,6 +24,11 @@ type LocationHandler struct {
 
 	// mapService serves the map RPCs; nil until WithMaps.
 	mapService mapsService
+
+	// cities and places serve the city and curated place RPCs; nil until
+	// WithCatalog.
+	cities *city.Service
+	places *place.Service
 }
 
 func NewLocationHandler(

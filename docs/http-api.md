@@ -95,15 +95,32 @@ gateway it always answers 403 to a user, and the internal token is refused with 
 | PUT | `/v1/drivers/{driverId}/availability` | the driver |
 | GET | `/v1/identities/{identityId}/driver` | the identity's owner |
 
-### Positions and zones
+### Positions, cities and zones
+
+A deployment serves one country in one currency. It operates in cities; each
+city has its own time zone and the zones (polygons) that are served. A point is
+served when an active zone of an active city covers it.
 
 | Method | Path | Who | Notes |
 |---|---|---|---|
 | PUT | `/v1/locations/{entityId}` | the entity itself | body has `entityType` and `coordinates`; driver app every few seconds |
 | GET | `/v1/locations/{entityId}?entity_type=...` | the entity itself | riders follow their driver through `driver-location`, not this |
-| GET | `/v1/zones` | any user | `?city=` optional |
+| GET | `/v1/cities` | any user | active cities: `id`, `name`, `names` (`ar`, `ku`, `en`), `timeZone`, `center` |
+| GET | `/v1/cities/{cityId}` | any user | 404 for an inactive city |
+| GET | `/v1/zones` | any user | `?city_id=` optional; each zone has `cityId` and `city` (its name) |
 | GET | `/v1/zones/{zoneId}` | any user | |
-| GET | `/v1/zones:check` | any user | `?coordinates.latitude=&coordinates.longitude=` |
+| GET | `/v1/zones:check` | any user | `?coordinates.latitude=&coordinates.longitude=`; when served also `zoneId`, `cityId`, `city`, `timeZone` |
+
+### Curated places
+
+Places staff chose (airports, malls, hotels, hospitals...), named in every
+language, each with the exact point to be picked up or dropped at (a gate, an
+entrance). They also come first in `/v1/places:search`.
+
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| GET | `/v1/places?city_id=&category=&near.latitude=&near.longitude=&page_size=&page_token=` | any user | active places, higher `priority` first, then closer to `near`; `category` is `PLACE_CATEGORY_AIRPORT`, `_MALL`, `_HOTEL`, `_HOSPITAL`, `_UNIVERSITY`, `_LANDMARK`, `_STATION`, `_GOVERNMENT`, `_RESTAURANT` or `_OTHER`; `nextPageToken` is empty on the last page |
+| GET | `/v1/places/{placeId}` | any user | 404 for an inactive place or one in an inactive city |
 
 ### Maps: routes and places
 
@@ -112,7 +129,7 @@ Routes come from a self-hosted OSRM and places from a self-hosted Nominatim, bot
 | Method | Path | What it does |
 |---|---|---|
 | POST | `/v1/routes:compute` | Best route by road between `origin` and `destination` (each `{latitude, longitude}`): `distanceMeters`, `durationSeconds` and `polyline`, the whole path as a Google encoded polyline with 5 digits of precision, ready to decode and draw. `404` when there is no way between the points, `400` when a point is missing, is not a position on Earth, or is more than 1 km from any road, `503` when the routing engine is down. |
-| GET | `/v1/places:search` | Places by name, best match first. Query: `query` (2 to 200 characters), `near.latitude` and `near.longitude` (optional, ranks close places first without excluding the rest), `limit` (5 by default, at most 10), `language` (`ar`, `ku` or `en`; Arabic first when empty). Each place has `id`, `name`, `displayName`, `category`, `type`, `coordinates` and `address` (road, neighbourhood, suburb, city, state, postcode...). An empty `places` list means nothing was found. |
+| GET | `/v1/places:search` | Places by name, best match first: curated places (see above) whose name in any language contains the query or is close to it, then places from the map (a map result within 75 m of a curated one is left out). Query: `query` (2 to 200 characters), `near.latitude` and `near.longitude` (optional, ranks close places first without excluding the rest), `limit` (5 by default, at most 10), `language` (`ar`, `ku` or `en`; Arabic first when empty). Each place has `id`, `name`, `displayName`, `category`, `type`, `coordinates` and `address` (road, neighbourhood, suburb, city, state, postcode...); a curated place has `id` `curated/<placeId>`, `curatedPlaceId`, `type` `curated` and its category (`airport`, `mall`...). If one of the two sources is down the other still answers. An empty `places` list means nothing was found. |
 | GET | `/v1/places:reverse` | What is at a point. Query: `coordinates.latitude`, `coordinates.longitude`, `language`. `404` when there is nothing there. |
 
 Searching is limited to the country set by `MAPS_COUNTRY_CODES` (Iraq by default).
@@ -195,9 +212,17 @@ before it runs. A caller who is not staff, or lacks the permission, gets 403.
 | GET | `/v1/drivers/{driverId}` | the driver, or `drivers.read` | |
 | POST | `/v1/admin/drivers/{driverId}:approve` | `drivers.approve` | clears any earlier rejection reason |
 | POST | `/v1/admin/drivers/{driverId}:reject` | `drivers.approve` | `reason` is required and shown to the driver (`rejectionReason`) |
-| POST | `/v1/admin/zones` | `zones.manage` | `city`, `name`, `boundary` |
+| GET | `/v1/admin/cities` | `zones.manage` | every city, inactive ones too |
+| POST | `/v1/admin/cities` | `zones.manage` | `name`, `names` (`{"ar":…, "ku":…, "en":…}`), `timeZone` (IANA, for example `Asia/Baghdad`), `center`; 409 for a name already used |
+| PATCH | `/v1/admin/cities/{cityId}` | `zones.manage` | replaces `name`, `names`, `timeZone`, `center` |
+| POST | `/v1/admin/cities/{cityId}:setActive` | `zones.manage` | `active`; an inactive city serves none of its zones |
+| POST | `/v1/admin/zones` | `zones.manage` | `cityId`, `name`, `boundary` |
 | PATCH | `/v1/admin/zones/{zoneId}` | `zones.manage` | `name`, `boundary` |
 | POST | `/v1/admin/zones/{zoneId}:setActive` | `zones.manage` | `active` |
+| GET | `/v1/admin/places?city_id=&category=&page_size=&page_token=` | `places.manage` | every curated place, inactive ones too |
+| POST | `/v1/admin/places` | `places.manage` | `cityId`, `category`, `name`, `names`, `address` (at most 300 characters), `coordinates`, `priority` (-1000 to 1000) |
+| PATCH | `/v1/admin/places/{placeId}` | `places.manage` | replaces everything but the city |
+| POST | `/v1/admin/places/{placeId}:setActive` | `places.manage` | `active` |
 | GET | `/v1/media/{mediaId}` · `/v1/media/{mediaId}:download` | `media.read` | any user's file (see Files) |
 
 ## Not exposed yet

@@ -164,5 +164,7 @@ func toProtoMapPlace(place maps.Place) *locationv1.Place {
 		Type:        place.Type,
 		Coordinates: &locationv1.Coordinates{Latitude: place.Coordinates.Latitude, Longitude: place.Coordinates.Longitude},
 		Address:     place.Address,
+
+		CuratedPlaceId: place.CuratedPlaceID,
 	}
 }

@@ -10,9 +10,12 @@ func (s *service) CreateZone(
 	ctx context.Context,
 	input CreateZoneInput,
 ) (Zone, error) {
-	city := strings.TrimSpace(input.City)
-	if city == "" {
+	cityID := strings.ToLower(strings.TrimSpace(input.CityID))
+	switch {
+	case cityID == "":
 		return Zone{}, ErrCityRequired
+	case !uuidShape.MatchString(cityID):
+		return Zone{}, ErrCityNotFound
 	}
 
 	name := strings.TrimSpace(input.Name)
@@ -27,7 +30,7 @@ func (s *service) CreateZone(
 
 	created, err := s.repository.Create(ctx, CreateInput{
 		ID:       s.idGenerator.NewID(),
-		City:     city,
+		CityID:   cityID,
 		Name:     name,
 		Boundary: boundary,
 	})

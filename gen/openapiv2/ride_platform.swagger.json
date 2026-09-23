@@ -122,6 +122,135 @@
         ]
       }
     },
+    "/v1/admin/cities": {
+      "get": {
+        "summary": "Staff with zones.manage (or the internal token) manage cities; the admin\nlist includes inactive ones. Switching a city off stops serving all its\nzones at once.",
+        "operationId": "LocationService_AdminListCities",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListCitiesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "LocationService"
+        ]
+      },
+      "post": {
+        "operationId": "LocationService_CreateCity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateCityRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/admin/cities/{cityId}": {
+      "patch": {
+        "operationId": "LocationService_UpdateCity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cityId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LocationServiceUpdateCityBody"
+            }
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/admin/cities/{cityId}:setActive": {
+      "post": {
+        "operationId": "LocationService_SetCityActive",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cityId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LocationServiceSetCityActiveBody"
+            }
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
     "/v1/admin/drivers": {
       "get": {
         "summary": "ListDrivers lists drivers for the review queue and the admin, newest first,\noptionally by status. Staff with drivers.read, or the internal token.",
@@ -274,6 +403,176 @@
         },
         "tags": [
           "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/places": {
+      "get": {
+        "summary": "Staff with places.manage (or the internal token) manage curated places;\nthe admin list includes inactive ones.",
+        "operationId": "LocationService_AdminListPlaces",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListPlacesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cityId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "PLACE_CATEGORY_UNSPECIFIED",
+              "PLACE_CATEGORY_AIRPORT",
+              "PLACE_CATEGORY_MALL",
+              "PLACE_CATEGORY_HOTEL",
+              "PLACE_CATEGORY_HOSPITAL",
+              "PLACE_CATEGORY_UNIVERSITY",
+              "PLACE_CATEGORY_LANDMARK",
+              "PLACE_CATEGORY_STATION",
+              "PLACE_CATEGORY_GOVERNMENT",
+              "PLACE_CATEGORY_RESTAURANT",
+              "PLACE_CATEGORY_OTHER"
+            ],
+            "default": "PLACE_CATEGORY_UNSPECIFIED"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      },
+      "post": {
+        "operationId": "LocationService_CreatePlace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CuratedPlaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreatePlaceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/admin/places/{placeId}": {
+      "patch": {
+        "operationId": "LocationService_UpdatePlace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CuratedPlaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LocationServiceUpdatePlaceBody"
+            }
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/admin/places/{placeId}:setActive": {
+      "post": {
+        "operationId": "LocationService_SetPlaceActive",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CuratedPlaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LocationServiceSetPlaceActiveBody"
+            }
+          }
+        ],
+        "tags": [
+          "LocationService"
         ]
       }
     },
@@ -1119,6 +1418,59 @@
         ],
         "tags": [
           "IdentityService"
+        ]
+      }
+    },
+    "/v1/cities": {
+      "get": {
+        "summary": "Cities the platform operates in. Every service zone and curated place\nbelongs to one; its time zone is the one schedules and reports use.\nListCities and GetCity show active cities to any signed-in user.",
+        "operationId": "LocationService_ListCities",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListCitiesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/cities/{cityId}": {
+      "get": {
+        "operationId": "LocationService_GetCity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cityId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LocationService"
         ]
       }
     },
@@ -2107,6 +2459,116 @@
         ],
         "tags": [
           "NotificationService"
+        ]
+      }
+    },
+    "/v1/places": {
+      "get": {
+        "summary": "Curated places: airports, malls, hotels... that staff chose, named in\nevery language, with the exact point to be picked up or dropped at.\nSearchPlaces lists matching curated places before map results.\nListPlaces and GetPlace show active places to any signed-in user.",
+        "operationId": "LocationService_ListPlaces",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListPlacesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cityId",
+            "description": "Optional filters.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "PLACE_CATEGORY_UNSPECIFIED",
+              "PLACE_CATEGORY_AIRPORT",
+              "PLACE_CATEGORY_MALL",
+              "PLACE_CATEGORY_HOTEL",
+              "PLACE_CATEGORY_HOSPITAL",
+              "PLACE_CATEGORY_UNIVERSITY",
+              "PLACE_CATEGORY_LANDMARK",
+              "PLACE_CATEGORY_STATION",
+              "PLACE_CATEGORY_GOVERNMENT",
+              "PLACE_CATEGORY_RESTAURANT",
+              "PLACE_CATEGORY_OTHER"
+            ],
+            "default": "PLACE_CATEGORY_UNSPECIFIED"
+          },
+          {
+            "name": "near.latitude",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "near.longitude",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "pageSize",
+            "description": "At most 100; 20 by default.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LocationService"
+        ]
+      }
+    },
+    "/v1/places/{placeId}": {
+      "get": {
+        "operationId": "LocationService_GetPlace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CuratedPlaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LocationService"
         ]
       }
     },
@@ -3192,7 +3654,7 @@
     },
     "/v1/zones": {
       "get": {
-        "summary": "ListZones lists service zones, optionally for one city (?city=).",
+        "summary": "ListZones lists service zones, optionally for one city (?city_id=).",
         "operationId": "LocationService_ListZones",
         "responses": {
           "200": {
@@ -3210,7 +3672,7 @@
         },
         "parameters": [
           {
-            "name": "city",
+            "name": "cityId",
             "description": "Optional. Empty returns zones for every city.",
             "in": "query",
             "required": false,
@@ -3325,6 +3787,22 @@
         }
       }
     },
+    "LocationServiceSetCityActiveBody": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean"
+        }
+      }
+    },
+    "LocationServiceSetPlaceActiveBody": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean"
+        }
+      }
+    },
     "LocationServiceSetZoneActiveBody": {
       "type": "object",
       "properties": {
@@ -3332,6 +3810,27 @@
           "type": "boolean"
         }
       }
+    },
+    "LocationServiceUpdateCityBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "names": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "center": {
+          "$ref": "#/definitions/rideLocationV1Coordinates"
+        }
+      },
+      "description": "UpdateCity replaces the name, the translations, the time zone and the\ncenter."
     },
     "LocationServiceUpdateLocationBody": {
       "type": "object",
@@ -3343,6 +3842,34 @@
           "$ref": "#/definitions/rideLocationV1Coordinates"
         }
       }
+    },
+    "LocationServiceUpdatePlaceBody": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "$ref": "#/definitions/v1PlaceCategory"
+        },
+        "name": {
+          "type": "string"
+        },
+        "names": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "address": {
+          "type": "string"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/rideLocationV1Coordinates"
+        },
+        "priority": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "UpdatePlace replaces everything but the city."
     },
     "LocationServiceUpdateZoneBody": {
       "type": "object",
@@ -3732,10 +4259,64 @@
         },
         "zoneId": {
           "type": "string",
-          "description": "zone_id/city are only set when served is true."
+          "description": "Only set when served is true. A point is served when an active zone of an\nactive city covers it."
         },
         "city": {
+          "type": "string",
+          "description": "The city's name."
+        },
+        "cityId": {
           "type": "string"
+        },
+        "timeZone": {
+          "type": "string",
+          "description": "The city's IANA time zone, for example \"Asia/Baghdad\"."
+        }
+      }
+    },
+    "v1City": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name used when no translation fits."
+        },
+        "names": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The name in other languages, by language: \"ar\", \"ku\", \"en\"."
+        },
+        "timeZone": {
+          "type": "string",
+          "description": "IANA time zone, for example \"Asia/Baghdad\"."
+        },
+        "center": {
+          "$ref": "#/definitions/rideLocationV1Coordinates",
+          "description": "Where a map of the city opens."
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1CityResponse": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "$ref": "#/definitions/v1City"
         }
       }
     },
@@ -3744,6 +4325,26 @@
       "properties": {
         "trip": {
           "$ref": "#/definitions/v1Trip"
+        }
+      }
+    },
+    "v1CreateCityRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "names": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "center": {
+          "$ref": "#/definitions/rideLocationV1Coordinates"
         }
       }
     },
@@ -3766,6 +4367,36 @@
       "properties": {
         "driver": {
           "$ref": "#/definitions/v1Driver"
+        }
+      }
+    },
+    "v1CreatePlaceRequest": {
+      "type": "object",
+      "properties": {
+        "cityId": {
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/definitions/v1PlaceCategory"
+        },
+        "name": {
+          "type": "string"
+        },
+        "names": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "address": {
+          "type": "string"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/rideLocationV1Coordinates"
+        },
+        "priority": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -3850,9 +4481,6 @@
     "v1CreateZoneRequest": {
       "type": "object",
       "properties": {
-        "city": {
-          "type": "string"
-        },
         "name": {
           "type": "string"
         },
@@ -3862,6 +4490,67 @@
             "type": "object",
             "$ref": "#/definitions/rideLocationV1Coordinates"
           }
+        },
+        "cityId": {
+          "type": "string",
+          "description": "The city the zone is in (see CreateCity)."
+        }
+      }
+    },
+    "v1CuratedPlace": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "cityId": {
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/definitions/v1PlaceCategory"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name used when no translation fits."
+        },
+        "names": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The name in other languages, by language: \"ar\", \"ku\", \"en\"."
+        },
+        "address": {
+          "type": "string",
+          "description": "A short address or directions (\"Main gate, 100m Street\")."
+        },
+        "coordinates": {
+          "$ref": "#/definitions/rideLocationV1Coordinates",
+          "description": "The exact point to be picked up or dropped at (a gate, an entrance)."
+        },
+        "priority": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Higher first, in lists and search."
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1CuratedPlaceResponse": {
+      "type": "object",
+      "properties": {
+        "place": {
+          "$ref": "#/definitions/v1CuratedPlace"
         }
       }
     },
@@ -4435,6 +5124,18 @@
         }
       }
     },
+    "v1ListCitiesResponse": {
+      "type": "object",
+      "properties": {
+        "cities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1City"
+          }
+        }
+      }
+    },
     "v1ListDriversResponse": {
       "type": "object",
       "properties": {
@@ -4487,6 +5188,22 @@
             "type": "object",
             "$ref": "#/definitions/v1Permission"
           }
+        }
+      }
+    },
+    "v1ListPlacesResponse": {
+      "type": "object",
+      "properties": {
+        "places": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1CuratedPlace"
+          }
+        },
+        "nextPageToken": {
+          "type": "string",
+          "description": "Empty on the last page."
         }
       }
     },
@@ -4778,7 +5495,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "The OpenStreetMap object, for example \"way/123456\"."
+          "description": "The OpenStreetMap object, for example \"way/123456\", or \"curated/\u003cid\u003e\" for\na curated place."
         },
         "name": {
           "type": "string",
@@ -4802,8 +5519,29 @@
             "type": "string"
           },
           "description": "The parts of the address that are known (road, neighbourhood, suburb, city, state,\npostcode...), by OpenStreetMap's own names."
+        },
+        "curatedPlaceId": {
+          "type": "string",
+          "description": "Set for a curated place (see CuratedPlace): its id, and category is then\nthe curated category in lower case (\"airport\", \"mall\"...)."
         }
       }
+    },
+    "v1PlaceCategory": {
+      "type": "string",
+      "enum": [
+        "PLACE_CATEGORY_UNSPECIFIED",
+        "PLACE_CATEGORY_AIRPORT",
+        "PLACE_CATEGORY_MALL",
+        "PLACE_CATEGORY_HOTEL",
+        "PLACE_CATEGORY_HOSPITAL",
+        "PLACE_CATEGORY_UNIVERSITY",
+        "PLACE_CATEGORY_LANDMARK",
+        "PLACE_CATEGORY_STATION",
+        "PLACE_CATEGORY_GOVERNMENT",
+        "PLACE_CATEGORY_RESTAURANT",
+        "PLACE_CATEGORY_OTHER"
+      ],
+      "default": "PLACE_CATEGORY_UNSPECIFIED"
     },
     "v1Platform": {
       "type": "string",
@@ -5752,7 +6490,8 @@
           "type": "string"
         },
         "city": {
-          "type": "string"
+          "type": "string",
+          "description": "The city's name, for display; city_id is the reference."
         },
         "name": {
           "type": "string"
@@ -5774,6 +6513,9 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "cityId": {
+          "type": "string"
         }
       }
     },

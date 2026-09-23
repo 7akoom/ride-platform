@@ -1,61 +1,58 @@
 # Location Service
 
-Owns real-time position tracking for drivers and riders. Unlike every
-other service so far, this one has **no Postgres database** — it's
-backed entirely by Valkey, and that's a deliberate design choice, not a
-shortcut.
+Owns where things are: the live positions of drivers and riders, the cities
+the platform operates in and the zones it serves inside them, curated places
+(airports, malls, hotels...), and the map features built on self-hosted
+OpenStreetMap data (routes from OSRM, place search from Nominatim).
 
-## Why no durable database here
+## Two stores, on purpose
 
-A driver's position from 30 seconds ago is operationally useless — the
-only thing that matters is "where is this driver *right now*". Writing
-every GPS ping (every 2-5 seconds, per active driver) to Postgres would
-overwhelm it for no benefit. This is the same reasoning production
-systems like Uber/Careem use: real-time location lives in an in-memory
-store (Redis/Valkey) with automatic expiry; only meaningful trip
-milestones (pickup point, dropoff point) get persisted durably, and
-that's Trip service's job, not this one's.
+- **Valkey** holds live positions. A driver's position from 30 seconds ago
+  is useless and pings arrive every few seconds, so they never touch
+  Postgres. `GEOADD` into one sorted set per entity type (`geo:driver`,
+  `geo:rider`) makes `FindNearby` (`GEOSEARCH`) fast; a companion key per
+  entity (`loc:driver:<id>`) carries a TTL (30 s by default) and is what
+  "stale / offline" means, because sorted sets have no per-member TTL.
+  `FindNearby` cross-checks candidates against those keys.
+- **PostgreSQL + PostGIS** holds what changes rarely and must survive a
+  restart: cities, zones (polygons, `GEOGRAPHY(POLYGON)`) and curated places
+  (`GEOGRAPHY(POINT)`, with a trigram index over every name for search).
 
-## How it works
+## Cities, zones and places
 
-- **`GEOADD`** into a Valkey sorted set (one per entity type: `geo:driver`,
-  `geo:rider`) — this is what makes `FindNearby` (`GEOSEARCH`) fast.
-- **A companion "meta" key per entity** (`loc:driver:<id>`) storing the
-  same coordinates as JSON, with a TTL (30s by default). This key
-  expiring is what "this entity went stale/offline" means.
+A deployment serves one country in one currency (the country is
+`MAPS_COUNTRY_CODES`; the currency lives in pricing and wallet). Inside it:
 
-  This two-key design exists because Valkey sorted sets don't support a
-  TTL per member — only on the whole key. A single shared TTL on
-  `geo:driver` would wipe out every driver's position when it expired,
-  which is wrong. So the meta key carries the actual freshness signal,
-  and `FindNearby` cross-checks `GEOSEARCH` candidates against the meta
-  keys (via `MGET`) before returning them, filtering out anything whose
-  entry is stale but hasn't been cleaned out of the geo set yet.
+- A **city** has a name, translations (`ar`, `ku`, `en`), an IANA time zone
+  (checked against the embedded time zone database) and the point a map of it
+  opens at. Switching a city off stops serving all its zones at once.
+- A **zone** is a polygon inside a city. `CheckServiceZone` answers whether a
+  point is served — an active zone of an active city covers it — and with
+  which zone, city and time zone. Every trip request passes it.
+- A **curated place** belongs to a city and has a category, translated names,
+  a short address and the exact point to be picked up or dropped at. Search
+  (`/v1/places:search`) lists matching curated places first, then map results
+  (dropping a map result within 75 m of a curated one); if one source is down
+  the other still answers.
 
-- No transactional outbox here either — location pings are too
-  high-frequency to be meaningful domain events. If a future need comes
-  up (e.g. "notify when a driver enters a zone"), that's a different,
-  much lower-frequency event and can be added deliberately then.
-
-## What's intentionally NOT done yet
-
-Same list as rider-service and driver-service:
-
-- Observability (Prometheus metrics, structured request logging)
-- Authentication interceptor
-- Tests
-- A background cleanup job for the geo sorted sets (currently handled
-  lazily at query time in `FindNearby` — fine for now, but at high scale
-  a periodic job that actually removes stale members from the sorted
-  set, not just filters them out at read time, would be more efficient)
+Staff manage cities and zones with `zones.manage`, curated places with
+`places.manage` (asked of staff-service before every change, and audited).
+Users see only active cities and places.
 
 ## Running locally
 
 ```bash
 cd services/location-service
-cp .env.example .env   # adjust VALKEY_ADDRESS / VALKEY_PASSWORD
-go mod tidy
+cp .env.example .env
+goose -dir migrations postgres "$DATABASE_URL" up
 go run ./cmd/location-service
+```
+
+The Postgres store tests need a throw-away PostGIS database:
+
+```bash
+LOCATION_TEST_DATABASE_URL=postgres://.../empty_db \
+  go test ./internal/infrastructure/persistence/postgres/
 ```
 
 ## Regenerating proto code

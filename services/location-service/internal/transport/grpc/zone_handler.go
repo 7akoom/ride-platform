@@ -20,7 +20,7 @@ func (h *LocationHandler) CreateZone(
 	}
 
 	created, err := h.zoneService.CreateZone(ctx, zone.CreateZoneInput{
-		City:     request.GetCity(),
+		CityID:   request.GetCityId(),
 		Name:     request.GetName(),
 		Boundary: toDomainBoundary(request.GetBoundary()),
 	})
@@ -91,7 +91,7 @@ func (h *LocationHandler) ListZones(
 		return nil, status.Error(codes.InvalidArgument, "request is required")
 	}
 
-	results, err := h.zoneService.ListZones(ctx, request.GetCity())
+	results, err := h.zoneService.ListZones(ctx, request.GetCityId())
 	if err != nil {
 		return nil, h.mapZoneError(err)
 	}
@@ -124,9 +124,11 @@ func (h *LocationHandler) CheckServiceZone(
 	}
 
 	return &locationv1.CheckServiceZoneResponse{
-		Served: result.Served,
-		ZoneId: result.ZoneID,
-		City:   result.City,
+		Served:   result.Served,
+		ZoneId:   result.ZoneID,
+		City:     result.City,
+		CityId:   result.CityID,
+		TimeZone: result.TimeZone,
 	}, nil
 }
 
@@ -156,6 +158,7 @@ func toProtoZone(z zone.Zone) *locationv1.Zone {
 	return &locationv1.Zone{
 		Id:        z.ID,
 		City:      z.City,
+		CityId:    z.CityID,
 		Name:      z.Name,
 		Boundary:  boundary,
 		Active:    z.Active,
@@ -168,6 +171,9 @@ func (h *LocationHandler) mapZoneError(err error) error {
 	switch {
 	case errors.Is(err, zone.ErrZoneNotFound):
 		return status.Error(codes.NotFound, "zone not found")
+
+	case errors.Is(err, zone.ErrCityNotFound):
+		return status.Error(codes.NotFound, "city not found")
 
 	case errors.Is(err, zone.ErrCityRequired),
 		errors.Is(err, zone.ErrNameRequired),

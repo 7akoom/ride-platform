@@ -47,6 +47,20 @@ var methodAccess = map[string]accessLevel{
 	"/ride.location.v1.LocationService/GetRoute":         accessAuthenticated,
 	"/ride.location.v1.LocationService/SearchPlaces":     accessAuthenticated,
 	"/ride.location.v1.LocationService/ReverseGeocode":   accessAuthenticated,
+
+	"/ride.location.v1.LocationService/ListCities":      accessAuthenticated,
+	"/ride.location.v1.LocationService/GetCity":         accessAuthenticated,
+	"/ride.location.v1.LocationService/AdminListCities": accessStaff,
+	"/ride.location.v1.LocationService/CreateCity":      accessStaff,
+	"/ride.location.v1.LocationService/UpdateCity":      accessStaff,
+	"/ride.location.v1.LocationService/SetCityActive":   accessStaff,
+
+	"/ride.location.v1.LocationService/ListPlaces":      accessAuthenticated,
+	"/ride.location.v1.LocationService/GetPlace":        accessAuthenticated,
+	"/ride.location.v1.LocationService/AdminListPlaces": accessStaff,
+	"/ride.location.v1.LocationService/CreatePlace":     accessStaff,
+	"/ride.location.v1.LocationService/UpdatePlace":     accessStaff,
+	"/ride.location.v1.LocationService/SetPlaceActive":  accessStaff,
 }
 
 // staffPermissions names the staff permission for every accessStaff method.
@@ -54,6 +68,16 @@ var staffPermissions = map[string]string{
 	"/ride.location.v1.LocationService/CreateZone":    "zones.manage",
 	"/ride.location.v1.LocationService/UpdateZone":    "zones.manage",
 	"/ride.location.v1.LocationService/SetZoneActive": "zones.manage",
+
+	"/ride.location.v1.LocationService/AdminListCities": "zones.manage",
+	"/ride.location.v1.LocationService/CreateCity":      "zones.manage",
+	"/ride.location.v1.LocationService/UpdateCity":      "zones.manage",
+	"/ride.location.v1.LocationService/SetCityActive":   "zones.manage",
+
+	"/ride.location.v1.LocationService/AdminListPlaces": "places.manage",
+	"/ride.location.v1.LocationService/CreatePlace":     "places.manage",
+	"/ride.location.v1.LocationService/UpdatePlace":     "places.manage",
+	"/ride.location.v1.LocationService/SetPlaceActive":  "places.manage",
 }
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver, staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {

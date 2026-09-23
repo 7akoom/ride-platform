@@ -52,6 +52,10 @@ func staffTargetOf(request any) string {
 	switch r := request.(type) {
 	case interface{ GetZoneId() string }:
 		return r.GetZoneId()
+	case interface{ GetPlaceId() string }:
+		return r.GetPlaceId()
+	case interface{ GetCityId() string }:
+		return r.GetCityId()
 	default:
 		return ""
 	}

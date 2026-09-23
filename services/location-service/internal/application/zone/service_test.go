@@ -3,6 +3,7 @@ package zone_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/zone"
@@ -76,6 +77,8 @@ func (r *fakeRepository) FindContaining(_ context.Context, _ zone.Coordinates) (
 	}
 	return r.findResult, r.findFound, nil
 }
+
+const erbilID = "c17e0000-0000-4000-8000-000000000001"
 
 type fakeIDGenerator struct{ id string }
 
@@ -153,9 +156,10 @@ func TestService_CreateZone_ValidationErrors(t *testing.T) {
 		input   zone.CreateZoneInput
 		wantErr error
 	}{
-		{"empty city", zone.CreateZoneInput{City: " ", Name: "Center", Boundary: validBoundary()}, zone.ErrCityRequired},
-		{"empty name", zone.CreateZoneInput{City: "Erbil", Name: "", Boundary: validBoundary()}, zone.ErrNameRequired},
-		{"bad boundary", zone.CreateZoneInput{City: "Erbil", Name: "Center", Boundary: validBoundary()[:1]}, zone.ErrBoundaryTooFewPoints},
+		{"empty city", zone.CreateZoneInput{CityID: " ", Name: "Center", Boundary: validBoundary()}, zone.ErrCityRequired},
+		{"malformed city id", zone.CreateZoneInput{CityID: "Erbil", Name: "Center", Boundary: validBoundary()}, zone.ErrCityNotFound},
+		{"empty name", zone.CreateZoneInput{CityID: erbilID, Name: "", Boundary: validBoundary()}, zone.ErrNameRequired},
+		{"bad boundary", zone.CreateZoneInput{CityID: erbilID, Name: "Center", Boundary: validBoundary()[:1]}, zone.ErrBoundaryTooFewPoints},
 	}
 
 	for _, tc := range cases {
@@ -176,11 +180,11 @@ func TestService_CreateZone_ValidationErrors(t *testing.T) {
 }
 
 func TestService_CreateZone_HappyPath(t *testing.T) {
-	repo := &fakeRepository{createResult: zone.Zone{ID: "new-zone-id", City: "Erbil", Name: "Center"}}
+	repo := &fakeRepository{createResult: zone.Zone{ID: "new-zone-id", CityID: erbilID, City: "Erbil", Name: "Center"}}
 	svc := newService(repo)
 
 	got, err := svc.CreateZone(context.Background(), zone.CreateZoneInput{
-		City:     "  Erbil  ",
+		CityID:   "  " + strings.ToUpper(erbilID) + "  ",
 		Name:     "  Center  ",
 		Boundary: validBoundary(),
 	})
@@ -197,7 +201,7 @@ func TestService_CreateZone_HappyPath(t *testing.T) {
 	}
 
 	call := repo.createCalls[0]
-	if call.ID != "new-zone-id" || call.City != "Erbil" || call.Name != "Center" {
+	if call.ID != "new-zone-id" || call.CityID != erbilID || call.Name != "Center" {
 		t.Fatalf("unexpected Create input: %+v", call)
 	}
 }
@@ -208,7 +212,7 @@ func TestService_CreateZone_WrapsRepositoryError(t *testing.T) {
 	svc := newService(repo)
 
 	_, err := svc.CreateZone(context.Background(), zone.CreateZoneInput{
-		City: "Erbil", Name: "Center", Boundary: validBoundary(),
+		CityID: erbilID, Name: "Center", Boundary: validBoundary(),
 	})
 	if !errors.Is(err, repoErr) {
 		t.Fatalf("got %v, want wrapped %v", err, repoErr)
@@ -276,15 +280,25 @@ func TestService_ListZones_PassesCityFilterThrough(t *testing.T) {
 	repo := &fakeRepository{listResult: []zone.Zone{{ID: "zone-1"}}}
 	svc := newService(repo)
 
-	got, err := svc.ListZones(context.Background(), "  Erbil  ")
+	got, err := svc.ListZones(context.Background(), "  "+erbilID+"  ")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(got) != 1 {
 		t.Fatalf("got %+v", got)
 	}
-	if repo.listCity != "Erbil" {
-		t.Fatalf("got city filter %q, want trimmed \"Erbil\"", repo.listCity)
+	if repo.listCity != erbilID {
+		t.Fatalf("got city filter %q, want the trimmed id", repo.listCity)
+	}
+}
+
+func TestService_ListZones_MalformedCityIsEmpty(t *testing.T) {
+	repo := &fakeRepository{listResult: []zone.Zone{{ID: "zone-1"}}}
+	svc := newService(repo)
+
+	got, err := svc.ListZones(context.Background(), "Erbil")
+	if err != nil || len(got) != 0 {
+		t.Fatalf("got %+v, %v", got, err)
 	}
 }
 
@@ -301,7 +315,7 @@ func TestService_CheckServiceZone_ValidatesCoordinates(t *testing.T) {
 
 func TestService_CheckServiceZone_PointInsideAZone(t *testing.T) {
 	repo := &fakeRepository{
-		findResult: zone.Zone{ID: "zone-1", City: "Erbil"},
+		findResult: zone.Zone{ID: "zone-1", CityID: erbilID, City: "Erbil", TimeZone: "Asia/Baghdad"},
 		findFound:  true,
 	}
 	svc := newService(repo)
@@ -310,7 +324,7 @@ func TestService_CheckServiceZone_PointInsideAZone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !got.Served || got.ZoneID != "zone-1" || got.City != "Erbil" {
+	if !got.Served || got.ZoneID != "zone-1" || got.CityID != erbilID || got.City != "Erbil" || got.TimeZone != "Asia/Baghdad" {
 		t.Fatalf("got %+v", got)
 	}
 }

@@ -28,7 +28,12 @@ func NewZoneStore(
 	return &ZoneStore{pool: pool}
 }
 
-const zoneColumns = `id, city, name, ST_AsGeoJSON(boundary::geometry), active, created_at, updated_at`
+// zoneColumns reads a zone with its city's name and time zone; every query
+// selects FROM zones z JOIN cities c ON c.id = z.city_id.
+const zoneColumns = `z.id, z.city_id, c.name, c.time_zone, z.name, ST_AsGeoJSON(z.boundary::geometry),
+	z.active, z.created_at, z.updated_at`
+
+const zoneFrom = `zones z JOIN cities c ON c.id = z.city_id`
 
 // rowScanner is satisfied by both pgx.Row (QueryRow) and pgx.Rows
 // (Query, one row at a time via Next), so scanZoneRow works for both a
@@ -39,13 +44,13 @@ type rowScanner interface {
 
 func scanZoneRow(row rowScanner) (zone.Zone, error) {
 	var (
-		id, city, name, boundaryGeoJSON string
-		active                          bool
-		createdAt, updatedAt            time.Time
+		id, cityID, city, timeZone, name, boundaryGeoJSON string
+		active                                            bool
+		createdAt, updatedAt                              time.Time
 	)
 
 	if err := row.Scan(
-		&id, &city, &name, &boundaryGeoJSON, &active, &createdAt, &updatedAt,
+		&id, &cityID, &city, &timeZone, &name, &boundaryGeoJSON, &active, &createdAt, &updatedAt,
 	); err != nil {
 		return zone.Zone{}, fmt.Errorf("scan zone row: %w", err)
 	}
@@ -57,7 +62,9 @@ func scanZoneRow(row rowScanner) (zone.Zone, error) {
 
 	return zone.Zone{
 		ID:        id,
+		CityID:    cityID,
 		City:      city,
+		TimeZone:  timeZone,
 		Name:      name,
 		Boundary:  boundary,
 		Active:    active,
@@ -128,17 +135,23 @@ func (s *ZoneStore) Create(
 	input zone.CreateInput,
 ) (zone.Zone, error) {
 	query := fmt.Sprintf(`
-		INSERT INTO zones (id, city, name, boundary, active)
-		VALUES ($1, $2, $3, ST_GeogFromText($4), TRUE)
-		RETURNING %s
+		WITH z AS (
+			INSERT INTO zones (id, city_id, name, boundary, active)
+			VALUES ($1, $2, $3, ST_GeogFromText($4), TRUE)
+			RETURNING *
+		)
+		SELECT %s FROM z JOIN cities c ON c.id = z.city_id
 	`, zoneColumns)
 
 	row := s.pool.QueryRow(
 		ctx, query,
-		input.ID, input.City, input.Name, boundaryToWKT(input.Boundary),
+		input.ID, input.CityID, input.Name, boundaryToWKT(input.Boundary),
 	)
 
 	created, err := scanZoneRow(row)
+	if isForeignKeyViolation(err) {
+		return zone.Zone{}, zone.ErrCityNotFound
+	}
 	if err != nil {
 		return zone.Zone{}, fmt.Errorf("insert zone: %w", err)
 	}
@@ -151,10 +164,13 @@ func (s *ZoneStore) Update(
 	input zone.UpdateInput,
 ) (zone.Zone, error) {
 	query := fmt.Sprintf(`
-		UPDATE zones
-		SET name = $2, boundary = ST_GeogFromText($3), updated_at = CURRENT_TIMESTAMP
-		WHERE id = $1
-		RETURNING %s
+		WITH z AS (
+			UPDATE zones
+			SET name = $2, boundary = ST_GeogFromText($3), updated_at = CURRENT_TIMESTAMP
+			WHERE id = $1
+			RETURNING *
+		)
+		SELECT %s FROM z JOIN cities c ON c.id = z.city_id
 	`, zoneColumns)
 
 	row := s.pool.QueryRow(
@@ -179,10 +195,13 @@ func (s *ZoneStore) SetActive(
 	active bool,
 ) (zone.Zone, error) {
 	query := fmt.Sprintf(`
-		UPDATE zones
-		SET active = $2, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $1
-		RETURNING %s
+		WITH z AS (
+			UPDATE zones
+			SET active = $2, updated_at = CURRENT_TIMESTAMP
+			WHERE id = $1
+			RETURNING *
+		)
+		SELECT %s FROM z JOIN cities c ON c.id = z.city_id
 	`, zoneColumns)
 
 	row := s.pool.QueryRow(ctx, query, zoneID, active)
@@ -202,7 +221,7 @@ func (s *ZoneStore) Get(
 	ctx context.Context,
 	zoneID string,
 ) (zone.Zone, error) {
-	query := fmt.Sprintf(`SELECT %s FROM zones WHERE id = $1`, zoneColumns)
+	query := fmt.Sprintf(`SELECT %s FROM %s WHERE z.id = $1`, zoneColumns, zoneFrom)
 
 	row := s.pool.QueryRow(ctx, query, zoneID)
 
@@ -219,19 +238,19 @@ func (s *ZoneStore) Get(
 
 func (s *ZoneStore) List(
 	ctx context.Context,
-	city string,
+	cityID string,
 ) ([]zone.Zone, error) {
 	var (
 		rows pgx.Rows
 		err  error
 	)
 
-	if city == "" {
-		query := fmt.Sprintf(`SELECT %s FROM zones ORDER BY city, name`, zoneColumns)
+	if cityID == "" {
+		query := fmt.Sprintf(`SELECT %s FROM %s ORDER BY c.name, z.name`, zoneColumns, zoneFrom)
 		rows, err = s.pool.Query(ctx, query)
 	} else {
-		query := fmt.Sprintf(`SELECT %s FROM zones WHERE city = $1 ORDER BY name`, zoneColumns)
-		rows, err = s.pool.Query(ctx, query, city)
+		query := fmt.Sprintf(`SELECT %s FROM %s WHERE z.city_id = $1 ORDER BY z.name`, zoneColumns, zoneFrom)
+		rows, err = s.pool.Query(ctx, query, cityID)
 	}
 
 	if err != nil {
@@ -263,11 +282,12 @@ func (s *ZoneStore) FindContaining(
 ) (zone.Zone, bool, error) {
 	query := fmt.Sprintf(`
 		SELECT %s
-		FROM zones
-		WHERE active = TRUE
-		  AND ST_Covers(boundary, ST_GeogFromText($1))
+		FROM %s
+		WHERE z.active AND c.active
+		  AND ST_Covers(z.boundary, ST_GeogFromText($1))
+		ORDER BY z.created_at
 		LIMIT 1
-	`, zoneColumns)
+	`, zoneColumns, zoneFrom)
 
 	row := s.pool.QueryRow(ctx, query, pointToWKT(point))
 

@@ -3,7 +3,7 @@ package zone
 import "context"
 
 type CreateZoneInput struct {
-	City     string
+	CityID   string
 	Name     string
 	Boundary []Coordinates
 }
@@ -15,9 +15,11 @@ type UpdateZoneInput struct {
 }
 
 type CheckServiceZoneResult struct {
-	Served bool
-	ZoneID string
-	City   string
+	Served   bool
+	ZoneID   string
+	CityID   string
+	City     string
+	TimeZone string
 }
 
 type Service interface {
@@ -29,7 +31,7 @@ type Service interface {
 
 	GetZone(ctx context.Context, zoneID string) (Zone, error)
 
-	ListZones(ctx context.Context, city string) ([]Zone, error)
+	ListZones(ctx context.Context, cityID string) ([]Zone, error)
 
 	// CheckServiceZone is the query every trip request must pass: is
 	// this point inside any active service zone?

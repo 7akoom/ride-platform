@@ -3,7 +3,8 @@ package zone
 import "errors"
 
 var (
-	ErrCityRequired         = errors.New("city is required")
+	ErrCityRequired         = errors.New("city id is required")
+	ErrCityNotFound         = errors.New("city not found")
 	ErrNameRequired         = errors.New("name is required")
 	ErrZoneIDRequired       = errors.New("zone id is required")
 	ErrBoundaryTooFewPoints = errors.New("a zone boundary needs at least 3 points")

@@ -36,7 +36,7 @@ REVOKE_EMAIL="e2e-revoke-$RUN@ride.test"
 DRIVER_IDENTITY="$(python3 -c 'import uuid; print(uuid.uuid4())')"
 OUTSIDER_IDENTITY="$(python3 -c 'import uuid; print(uuid.uuid4())')"
 PLATE="E2E-STAFF-$RUN"
-ZONE_CITY="E2E Staff City"
+ZONE_CITY="E2E Staff City $RUN"
 
 OWNER_EMAIL="$(sed -n 's/^STAFF_BOOTSTRAP_OWNER_EMAIL=//p' services/staff-service/.env | tr -d '"' | tr '[:upper:]' '[:lower:]')"
 if [ -z "$OWNER_EMAIL" ]; then
@@ -55,7 +55,7 @@ cleanup() {
   rm -f "$BODY_FILE"
   sql ride-staff-postgres "delete from staff_members where email like 'e2e-%@ride.test';" > /dev/null 2>&1 || true
   sql ride-driver-postgres "delete from drivers where vehicle_plate_number = '$PLATE';" > /dev/null 2>&1 || true
-  sql ride-location-postgres "delete from zones where city = '$ZONE_CITY';" > /dev/null 2>&1 || true
+  sql ride-location-postgres "delete from zones where city_id in (select id from cities where name like 'E2E Staff City%'); delete from cities where name like 'E2E Staff City%';" > /dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
@@ -179,7 +179,7 @@ expect "an invitation without a role" 400 POST /v1/admin/staff "$OWNER" "{\"emai
 OPS="$(login "$OPS_EMAIL")"
 expect "the operator accepts" 200 POST /v1/staff/me:accept "$OPS" '{}'
 check "the operator is active" STAFF_STATUS_ACTIVE "$(body_field 'd["staffMember"]["status"]')"
-check "the operator holds the operations permissions" "drivers.approve,drivers.read,media.read,zones.manage" "$(body_field '",".join(d.get("permissions", []))')"
+check "the operator holds the operations permissions" "drivers.approve,drivers.read,media.read,places.manage,zones.manage" "$(body_field '",".join(d.get("permissions", []))')"
 expect "accepting twice" 409 POST /v1/staff/me:accept "$OPS" '{}'
 
 echo "==> [3/7] the operator reviews a driver"
@@ -200,11 +200,13 @@ expect "the operator approves" 200 POST "/v1/admin/drivers/$DRIVER_ID:approve" "
 check "active" DRIVER_STATUS_ACTIVE "$(body_field 'd["driver"]["status"]')"
 check "the reason is cleared" "" "$(body_field 'd["driver"].get("rejectionReason", "")')"
 
-echo "==> [4/7] zones, and what the operator may not do"
-expect "the operator creates a zone" 200 POST /v1/admin/zones "$OPS" "{\"city\":\"$ZONE_CITY\",\"name\":\"E2E\",\"boundary\":[{\"latitude\":10,\"longitude\":10},{\"latitude\":10,\"longitude\":10.01},{\"latitude\":10.01,\"longitude\":10.01},{\"latitude\":10.01,\"longitude\":10}]}"
+echo "==> [4/7] cities and zones, and what the operator may not do"
+expect "the operator creates a city" 200 POST /v1/admin/cities "$OPS" "{\"name\":\"$ZONE_CITY\",\"timeZone\":\"Asia/Baghdad\",\"center\":{\"latitude\":10.005,\"longitude\":10.005}}"
+CITY_ID="$(body_field 'd["city"]["id"]')"
+expect "the operator creates a zone" 200 POST /v1/admin/zones "$OPS" "{\"cityId\":\"$CITY_ID\",\"name\":\"E2E\",\"boundary\":[{\"latitude\":10,\"longitude\":10},{\"latitude\":10,\"longitude\":10.01},{\"latitude\":10.01,\"longitude\":10.01},{\"latitude\":10.01,\"longitude\":10}]}"
 ZONE_ID="$(body_field 'd["zone"]["id"]')"
 expect "the operator switches it off" 200 POST "/v1/admin/zones/$ZONE_ID:setActive" "$OPS" '{"active":false}'
-expect "a rider creates a zone" 403 POST /v1/admin/zones "$OUTSIDER" "{\"city\":\"$ZONE_CITY\",\"name\":\"X\",\"boundary\":[{\"latitude\":1,\"longitude\":1},{\"latitude\":1,\"longitude\":2},{\"latitude\":2,\"longitude\":2}]}"
+expect "a rider creates a zone" 403 POST /v1/admin/zones "$OUTSIDER" "{\"cityId\":\"$CITY_ID\",\"name\":\"X\",\"boundary\":[{\"latitude\":1,\"longitude\":1},{\"latitude\":1,\"longitude\":2},{\"latitude\":2,\"longitude\":2}]}"
 expect "the operator lists staff" 403 GET /v1/admin/staff "$OPS"
 expect "the operator invites someone" 403 POST /v1/admin/staff "$OPS" "{\"email\":\"e2e-x-$RUN@ride.test\",\"displayName\":\"X\",\"roleIds\":[\"$OPERATIONS_ROLE\"]}"
 expect "the operator reads the audit log" 403 GET /v1/admin/audit "$OPS"

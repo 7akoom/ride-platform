@@ -78,6 +78,8 @@ type Place struct {
 	// Address holds the parts of the address that are known (road, neighbourhood,
 	// city, state, postcode...), by OpenStreetMap's own names.
 	Address map[string]string
+	// CuratedPlaceID is set for a curated place.
+	CuratedPlaceID string
 }
 
 type RouteInput struct {
@@ -102,6 +104,12 @@ type SearchInput struct {
 type ReverseInput struct {
 	Coordinates *Coordinates
 	Language    string
+}
+
+// CuratedSearcher finds curated places (see the place package) matching a
+// search. languages is the ordered preference for names ("ar", "ku", "en").
+type CuratedSearcher interface {
+	SearchCurated(ctx context.Context, query string, near *Coordinates, limit int, languages []string) ([]Place, error)
 }
 
 // Router is the port to the routing engine (OSRM).

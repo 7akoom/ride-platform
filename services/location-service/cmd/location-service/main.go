@@ -7,9 +7,14 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	// City time zones are checked against the IANA database; embedding it keeps
+	// that working in images without /usr/share/zoneinfo.
+	_ "time/tzdata"
 
+	"github.com/7akoom/ride-platform/services/location-service/internal/application/city"
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/location"
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/maps"
+	"github.com/7akoom/ride-platform/services/location-service/internal/application/place"
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/zone"
 	"github.com/7akoom/ride-platform/services/location-service/internal/config"
 	"github.com/7akoom/ride-platform/services/location-service/internal/infrastructure/clients"
@@ -96,12 +101,20 @@ func run() int {
 		return 1
 	}
 
-	mapsService := maps.NewService(
+	cityService := city.NewService(postgresrepo.NewCityStore(pool), identifier.NewUUIDGenerator())
+	placeService := place.NewService(postgresrepo.NewPlaceStore(pool), identifier.NewUUIDGenerator())
+
+	// Curated places come before map results in search.
+	mapsService := maps.NewServiceWithCurated(
 		routing.NewOSRMClient(mapsConfig.OSRMBaseURL, mapsConfig.Timeout),
 		geocoding.NewNominatimClient(mapsConfig.NominatimBaseURL, mapsConfig.CountryCodes, mapsConfig.Timeout),
+		placeService,
+		logger,
 	)
 
-	locationHandler := grpcserver.NewLocationHandler(locationService, zoneService, logger).WithMaps(mapsService)
+	locationHandler := grpcserver.NewLocationHandler(locationService, zoneService, logger).
+		WithMaps(mapsService).
+		WithCatalog(cityService, placeService)
 
 	riderConn, err := grpc.NewClient(
 		cfg.RiderServiceAddress,

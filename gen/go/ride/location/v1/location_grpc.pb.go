@@ -28,6 +28,18 @@ const (
 	LocationService_GetZone_FullMethodName          = "/ride.location.v1.LocationService/GetZone"
 	LocationService_ListZones_FullMethodName        = "/ride.location.v1.LocationService/ListZones"
 	LocationService_CheckServiceZone_FullMethodName = "/ride.location.v1.LocationService/CheckServiceZone"
+	LocationService_ListCities_FullMethodName       = "/ride.location.v1.LocationService/ListCities"
+	LocationService_GetCity_FullMethodName          = "/ride.location.v1.LocationService/GetCity"
+	LocationService_AdminListCities_FullMethodName  = "/ride.location.v1.LocationService/AdminListCities"
+	LocationService_CreateCity_FullMethodName       = "/ride.location.v1.LocationService/CreateCity"
+	LocationService_UpdateCity_FullMethodName       = "/ride.location.v1.LocationService/UpdateCity"
+	LocationService_SetCityActive_FullMethodName    = "/ride.location.v1.LocationService/SetCityActive"
+	LocationService_ListPlaces_FullMethodName       = "/ride.location.v1.LocationService/ListPlaces"
+	LocationService_GetPlace_FullMethodName         = "/ride.location.v1.LocationService/GetPlace"
+	LocationService_AdminListPlaces_FullMethodName  = "/ride.location.v1.LocationService/AdminListPlaces"
+	LocationService_CreatePlace_FullMethodName      = "/ride.location.v1.LocationService/CreatePlace"
+	LocationService_UpdatePlace_FullMethodName      = "/ride.location.v1.LocationService/UpdatePlace"
+	LocationService_SetPlaceActive_FullMethodName   = "/ride.location.v1.LocationService/SetPlaceActive"
 	LocationService_GetRoute_FullMethodName         = "/ride.location.v1.LocationService/GetRoute"
 	LocationService_SearchPlaces_FullMethodName     = "/ride.location.v1.LocationService/SearchPlaces"
 	LocationService_ReverseGeocode_FullMethodName   = "/ride.location.v1.LocationService/ReverseGeocode"
@@ -56,10 +68,34 @@ type LocationServiceClient interface {
 	SetZoneActive(ctx context.Context, in *SetZoneActiveRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
 	// GetZone reads one service zone.
 	GetZone(ctx context.Context, in *GetZoneRequest, opts ...grpc.CallOption) (*ZoneResponse, error)
-	// ListZones lists service zones, optionally for one city (?city=).
+	// ListZones lists service zones, optionally for one city (?city_id=).
 	ListZones(ctx context.Context, in *ListZonesRequest, opts ...grpc.CallOption) (*ListZonesResponse, error)
 	// CheckServiceZone tells whether a point is served (?coordinates.latitude=&coordinates.longitude=).
 	CheckServiceZone(ctx context.Context, in *CheckServiceZoneRequest, opts ...grpc.CallOption) (*CheckServiceZoneResponse, error)
+	// Cities the platform operates in. Every service zone and curated place
+	// belongs to one; its time zone is the one schedules and reports use.
+	// ListCities and GetCity show active cities to any signed-in user.
+	ListCities(ctx context.Context, in *ListCitiesRequest, opts ...grpc.CallOption) (*ListCitiesResponse, error)
+	GetCity(ctx context.Context, in *GetCityRequest, opts ...grpc.CallOption) (*CityResponse, error)
+	// Staff with zones.manage (or the internal token) manage cities; the admin
+	// list includes inactive ones. Switching a city off stops serving all its
+	// zones at once.
+	AdminListCities(ctx context.Context, in *AdminListCitiesRequest, opts ...grpc.CallOption) (*ListCitiesResponse, error)
+	CreateCity(ctx context.Context, in *CreateCityRequest, opts ...grpc.CallOption) (*CityResponse, error)
+	UpdateCity(ctx context.Context, in *UpdateCityRequest, opts ...grpc.CallOption) (*CityResponse, error)
+	SetCityActive(ctx context.Context, in *SetCityActiveRequest, opts ...grpc.CallOption) (*CityResponse, error)
+	// Curated places: airports, malls, hotels... that staff chose, named in
+	// every language, with the exact point to be picked up or dropped at.
+	// SearchPlaces lists matching curated places before map results.
+	// ListPlaces and GetPlace show active places to any signed-in user.
+	ListPlaces(ctx context.Context, in *ListPlacesRequest, opts ...grpc.CallOption) (*ListPlacesResponse, error)
+	GetPlace(ctx context.Context, in *GetPlaceRequest, opts ...grpc.CallOption) (*CuratedPlaceResponse, error)
+	// Staff with places.manage (or the internal token) manage curated places;
+	// the admin list includes inactive ones.
+	AdminListPlaces(ctx context.Context, in *AdminListPlacesRequest, opts ...grpc.CallOption) (*ListPlacesResponse, error)
+	CreatePlace(ctx context.Context, in *CreatePlaceRequest, opts ...grpc.CallOption) (*CuratedPlaceResponse, error)
+	UpdatePlace(ctx context.Context, in *UpdatePlaceRequest, opts ...grpc.CallOption) (*CuratedPlaceResponse, error)
+	SetPlaceActive(ctx context.Context, in *SetPlaceActiveRequest, opts ...grpc.CallOption) (*CuratedPlaceResponse, error)
 	// GetRoute returns the best route by road between two points: how far, how long, and
 	// the line to draw on a map. Any signed-in user may ask.
 	GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*GetRouteResponse, error)
@@ -168,6 +204,126 @@ func (c *locationServiceClient) CheckServiceZone(ctx context.Context, in *CheckS
 	return out, nil
 }
 
+func (c *locationServiceClient) ListCities(ctx context.Context, in *ListCitiesRequest, opts ...grpc.CallOption) (*ListCitiesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCitiesResponse)
+	err := c.cc.Invoke(ctx, LocationService_ListCities_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) GetCity(ctx context.Context, in *GetCityRequest, opts ...grpc.CallOption) (*CityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CityResponse)
+	err := c.cc.Invoke(ctx, LocationService_GetCity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) AdminListCities(ctx context.Context, in *AdminListCitiesRequest, opts ...grpc.CallOption) (*ListCitiesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCitiesResponse)
+	err := c.cc.Invoke(ctx, LocationService_AdminListCities_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) CreateCity(ctx context.Context, in *CreateCityRequest, opts ...grpc.CallOption) (*CityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CityResponse)
+	err := c.cc.Invoke(ctx, LocationService_CreateCity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) UpdateCity(ctx context.Context, in *UpdateCityRequest, opts ...grpc.CallOption) (*CityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CityResponse)
+	err := c.cc.Invoke(ctx, LocationService_UpdateCity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) SetCityActive(ctx context.Context, in *SetCityActiveRequest, opts ...grpc.CallOption) (*CityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CityResponse)
+	err := c.cc.Invoke(ctx, LocationService_SetCityActive_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) ListPlaces(ctx context.Context, in *ListPlacesRequest, opts ...grpc.CallOption) (*ListPlacesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPlacesResponse)
+	err := c.cc.Invoke(ctx, LocationService_ListPlaces_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) GetPlace(ctx context.Context, in *GetPlaceRequest, opts ...grpc.CallOption) (*CuratedPlaceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CuratedPlaceResponse)
+	err := c.cc.Invoke(ctx, LocationService_GetPlace_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) AdminListPlaces(ctx context.Context, in *AdminListPlacesRequest, opts ...grpc.CallOption) (*ListPlacesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPlacesResponse)
+	err := c.cc.Invoke(ctx, LocationService_AdminListPlaces_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) CreatePlace(ctx context.Context, in *CreatePlaceRequest, opts ...grpc.CallOption) (*CuratedPlaceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CuratedPlaceResponse)
+	err := c.cc.Invoke(ctx, LocationService_CreatePlace_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) UpdatePlace(ctx context.Context, in *UpdatePlaceRequest, opts ...grpc.CallOption) (*CuratedPlaceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CuratedPlaceResponse)
+	err := c.cc.Invoke(ctx, LocationService_UpdatePlace_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) SetPlaceActive(ctx context.Context, in *SetPlaceActiveRequest, opts ...grpc.CallOption) (*CuratedPlaceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CuratedPlaceResponse)
+	err := c.cc.Invoke(ctx, LocationService_SetPlaceActive_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *locationServiceClient) GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*GetRouteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRouteResponse)
@@ -221,10 +377,34 @@ type LocationServiceServer interface {
 	SetZoneActive(context.Context, *SetZoneActiveRequest) (*ZoneResponse, error)
 	// GetZone reads one service zone.
 	GetZone(context.Context, *GetZoneRequest) (*ZoneResponse, error)
-	// ListZones lists service zones, optionally for one city (?city=).
+	// ListZones lists service zones, optionally for one city (?city_id=).
 	ListZones(context.Context, *ListZonesRequest) (*ListZonesResponse, error)
 	// CheckServiceZone tells whether a point is served (?coordinates.latitude=&coordinates.longitude=).
 	CheckServiceZone(context.Context, *CheckServiceZoneRequest) (*CheckServiceZoneResponse, error)
+	// Cities the platform operates in. Every service zone and curated place
+	// belongs to one; its time zone is the one schedules and reports use.
+	// ListCities and GetCity show active cities to any signed-in user.
+	ListCities(context.Context, *ListCitiesRequest) (*ListCitiesResponse, error)
+	GetCity(context.Context, *GetCityRequest) (*CityResponse, error)
+	// Staff with zones.manage (or the internal token) manage cities; the admin
+	// list includes inactive ones. Switching a city off stops serving all its
+	// zones at once.
+	AdminListCities(context.Context, *AdminListCitiesRequest) (*ListCitiesResponse, error)
+	CreateCity(context.Context, *CreateCityRequest) (*CityResponse, error)
+	UpdateCity(context.Context, *UpdateCityRequest) (*CityResponse, error)
+	SetCityActive(context.Context, *SetCityActiveRequest) (*CityResponse, error)
+	// Curated places: airports, malls, hotels... that staff chose, named in
+	// every language, with the exact point to be picked up or dropped at.
+	// SearchPlaces lists matching curated places before map results.
+	// ListPlaces and GetPlace show active places to any signed-in user.
+	ListPlaces(context.Context, *ListPlacesRequest) (*ListPlacesResponse, error)
+	GetPlace(context.Context, *GetPlaceRequest) (*CuratedPlaceResponse, error)
+	// Staff with places.manage (or the internal token) manage curated places;
+	// the admin list includes inactive ones.
+	AdminListPlaces(context.Context, *AdminListPlacesRequest) (*ListPlacesResponse, error)
+	CreatePlace(context.Context, *CreatePlaceRequest) (*CuratedPlaceResponse, error)
+	UpdatePlace(context.Context, *UpdatePlaceRequest) (*CuratedPlaceResponse, error)
+	SetPlaceActive(context.Context, *SetPlaceActiveRequest) (*CuratedPlaceResponse, error)
 	// GetRoute returns the best route by road between two points: how far, how long, and
 	// the line to draw on a map. Any signed-in user may ask.
 	GetRoute(context.Context, *GetRouteRequest) (*GetRouteResponse, error)
@@ -269,6 +449,42 @@ func (UnimplementedLocationServiceServer) ListZones(context.Context, *ListZonesR
 }
 func (UnimplementedLocationServiceServer) CheckServiceZone(context.Context, *CheckServiceZoneRequest) (*CheckServiceZoneResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CheckServiceZone not implemented")
+}
+func (UnimplementedLocationServiceServer) ListCities(context.Context, *ListCitiesRequest) (*ListCitiesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCities not implemented")
+}
+func (UnimplementedLocationServiceServer) GetCity(context.Context, *GetCityRequest) (*CityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCity not implemented")
+}
+func (UnimplementedLocationServiceServer) AdminListCities(context.Context, *AdminListCitiesRequest) (*ListCitiesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminListCities not implemented")
+}
+func (UnimplementedLocationServiceServer) CreateCity(context.Context, *CreateCityRequest) (*CityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateCity not implemented")
+}
+func (UnimplementedLocationServiceServer) UpdateCity(context.Context, *UpdateCityRequest) (*CityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateCity not implemented")
+}
+func (UnimplementedLocationServiceServer) SetCityActive(context.Context, *SetCityActiveRequest) (*CityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetCityActive not implemented")
+}
+func (UnimplementedLocationServiceServer) ListPlaces(context.Context, *ListPlacesRequest) (*ListPlacesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPlaces not implemented")
+}
+func (UnimplementedLocationServiceServer) GetPlace(context.Context, *GetPlaceRequest) (*CuratedPlaceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPlace not implemented")
+}
+func (UnimplementedLocationServiceServer) AdminListPlaces(context.Context, *AdminListPlacesRequest) (*ListPlacesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminListPlaces not implemented")
+}
+func (UnimplementedLocationServiceServer) CreatePlace(context.Context, *CreatePlaceRequest) (*CuratedPlaceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreatePlace not implemented")
+}
+func (UnimplementedLocationServiceServer) UpdatePlace(context.Context, *UpdatePlaceRequest) (*CuratedPlaceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdatePlace not implemented")
+}
+func (UnimplementedLocationServiceServer) SetPlaceActive(context.Context, *SetPlaceActiveRequest) (*CuratedPlaceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetPlaceActive not implemented")
 }
 func (UnimplementedLocationServiceServer) GetRoute(context.Context, *GetRouteRequest) (*GetRouteResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRoute not implemented")
@@ -462,6 +678,222 @@ func _LocationService_CheckServiceZone_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LocationService_ListCities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCitiesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).ListCities(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_ListCities_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).ListCities(ctx, req.(*ListCitiesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_GetCity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).GetCity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_GetCity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).GetCity(ctx, req.(*GetCityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_AdminListCities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminListCitiesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).AdminListCities(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_AdminListCities_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).AdminListCities(ctx, req.(*AdminListCitiesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_CreateCity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).CreateCity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_CreateCity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).CreateCity(ctx, req.(*CreateCityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_UpdateCity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateCityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).UpdateCity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_UpdateCity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).UpdateCity(ctx, req.(*UpdateCityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_SetCityActive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetCityActiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).SetCityActive(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_SetCityActive_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).SetCityActive(ctx, req.(*SetCityActiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_ListPlaces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPlacesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).ListPlaces(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_ListPlaces_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).ListPlaces(ctx, req.(*ListPlacesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_GetPlace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPlaceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).GetPlace(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_GetPlace_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).GetPlace(ctx, req.(*GetPlaceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_AdminListPlaces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminListPlacesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).AdminListPlaces(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_AdminListPlaces_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).AdminListPlaces(ctx, req.(*AdminListPlacesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_CreatePlace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatePlaceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).CreatePlace(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_CreatePlace_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).CreatePlace(ctx, req.(*CreatePlaceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_UpdatePlace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePlaceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).UpdatePlace(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_UpdatePlace_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).UpdatePlace(ctx, req.(*UpdatePlaceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_SetPlaceActive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetPlaceActiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).SetPlaceActive(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_SetPlaceActive_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).SetPlaceActive(ctx, req.(*SetPlaceActiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _LocationService_GetRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRouteRequest)
 	if err := dec(in); err != nil {
@@ -558,6 +990,54 @@ var LocationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckServiceZone",
 			Handler:    _LocationService_CheckServiceZone_Handler,
+		},
+		{
+			MethodName: "ListCities",
+			Handler:    _LocationService_ListCities_Handler,
+		},
+		{
+			MethodName: "GetCity",
+			Handler:    _LocationService_GetCity_Handler,
+		},
+		{
+			MethodName: "AdminListCities",
+			Handler:    _LocationService_AdminListCities_Handler,
+		},
+		{
+			MethodName: "CreateCity",
+			Handler:    _LocationService_CreateCity_Handler,
+		},
+		{
+			MethodName: "UpdateCity",
+			Handler:    _LocationService_UpdateCity_Handler,
+		},
+		{
+			MethodName: "SetCityActive",
+			Handler:    _LocationService_SetCityActive_Handler,
+		},
+		{
+			MethodName: "ListPlaces",
+			Handler:    _LocationService_ListPlaces_Handler,
+		},
+		{
+			MethodName: "GetPlace",
+			Handler:    _LocationService_GetPlace_Handler,
+		},
+		{
+			MethodName: "AdminListPlaces",
+			Handler:    _LocationService_AdminListPlaces_Handler,
+		},
+		{
+			MethodName: "CreatePlace",
+			Handler:    _LocationService_CreatePlace_Handler,
+		},
+		{
+			MethodName: "UpdatePlace",
+			Handler:    _LocationService_UpdatePlace_Handler,
+		},
+		{
+			MethodName: "SetPlaceActive",
+			Handler:    _LocationService_SetPlaceActive_Handler,
 		},
 		{
 			MethodName: "GetRoute",

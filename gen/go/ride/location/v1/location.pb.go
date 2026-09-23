@@ -72,6 +72,79 @@ func (EntityType) EnumDescriptor() ([]byte, []int) {
 	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{0}
 }
 
+type PlaceCategory int32
+
+const (
+	PlaceCategory_PLACE_CATEGORY_UNSPECIFIED PlaceCategory = 0
+	PlaceCategory_PLACE_CATEGORY_AIRPORT     PlaceCategory = 1
+	PlaceCategory_PLACE_CATEGORY_MALL        PlaceCategory = 2
+	PlaceCategory_PLACE_CATEGORY_HOTEL       PlaceCategory = 3
+	PlaceCategory_PLACE_CATEGORY_HOSPITAL    PlaceCategory = 4
+	PlaceCategory_PLACE_CATEGORY_UNIVERSITY  PlaceCategory = 5
+	PlaceCategory_PLACE_CATEGORY_LANDMARK    PlaceCategory = 6
+	PlaceCategory_PLACE_CATEGORY_STATION     PlaceCategory = 7
+	PlaceCategory_PLACE_CATEGORY_GOVERNMENT  PlaceCategory = 8
+	PlaceCategory_PLACE_CATEGORY_RESTAURANT  PlaceCategory = 9
+	PlaceCategory_PLACE_CATEGORY_OTHER       PlaceCategory = 10
+)
+
+// Enum value maps for PlaceCategory.
+var (
+	PlaceCategory_name = map[int32]string{
+		0:  "PLACE_CATEGORY_UNSPECIFIED",
+		1:  "PLACE_CATEGORY_AIRPORT",
+		2:  "PLACE_CATEGORY_MALL",
+		3:  "PLACE_CATEGORY_HOTEL",
+		4:  "PLACE_CATEGORY_HOSPITAL",
+		5:  "PLACE_CATEGORY_UNIVERSITY",
+		6:  "PLACE_CATEGORY_LANDMARK",
+		7:  "PLACE_CATEGORY_STATION",
+		8:  "PLACE_CATEGORY_GOVERNMENT",
+		9:  "PLACE_CATEGORY_RESTAURANT",
+		10: "PLACE_CATEGORY_OTHER",
+	}
+	PlaceCategory_value = map[string]int32{
+		"PLACE_CATEGORY_UNSPECIFIED": 0,
+		"PLACE_CATEGORY_AIRPORT":     1,
+		"PLACE_CATEGORY_MALL":        2,
+		"PLACE_CATEGORY_HOTEL":       3,
+		"PLACE_CATEGORY_HOSPITAL":    4,
+		"PLACE_CATEGORY_UNIVERSITY":  5,
+		"PLACE_CATEGORY_LANDMARK":    6,
+		"PLACE_CATEGORY_STATION":     7,
+		"PLACE_CATEGORY_GOVERNMENT":  8,
+		"PLACE_CATEGORY_RESTAURANT":  9,
+		"PLACE_CATEGORY_OTHER":       10,
+	}
+)
+
+func (x PlaceCategory) Enum() *PlaceCategory {
+	p := new(PlaceCategory)
+	*p = x
+	return p
+}
+
+func (x PlaceCategory) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PlaceCategory) Descriptor() protoreflect.EnumDescriptor {
+	return file_ride_location_v1_location_proto_enumTypes[1].Descriptor()
+}
+
+func (PlaceCategory) Type() protoreflect.EnumType {
+	return &file_ride_location_v1_location_proto_enumTypes[1]
+}
+
+func (x PlaceCategory) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PlaceCategory.Descriptor instead.
+func (PlaceCategory) EnumDescriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{1}
+}
+
 type Coordinates struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Latitude      float64                `protobuf:"fixed64,1,opt,name=latitude,proto3" json:"latitude,omitempty"`
@@ -505,14 +578,16 @@ func (x *FindNearbyResponse) GetEntities() []*NearbyEntity {
 }
 
 type Zone struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The city's name, for display; city_id is the reference.
 	City          string                 `protobuf:"bytes,2,opt,name=city,proto3" json:"city,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	Boundary      []*Coordinates         `protobuf:"bytes,4,rep,name=boundary,proto3" json:"boundary,omitempty"`
 	Active        bool                   `protobuf:"varint,5,opt,name=active,proto3" json:"active,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	CityId        string                 `protobuf:"bytes,8,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -596,11 +671,19 @@ func (x *Zone) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Zone) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
 type CreateZoneRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	City          string                 `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Boundary      []*Coordinates         `protobuf:"bytes,3,rep,name=boundary,proto3" json:"boundary,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Name     string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Boundary []*Coordinates         `protobuf:"bytes,3,rep,name=boundary,proto3" json:"boundary,omitempty"`
+	// The city the zone is in (see CreateCity).
+	CityId        string `protobuf:"bytes,4,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -635,13 +718,6 @@ func (*CreateZoneRequest) Descriptor() ([]byte, []int) {
 	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *CreateZoneRequest) GetCity() string {
-	if x != nil {
-		return x.City
-	}
-	return ""
-}
-
 func (x *CreateZoneRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -654,6 +730,13 @@ func (x *CreateZoneRequest) GetBoundary() []*Coordinates {
 		return x.Boundary
 	}
 	return nil
+}
+
+func (x *CreateZoneRequest) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
 }
 
 type UpdateZoneRequest struct {
@@ -859,7 +942,7 @@ func (x *GetZoneRequest) GetZoneId() string {
 type ListZonesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Optional. Empty returns zones for every city.
-	City          string `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
+	CityId        string `protobuf:"bytes,2,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -894,9 +977,9 @@ func (*ListZonesRequest) Descriptor() ([]byte, []int) {
 	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *ListZonesRequest) GetCity() string {
+func (x *ListZonesRequest) GetCityId() string {
 	if x != nil {
-		return x.City
+		return x.CityId
 	}
 	return ""
 }
@@ -992,9 +1075,14 @@ func (x *CheckServiceZoneRequest) GetCoordinates() *Coordinates {
 type CheckServiceZoneResponse struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Served bool                   `protobuf:"varint,1,opt,name=served,proto3" json:"served,omitempty"`
-	// zone_id/city are only set when served is true.
-	ZoneId        string `protobuf:"bytes,2,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
-	City          string `protobuf:"bytes,3,opt,name=city,proto3" json:"city,omitempty"`
+	// Only set when served is true. A point is served when an active zone of an
+	// active city covers it.
+	ZoneId string `protobuf:"bytes,2,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	// The city's name.
+	City   string `protobuf:"bytes,3,opt,name=city,proto3" json:"city,omitempty"`
+	CityId string `protobuf:"bytes,4,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	// The city's IANA time zone, for example "Asia/Baghdad".
+	TimeZone      string `protobuf:"bytes,5,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1050,6 +1138,1180 @@ func (x *CheckServiceZoneResponse) GetCity() string {
 	return ""
 }
 
+func (x *CheckServiceZoneResponse) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+func (x *CheckServiceZoneResponse) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+type City struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The name used when no translation fits.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// The name in other languages, by language: "ar", "ku", "en".
+	Names map[string]string `protobuf:"bytes,3,rep,name=names,proto3" json:"names,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// IANA time zone, for example "Asia/Baghdad".
+	TimeZone string `protobuf:"bytes,4,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	// Where a map of the city opens.
+	Center        *Coordinates           `protobuf:"bytes,5,opt,name=center,proto3" json:"center,omitempty"`
+	Active        bool                   `protobuf:"varint,6,opt,name=active,proto3" json:"active,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *City) Reset() {
+	*x = City{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *City) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*City) ProtoMessage() {}
+
+func (x *City) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use City.ProtoReflect.Descriptor instead.
+func (*City) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *City) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *City) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *City) GetNames() map[string]string {
+	if x != nil {
+		return x.Names
+	}
+	return nil
+}
+
+func (x *City) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *City) GetCenter() *Coordinates {
+	if x != nil {
+		return x.Center
+	}
+	return nil
+}
+
+func (x *City) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
+func (x *City) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *City) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type ListCitiesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCitiesRequest) Reset() {
+	*x = ListCitiesRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCitiesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCitiesRequest) ProtoMessage() {}
+
+func (x *ListCitiesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCitiesRequest.ProtoReflect.Descriptor instead.
+func (*ListCitiesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{19}
+}
+
+type AdminListCitiesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminListCitiesRequest) Reset() {
+	*x = AdminListCitiesRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminListCitiesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminListCitiesRequest) ProtoMessage() {}
+
+func (x *AdminListCitiesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminListCitiesRequest.ProtoReflect.Descriptor instead.
+func (*AdminListCitiesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{20}
+}
+
+type ListCitiesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Cities        []*City                `protobuf:"bytes,1,rep,name=cities,proto3" json:"cities,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCitiesResponse) Reset() {
+	*x = ListCitiesResponse{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCitiesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCitiesResponse) ProtoMessage() {}
+
+func (x *ListCitiesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCitiesResponse.ProtoReflect.Descriptor instead.
+func (*ListCitiesResponse) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *ListCitiesResponse) GetCities() []*City {
+	if x != nil {
+		return x.Cities
+	}
+	return nil
+}
+
+type GetCityRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CityId        string                 `protobuf:"bytes,1,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCityRequest) Reset() {
+	*x = GetCityRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCityRequest) ProtoMessage() {}
+
+func (x *GetCityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCityRequest.ProtoReflect.Descriptor instead.
+func (*GetCityRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetCityRequest) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+type CityResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	City          *City                  `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CityResponse) Reset() {
+	*x = CityResponse{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CityResponse) ProtoMessage() {}
+
+func (x *CityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CityResponse.ProtoReflect.Descriptor instead.
+func (*CityResponse) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *CityResponse) GetCity() *City {
+	if x != nil {
+		return x.City
+	}
+	return nil
+}
+
+type CreateCityRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Names         map[string]string      `protobuf:"bytes,2,rep,name=names,proto3" json:"names,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	TimeZone      string                 `protobuf:"bytes,3,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	Center        *Coordinates           `protobuf:"bytes,4,opt,name=center,proto3" json:"center,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateCityRequest) Reset() {
+	*x = CreateCityRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateCityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateCityRequest) ProtoMessage() {}
+
+func (x *CreateCityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateCityRequest.ProtoReflect.Descriptor instead.
+func (*CreateCityRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *CreateCityRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateCityRequest) GetNames() map[string]string {
+	if x != nil {
+		return x.Names
+	}
+	return nil
+}
+
+func (x *CreateCityRequest) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *CreateCityRequest) GetCenter() *Coordinates {
+	if x != nil {
+		return x.Center
+	}
+	return nil
+}
+
+// UpdateCity replaces the name, the translations, the time zone and the
+// center.
+type UpdateCityRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CityId        string                 `protobuf:"bytes,1,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Names         map[string]string      `protobuf:"bytes,3,rep,name=names,proto3" json:"names,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	TimeZone      string                 `protobuf:"bytes,4,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	Center        *Coordinates           `protobuf:"bytes,5,opt,name=center,proto3" json:"center,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateCityRequest) Reset() {
+	*x = UpdateCityRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateCityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateCityRequest) ProtoMessage() {}
+
+func (x *UpdateCityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateCityRequest.ProtoReflect.Descriptor instead.
+func (*UpdateCityRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *UpdateCityRequest) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+func (x *UpdateCityRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateCityRequest) GetNames() map[string]string {
+	if x != nil {
+		return x.Names
+	}
+	return nil
+}
+
+func (x *UpdateCityRequest) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *UpdateCityRequest) GetCenter() *Coordinates {
+	if x != nil {
+		return x.Center
+	}
+	return nil
+}
+
+type SetCityActiveRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CityId        string                 `protobuf:"bytes,1,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	Active        bool                   `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetCityActiveRequest) Reset() {
+	*x = SetCityActiveRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetCityActiveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetCityActiveRequest) ProtoMessage() {}
+
+func (x *SetCityActiveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetCityActiveRequest.ProtoReflect.Descriptor instead.
+func (*SetCityActiveRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *SetCityActiveRequest) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+func (x *SetCityActiveRequest) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
+type CuratedPlace struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Id       string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CityId   string                 `protobuf:"bytes,2,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	Category PlaceCategory          `protobuf:"varint,3,opt,name=category,proto3,enum=ride.location.v1.PlaceCategory" json:"category,omitempty"`
+	// The name used when no translation fits.
+	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	// The name in other languages, by language: "ar", "ku", "en".
+	Names map[string]string `protobuf:"bytes,5,rep,name=names,proto3" json:"names,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// A short address or directions ("Main gate, 100m Street").
+	Address string `protobuf:"bytes,6,opt,name=address,proto3" json:"address,omitempty"`
+	// The exact point to be picked up or dropped at (a gate, an entrance).
+	Coordinates *Coordinates `protobuf:"bytes,7,opt,name=coordinates,proto3" json:"coordinates,omitempty"`
+	// Higher first, in lists and search.
+	Priority      int32                  `protobuf:"varint,8,opt,name=priority,proto3" json:"priority,omitempty"`
+	Active        bool                   `protobuf:"varint,9,opt,name=active,proto3" json:"active,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CuratedPlace) Reset() {
+	*x = CuratedPlace{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CuratedPlace) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CuratedPlace) ProtoMessage() {}
+
+func (x *CuratedPlace) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CuratedPlace.ProtoReflect.Descriptor instead.
+func (*CuratedPlace) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *CuratedPlace) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *CuratedPlace) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+func (x *CuratedPlace) GetCategory() PlaceCategory {
+	if x != nil {
+		return x.Category
+	}
+	return PlaceCategory_PLACE_CATEGORY_UNSPECIFIED
+}
+
+func (x *CuratedPlace) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CuratedPlace) GetNames() map[string]string {
+	if x != nil {
+		return x.Names
+	}
+	return nil
+}
+
+func (x *CuratedPlace) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *CuratedPlace) GetCoordinates() *Coordinates {
+	if x != nil {
+		return x.Coordinates
+	}
+	return nil
+}
+
+func (x *CuratedPlace) GetPriority() int32 {
+	if x != nil {
+		return x.Priority
+	}
+	return 0
+}
+
+func (x *CuratedPlace) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
+func (x *CuratedPlace) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *CuratedPlace) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type ListPlacesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional filters.
+	CityId   string        `protobuf:"bytes,1,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	Category PlaceCategory `protobuf:"varint,2,opt,name=category,proto3,enum=ride.location.v1.PlaceCategory" json:"category,omitempty"`
+	// When set, closer places come first after priority.
+	Near *Coordinates `protobuf:"bytes,3,opt,name=near,proto3" json:"near,omitempty"`
+	// At most 100; 20 by default.
+	PageSize      int32  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPlacesRequest) Reset() {
+	*x = ListPlacesRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPlacesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPlacesRequest) ProtoMessage() {}
+
+func (x *ListPlacesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPlacesRequest.ProtoReflect.Descriptor instead.
+func (*ListPlacesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ListPlacesRequest) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+func (x *ListPlacesRequest) GetCategory() PlaceCategory {
+	if x != nil {
+		return x.Category
+	}
+	return PlaceCategory_PLACE_CATEGORY_UNSPECIFIED
+}
+
+func (x *ListPlacesRequest) GetNear() *Coordinates {
+	if x != nil {
+		return x.Near
+	}
+	return nil
+}
+
+func (x *ListPlacesRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListPlacesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type AdminListPlacesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CityId        string                 `protobuf:"bytes,1,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	Category      PlaceCategory          `protobuf:"varint,2,opt,name=category,proto3,enum=ride.location.v1.PlaceCategory" json:"category,omitempty"`
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminListPlacesRequest) Reset() {
+	*x = AdminListPlacesRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminListPlacesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminListPlacesRequest) ProtoMessage() {}
+
+func (x *AdminListPlacesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminListPlacesRequest.ProtoReflect.Descriptor instead.
+func (*AdminListPlacesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *AdminListPlacesRequest) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+func (x *AdminListPlacesRequest) GetCategory() PlaceCategory {
+	if x != nil {
+		return x.Category
+	}
+	return PlaceCategory_PLACE_CATEGORY_UNSPECIFIED
+}
+
+func (x *AdminListPlacesRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *AdminListPlacesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListPlacesResponse struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Places []*CuratedPlace        `protobuf:"bytes,1,rep,name=places,proto3" json:"places,omitempty"`
+	// Empty on the last page.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPlacesResponse) Reset() {
+	*x = ListPlacesResponse{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPlacesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPlacesResponse) ProtoMessage() {}
+
+func (x *ListPlacesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPlacesResponse.ProtoReflect.Descriptor instead.
+func (*ListPlacesResponse) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ListPlacesResponse) GetPlaces() []*CuratedPlace {
+	if x != nil {
+		return x.Places
+	}
+	return nil
+}
+
+func (x *ListPlacesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type GetPlaceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlaceId       string                 `protobuf:"bytes,1,opt,name=place_id,json=placeId,proto3" json:"place_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPlaceRequest) Reset() {
+	*x = GetPlaceRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPlaceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPlaceRequest) ProtoMessage() {}
+
+func (x *GetPlaceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPlaceRequest.ProtoReflect.Descriptor instead.
+func (*GetPlaceRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *GetPlaceRequest) GetPlaceId() string {
+	if x != nil {
+		return x.PlaceId
+	}
+	return ""
+}
+
+type CuratedPlaceResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Place         *CuratedPlace          `protobuf:"bytes,1,opt,name=place,proto3" json:"place,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CuratedPlaceResponse) Reset() {
+	*x = CuratedPlaceResponse{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CuratedPlaceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CuratedPlaceResponse) ProtoMessage() {}
+
+func (x *CuratedPlaceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CuratedPlaceResponse.ProtoReflect.Descriptor instead.
+func (*CuratedPlaceResponse) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *CuratedPlaceResponse) GetPlace() *CuratedPlace {
+	if x != nil {
+		return x.Place
+	}
+	return nil
+}
+
+type CreatePlaceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CityId        string                 `protobuf:"bytes,1,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	Category      PlaceCategory          `protobuf:"varint,2,opt,name=category,proto3,enum=ride.location.v1.PlaceCategory" json:"category,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Names         map[string]string      `protobuf:"bytes,4,rep,name=names,proto3" json:"names,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Address       string                 `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
+	Coordinates   *Coordinates           `protobuf:"bytes,6,opt,name=coordinates,proto3" json:"coordinates,omitempty"`
+	Priority      int32                  `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreatePlaceRequest) Reset() {
+	*x = CreatePlaceRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreatePlaceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreatePlaceRequest) ProtoMessage() {}
+
+func (x *CreatePlaceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreatePlaceRequest.ProtoReflect.Descriptor instead.
+func (*CreatePlaceRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *CreatePlaceRequest) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+func (x *CreatePlaceRequest) GetCategory() PlaceCategory {
+	if x != nil {
+		return x.Category
+	}
+	return PlaceCategory_PLACE_CATEGORY_UNSPECIFIED
+}
+
+func (x *CreatePlaceRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreatePlaceRequest) GetNames() map[string]string {
+	if x != nil {
+		return x.Names
+	}
+	return nil
+}
+
+func (x *CreatePlaceRequest) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *CreatePlaceRequest) GetCoordinates() *Coordinates {
+	if x != nil {
+		return x.Coordinates
+	}
+	return nil
+}
+
+func (x *CreatePlaceRequest) GetPriority() int32 {
+	if x != nil {
+		return x.Priority
+	}
+	return 0
+}
+
+// UpdatePlace replaces everything but the city.
+type UpdatePlaceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlaceId       string                 `protobuf:"bytes,1,opt,name=place_id,json=placeId,proto3" json:"place_id,omitempty"`
+	Category      PlaceCategory          `protobuf:"varint,2,opt,name=category,proto3,enum=ride.location.v1.PlaceCategory" json:"category,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Names         map[string]string      `protobuf:"bytes,4,rep,name=names,proto3" json:"names,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Address       string                 `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
+	Coordinates   *Coordinates           `protobuf:"bytes,6,opt,name=coordinates,proto3" json:"coordinates,omitempty"`
+	Priority      int32                  `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdatePlaceRequest) Reset() {
+	*x = UpdatePlaceRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdatePlaceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdatePlaceRequest) ProtoMessage() {}
+
+func (x *UpdatePlaceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdatePlaceRequest.ProtoReflect.Descriptor instead.
+func (*UpdatePlaceRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *UpdatePlaceRequest) GetPlaceId() string {
+	if x != nil {
+		return x.PlaceId
+	}
+	return ""
+}
+
+func (x *UpdatePlaceRequest) GetCategory() PlaceCategory {
+	if x != nil {
+		return x.Category
+	}
+	return PlaceCategory_PLACE_CATEGORY_UNSPECIFIED
+}
+
+func (x *UpdatePlaceRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdatePlaceRequest) GetNames() map[string]string {
+	if x != nil {
+		return x.Names
+	}
+	return nil
+}
+
+func (x *UpdatePlaceRequest) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *UpdatePlaceRequest) GetCoordinates() *Coordinates {
+	if x != nil {
+		return x.Coordinates
+	}
+	return nil
+}
+
+func (x *UpdatePlaceRequest) GetPriority() int32 {
+	if x != nil {
+		return x.Priority
+	}
+	return 0
+}
+
+type SetPlaceActiveRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlaceId       string                 `protobuf:"bytes,1,opt,name=place_id,json=placeId,proto3" json:"place_id,omitempty"`
+	Active        bool                   `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetPlaceActiveRequest) Reset() {
+	*x = SetPlaceActiveRequest{}
+	mi := &file_ride_location_v1_location_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetPlaceActiveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetPlaceActiveRequest) ProtoMessage() {}
+
+func (x *SetPlaceActiveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_location_v1_location_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetPlaceActiveRequest.ProtoReflect.Descriptor instead.
+func (*SetPlaceActiveRequest) Descriptor() ([]byte, []int) {
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *SetPlaceActiveRequest) GetPlaceId() string {
+	if x != nil {
+		return x.PlaceId
+	}
+	return ""
+}
+
+func (x *SetPlaceActiveRequest) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
 type GetRouteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Origin        *Coordinates           `protobuf:"bytes,1,opt,name=origin,proto3" json:"origin,omitempty"`
@@ -1060,7 +2322,7 @@ type GetRouteRequest struct {
 
 func (x *GetRouteRequest) Reset() {
 	*x = GetRouteRequest{}
-	mi := &file_ride_location_v1_location_proto_msgTypes[18]
+	mi := &file_ride_location_v1_location_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1072,7 +2334,7 @@ func (x *GetRouteRequest) String() string {
 func (*GetRouteRequest) ProtoMessage() {}
 
 func (x *GetRouteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_location_v1_location_proto_msgTypes[18]
+	mi := &file_ride_location_v1_location_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1085,7 +2347,7 @@ func (x *GetRouteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRouteRequest.ProtoReflect.Descriptor instead.
 func (*GetRouteRequest) Descriptor() ([]byte, []int) {
-	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{18}
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *GetRouteRequest) GetOrigin() *Coordinates {
@@ -1115,7 +2377,7 @@ type GetRouteResponse struct {
 
 func (x *GetRouteResponse) Reset() {
 	*x = GetRouteResponse{}
-	mi := &file_ride_location_v1_location_proto_msgTypes[19]
+	mi := &file_ride_location_v1_location_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1127,7 +2389,7 @@ func (x *GetRouteResponse) String() string {
 func (*GetRouteResponse) ProtoMessage() {}
 
 func (x *GetRouteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_location_v1_location_proto_msgTypes[19]
+	mi := &file_ride_location_v1_location_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1140,7 +2402,7 @@ func (x *GetRouteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRouteResponse.ProtoReflect.Descriptor instead.
 func (*GetRouteResponse) Descriptor() ([]byte, []int) {
-	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{19}
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *GetRouteResponse) GetDistanceMeters() float64 {
@@ -1181,7 +2443,7 @@ type SearchPlacesRequest struct {
 
 func (x *SearchPlacesRequest) Reset() {
 	*x = SearchPlacesRequest{}
-	mi := &file_ride_location_v1_location_proto_msgTypes[20]
+	mi := &file_ride_location_v1_location_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1193,7 +2455,7 @@ func (x *SearchPlacesRequest) String() string {
 func (*SearchPlacesRequest) ProtoMessage() {}
 
 func (x *SearchPlacesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_location_v1_location_proto_msgTypes[20]
+	mi := &file_ride_location_v1_location_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1206,7 +2468,7 @@ func (x *SearchPlacesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchPlacesRequest.ProtoReflect.Descriptor instead.
 func (*SearchPlacesRequest) Descriptor() ([]byte, []int) {
-	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{20}
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *SearchPlacesRequest) GetQuery() string {
@@ -1246,7 +2508,7 @@ type SearchPlacesResponse struct {
 
 func (x *SearchPlacesResponse) Reset() {
 	*x = SearchPlacesResponse{}
-	mi := &file_ride_location_v1_location_proto_msgTypes[21]
+	mi := &file_ride_location_v1_location_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1258,7 +2520,7 @@ func (x *SearchPlacesResponse) String() string {
 func (*SearchPlacesResponse) ProtoMessage() {}
 
 func (x *SearchPlacesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_location_v1_location_proto_msgTypes[21]
+	mi := &file_ride_location_v1_location_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1271,7 +2533,7 @@ func (x *SearchPlacesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchPlacesResponse.ProtoReflect.Descriptor instead.
 func (*SearchPlacesResponse) Descriptor() ([]byte, []int) {
-	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{21}
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *SearchPlacesResponse) GetPlaces() []*Place {
@@ -1291,7 +2553,7 @@ type ReverseGeocodeRequest struct {
 
 func (x *ReverseGeocodeRequest) Reset() {
 	*x = ReverseGeocodeRequest{}
-	mi := &file_ride_location_v1_location_proto_msgTypes[22]
+	mi := &file_ride_location_v1_location_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1303,7 +2565,7 @@ func (x *ReverseGeocodeRequest) String() string {
 func (*ReverseGeocodeRequest) ProtoMessage() {}
 
 func (x *ReverseGeocodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_location_v1_location_proto_msgTypes[22]
+	mi := &file_ride_location_v1_location_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1316,7 +2578,7 @@ func (x *ReverseGeocodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReverseGeocodeRequest.ProtoReflect.Descriptor instead.
 func (*ReverseGeocodeRequest) Descriptor() ([]byte, []int) {
-	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{22}
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *ReverseGeocodeRequest) GetCoordinates() *Coordinates {
@@ -1342,7 +2604,7 @@ type ReverseGeocodeResponse struct {
 
 func (x *ReverseGeocodeResponse) Reset() {
 	*x = ReverseGeocodeResponse{}
-	mi := &file_ride_location_v1_location_proto_msgTypes[23]
+	mi := &file_ride_location_v1_location_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1354,7 +2616,7 @@ func (x *ReverseGeocodeResponse) String() string {
 func (*ReverseGeocodeResponse) ProtoMessage() {}
 
 func (x *ReverseGeocodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_location_v1_location_proto_msgTypes[23]
+	mi := &file_ride_location_v1_location_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1367,7 +2629,7 @@ func (x *ReverseGeocodeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReverseGeocodeResponse.ProtoReflect.Descriptor instead.
 func (*ReverseGeocodeResponse) Descriptor() ([]byte, []int) {
-	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{23}
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *ReverseGeocodeResponse) GetPlace() *Place {
@@ -1379,7 +2641,8 @@ func (x *ReverseGeocodeResponse) GetPlace() *Place {
 
 type Place struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The OpenStreetMap object, for example "way/123456".
+	// The OpenStreetMap object, for example "way/123456", or "curated/<id>" for
+	// a curated place.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The short name (a mall, a street) and the full one with neighbourhood, city and
 	// country.
@@ -1390,14 +2653,17 @@ type Place struct {
 	Coordinates *Coordinates `protobuf:"bytes,6,opt,name=coordinates,proto3" json:"coordinates,omitempty"`
 	// The parts of the address that are known (road, neighbourhood, suburb, city, state,
 	// postcode...), by OpenStreetMap's own names.
-	Address       map[string]string `protobuf:"bytes,7,rep,name=address,proto3" json:"address,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Address map[string]string `protobuf:"bytes,7,rep,name=address,proto3" json:"address,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Set for a curated place (see CuratedPlace): its id, and category is then
+	// the curated category in lower case ("airport", "mall"...).
+	CuratedPlaceId string `protobuf:"bytes,8,opt,name=curated_place_id,json=curatedPlaceId,proto3" json:"curated_place_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Place) Reset() {
 	*x = Place{}
-	mi := &file_ride_location_v1_location_proto_msgTypes[24]
+	mi := &file_ride_location_v1_location_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1409,7 +2675,7 @@ func (x *Place) String() string {
 func (*Place) ProtoMessage() {}
 
 func (x *Place) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_location_v1_location_proto_msgTypes[24]
+	mi := &file_ride_location_v1_location_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1422,7 +2688,7 @@ func (x *Place) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Place.ProtoReflect.Descriptor instead.
 func (*Place) Descriptor() ([]byte, []int) {
-	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{24}
+	return file_ride_location_v1_location_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *Place) GetId() string {
@@ -1474,6 +2740,13 @@ func (x *Place) GetAddress() map[string]string {
 	return nil
 }
 
+func (x *Place) GetCuratedPlaceId() string {
+	if x != nil {
+		return x.CuratedPlaceId
+	}
+	return ""
+}
+
 var File_ride_location_v1_location_proto protoreflect.FileDescriptor
 
 const file_ride_location_v1_location_proto_rawDesc = "" +
@@ -1509,7 +2782,7 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"\rradius_meters\x18\x03 \x01(\x01R\fradiusMeters\x12\x14\n" +
 	"\x05limit\x18\x04 \x01(\x05R\x05limit\"P\n" +
 	"\x12FindNearbyResponse\x12:\n" +
-	"\bentities\x18\x01 \x03(\v2\x1e.ride.location.v1.NearbyEntityR\bentities\"\x87\x02\n" +
+	"\bentities\x18\x01 \x03(\v2\x1e.ride.location.v1.NearbyEntityR\bentities\"\xa0\x02\n" +
 	"\x04Zone\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04city\x18\x02 \x01(\tR\x04city\x12\x12\n" +
@@ -1519,11 +2792,12 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"v\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x17\n" +
+	"\acity_id\x18\b \x01(\tR\x06cityId\"\x87\x01\n" +
 	"\x11CreateZoneRequest\x12\x12\n" +
-	"\x04city\x18\x01 \x01(\tR\x04city\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
-	"\bboundary\x18\x03 \x03(\v2\x1d.ride.location.v1.CoordinatesR\bboundary\"{\n" +
+	"\bboundary\x18\x03 \x03(\v2\x1d.ride.location.v1.CoordinatesR\bboundary\x12\x17\n" +
+	"\acity_id\x18\x04 \x01(\tR\x06cityIdJ\x04\b\x01\x10\x02R\x04city\"{\n" +
 	"\x11UpdateZoneRequest\x12\x17\n" +
 	"\azone_id\x18\x01 \x01(\tR\x06zoneId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
@@ -1534,17 +2808,130 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"\fZoneResponse\x12*\n" +
 	"\x04zone\x18\x01 \x01(\v2\x16.ride.location.v1.ZoneR\x04zone\")\n" +
 	"\x0eGetZoneRequest\x12\x17\n" +
-	"\azone_id\x18\x01 \x01(\tR\x06zoneId\"&\n" +
-	"\x10ListZonesRequest\x12\x12\n" +
-	"\x04city\x18\x01 \x01(\tR\x04city\"A\n" +
+	"\azone_id\x18\x01 \x01(\tR\x06zoneId\"7\n" +
+	"\x10ListZonesRequest\x12\x17\n" +
+	"\acity_id\x18\x02 \x01(\tR\x06cityIdJ\x04\b\x01\x10\x02R\x04city\"A\n" +
 	"\x11ListZonesResponse\x12,\n" +
 	"\x05zones\x18\x01 \x03(\v2\x16.ride.location.v1.ZoneR\x05zones\"Z\n" +
 	"\x17CheckServiceZoneRequest\x12?\n" +
-	"\vcoordinates\x18\x01 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vcoordinates\"_\n" +
+	"\vcoordinates\x18\x01 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vcoordinates\"\x95\x01\n" +
 	"\x18CheckServiceZoneResponse\x12\x16\n" +
 	"\x06served\x18\x01 \x01(\bR\x06served\x12\x17\n" +
 	"\azone_id\x18\x02 \x01(\tR\x06zoneId\x12\x12\n" +
-	"\x04city\x18\x03 \x01(\tR\x04city\"\x89\x01\n" +
+	"\x04city\x18\x03 \x01(\tR\x04city\x12\x17\n" +
+	"\acity_id\x18\x04 \x01(\tR\x06cityId\x12\x1b\n" +
+	"\ttime_zone\x18\x05 \x01(\tR\btimeZone\"\xff\x02\n" +
+	"\x04City\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x127\n" +
+	"\x05names\x18\x03 \x03(\v2!.ride.location.v1.City.NamesEntryR\x05names\x12\x1b\n" +
+	"\ttime_zone\x18\x04 \x01(\tR\btimeZone\x125\n" +
+	"\x06center\x18\x05 \x01(\v2\x1d.ride.location.v1.CoordinatesR\x06center\x12\x16\n" +
+	"\x06active\x18\x06 \x01(\bR\x06active\x129\n" +
+	"\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x1a8\n" +
+	"\n" +
+	"NamesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x13\n" +
+	"\x11ListCitiesRequest\"\x18\n" +
+	"\x16AdminListCitiesRequest\"D\n" +
+	"\x12ListCitiesResponse\x12.\n" +
+	"\x06cities\x18\x01 \x03(\v2\x16.ride.location.v1.CityR\x06cities\")\n" +
+	"\x0eGetCityRequest\x12\x17\n" +
+	"\acity_id\x18\x01 \x01(\tR\x06cityId\":\n" +
+	"\fCityResponse\x12*\n" +
+	"\x04city\x18\x01 \x01(\v2\x16.ride.location.v1.CityR\x04city\"\xfb\x01\n" +
+	"\x11CreateCityRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12D\n" +
+	"\x05names\x18\x02 \x03(\v2..ride.location.v1.CreateCityRequest.NamesEntryR\x05names\x12\x1b\n" +
+	"\ttime_zone\x18\x03 \x01(\tR\btimeZone\x125\n" +
+	"\x06center\x18\x04 \x01(\v2\x1d.ride.location.v1.CoordinatesR\x06center\x1a8\n" +
+	"\n" +
+	"NamesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x94\x02\n" +
+	"\x11UpdateCityRequest\x12\x17\n" +
+	"\acity_id\x18\x01 \x01(\tR\x06cityId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12D\n" +
+	"\x05names\x18\x03 \x03(\v2..ride.location.v1.UpdateCityRequest.NamesEntryR\x05names\x12\x1b\n" +
+	"\ttime_zone\x18\x04 \x01(\tR\btimeZone\x125\n" +
+	"\x06center\x18\x05 \x01(\v2\x1d.ride.location.v1.CoordinatesR\x06center\x1a8\n" +
+	"\n" +
+	"NamesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"G\n" +
+	"\x14SetCityActiveRequest\x12\x17\n" +
+	"\acity_id\x18\x01 \x01(\tR\x06cityId\x12\x16\n" +
+	"\x06active\x18\x02 \x01(\bR\x06active\"\x88\x04\n" +
+	"\fCuratedPlace\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
+	"\acity_id\x18\x02 \x01(\tR\x06cityId\x12;\n" +
+	"\bcategory\x18\x03 \x01(\x0e2\x1f.ride.location.v1.PlaceCategoryR\bcategory\x12\x12\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\x12?\n" +
+	"\x05names\x18\x05 \x03(\v2).ride.location.v1.CuratedPlace.NamesEntryR\x05names\x12\x18\n" +
+	"\aaddress\x18\x06 \x01(\tR\aaddress\x12?\n" +
+	"\vcoordinates\x18\a \x01(\v2\x1d.ride.location.v1.CoordinatesR\vcoordinates\x12\x1a\n" +
+	"\bpriority\x18\b \x01(\x05R\bpriority\x12\x16\n" +
+	"\x06active\x18\t \x01(\bR\x06active\x129\n" +
+	"\n" +
+	"created_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x1a8\n" +
+	"\n" +
+	"NamesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd8\x01\n" +
+	"\x11ListPlacesRequest\x12\x17\n" +
+	"\acity_id\x18\x01 \x01(\tR\x06cityId\x12;\n" +
+	"\bcategory\x18\x02 \x01(\x0e2\x1f.ride.location.v1.PlaceCategoryR\bcategory\x121\n" +
+	"\x04near\x18\x03 \x01(\v2\x1d.ride.location.v1.CoordinatesR\x04near\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x05 \x01(\tR\tpageToken\"\xaa\x01\n" +
+	"\x16AdminListPlacesRequest\x12\x17\n" +
+	"\acity_id\x18\x01 \x01(\tR\x06cityId\x12;\n" +
+	"\bcategory\x18\x02 \x01(\x0e2\x1f.ride.location.v1.PlaceCategoryR\bcategory\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageToken\"t\n" +
+	"\x12ListPlacesResponse\x126\n" +
+	"\x06places\x18\x01 \x03(\v2\x1e.ride.location.v1.CuratedPlaceR\x06places\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\",\n" +
+	"\x0fGetPlaceRequest\x12\x19\n" +
+	"\bplace_id\x18\x01 \x01(\tR\aplaceId\"L\n" +
+	"\x14CuratedPlaceResponse\x124\n" +
+	"\x05place\x18\x01 \x01(\v2\x1e.ride.location.v1.CuratedPlaceR\x05place\"\xf6\x02\n" +
+	"\x12CreatePlaceRequest\x12\x17\n" +
+	"\acity_id\x18\x01 \x01(\tR\x06cityId\x12;\n" +
+	"\bcategory\x18\x02 \x01(\x0e2\x1f.ride.location.v1.PlaceCategoryR\bcategory\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12E\n" +
+	"\x05names\x18\x04 \x03(\v2/.ride.location.v1.CreatePlaceRequest.NamesEntryR\x05names\x12\x18\n" +
+	"\aaddress\x18\x05 \x01(\tR\aaddress\x12?\n" +
+	"\vcoordinates\x18\x06 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vcoordinates\x12\x1a\n" +
+	"\bpriority\x18\a \x01(\x05R\bpriority\x1a8\n" +
+	"\n" +
+	"NamesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf8\x02\n" +
+	"\x12UpdatePlaceRequest\x12\x19\n" +
+	"\bplace_id\x18\x01 \x01(\tR\aplaceId\x12;\n" +
+	"\bcategory\x18\x02 \x01(\x0e2\x1f.ride.location.v1.PlaceCategoryR\bcategory\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12E\n" +
+	"\x05names\x18\x04 \x03(\v2/.ride.location.v1.UpdatePlaceRequest.NamesEntryR\x05names\x12\x18\n" +
+	"\aaddress\x18\x05 \x01(\tR\aaddress\x12?\n" +
+	"\vcoordinates\x18\x06 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vcoordinates\x12\x1a\n" +
+	"\bpriority\x18\a \x01(\x05R\bpriority\x1a8\n" +
+	"\n" +
+	"NamesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"J\n" +
+	"\x15SetPlaceActiveRequest\x12\x19\n" +
+	"\bplace_id\x18\x01 \x01(\tR\aplaceId\x12\x16\n" +
+	"\x06active\x18\x02 \x01(\bR\x06active\"\x89\x01\n" +
 	"\x0fGetRouteRequest\x125\n" +
 	"\x06origin\x18\x01 \x01(\v2\x1d.ride.location.v1.CoordinatesR\x06origin\x12?\n" +
 	"\vdestination\x18\x02 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vdestination\"\x82\x01\n" +
@@ -1563,7 +2950,7 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"\vcoordinates\x18\x01 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vcoordinates\x12\x1a\n" +
 	"\blanguage\x18\x02 \x01(\tR\blanguage\"G\n" +
 	"\x16ReverseGeocodeResponse\x12-\n" +
-	"\x05place\x18\x01 \x01(\v2\x17.ride.location.v1.PlaceR\x05place\"\xbb\x02\n" +
+	"\x05place\x18\x01 \x01(\v2\x17.ride.location.v1.PlaceR\x05place\"\xe5\x02\n" +
 	"\x05Place\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12!\n" +
@@ -1571,7 +2958,8 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"\bcategory\x18\x04 \x01(\tR\bcategory\x12\x12\n" +
 	"\x04type\x18\x05 \x01(\tR\x04type\x12?\n" +
 	"\vcoordinates\x18\x06 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vcoordinates\x12>\n" +
-	"\aaddress\x18\a \x03(\v2$.ride.location.v1.Place.AddressEntryR\aaddress\x1a:\n" +
+	"\aaddress\x18\a \x03(\v2$.ride.location.v1.Place.AddressEntryR\aaddress\x12(\n" +
+	"\x10curated_place_id\x18\b \x01(\tR\x0ecuratedPlaceId\x1a:\n" +
 	"\fAddressEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*X\n" +
@@ -1579,7 +2967,20 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"EntityType\x12\x1b\n" +
 	"\x17ENTITY_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ENTITY_TYPE_DRIVER\x10\x01\x12\x15\n" +
-	"\x11ENTITY_TYPE_RIDER\x10\x022\xac\v\n" +
+	"\x11ENTITY_TYPE_RIDER\x10\x02*\xcb\x02\n" +
+	"\rPlaceCategory\x12\x1e\n" +
+	"\x1aPLACE_CATEGORY_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16PLACE_CATEGORY_AIRPORT\x10\x01\x12\x17\n" +
+	"\x13PLACE_CATEGORY_MALL\x10\x02\x12\x18\n" +
+	"\x14PLACE_CATEGORY_HOTEL\x10\x03\x12\x1b\n" +
+	"\x17PLACE_CATEGORY_HOSPITAL\x10\x04\x12\x1d\n" +
+	"\x19PLACE_CATEGORY_UNIVERSITY\x10\x05\x12\x1b\n" +
+	"\x17PLACE_CATEGORY_LANDMARK\x10\x06\x12\x1a\n" +
+	"\x16PLACE_CATEGORY_STATION\x10\a\x12\x1d\n" +
+	"\x19PLACE_CATEGORY_GOVERNMENT\x10\b\x12\x1d\n" +
+	"\x19PLACE_CATEGORY_RESTAURANT\x10\t\x12\x18\n" +
+	"\x14PLACE_CATEGORY_OTHER\x10\n" +
+	"2\xec\x16\n" +
 	"\x0fLocationService\x12\x89\x01\n" +
 	"\x0eUpdateLocation\x12'.ride.location.v1.UpdateLocationRequest\x1a(.ride.location.v1.UpdateLocationResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\x1a\x19/v1/locations/{entity_id}\x12}\n" +
 	"\vGetLocation\x12$.ride.location.v1.GetLocationRequest\x1a%.ride.location.v1.GetLocationResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/locations/{entity_id}\x12W\n" +
@@ -1592,7 +2993,25 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"\rSetZoneActive\x12&.ride.location.v1.SetZoneActiveRequest\x1a\x1e.ride.location.v1.ZoneResponse\".\x82\xd3\xe4\x93\x02(:\x01*\"#/v1/admin/zones/{zone_id}:setActive\x12h\n" +
 	"\aGetZone\x12 .ride.location.v1.GetZoneRequest\x1a\x1e.ride.location.v1.ZoneResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/zones/{zone_id}\x12g\n" +
 	"\tListZones\x12\".ride.location.v1.ListZonesRequest\x1a#.ride.location.v1.ListZonesResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/zones\x12\x82\x01\n" +
-	"\x10CheckServiceZone\x12).ride.location.v1.CheckServiceZoneRequest\x1a*.ride.location.v1.CheckServiceZoneResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/zones:check\x12p\n" +
+	"\x10CheckServiceZone\x12).ride.location.v1.CheckServiceZoneRequest\x1a*.ride.location.v1.CheckServiceZoneResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/zones:check\x12k\n" +
+	"\n" +
+	"ListCities\x12#.ride.location.v1.ListCitiesRequest\x1a$.ride.location.v1.ListCitiesResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
+	"/v1/cities\x12i\n" +
+	"\aGetCity\x12 .ride.location.v1.GetCityRequest\x1a\x1e.ride.location.v1.CityResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/cities/{city_id}\x12{\n" +
+	"\x0fAdminListCities\x12(.ride.location.v1.AdminListCitiesRequest\x1a$.ride.location.v1.ListCitiesResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/admin/cities\x12n\n" +
+	"\n" +
+	"CreateCity\x12#.ride.location.v1.CreateCityRequest\x1a\x1e.ride.location.v1.CityResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/v1/admin/cities\x12x\n" +
+	"\n" +
+	"UpdateCity\x12#.ride.location.v1.UpdateCityRequest\x1a\x1e.ride.location.v1.CityResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*2\x1a/v1/admin/cities/{city_id}\x12\x88\x01\n" +
+	"\rSetCityActive\x12&.ride.location.v1.SetCityActiveRequest\x1a\x1e.ride.location.v1.CityResponse\"/\x82\xd3\xe4\x93\x02):\x01*\"$/v1/admin/cities/{city_id}:setActive\x12k\n" +
+	"\n" +
+	"ListPlaces\x12#.ride.location.v1.ListPlacesRequest\x1a$.ride.location.v1.ListPlacesResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
+	"/v1/places\x12t\n" +
+	"\bGetPlace\x12!.ride.location.v1.GetPlaceRequest\x1a&.ride.location.v1.CuratedPlaceResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/v1/places/{place_id}\x12{\n" +
+	"\x0fAdminListPlaces\x12(.ride.location.v1.AdminListPlacesRequest\x1a$.ride.location.v1.ListPlacesResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/admin/places\x12x\n" +
+	"\vCreatePlace\x12$.ride.location.v1.CreatePlaceRequest\x1a&.ride.location.v1.CuratedPlaceResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/v1/admin/places\x12\x83\x01\n" +
+	"\vUpdatePlace\x12$.ride.location.v1.UpdatePlaceRequest\x1a&.ride.location.v1.CuratedPlaceResponse\"&\x82\xd3\xe4\x93\x02 :\x01*2\x1b/v1/admin/places/{place_id}\x12\x93\x01\n" +
+	"\x0eSetPlaceActive\x12'.ride.location.v1.SetPlaceActiveRequest\x1a&.ride.location.v1.CuratedPlaceResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/v1/admin/places/{place_id}:setActive\x12p\n" +
 	"\bGetRoute\x12!.ride.location.v1.GetRouteRequest\x1a\".ride.location.v1.GetRouteResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/routes:compute\x12x\n" +
 	"\fSearchPlaces\x12%.ride.location.v1.SearchPlacesRequest\x1a&.ride.location.v1.SearchPlacesResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/places:search\x12\x7f\n" +
 	"\x0eReverseGeocode\x12'.ride.location.v1.ReverseGeocodeRequest\x1a(.ride.location.v1.ReverseGeocodeResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/places:reverseBDZBgithub.com/7akoom/ride-platform/gen/go/ride/location/v1;locationv1b\x06proto3"
@@ -1609,94 +3028,169 @@ func file_ride_location_v1_location_proto_rawDescGZIP() []byte {
 	return file_ride_location_v1_location_proto_rawDescData
 }
 
-var file_ride_location_v1_location_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ride_location_v1_location_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_ride_location_v1_location_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_ride_location_v1_location_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
 var file_ride_location_v1_location_proto_goTypes = []any{
 	(EntityType)(0),                  // 0: ride.location.v1.EntityType
-	(*Coordinates)(nil),              // 1: ride.location.v1.Coordinates
-	(*UpdateLocationRequest)(nil),    // 2: ride.location.v1.UpdateLocationRequest
-	(*UpdateLocationResponse)(nil),   // 3: ride.location.v1.UpdateLocationResponse
-	(*GetLocationRequest)(nil),       // 4: ride.location.v1.GetLocationRequest
-	(*GetLocationResponse)(nil),      // 5: ride.location.v1.GetLocationResponse
-	(*NearbyEntity)(nil),             // 6: ride.location.v1.NearbyEntity
-	(*FindNearbyRequest)(nil),        // 7: ride.location.v1.FindNearbyRequest
-	(*FindNearbyResponse)(nil),       // 8: ride.location.v1.FindNearbyResponse
-	(*Zone)(nil),                     // 9: ride.location.v1.Zone
-	(*CreateZoneRequest)(nil),        // 10: ride.location.v1.CreateZoneRequest
-	(*UpdateZoneRequest)(nil),        // 11: ride.location.v1.UpdateZoneRequest
-	(*SetZoneActiveRequest)(nil),     // 12: ride.location.v1.SetZoneActiveRequest
-	(*ZoneResponse)(nil),             // 13: ride.location.v1.ZoneResponse
-	(*GetZoneRequest)(nil),           // 14: ride.location.v1.GetZoneRequest
-	(*ListZonesRequest)(nil),         // 15: ride.location.v1.ListZonesRequest
-	(*ListZonesResponse)(nil),        // 16: ride.location.v1.ListZonesResponse
-	(*CheckServiceZoneRequest)(nil),  // 17: ride.location.v1.CheckServiceZoneRequest
-	(*CheckServiceZoneResponse)(nil), // 18: ride.location.v1.CheckServiceZoneResponse
-	(*GetRouteRequest)(nil),          // 19: ride.location.v1.GetRouteRequest
-	(*GetRouteResponse)(nil),         // 20: ride.location.v1.GetRouteResponse
-	(*SearchPlacesRequest)(nil),      // 21: ride.location.v1.SearchPlacesRequest
-	(*SearchPlacesResponse)(nil),     // 22: ride.location.v1.SearchPlacesResponse
-	(*ReverseGeocodeRequest)(nil),    // 23: ride.location.v1.ReverseGeocodeRequest
-	(*ReverseGeocodeResponse)(nil),   // 24: ride.location.v1.ReverseGeocodeResponse
-	(*Place)(nil),                    // 25: ride.location.v1.Place
-	nil,                              // 26: ride.location.v1.Place.AddressEntry
-	(*timestamppb.Timestamp)(nil),    // 27: google.protobuf.Timestamp
+	(PlaceCategory)(0),               // 1: ride.location.v1.PlaceCategory
+	(*Coordinates)(nil),              // 2: ride.location.v1.Coordinates
+	(*UpdateLocationRequest)(nil),    // 3: ride.location.v1.UpdateLocationRequest
+	(*UpdateLocationResponse)(nil),   // 4: ride.location.v1.UpdateLocationResponse
+	(*GetLocationRequest)(nil),       // 5: ride.location.v1.GetLocationRequest
+	(*GetLocationResponse)(nil),      // 6: ride.location.v1.GetLocationResponse
+	(*NearbyEntity)(nil),             // 7: ride.location.v1.NearbyEntity
+	(*FindNearbyRequest)(nil),        // 8: ride.location.v1.FindNearbyRequest
+	(*FindNearbyResponse)(nil),       // 9: ride.location.v1.FindNearbyResponse
+	(*Zone)(nil),                     // 10: ride.location.v1.Zone
+	(*CreateZoneRequest)(nil),        // 11: ride.location.v1.CreateZoneRequest
+	(*UpdateZoneRequest)(nil),        // 12: ride.location.v1.UpdateZoneRequest
+	(*SetZoneActiveRequest)(nil),     // 13: ride.location.v1.SetZoneActiveRequest
+	(*ZoneResponse)(nil),             // 14: ride.location.v1.ZoneResponse
+	(*GetZoneRequest)(nil),           // 15: ride.location.v1.GetZoneRequest
+	(*ListZonesRequest)(nil),         // 16: ride.location.v1.ListZonesRequest
+	(*ListZonesResponse)(nil),        // 17: ride.location.v1.ListZonesResponse
+	(*CheckServiceZoneRequest)(nil),  // 18: ride.location.v1.CheckServiceZoneRequest
+	(*CheckServiceZoneResponse)(nil), // 19: ride.location.v1.CheckServiceZoneResponse
+	(*City)(nil),                     // 20: ride.location.v1.City
+	(*ListCitiesRequest)(nil),        // 21: ride.location.v1.ListCitiesRequest
+	(*AdminListCitiesRequest)(nil),   // 22: ride.location.v1.AdminListCitiesRequest
+	(*ListCitiesResponse)(nil),       // 23: ride.location.v1.ListCitiesResponse
+	(*GetCityRequest)(nil),           // 24: ride.location.v1.GetCityRequest
+	(*CityResponse)(nil),             // 25: ride.location.v1.CityResponse
+	(*CreateCityRequest)(nil),        // 26: ride.location.v1.CreateCityRequest
+	(*UpdateCityRequest)(nil),        // 27: ride.location.v1.UpdateCityRequest
+	(*SetCityActiveRequest)(nil),     // 28: ride.location.v1.SetCityActiveRequest
+	(*CuratedPlace)(nil),             // 29: ride.location.v1.CuratedPlace
+	(*ListPlacesRequest)(nil),        // 30: ride.location.v1.ListPlacesRequest
+	(*AdminListPlacesRequest)(nil),   // 31: ride.location.v1.AdminListPlacesRequest
+	(*ListPlacesResponse)(nil),       // 32: ride.location.v1.ListPlacesResponse
+	(*GetPlaceRequest)(nil),          // 33: ride.location.v1.GetPlaceRequest
+	(*CuratedPlaceResponse)(nil),     // 34: ride.location.v1.CuratedPlaceResponse
+	(*CreatePlaceRequest)(nil),       // 35: ride.location.v1.CreatePlaceRequest
+	(*UpdatePlaceRequest)(nil),       // 36: ride.location.v1.UpdatePlaceRequest
+	(*SetPlaceActiveRequest)(nil),    // 37: ride.location.v1.SetPlaceActiveRequest
+	(*GetRouteRequest)(nil),          // 38: ride.location.v1.GetRouteRequest
+	(*GetRouteResponse)(nil),         // 39: ride.location.v1.GetRouteResponse
+	(*SearchPlacesRequest)(nil),      // 40: ride.location.v1.SearchPlacesRequest
+	(*SearchPlacesResponse)(nil),     // 41: ride.location.v1.SearchPlacesResponse
+	(*ReverseGeocodeRequest)(nil),    // 42: ride.location.v1.ReverseGeocodeRequest
+	(*ReverseGeocodeResponse)(nil),   // 43: ride.location.v1.ReverseGeocodeResponse
+	(*Place)(nil),                    // 44: ride.location.v1.Place
+	nil,                              // 45: ride.location.v1.City.NamesEntry
+	nil,                              // 46: ride.location.v1.CreateCityRequest.NamesEntry
+	nil,                              // 47: ride.location.v1.UpdateCityRequest.NamesEntry
+	nil,                              // 48: ride.location.v1.CuratedPlace.NamesEntry
+	nil,                              // 49: ride.location.v1.CreatePlaceRequest.NamesEntry
+	nil,                              // 50: ride.location.v1.UpdatePlaceRequest.NamesEntry
+	nil,                              // 51: ride.location.v1.Place.AddressEntry
+	(*timestamppb.Timestamp)(nil),    // 52: google.protobuf.Timestamp
 }
 var file_ride_location_v1_location_proto_depIdxs = []int32{
 	0,  // 0: ride.location.v1.UpdateLocationRequest.entity_type:type_name -> ride.location.v1.EntityType
-	1,  // 1: ride.location.v1.UpdateLocationRequest.coordinates:type_name -> ride.location.v1.Coordinates
-	27, // 2: ride.location.v1.UpdateLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
+	2,  // 1: ride.location.v1.UpdateLocationRequest.coordinates:type_name -> ride.location.v1.Coordinates
+	52, // 2: ride.location.v1.UpdateLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: ride.location.v1.GetLocationRequest.entity_type:type_name -> ride.location.v1.EntityType
-	1,  // 4: ride.location.v1.GetLocationResponse.coordinates:type_name -> ride.location.v1.Coordinates
-	27, // 5: ride.location.v1.GetLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
-	1,  // 6: ride.location.v1.NearbyEntity.coordinates:type_name -> ride.location.v1.Coordinates
+	2,  // 4: ride.location.v1.GetLocationResponse.coordinates:type_name -> ride.location.v1.Coordinates
+	52, // 5: ride.location.v1.GetLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
+	2,  // 6: ride.location.v1.NearbyEntity.coordinates:type_name -> ride.location.v1.Coordinates
 	0,  // 7: ride.location.v1.FindNearbyRequest.entity_type:type_name -> ride.location.v1.EntityType
-	1,  // 8: ride.location.v1.FindNearbyRequest.coordinates:type_name -> ride.location.v1.Coordinates
-	6,  // 9: ride.location.v1.FindNearbyResponse.entities:type_name -> ride.location.v1.NearbyEntity
-	1,  // 10: ride.location.v1.Zone.boundary:type_name -> ride.location.v1.Coordinates
-	27, // 11: ride.location.v1.Zone.created_at:type_name -> google.protobuf.Timestamp
-	27, // 12: ride.location.v1.Zone.updated_at:type_name -> google.protobuf.Timestamp
-	1,  // 13: ride.location.v1.CreateZoneRequest.boundary:type_name -> ride.location.v1.Coordinates
-	1,  // 14: ride.location.v1.UpdateZoneRequest.boundary:type_name -> ride.location.v1.Coordinates
-	9,  // 15: ride.location.v1.ZoneResponse.zone:type_name -> ride.location.v1.Zone
-	9,  // 16: ride.location.v1.ListZonesResponse.zones:type_name -> ride.location.v1.Zone
-	1,  // 17: ride.location.v1.CheckServiceZoneRequest.coordinates:type_name -> ride.location.v1.Coordinates
-	1,  // 18: ride.location.v1.GetRouteRequest.origin:type_name -> ride.location.v1.Coordinates
-	1,  // 19: ride.location.v1.GetRouteRequest.destination:type_name -> ride.location.v1.Coordinates
-	1,  // 20: ride.location.v1.SearchPlacesRequest.near:type_name -> ride.location.v1.Coordinates
-	25, // 21: ride.location.v1.SearchPlacesResponse.places:type_name -> ride.location.v1.Place
-	1,  // 22: ride.location.v1.ReverseGeocodeRequest.coordinates:type_name -> ride.location.v1.Coordinates
-	25, // 23: ride.location.v1.ReverseGeocodeResponse.place:type_name -> ride.location.v1.Place
-	1,  // 24: ride.location.v1.Place.coordinates:type_name -> ride.location.v1.Coordinates
-	26, // 25: ride.location.v1.Place.address:type_name -> ride.location.v1.Place.AddressEntry
-	2,  // 26: ride.location.v1.LocationService.UpdateLocation:input_type -> ride.location.v1.UpdateLocationRequest
-	4,  // 27: ride.location.v1.LocationService.GetLocation:input_type -> ride.location.v1.GetLocationRequest
-	7,  // 28: ride.location.v1.LocationService.FindNearby:input_type -> ride.location.v1.FindNearbyRequest
-	10, // 29: ride.location.v1.LocationService.CreateZone:input_type -> ride.location.v1.CreateZoneRequest
-	11, // 30: ride.location.v1.LocationService.UpdateZone:input_type -> ride.location.v1.UpdateZoneRequest
-	12, // 31: ride.location.v1.LocationService.SetZoneActive:input_type -> ride.location.v1.SetZoneActiveRequest
-	14, // 32: ride.location.v1.LocationService.GetZone:input_type -> ride.location.v1.GetZoneRequest
-	15, // 33: ride.location.v1.LocationService.ListZones:input_type -> ride.location.v1.ListZonesRequest
-	17, // 34: ride.location.v1.LocationService.CheckServiceZone:input_type -> ride.location.v1.CheckServiceZoneRequest
-	19, // 35: ride.location.v1.LocationService.GetRoute:input_type -> ride.location.v1.GetRouteRequest
-	21, // 36: ride.location.v1.LocationService.SearchPlaces:input_type -> ride.location.v1.SearchPlacesRequest
-	23, // 37: ride.location.v1.LocationService.ReverseGeocode:input_type -> ride.location.v1.ReverseGeocodeRequest
-	3,  // 38: ride.location.v1.LocationService.UpdateLocation:output_type -> ride.location.v1.UpdateLocationResponse
-	5,  // 39: ride.location.v1.LocationService.GetLocation:output_type -> ride.location.v1.GetLocationResponse
-	8,  // 40: ride.location.v1.LocationService.FindNearby:output_type -> ride.location.v1.FindNearbyResponse
-	13, // 41: ride.location.v1.LocationService.CreateZone:output_type -> ride.location.v1.ZoneResponse
-	13, // 42: ride.location.v1.LocationService.UpdateZone:output_type -> ride.location.v1.ZoneResponse
-	13, // 43: ride.location.v1.LocationService.SetZoneActive:output_type -> ride.location.v1.ZoneResponse
-	13, // 44: ride.location.v1.LocationService.GetZone:output_type -> ride.location.v1.ZoneResponse
-	16, // 45: ride.location.v1.LocationService.ListZones:output_type -> ride.location.v1.ListZonesResponse
-	18, // 46: ride.location.v1.LocationService.CheckServiceZone:output_type -> ride.location.v1.CheckServiceZoneResponse
-	20, // 47: ride.location.v1.LocationService.GetRoute:output_type -> ride.location.v1.GetRouteResponse
-	22, // 48: ride.location.v1.LocationService.SearchPlaces:output_type -> ride.location.v1.SearchPlacesResponse
-	24, // 49: ride.location.v1.LocationService.ReverseGeocode:output_type -> ride.location.v1.ReverseGeocodeResponse
-	38, // [38:50] is the sub-list for method output_type
-	26, // [26:38] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	2,  // 8: ride.location.v1.FindNearbyRequest.coordinates:type_name -> ride.location.v1.Coordinates
+	7,  // 9: ride.location.v1.FindNearbyResponse.entities:type_name -> ride.location.v1.NearbyEntity
+	2,  // 10: ride.location.v1.Zone.boundary:type_name -> ride.location.v1.Coordinates
+	52, // 11: ride.location.v1.Zone.created_at:type_name -> google.protobuf.Timestamp
+	52, // 12: ride.location.v1.Zone.updated_at:type_name -> google.protobuf.Timestamp
+	2,  // 13: ride.location.v1.CreateZoneRequest.boundary:type_name -> ride.location.v1.Coordinates
+	2,  // 14: ride.location.v1.UpdateZoneRequest.boundary:type_name -> ride.location.v1.Coordinates
+	10, // 15: ride.location.v1.ZoneResponse.zone:type_name -> ride.location.v1.Zone
+	10, // 16: ride.location.v1.ListZonesResponse.zones:type_name -> ride.location.v1.Zone
+	2,  // 17: ride.location.v1.CheckServiceZoneRequest.coordinates:type_name -> ride.location.v1.Coordinates
+	45, // 18: ride.location.v1.City.names:type_name -> ride.location.v1.City.NamesEntry
+	2,  // 19: ride.location.v1.City.center:type_name -> ride.location.v1.Coordinates
+	52, // 20: ride.location.v1.City.created_at:type_name -> google.protobuf.Timestamp
+	52, // 21: ride.location.v1.City.updated_at:type_name -> google.protobuf.Timestamp
+	20, // 22: ride.location.v1.ListCitiesResponse.cities:type_name -> ride.location.v1.City
+	20, // 23: ride.location.v1.CityResponse.city:type_name -> ride.location.v1.City
+	46, // 24: ride.location.v1.CreateCityRequest.names:type_name -> ride.location.v1.CreateCityRequest.NamesEntry
+	2,  // 25: ride.location.v1.CreateCityRequest.center:type_name -> ride.location.v1.Coordinates
+	47, // 26: ride.location.v1.UpdateCityRequest.names:type_name -> ride.location.v1.UpdateCityRequest.NamesEntry
+	2,  // 27: ride.location.v1.UpdateCityRequest.center:type_name -> ride.location.v1.Coordinates
+	1,  // 28: ride.location.v1.CuratedPlace.category:type_name -> ride.location.v1.PlaceCategory
+	48, // 29: ride.location.v1.CuratedPlace.names:type_name -> ride.location.v1.CuratedPlace.NamesEntry
+	2,  // 30: ride.location.v1.CuratedPlace.coordinates:type_name -> ride.location.v1.Coordinates
+	52, // 31: ride.location.v1.CuratedPlace.created_at:type_name -> google.protobuf.Timestamp
+	52, // 32: ride.location.v1.CuratedPlace.updated_at:type_name -> google.protobuf.Timestamp
+	1,  // 33: ride.location.v1.ListPlacesRequest.category:type_name -> ride.location.v1.PlaceCategory
+	2,  // 34: ride.location.v1.ListPlacesRequest.near:type_name -> ride.location.v1.Coordinates
+	1,  // 35: ride.location.v1.AdminListPlacesRequest.category:type_name -> ride.location.v1.PlaceCategory
+	29, // 36: ride.location.v1.ListPlacesResponse.places:type_name -> ride.location.v1.CuratedPlace
+	29, // 37: ride.location.v1.CuratedPlaceResponse.place:type_name -> ride.location.v1.CuratedPlace
+	1,  // 38: ride.location.v1.CreatePlaceRequest.category:type_name -> ride.location.v1.PlaceCategory
+	49, // 39: ride.location.v1.CreatePlaceRequest.names:type_name -> ride.location.v1.CreatePlaceRequest.NamesEntry
+	2,  // 40: ride.location.v1.CreatePlaceRequest.coordinates:type_name -> ride.location.v1.Coordinates
+	1,  // 41: ride.location.v1.UpdatePlaceRequest.category:type_name -> ride.location.v1.PlaceCategory
+	50, // 42: ride.location.v1.UpdatePlaceRequest.names:type_name -> ride.location.v1.UpdatePlaceRequest.NamesEntry
+	2,  // 43: ride.location.v1.UpdatePlaceRequest.coordinates:type_name -> ride.location.v1.Coordinates
+	2,  // 44: ride.location.v1.GetRouteRequest.origin:type_name -> ride.location.v1.Coordinates
+	2,  // 45: ride.location.v1.GetRouteRequest.destination:type_name -> ride.location.v1.Coordinates
+	2,  // 46: ride.location.v1.SearchPlacesRequest.near:type_name -> ride.location.v1.Coordinates
+	44, // 47: ride.location.v1.SearchPlacesResponse.places:type_name -> ride.location.v1.Place
+	2,  // 48: ride.location.v1.ReverseGeocodeRequest.coordinates:type_name -> ride.location.v1.Coordinates
+	44, // 49: ride.location.v1.ReverseGeocodeResponse.place:type_name -> ride.location.v1.Place
+	2,  // 50: ride.location.v1.Place.coordinates:type_name -> ride.location.v1.Coordinates
+	51, // 51: ride.location.v1.Place.address:type_name -> ride.location.v1.Place.AddressEntry
+	3,  // 52: ride.location.v1.LocationService.UpdateLocation:input_type -> ride.location.v1.UpdateLocationRequest
+	5,  // 53: ride.location.v1.LocationService.GetLocation:input_type -> ride.location.v1.GetLocationRequest
+	8,  // 54: ride.location.v1.LocationService.FindNearby:input_type -> ride.location.v1.FindNearbyRequest
+	11, // 55: ride.location.v1.LocationService.CreateZone:input_type -> ride.location.v1.CreateZoneRequest
+	12, // 56: ride.location.v1.LocationService.UpdateZone:input_type -> ride.location.v1.UpdateZoneRequest
+	13, // 57: ride.location.v1.LocationService.SetZoneActive:input_type -> ride.location.v1.SetZoneActiveRequest
+	15, // 58: ride.location.v1.LocationService.GetZone:input_type -> ride.location.v1.GetZoneRequest
+	16, // 59: ride.location.v1.LocationService.ListZones:input_type -> ride.location.v1.ListZonesRequest
+	18, // 60: ride.location.v1.LocationService.CheckServiceZone:input_type -> ride.location.v1.CheckServiceZoneRequest
+	21, // 61: ride.location.v1.LocationService.ListCities:input_type -> ride.location.v1.ListCitiesRequest
+	24, // 62: ride.location.v1.LocationService.GetCity:input_type -> ride.location.v1.GetCityRequest
+	22, // 63: ride.location.v1.LocationService.AdminListCities:input_type -> ride.location.v1.AdminListCitiesRequest
+	26, // 64: ride.location.v1.LocationService.CreateCity:input_type -> ride.location.v1.CreateCityRequest
+	27, // 65: ride.location.v1.LocationService.UpdateCity:input_type -> ride.location.v1.UpdateCityRequest
+	28, // 66: ride.location.v1.LocationService.SetCityActive:input_type -> ride.location.v1.SetCityActiveRequest
+	30, // 67: ride.location.v1.LocationService.ListPlaces:input_type -> ride.location.v1.ListPlacesRequest
+	33, // 68: ride.location.v1.LocationService.GetPlace:input_type -> ride.location.v1.GetPlaceRequest
+	31, // 69: ride.location.v1.LocationService.AdminListPlaces:input_type -> ride.location.v1.AdminListPlacesRequest
+	35, // 70: ride.location.v1.LocationService.CreatePlace:input_type -> ride.location.v1.CreatePlaceRequest
+	36, // 71: ride.location.v1.LocationService.UpdatePlace:input_type -> ride.location.v1.UpdatePlaceRequest
+	37, // 72: ride.location.v1.LocationService.SetPlaceActive:input_type -> ride.location.v1.SetPlaceActiveRequest
+	38, // 73: ride.location.v1.LocationService.GetRoute:input_type -> ride.location.v1.GetRouteRequest
+	40, // 74: ride.location.v1.LocationService.SearchPlaces:input_type -> ride.location.v1.SearchPlacesRequest
+	42, // 75: ride.location.v1.LocationService.ReverseGeocode:input_type -> ride.location.v1.ReverseGeocodeRequest
+	4,  // 76: ride.location.v1.LocationService.UpdateLocation:output_type -> ride.location.v1.UpdateLocationResponse
+	6,  // 77: ride.location.v1.LocationService.GetLocation:output_type -> ride.location.v1.GetLocationResponse
+	9,  // 78: ride.location.v1.LocationService.FindNearby:output_type -> ride.location.v1.FindNearbyResponse
+	14, // 79: ride.location.v1.LocationService.CreateZone:output_type -> ride.location.v1.ZoneResponse
+	14, // 80: ride.location.v1.LocationService.UpdateZone:output_type -> ride.location.v1.ZoneResponse
+	14, // 81: ride.location.v1.LocationService.SetZoneActive:output_type -> ride.location.v1.ZoneResponse
+	14, // 82: ride.location.v1.LocationService.GetZone:output_type -> ride.location.v1.ZoneResponse
+	17, // 83: ride.location.v1.LocationService.ListZones:output_type -> ride.location.v1.ListZonesResponse
+	19, // 84: ride.location.v1.LocationService.CheckServiceZone:output_type -> ride.location.v1.CheckServiceZoneResponse
+	23, // 85: ride.location.v1.LocationService.ListCities:output_type -> ride.location.v1.ListCitiesResponse
+	25, // 86: ride.location.v1.LocationService.GetCity:output_type -> ride.location.v1.CityResponse
+	23, // 87: ride.location.v1.LocationService.AdminListCities:output_type -> ride.location.v1.ListCitiesResponse
+	25, // 88: ride.location.v1.LocationService.CreateCity:output_type -> ride.location.v1.CityResponse
+	25, // 89: ride.location.v1.LocationService.UpdateCity:output_type -> ride.location.v1.CityResponse
+	25, // 90: ride.location.v1.LocationService.SetCityActive:output_type -> ride.location.v1.CityResponse
+	32, // 91: ride.location.v1.LocationService.ListPlaces:output_type -> ride.location.v1.ListPlacesResponse
+	34, // 92: ride.location.v1.LocationService.GetPlace:output_type -> ride.location.v1.CuratedPlaceResponse
+	32, // 93: ride.location.v1.LocationService.AdminListPlaces:output_type -> ride.location.v1.ListPlacesResponse
+	34, // 94: ride.location.v1.LocationService.CreatePlace:output_type -> ride.location.v1.CuratedPlaceResponse
+	34, // 95: ride.location.v1.LocationService.UpdatePlace:output_type -> ride.location.v1.CuratedPlaceResponse
+	34, // 96: ride.location.v1.LocationService.SetPlaceActive:output_type -> ride.location.v1.CuratedPlaceResponse
+	39, // 97: ride.location.v1.LocationService.GetRoute:output_type -> ride.location.v1.GetRouteResponse
+	41, // 98: ride.location.v1.LocationService.SearchPlaces:output_type -> ride.location.v1.SearchPlacesResponse
+	43, // 99: ride.location.v1.LocationService.ReverseGeocode:output_type -> ride.location.v1.ReverseGeocodeResponse
+	76, // [76:100] is the sub-list for method output_type
+	52, // [52:76] is the sub-list for method input_type
+	52, // [52:52] is the sub-list for extension type_name
+	52, // [52:52] is the sub-list for extension extendee
+	0,  // [0:52] is the sub-list for field type_name
 }
 
 func init() { file_ride_location_v1_location_proto_init() }
@@ -1709,8 +3203,8 @@ func file_ride_location_v1_location_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_location_v1_location_proto_rawDesc), len(file_ride_location_v1_location_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   26,
+			NumEnums:      2,
+			NumMessages:   50,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

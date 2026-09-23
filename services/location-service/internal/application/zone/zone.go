@@ -1,6 +1,11 @@
 package zone
 
-import "time"
+import (
+	"regexp"
+	"time"
+)
+
+var uuidShape = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // minBoundaryPoints is the fewest vertices that can form a real polygon.
 // The stored ring is not closed (the first point is not repeated at the
@@ -58,10 +63,13 @@ func NewBoundary(points []Coordinates) ([]Coordinates, error) {
 }
 
 // Zone is a served geographic area within a city — an arbitrary
-// polygon, not the city itself. Two zones may share a city name.
+// polygon, not the city itself. A city has as many zones as it needs.
 type Zone struct {
-	ID        string
+	ID     string
+	CityID string
+	// City and TimeZone are the city's name and time zone, read with the zone.
 	City      string
+	TimeZone  string
 	Name      string
 	Boundary  []Coordinates
 	Active    bool

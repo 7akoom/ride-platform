@@ -55,7 +55,7 @@ service LocationService {
       get: "/v1/zones/{zone_id}"
     };
   }
-  // ListZones lists service zones, optionally for one city (?city=).
+  // ListZones lists service zones, optionally for one city (?city_id=).
   rpc ListZones(ListZonesRequest) returns (ListZonesResponse) {
     option (google.api.http) = {
       get: "/v1/zones"
@@ -65,6 +65,86 @@ service LocationService {
   rpc CheckServiceZone(CheckServiceZoneRequest) returns (CheckServiceZoneResponse) {
     option (google.api.http) = {
       get: "/v1/zones:check"
+    };
+  }
+
+  // Cities the platform operates in. Every service zone and curated place
+  // belongs to one; its time zone is the one schedules and reports use.
+  // ListCities and GetCity show active cities to any signed-in user.
+  rpc ListCities(ListCitiesRequest) returns (ListCitiesResponse) {
+    option (google.api.http) = {
+      get: "/v1/cities"
+    };
+  }
+  rpc GetCity(GetCityRequest) returns (CityResponse) {
+    option (google.api.http) = {
+      get: "/v1/cities/{city_id}"
+    };
+  }
+  // Staff with zones.manage (or the internal token) manage cities; the admin
+  // list includes inactive ones. Switching a city off stops serving all its
+  // zones at once.
+  rpc AdminListCities(AdminListCitiesRequest) returns (ListCitiesResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/cities"
+    };
+  }
+  rpc CreateCity(CreateCityRequest) returns (CityResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/cities"
+      body: "*"
+    };
+  }
+  rpc UpdateCity(UpdateCityRequest) returns (CityResponse) {
+    option (google.api.http) = {
+      patch: "/v1/admin/cities/{city_id}"
+      body: "*"
+    };
+  }
+  rpc SetCityActive(SetCityActiveRequest) returns (CityResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/cities/{city_id}:setActive"
+      body: "*"
+    };
+  }
+
+  // Curated places: airports, malls, hotels... that staff chose, named in
+  // every language, with the exact point to be picked up or dropped at.
+  // SearchPlaces lists matching curated places before map results.
+  // ListPlaces and GetPlace show active places to any signed-in user.
+  rpc ListPlaces(ListPlacesRequest) returns (ListPlacesResponse) {
+    option (google.api.http) = {
+      get: "/v1/places"
+    };
+  }
+  rpc GetPlace(GetPlaceRequest) returns (CuratedPlaceResponse) {
+    option (google.api.http) = {
+      get: "/v1/places/{place_id}"
+    };
+  }
+  // Staff with places.manage (or the internal token) manage curated places;
+  // the admin list includes inactive ones.
+  rpc AdminListPlaces(AdminListPlacesRequest) returns (ListPlacesResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/places"
+    };
+  }
+  rpc CreatePlace(CreatePlaceRequest) returns (CuratedPlaceResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/places"
+      body: "*"
+    };
+  }
+  rpc UpdatePlace(UpdatePlaceRequest) returns (CuratedPlaceResponse) {
+    option (google.api.http) = {
+      patch: "/v1/admin/places/{place_id}"
+      body: "*"
+    };
+  }
+  rpc SetPlaceActive(SetPlaceActiveRequest) returns (CuratedPlaceResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/places/{place_id}:setActive"
+      body: "*"
     };
   }
 
@@ -144,24 +224,29 @@ message FindNearbyResponse {
 // --- Service zones ---------------------------------------------------
 //
 // A zone is an arbitrary polygon within a city, not the city itself —
-// two zones can share a city name (e.g. distinct approved areas within
+// a city has as many zones as it needs (distinct approved areas within
 // Erbil). boundary is an ordered list of vertices forming a simple
 // polygon (first point is not repeated at the end).
 
 message Zone {
   string id = 1;
+  // The city's name, for display; city_id is the reference.
   string city = 2;
   string name = 3;
   repeated Coordinates boundary = 4;
   bool active = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
+  string city_id = 8;
 }
 
 message CreateZoneRequest {
-  string city = 1;
+  reserved 1;
+  reserved "city";
   string name = 2;
   repeated Coordinates boundary = 3;
+  // The city the zone is in (see CreateCity).
+  string city_id = 4;
 }
 
 message UpdateZoneRequest {
@@ -184,8 +269,10 @@ message GetZoneRequest {
 }
 
 message ListZonesRequest {
+  reserved 1;
+  reserved "city";
   // Optional. Empty returns zones for every city.
-  string city = 1;
+  string city_id = 2;
 }
 
 message ListZonesResponse {
@@ -198,9 +285,162 @@ message CheckServiceZoneRequest {
 
 message CheckServiceZoneResponse {
   bool served = 1;
-  // zone_id/city are only set when served is true.
+  // Only set when served is true. A point is served when an active zone of an
+  // active city covers it.
   string zone_id = 2;
+  // The city's name.
   string city = 3;
+  string city_id = 4;
+  // The city's IANA time zone, for example "Asia/Baghdad".
+  string time_zone = 5;
+}
+
+// --- Cities ------------------------------------------------------------
+
+message City {
+  string id = 1;
+  // The name used when no translation fits.
+  string name = 2;
+  // The name in other languages, by language: "ar", "ku", "en".
+  map<string, string> names = 3;
+  // IANA time zone, for example "Asia/Baghdad".
+  string time_zone = 4;
+  // Where a map of the city opens.
+  Coordinates center = 5;
+  bool active = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message ListCitiesRequest {}
+
+message AdminListCitiesRequest {}
+
+message ListCitiesResponse {
+  repeated City cities = 1;
+}
+
+message GetCityRequest {
+  string city_id = 1;
+}
+
+message CityResponse {
+  City city = 1;
+}
+
+message CreateCityRequest {
+  string name = 1;
+  map<string, string> names = 2;
+  string time_zone = 3;
+  Coordinates center = 4;
+}
+
+// UpdateCity replaces the name, the translations, the time zone and the
+// center.
+message UpdateCityRequest {
+  string city_id = 1;
+  string name = 2;
+  map<string, string> names = 3;
+  string time_zone = 4;
+  Coordinates center = 5;
+}
+
+message SetCityActiveRequest {
+  string city_id = 1;
+  bool active = 2;
+}
+
+// --- Curated places ------------------------------------------------------
+
+enum PlaceCategory {
+  PLACE_CATEGORY_UNSPECIFIED = 0;
+  PLACE_CATEGORY_AIRPORT = 1;
+  PLACE_CATEGORY_MALL = 2;
+  PLACE_CATEGORY_HOTEL = 3;
+  PLACE_CATEGORY_HOSPITAL = 4;
+  PLACE_CATEGORY_UNIVERSITY = 5;
+  PLACE_CATEGORY_LANDMARK = 6;
+  PLACE_CATEGORY_STATION = 7;
+  PLACE_CATEGORY_GOVERNMENT = 8;
+  PLACE_CATEGORY_RESTAURANT = 9;
+  PLACE_CATEGORY_OTHER = 10;
+}
+
+message CuratedPlace {
+  string id = 1;
+  string city_id = 2;
+  PlaceCategory category = 3;
+  // The name used when no translation fits.
+  string name = 4;
+  // The name in other languages, by language: "ar", "ku", "en".
+  map<string, string> names = 5;
+  // A short address or directions ("Main gate, 100m Street").
+  string address = 6;
+  // The exact point to be picked up or dropped at (a gate, an entrance).
+  Coordinates coordinates = 7;
+  // Higher first, in lists and search.
+  int32 priority = 8;
+  bool active = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+message ListPlacesRequest {
+  // Optional filters.
+  string city_id = 1;
+  PlaceCategory category = 2;
+  // When set, closer places come first after priority.
+  Coordinates near = 3;
+  // At most 100; 20 by default.
+  int32 page_size = 4;
+  string page_token = 5;
+}
+
+message AdminListPlacesRequest {
+  string city_id = 1;
+  PlaceCategory category = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+message ListPlacesResponse {
+  repeated CuratedPlace places = 1;
+  // Empty on the last page.
+  string next_page_token = 2;
+}
+
+message GetPlaceRequest {
+  string place_id = 1;
+}
+
+message CuratedPlaceResponse {
+  CuratedPlace place = 1;
+}
+
+message CreatePlaceRequest {
+  string city_id = 1;
+  PlaceCategory category = 2;
+  string name = 3;
+  map<string, string> names = 4;
+  string address = 5;
+  Coordinates coordinates = 6;
+  int32 priority = 7;
+}
+
+// UpdatePlace replaces everything but the city.
+message UpdatePlaceRequest {
+  string place_id = 1;
+  PlaceCategory category = 2;
+  string name = 3;
+  map<string, string> names = 4;
+  string address = 5;
+  Coordinates coordinates = 6;
+  int32 priority = 7;
+}
+
+message SetPlaceActiveRequest {
+  string place_id = 1;
+  bool active = 2;
 }
 
 message GetRouteRequest {
@@ -246,7 +486,8 @@ message ReverseGeocodeResponse {
 }
 
 message Place {
-  // The OpenStreetMap object, for example "way/123456".
+  // The OpenStreetMap object, for example "way/123456", or "curated/<id>" for
+  // a curated place.
   string id = 1;
 
   // The short name (a mall, a street) and the full one with neighbourhood, city and
@@ -261,4 +502,8 @@ message Place {
   // The parts of the address that are known (road, neighbourhood, suburb, city, state,
   // postcode...), by OpenStreetMap's own names.
   map<string, string> address = 7;
+
+  // Set for a curated place (see CuratedPlace): its id, and category is then
+  // the curated category in lower case ("airport", "mall"...).
+  string curated_place_id = 8;
 }

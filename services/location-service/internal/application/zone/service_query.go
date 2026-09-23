@@ -25,9 +25,14 @@ func (s *service) GetZone(
 
 func (s *service) ListZones(
 	ctx context.Context,
-	city string,
+	cityID string,
 ) ([]Zone, error) {
-	results, err := s.repository.List(ctx, strings.TrimSpace(city))
+	cityID = strings.ToLower(strings.TrimSpace(cityID))
+	if cityID != "" && !uuidShape.MatchString(cityID) {
+		return []Zone{}, nil
+	}
+
+	results, err := s.repository.List(ctx, cityID)
 	if err != nil {
 		return nil, fmt.Errorf("list zones: %w", err)
 	}
@@ -54,8 +59,10 @@ func (s *service) CheckServiceZone(
 	}
 
 	return CheckServiceZoneResult{
-		Served: true,
-		ZoneID: found.ID,
-		City:   found.City,
+		Served:   true,
+		ZoneID:   found.ID,
+		CityID:   found.CityID,
+		City:     found.City,
+		TimeZone: found.TimeZone,
 	}, nil
 }

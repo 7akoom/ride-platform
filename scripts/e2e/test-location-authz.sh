@@ -191,7 +191,7 @@ COORD="{\"coordinates\":{\"latitude\":$LAT_A,\"longitude\":$LNG_A}}"
 expect "rider 1 checks the service zone"            OK               "$TOKEN_RIDER_1"  CheckServiceZone "$COORD"
 expect "driver A lists zones"                       OK               "$TOKEN_DRIVER_A" ListZones        '{}'
 expect_authorized "rider 1 reads a zone that does not exist" "$TOKEN_RIDER_1" GetZone "{\"zone_id\":\"$MISSING_ID\"}"
-expect "rider 1 creates a zone"                     PermissionDenied "$TOKEN_RIDER_1"  CreateZone   '{"city":"x","name":"x","boundary":[{"latitude":1,"longitude":1},{"latitude":1,"longitude":2},{"latitude":2,"longitude":2}]}'
+expect "rider 1 creates a zone"                     PermissionDenied "$TOKEN_RIDER_1"  CreateZone   '{"city_id":"00000000-0000-4000-8000-000000000001","name":"x","boundary":[{"latitude":1,"longitude":1},{"latitude":1,"longitude":2},{"latitude":2,"longitude":2}]}'
 expect "driver A edits a zone"                      PermissionDenied "$TOKEN_DRIVER_A" UpdateZone   "{\"zone_id\":\"$MISSING_ID\",\"name\":\"x\"}"
 expect "driver A switches a zone off"               PermissionDenied "$TOKEN_DRIVER_A" SetZoneActive "{\"zone_id\":\"$MISSING_ID\",\"active\":false}"
 

@@ -14,6 +14,7 @@ const (
 	PermissionDriversReview = "drivers.approve"
 	PermissionZonesManage   = "zones.manage"
 	PermissionMediaRead     = "media.read"
+	PermissionPlacesManage  = "places.manage"
 )
 
 // RoleKeyOwner is the system role that always holds every permission,
@@ -27,8 +28,9 @@ var permissionCatalog = map[string]string{
 	PermissionAuditRead:     "Read the audit log of staff actions",
 	PermissionDriversRead:   "See drivers and the review queue",
 	PermissionDriversReview: "Approve or reject drivers",
-	PermissionZonesManage:   "Create and change service zones",
+	PermissionZonesManage:   "Create and change cities and service zones",
 	PermissionMediaRead:     "View files users uploaded (driver documents, photos, attachments)",
+	PermissionPlacesManage:  "Create and change curated places (airports, malls, hotels...)",
 }
 
 // PermissionInfo describes one grantable permission.

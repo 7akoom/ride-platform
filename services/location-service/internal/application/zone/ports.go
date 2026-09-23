@@ -4,7 +4,7 @@ import "context"
 
 type CreateInput struct {
 	ID       string
-	City     string
+	CityID   string
 	Name     string
 	Boundary []Coordinates
 }
@@ -19,6 +19,7 @@ type UpdateInput struct {
 // (ephemeral, Valkey-backed live positions), this is meant to be backed
 // by a durable store — zones barely change and must survive a restart.
 type Repository interface {
+	// Create returns ErrCityNotFound when the city does not exist.
 	Create(ctx context.Context, input CreateInput) (Zone, error)
 
 	Update(ctx context.Context, input UpdateInput) (Zone, error)
@@ -29,10 +30,10 @@ type Repository interface {
 
 	// List returns every zone, optionally filtered to one city (empty
 	// string returns all cities).
-	List(ctx context.Context, city string) ([]Zone, error)
+	List(ctx context.Context, cityID string) ([]Zone, error)
 
-	// FindContaining returns the first active zone whose boundary
-	// covers the given point, and false if no active zone does.
+	// FindContaining returns the first active zone of an active city whose
+	// boundary covers the given point, and false if none does.
 	FindContaining(ctx context.Context, point Coordinates) (Zone, bool, error)
 }
 
