@@ -36,6 +36,8 @@ type fakeRepository struct {
 	listTransactionsResult []wallet.Transaction
 	listTransactionsErr    error
 	listTransactionsLimit  int
+
+	dues []wallet.Due
 }
 
 func newFakeRepository() *fakeRepository {
@@ -625,4 +627,8 @@ func (r *fakeRepository) CreditTripChange(
 	_ wallet.ChangeCreditInput,
 ) (wallet.ChangeCredit, error) {
 	return wallet.ChangeCredit{}, nil
+}
+
+func (r *fakeRepository) ListDues(context.Context, string) ([]wallet.Due, error) {
+	return r.dues, nil
 }

@@ -30,6 +30,14 @@ const (
 	WalletService_InitiateTopUp_FullMethodName          = "/ride.wallet.v1.WalletService/InitiateTopUp"
 	WalletService_SendTransfer_FullMethodName           = "/ride.wallet.v1.WalletService/SendTransfer"
 	WalletService_ListTransfers_FullMethodName          = "/ride.wallet.v1.WalletService/ListTransfers"
+	WalletService_CreateMoneyRequest_FullMethodName     = "/ride.wallet.v1.WalletService/CreateMoneyRequest"
+	WalletService_ListMoneyRequests_FullMethodName      = "/ride.wallet.v1.WalletService/ListMoneyRequests"
+	WalletService_GetMoneyRequest_FullMethodName        = "/ride.wallet.v1.WalletService/GetMoneyRequest"
+	WalletService_PayMoneyRequest_FullMethodName        = "/ride.wallet.v1.WalletService/PayMoneyRequest"
+	WalletService_DeclineMoneyRequest_FullMethodName    = "/ride.wallet.v1.WalletService/DeclineMoneyRequest"
+	WalletService_CancelMoneyRequest_FullMethodName     = "/ride.wallet.v1.WalletService/CancelMoneyRequest"
+	WalletService_GetStatement_FullMethodName           = "/ride.wallet.v1.WalletService/GetStatement"
+	WalletService_GetRiderDues_FullMethodName           = "/ride.wallet.v1.WalletService/GetRiderDues"
 	WalletService_ProcessZainCashWebhook_FullMethodName = "/ride.wallet.v1.WalletService/ProcessZainCashWebhook"
 )
 
@@ -74,6 +82,33 @@ type WalletServiceClient interface {
 	SendTransfer(ctx context.Context, in *SendTransferRequest, opts ...grpc.CallOption) (*SendTransferResponse, error)
 	// ListTransfers is the rider's transfers, sent and received, newest first.
 	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersResponse, error)
+	// Money requests: a rider asks for money, from one registered rider (by
+	// phone: they are told) or from whoever opens its code (a link or a QR
+	// code built from the code). Paying one is a transfer from the payer with
+	// their PIN, within the transfer limits. It stays pending until paid,
+	// declined (by the rider it is for), cancelled (by the requester) or it
+	// expires (72 hours by default, 1-168).
+	CreateMoneyRequest(ctx context.Context, in *CreateMoneyRequestRequest, opts ...grpc.CallOption) (*MoneyRequestResponse, error)
+	// ListMoneyRequests: role outgoing (asked by this rider) or incoming (for
+	// this rider, or paid by them); status pending, paid, declined, cancelled
+	// or expired. Newest first.
+	ListMoneyRequests(ctx context.Context, in *ListMoneyRequestsRequest, opts ...grpc.CallOption) (*ListMoneyRequestsResponse, error)
+	// GetMoneyRequest opens a request by its code (after scanning its QR code
+	// or following its link). A request for one rider is seen only by that
+	// rider and the requester.
+	GetMoneyRequest(ctx context.Context, in *GetMoneyRequestRequest, opts ...grpc.CallOption) (*MoneyRequestResponse, error)
+	PayMoneyRequest(ctx context.Context, in *PayMoneyRequestRequest, opts ...grpc.CallOption) (*PayMoneyRequestResponse, error)
+	DeclineMoneyRequest(ctx context.Context, in *CloseMoneyRequestRequest, opts ...grpc.CallOption) (*MoneyRequestResponse, error)
+	CancelMoneyRequest(ctx context.Context, in *CloseMoneyRequestRequest, opts ...grpc.CallOption) (*MoneyRequestResponse, error)
+	// GetStatement is the wallet's ledger for a period, with the balance
+	// before and after it and what came in and went out. direction in / out
+	// and types narrow the entries (and the totals); the opening and closing
+	// balances are the wallet's, whatever the filter. Newest first.
+	GetStatement(ctx context.Context, in *GetStatementRequest, opts ...grpc.CallOption) (*GetStatementResponse, error)
+	// GetRiderDues is what a rider still owes from cancelled trips' fees (the
+	// money reaching their wallet pays it off first), and whether they may
+	// request trips meanwhile (trip-service asks, with the internal token).
+	GetRiderDues(ctx context.Context, in *GetRiderDuesRequest, opts ...grpc.CallOption) (*GetRiderDuesResponse, error)
 	// ProcessZainCashWebhook receives ZainCash's server-to-server payment
 	// notification. Called directly by ZainCash, not by an authenticated
 	// platform client — exempted from the auth interceptor same as the
@@ -199,6 +234,86 @@ func (c *walletServiceClient) ListTransfers(ctx context.Context, in *ListTransfe
 	return out, nil
 }
 
+func (c *walletServiceClient) CreateMoneyRequest(ctx context.Context, in *CreateMoneyRequestRequest, opts ...grpc.CallOption) (*MoneyRequestResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MoneyRequestResponse)
+	err := c.cc.Invoke(ctx, WalletService_CreateMoneyRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListMoneyRequests(ctx context.Context, in *ListMoneyRequestsRequest, opts ...grpc.CallOption) (*ListMoneyRequestsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMoneyRequestsResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListMoneyRequests_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) GetMoneyRequest(ctx context.Context, in *GetMoneyRequestRequest, opts ...grpc.CallOption) (*MoneyRequestResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MoneyRequestResponse)
+	err := c.cc.Invoke(ctx, WalletService_GetMoneyRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) PayMoneyRequest(ctx context.Context, in *PayMoneyRequestRequest, opts ...grpc.CallOption) (*PayMoneyRequestResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PayMoneyRequestResponse)
+	err := c.cc.Invoke(ctx, WalletService_PayMoneyRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) DeclineMoneyRequest(ctx context.Context, in *CloseMoneyRequestRequest, opts ...grpc.CallOption) (*MoneyRequestResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MoneyRequestResponse)
+	err := c.cc.Invoke(ctx, WalletService_DeclineMoneyRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) CancelMoneyRequest(ctx context.Context, in *CloseMoneyRequestRequest, opts ...grpc.CallOption) (*MoneyRequestResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MoneyRequestResponse)
+	err := c.cc.Invoke(ctx, WalletService_CancelMoneyRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) GetStatement(ctx context.Context, in *GetStatementRequest, opts ...grpc.CallOption) (*GetStatementResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStatementResponse)
+	err := c.cc.Invoke(ctx, WalletService_GetStatement_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) GetRiderDues(ctx context.Context, in *GetRiderDuesRequest, opts ...grpc.CallOption) (*GetRiderDuesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRiderDuesResponse)
+	err := c.cc.Invoke(ctx, WalletService_GetRiderDues_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *walletServiceClient) ProcessZainCashWebhook(ctx context.Context, in *ProcessZainCashWebhookRequest, opts ...grpc.CallOption) (*ProcessZainCashWebhookResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ProcessZainCashWebhookResponse)
@@ -250,6 +365,33 @@ type WalletServiceServer interface {
 	SendTransfer(context.Context, *SendTransferRequest) (*SendTransferResponse, error)
 	// ListTransfers is the rider's transfers, sent and received, newest first.
 	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error)
+	// Money requests: a rider asks for money, from one registered rider (by
+	// phone: they are told) or from whoever opens its code (a link or a QR
+	// code built from the code). Paying one is a transfer from the payer with
+	// their PIN, within the transfer limits. It stays pending until paid,
+	// declined (by the rider it is for), cancelled (by the requester) or it
+	// expires (72 hours by default, 1-168).
+	CreateMoneyRequest(context.Context, *CreateMoneyRequestRequest) (*MoneyRequestResponse, error)
+	// ListMoneyRequests: role outgoing (asked by this rider) or incoming (for
+	// this rider, or paid by them); status pending, paid, declined, cancelled
+	// or expired. Newest first.
+	ListMoneyRequests(context.Context, *ListMoneyRequestsRequest) (*ListMoneyRequestsResponse, error)
+	// GetMoneyRequest opens a request by its code (after scanning its QR code
+	// or following its link). A request for one rider is seen only by that
+	// rider and the requester.
+	GetMoneyRequest(context.Context, *GetMoneyRequestRequest) (*MoneyRequestResponse, error)
+	PayMoneyRequest(context.Context, *PayMoneyRequestRequest) (*PayMoneyRequestResponse, error)
+	DeclineMoneyRequest(context.Context, *CloseMoneyRequestRequest) (*MoneyRequestResponse, error)
+	CancelMoneyRequest(context.Context, *CloseMoneyRequestRequest) (*MoneyRequestResponse, error)
+	// GetStatement is the wallet's ledger for a period, with the balance
+	// before and after it and what came in and went out. direction in / out
+	// and types narrow the entries (and the totals); the opening and closing
+	// balances are the wallet's, whatever the filter. Newest first.
+	GetStatement(context.Context, *GetStatementRequest) (*GetStatementResponse, error)
+	// GetRiderDues is what a rider still owes from cancelled trips' fees (the
+	// money reaching their wallet pays it off first), and whether they may
+	// request trips meanwhile (trip-service asks, with the internal token).
+	GetRiderDues(context.Context, *GetRiderDuesRequest) (*GetRiderDuesResponse, error)
 	// ProcessZainCashWebhook receives ZainCash's server-to-server payment
 	// notification. Called directly by ZainCash, not by an authenticated
 	// platform client — exempted from the auth interceptor same as the
@@ -297,6 +439,30 @@ func (UnimplementedWalletServiceServer) SendTransfer(context.Context, *SendTrans
 }
 func (UnimplementedWalletServiceServer) ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTransfers not implemented")
+}
+func (UnimplementedWalletServiceServer) CreateMoneyRequest(context.Context, *CreateMoneyRequestRequest) (*MoneyRequestResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateMoneyRequest not implemented")
+}
+func (UnimplementedWalletServiceServer) ListMoneyRequests(context.Context, *ListMoneyRequestsRequest) (*ListMoneyRequestsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMoneyRequests not implemented")
+}
+func (UnimplementedWalletServiceServer) GetMoneyRequest(context.Context, *GetMoneyRequestRequest) (*MoneyRequestResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMoneyRequest not implemented")
+}
+func (UnimplementedWalletServiceServer) PayMoneyRequest(context.Context, *PayMoneyRequestRequest) (*PayMoneyRequestResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PayMoneyRequest not implemented")
+}
+func (UnimplementedWalletServiceServer) DeclineMoneyRequest(context.Context, *CloseMoneyRequestRequest) (*MoneyRequestResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeclineMoneyRequest not implemented")
+}
+func (UnimplementedWalletServiceServer) CancelMoneyRequest(context.Context, *CloseMoneyRequestRequest) (*MoneyRequestResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelMoneyRequest not implemented")
+}
+func (UnimplementedWalletServiceServer) GetStatement(context.Context, *GetStatementRequest) (*GetStatementResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStatement not implemented")
+}
+func (UnimplementedWalletServiceServer) GetRiderDues(context.Context, *GetRiderDuesRequest) (*GetRiderDuesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRiderDues not implemented")
 }
 func (UnimplementedWalletServiceServer) ProcessZainCashWebhook(context.Context, *ProcessZainCashWebhookRequest) (*ProcessZainCashWebhookResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ProcessZainCashWebhook not implemented")
@@ -520,6 +686,150 @@ func _WalletService_ListTransfers_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WalletService_CreateMoneyRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateMoneyRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).CreateMoneyRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_CreateMoneyRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).CreateMoneyRequest(ctx, req.(*CreateMoneyRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListMoneyRequests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMoneyRequestsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListMoneyRequests(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListMoneyRequests_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListMoneyRequests(ctx, req.(*ListMoneyRequestsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_GetMoneyRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMoneyRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetMoneyRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetMoneyRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetMoneyRequest(ctx, req.(*GetMoneyRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_PayMoneyRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PayMoneyRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).PayMoneyRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_PayMoneyRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).PayMoneyRequest(ctx, req.(*PayMoneyRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_DeclineMoneyRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloseMoneyRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).DeclineMoneyRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_DeclineMoneyRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).DeclineMoneyRequest(ctx, req.(*CloseMoneyRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_CancelMoneyRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloseMoneyRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).CancelMoneyRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_CancelMoneyRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).CancelMoneyRequest(ctx, req.(*CloseMoneyRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_GetStatement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStatementRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetStatement(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetStatement_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetStatement(ctx, req.(*GetStatementRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_GetRiderDues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRiderDuesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetRiderDues(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetRiderDues_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetRiderDues(ctx, req.(*GetRiderDuesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WalletService_ProcessZainCashWebhook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ProcessZainCashWebhookRequest)
 	if err := dec(in); err != nil {
@@ -588,6 +898,38 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTransfers",
 			Handler:    _WalletService_ListTransfers_Handler,
+		},
+		{
+			MethodName: "CreateMoneyRequest",
+			Handler:    _WalletService_CreateMoneyRequest_Handler,
+		},
+		{
+			MethodName: "ListMoneyRequests",
+			Handler:    _WalletService_ListMoneyRequests_Handler,
+		},
+		{
+			MethodName: "GetMoneyRequest",
+			Handler:    _WalletService_GetMoneyRequest_Handler,
+		},
+		{
+			MethodName: "PayMoneyRequest",
+			Handler:    _WalletService_PayMoneyRequest_Handler,
+		},
+		{
+			MethodName: "DeclineMoneyRequest",
+			Handler:    _WalletService_DeclineMoneyRequest_Handler,
+		},
+		{
+			MethodName: "CancelMoneyRequest",
+			Handler:    _WalletService_CancelMoneyRequest_Handler,
+		},
+		{
+			MethodName: "GetStatement",
+			Handler:    _WalletService_GetStatement_Handler,
+		},
+		{
+			MethodName: "GetRiderDues",
+			Handler:    _WalletService_GetRiderDues_Handler,
 		},
 		{
 			MethodName: "ProcessZainCashWebhook",

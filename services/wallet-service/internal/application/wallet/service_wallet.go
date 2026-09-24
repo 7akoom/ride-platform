@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/shopspring/decimal"
 )
 
 const defaultTransactionLimit = 50
@@ -169,4 +171,30 @@ func (s *service) RequestPayout(
 	}
 
 	return updated, transaction, nil
+}
+
+func (s *service) RiderDues(ctx context.Context, riderID string) (RiderDues, error) {
+	riderID = strings.TrimSpace(riderID)
+	if riderID == "" {
+		return RiderDues{}, ErrRiderIDRequired
+	}
+
+	config, err := s.repository.GetActiveConfig(ctx)
+	if err != nil {
+		return RiderDues{}, fmt.Errorf("get active wallet config: %w", err)
+	}
+
+	dues, err := s.repository.ListDues(ctx, riderID)
+	if err != nil {
+		return RiderDues{}, fmt.Errorf("list dues: %w", err)
+	}
+
+	result := RiderDues{CurrencyCode: config.CurrencyCode, Outstanding: decimal.Zero, Dues: dues}
+	for _, due := range dues {
+		result.Outstanding = result.Outstanding.Add(due.Outstanding())
+	}
+
+	result.CanRequestTrips = !config.BlockTripsWithDues || !result.Outstanding.IsPositive()
+
+	return result, nil
 }

@@ -50,6 +50,17 @@ type Service interface {
 	// RecordTripChange credits the rider's wallet with the change the trip's driver could
 	// not return in cash. The platform pays; nothing is taken from the driver.
 	RecordTripChange(ctx context.Context, input RecordTripChangeInput) (ChangeCredit, error)
+	// RiderDues is what the rider still owes from cancelled trips' fees.
+	RiderDues(ctx context.Context, riderID string) (RiderDues, error)
+}
+
+// RiderDues is a rider's unpaid fees: the total, and each fee. CanRequestTrips
+// is false when the deployment blocks trips until they are paid.
+type RiderDues struct {
+	CurrencyCode    string
+	Outstanding     Money
+	Dues            []Due
+	CanRequestTrips bool
 }
 
 type service struct {

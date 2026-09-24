@@ -336,7 +336,8 @@ func (h *TripHandler) mapTripError(err error) error {
 		return status.Error(codes.FailedPrecondition, err.Error())
 
 	case errors.Is(err, trip.ErrRiderHasActiveTrip),
-		errors.Is(err, trip.ErrDriverHasActiveTrip):
+		errors.Is(err, trip.ErrDriverHasActiveTrip),
+		errors.Is(err, trip.ErrRiderOwesFees):
 		return status.Error(codes.FailedPrecondition, err.Error())
 
 	case errors.Is(err, trip.ErrRiderIDRequired),

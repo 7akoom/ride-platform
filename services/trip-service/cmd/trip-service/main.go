@@ -191,6 +191,16 @@ func run() int {
 	}
 	defer pricingConn.Close()
 
+	// wallet-service calls this service too (GetTrip); the connection is
+	// lazy, so neither has to start first.
+	walletConn, err := dialService(cfg.WalletServiceAddress, cfg.InternalServiceToken)
+	if err != nil {
+		logger.Error("failed to connect to wallet-service", "error", err)
+
+		return 1
+	}
+	defer walletConn.Close()
+
 	profileResolver := grpcserver.NewCachingResolver(clients.NewProfileResolver(riderConn, driverConn))
 
 	locationClient := clients.NewLocationClient(locationConn)
@@ -204,6 +214,7 @@ func run() int {
 	baseService := trip.WithSavedAddresses(
 		trip.NewService(tripRepository, idGenerator, locationClient,
 			trip.WithQuotes(clients.NewQuoteBook(pricingConn)),
+			trip.WithRiderStanding(clients.NewRiderStanding(walletConn, logger)),
 			trip.WithNoShowWait(noShowWait),
 		),
 		clients.NewAddressBook(riderConn),

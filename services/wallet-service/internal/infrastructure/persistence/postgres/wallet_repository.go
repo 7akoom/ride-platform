@@ -39,7 +39,7 @@ func (r *WalletRepository) GetActiveConfig(
 		`SELECT id, currency_code, commission_rate, suspension_threshold,
 		        minimum_payout_amount, max_change_credit,
 		        transfer_min_amount, transfer_max_amount, transfer_daily_amount, transfer_daily_count,
-		        created_at
+		        block_trips_with_dues, created_at
 		 FROM wallet_configs
 		 ORDER BY created_at DESC
 		 LIMIT 1`,
@@ -58,6 +58,7 @@ func (r *WalletRepository) GetActiveConfig(
 		&config.TransferMaxAmount,
 		&config.TransferDailyAmount,
 		&config.TransferDailyCount,
+		&config.BlockTripsWithDues,
 		&config.CreatedAt,
 	)
 	if err != nil {
@@ -173,7 +174,7 @@ func (r *WalletRepository) FindSettlement(
 		        s.payment_method, s.fare_amount, s.commission_rate,
 		        s.commission_amount, s.driver_earning,
 		        s.wallet_amount, s.cash_amount,
-		        COALESCE(cc.change_amount, 0), s.kind, s.due_amount,
+		        COALESCE(cc.change_amount, 0), s.kind, s.due_amount, s.due_paid,
 		        COALESCE(rw.balance, 0), COALESCE(dw.balance, 0)
 		 FROM trip_settlements s
 		 LEFT JOIN trip_change_credits cc ON cc.trip_id = s.trip_id
@@ -201,6 +202,7 @@ func (r *WalletRepository) FindSettlement(
 		&settlement.ChangeAmount,
 		&kind,
 		&settlement.DueAmount,
+		&settlement.DuePaid,
 		&settlement.RiderBalance,
 		&settlement.DriverBalance,
 	)
@@ -491,7 +493,7 @@ func (r *WalletRepository) ListTransactions(
 		 FROM wallet_transactions t
 		 JOIN wallets w ON w.id = t.wallet_id
 		 WHERE w.owner_type = $1 AND w.owner_id = $2
-		 ORDER BY t.created_at DESC
+		 ORDER BY t.created_at DESC, t.seq DESC
 		 LIMIT $3`,
 		string(ownerType),
 		ownerID,
@@ -694,7 +696,118 @@ func applyMovementTx(
 
 	transaction.Type = wallet.TransactionType(transactionType)
 
+	// Money reaching a rider's wallet first pays what they still owe from
+	// cancelled trips' fees.
+	if updated.OwnerType == wallet.OwnerRider && input.Amount.IsPositive() && input.Type != wallet.TxDuePayment {
+		updated, err = collectDuesTx(ctx, tx, updated)
+		if err != nil {
+			return wallet.Wallet{}, wallet.Transaction{}, err
+		}
+	}
+
 	return updated, transaction, nil
+}
+
+// collectDuesTx pays the rider's outstanding fees from their balance, oldest
+// first, as far as it goes: a due_payment row for each, and due_paid on the
+// settlement. The wallet row is locked by the caller.
+func collectDuesTx(ctx context.Context, tx pgx.Tx, rider wallet.Wallet) (wallet.Wallet, error) {
+	if !rider.Balance.IsPositive() {
+		return rider, nil
+	}
+
+	rows, err := tx.Query(
+		ctx,
+		`SELECT trip_id, due_amount - due_paid
+		 FROM trip_settlements
+		 WHERE rider_id = $1 AND due_amount > due_paid
+		 ORDER BY created_at, trip_id
+		 FOR UPDATE`,
+		rider.OwnerID,
+	)
+	if err != nil {
+		return wallet.Wallet{}, fmt.Errorf("select outstanding dues: %w", err)
+	}
+
+	type due struct {
+		tripID      string
+		outstanding wallet.Money
+	}
+
+	dues, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (due, error) {
+		var d due
+		err := row.Scan(&d.tripID, &d.outstanding)
+
+		return d, err
+	})
+	if err != nil {
+		return wallet.Wallet{}, fmt.Errorf("read outstanding dues: %w", err)
+	}
+
+	for _, d := range dues {
+		if !rider.Balance.IsPositive() {
+			break
+		}
+
+		pay := d.outstanding
+		if rider.Balance.LessThan(pay) {
+			pay = rider.Balance
+		}
+
+		rider, _, err = applyMovementTx(ctx, tx, rider, wallet.MovementInput{
+			OwnerType:   wallet.OwnerRider,
+			OwnerID:     rider.OwnerID,
+			Type:        wallet.TxDuePayment,
+			Amount:      pay.Neg(),
+			TripID:      d.tripID,
+			Description: "Unpaid fee of a cancelled trip",
+		})
+		if err != nil {
+			return wallet.Wallet{}, err
+		}
+
+		if _, err := tx.Exec(
+			ctx,
+			`UPDATE trip_settlements SET due_paid = due_paid + $2 WHERE trip_id = $1`,
+			d.tripID, pay,
+		); err != nil {
+			return wallet.Wallet{}, fmt.Errorf("record the paid due: %w", err)
+		}
+	}
+
+	return rider, nil
+}
+
+// ListDues returns the rider's fees not fully paid yet, oldest first.
+func (r *WalletRepository) ListDues(ctx context.Context, riderID string) ([]wallet.Due, error) {
+	rows, err := r.pool.Query(
+		ctx,
+		`SELECT trip_id, kind, currency_code, due_amount, due_paid, created_at
+		 FROM trip_settlements
+		 WHERE rider_id = $1 AND due_amount > due_paid
+		 ORDER BY created_at, trip_id`,
+		riderID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("select dues: %w", err)
+	}
+
+	dues, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (wallet.Due, error) {
+		var (
+			d    wallet.Due
+			kind string
+		)
+
+		err := row.Scan(&d.TripID, &kind, &d.CurrencyCode, &d.Amount, &d.Paid, &d.CreatedAt)
+		d.Kind = wallet.SettlementKind(kind)
+
+		return d, err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("read dues: %w", err)
+	}
+
+	return dues, nil
 }
 
 func scanWallet(row pgx.Row) (wallet.Wallet, error) {

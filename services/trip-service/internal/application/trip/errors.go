@@ -14,6 +14,10 @@ var (
 	ErrRiderHasActiveTrip  = errors.New("rider already has an active trip")
 	ErrDriverHasActiveTrip = errors.New("driver already has an active trip")
 
+	// ErrRiderOwesFees: the rider owes cancelled trips' fees and the
+	// deployment blocks new trips until they are paid.
+	ErrRiderOwesFees = errors.New("the rider owes fees from cancelled trips; pay them to request a trip")
+
 	ErrPickupOutsideServiceZone = errors.New("pickup location is outside every service zone")
 
 	ErrInvalidSosTriggeredBy = errors.New("triggered_by must be rider or driver")

@@ -48,6 +48,9 @@ type Config struct {
 	// pricing-service: claiming the fare quote a trip is requested with.
 	PricingServiceAddress string
 
+	// wallet-service: a rider's unpaid fees, which may block new trips.
+	WalletServiceAddress string
+
 	// NoShowWait is how long a driver waits at the pickup after marking
 	// arrival before they may cancel for a rider no-show (a Go duration).
 	NoShowWait string
@@ -166,6 +169,11 @@ func Load() Config {
 		PricingServiceAddress: getEnv(
 			"PRICING_SERVICE_ADDRESS",
 			"localhost:50057",
+		),
+
+		WalletServiceAddress: getEnv(
+			"WALLET_SERVICE_ADDRESS",
+			"localhost:50058",
 		),
 
 		NoShowWait: getEnv(

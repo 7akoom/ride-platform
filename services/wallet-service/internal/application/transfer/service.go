@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/wallet"
@@ -27,6 +27,8 @@ type Service struct {
 	store    Store
 	identity Identity
 	riders   Riders
+	requests Requests
+	now      func() time.Time
 }
 
 func NewService(store Store, identity Identity, riders Riders) *Service {
@@ -42,7 +44,7 @@ func NewService(store Store, identity Identity, riders Riders) *Service {
 		panic("rider resolver is required")
 	}
 
-	return &Service{store: store, identity: identity, riders: riders}
+	return &Service{store: store, identity: identity, riders: riders, now: func() time.Time { return time.Now().UTC() }}
 }
 
 // SendInput is a rider sending money. SenderIdentityID is the person
@@ -210,24 +212,9 @@ func (s *Service) List(ctx context.Context, riderID string, pageSize int, pageTo
 		return Page{}, ErrSenderRequired
 	}
 
-	limit := pageSize
-
-	switch {
-	case limit <= 0:
-		limit = defaultPageSize
-	case limit > maxPageSize:
-		limit = maxPageSize
-	}
-
-	offset := 0
-
-	if token := strings.TrimSpace(pageToken); token != "" {
-		value, err := strconv.Atoi(token)
-		if err != nil || value < 0 || strconv.Itoa(value) != token {
-			return Page{}, ErrInvalidPageToken
-		}
-
-		offset = value
+	offset, limit, err := paging(pageSize, pageToken)
+	if err != nil {
+		return Page{}, err
 	}
 
 	transfers, err := s.store.List(ctx, riderID, offset, limit+1)

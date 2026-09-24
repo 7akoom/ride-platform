@@ -87,6 +87,11 @@ type Repository interface {
 		limit int,
 	) ([]Transaction, error)
 
+	// ListDues returns the rider's cancelled trips' fees not fully paid yet,
+	// oldest first. Money reaching the wallet pays them off (inside every
+	// credit to a rider wallet).
+	ListDues(ctx context.Context, riderID string) ([]Due, error)
+
 	// CreditTripChange records the change and credits the rider's wallet in one
 	// transaction, at most once per trip: the same amount again returns the first record
 	// (Repeated) and a different amount returns ErrChangeAlreadyRecorded.

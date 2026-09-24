@@ -80,13 +80,28 @@ func (r *TransferStore) FindByKey(ctx context.Context, senderRiderID, key string
 // against the limits, and records the transfer, both ledger rows and the
 // wallet.transfer_completed event in one transaction.
 func (r *TransferStore) Send(ctx context.Context, record transfer.Record) (transfer.Transfer, wallet.Wallet, error) {
-	t := record.Transfer
-
 	tx, err := r.wallets.pool.Begin(ctx)
 	if err != nil {
 		return transfer.Transfer{}, wallet.Wallet{}, fmt.Errorf("begin transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
+
+	stored, sender, err := sendTx(ctx, tx, record)
+	if err != nil {
+		return transfer.Transfer{}, wallet.Wallet{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return transfer.Transfer{}, wallet.Wallet{}, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return stored, sender, nil
+}
+
+// sendTx is a transfer inside the caller's transaction (a send, or a money
+// request being paid).
+func sendTx(ctx context.Context, tx pgx.Tx, record transfer.Record) (transfer.Transfer, wallet.Wallet, error) {
+	t := record.Transfer
 
 	first, second := t.SenderRiderID, t.RecipientRiderID
 	if second < first {
@@ -212,10 +227,6 @@ func (r *TransferStore) Send(ctx context.Context, record transfer.Record) (trans
 		time.Now().UTC(),
 	); err != nil {
 		return transfer.Transfer{}, wallet.Wallet{}, fmt.Errorf("insert wallet.transfer_completed outbox event: %w", err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return transfer.Transfer{}, wallet.Wallet{}, fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return stored, senderAfter, nil

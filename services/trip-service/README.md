@@ -87,6 +87,19 @@ pricing-service calls this service (`GetTrip`) and this one calls pricing,
 so compose starts pricing after trip-service and trip-service connects to
 pricing lazily.
 
+## Unpaid fees
+
+A cancellation or no-show fee the rider's wallet could not cover stays owed
+(wallet-service collects it from the next money that reaches the wallet).
+Before creating a trip, trip-service asks wallet-service (`GetRiderDues`,
+internal token, `WALLET_SERVICE_ADDRESS`) whether the rider may request
+trips: when the deployment blocks trips until fees are paid
+(`wallet_configs.block_trips_with_dues`, on by default) and the rider owes
+any, `RequestTrip` fails with `FAILED_PRECONDITION` and the amount owed. While
+wallet-service cannot be reached the request goes through (a warning is
+logged): the fee is still collected later. wallet-service also calls this
+service, so the connection is lazy and compose does not order them.
+
 ## What's intentionally NOT done yet
 
 Same list as the other services (observability, auth interceptor, tests,

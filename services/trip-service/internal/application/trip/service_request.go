@@ -76,6 +76,10 @@ func (s *service) RequestTrip(
 		return Trip{}, fmt.Errorf("check rider's active trip: %w", err)
 	}
 
+	if err := s.checkRiderStanding(ctx, riderID); err != nil {
+		return Trip{}, err
+	}
+
 	create := CreateInput{
 		ID:            s.idGenerator.NewID(),
 		RiderID:       riderID,

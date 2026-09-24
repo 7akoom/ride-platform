@@ -90,6 +90,72 @@ service WalletService {
     };
   }
 
+  // Money requests: a rider asks for money, from one registered rider (by
+  // phone: they are told) or from whoever opens its code (a link or a QR
+  // code built from the code). Paying one is a transfer from the payer with
+  // their PIN, within the transfer limits. It stays pending until paid,
+  // declined (by the rider it is for), cancelled (by the requester) or it
+  // expires (72 hours by default, 1-168).
+  rpc CreateMoneyRequest(CreateMoneyRequestRequest) returns (MoneyRequestResponse) {
+    option (google.api.http) = {
+      post: "/v1/wallets/{rider_id}/money-requests"
+      body: "*"
+    };
+  }
+  // ListMoneyRequests: role outgoing (asked by this rider) or incoming (for
+  // this rider, or paid by them); status pending, paid, declined, cancelled
+  // or expired. Newest first.
+  rpc ListMoneyRequests(ListMoneyRequestsRequest) returns (ListMoneyRequestsResponse) {
+    option (google.api.http) = {
+      get: "/v1/wallets/{rider_id}/money-requests"
+    };
+  }
+  // GetMoneyRequest opens a request by its code (after scanning its QR code
+  // or following its link). A request for one rider is seen only by that
+  // rider and the requester.
+  rpc GetMoneyRequest(GetMoneyRequestRequest) returns (MoneyRequestResponse) {
+    option (google.api.http) = {
+      get: "/v1/wallets/{rider_id}/money-requests/{code}"
+    };
+  }
+  rpc PayMoneyRequest(PayMoneyRequestRequest) returns (PayMoneyRequestResponse) {
+    option (google.api.http) = {
+      post: "/v1/wallets/{rider_id}/money-requests/{code}:pay"
+      body: "*"
+    };
+  }
+  rpc DeclineMoneyRequest(CloseMoneyRequestRequest) returns (MoneyRequestResponse) {
+    option (google.api.http) = {
+      post: "/v1/wallets/{rider_id}/money-requests/{code}:decline"
+      body: "*"
+    };
+  }
+  rpc CancelMoneyRequest(CloseMoneyRequestRequest) returns (MoneyRequestResponse) {
+    option (google.api.http) = {
+      post: "/v1/wallets/{rider_id}/money-requests/{code}:cancel"
+      body: "*"
+    };
+  }
+
+  // GetStatement is the wallet's ledger for a period, with the balance
+  // before and after it and what came in and went out. direction in / out
+  // and types narrow the entries (and the totals); the opening and closing
+  // balances are the wallet's, whatever the filter. Newest first.
+  rpc GetStatement(GetStatementRequest) returns (GetStatementResponse) {
+    option (google.api.http) = {
+      get: "/v1/wallets/{owner_id}/statement"
+    };
+  }
+
+  // GetRiderDues is what a rider still owes from cancelled trips' fees (the
+  // money reaching their wallet pays it off first), and whether they may
+  // request trips meanwhile (trip-service asks, with the internal token).
+  rpc GetRiderDues(GetRiderDuesRequest) returns (GetRiderDuesResponse) {
+    option (google.api.http) = {
+      get: "/v1/wallets/{rider_id}/dues"
+    };
+  }
+
   // ProcessZainCashWebhook receives ZainCash's server-to-server payment
   // notification. Called directly by ZainCash, not by an authenticated
   // platform client — exempted from the auth interceptor same as the
@@ -128,6 +194,9 @@ enum TransactionType {
   // Money sent to another rider, and received from one.
   TRANSACTION_TYPE_TRANSFER_OUT = 8;
   TRANSACTION_TYPE_TRANSFER_IN = 9;
+  // A cancelled trip's fee the rider owed, paid from money that reached the
+  // wallet later.
+  TRANSACTION_TYPE_DUE_PAYMENT = 10;
 }
 
 message Wallet {
@@ -285,6 +354,9 @@ message GetTripSettlementResponse {
   // due_amount, still owed by the rider.
   string kind = 10;
   string due_amount = 11;
+  // How much of due_amount is paid since (from money that reached the
+  // rider's wallet).
+  string due_paid = 12;
 }
 
 message RecordTripChangeRequest {
@@ -346,4 +418,128 @@ message ListTransfersRequest {
 message ListTransfersResponse {
   repeated Transfer transfers = 1;
   string next_page_token = 2;
+}
+
+message CreateMoneyRequestRequest {
+  // The requester: the caller's own rider profile.
+  string rider_id = 1;
+  // The rider asked (E.164); empty for an open request anyone with the code
+  // may pay.
+  string payer_phone = 2;
+  string amount = 3;
+  string note = 4;
+  // 1-168; 0 means 72.
+  int32 expires_in_hours = 5;
+  // Required: a retry with the same key is the same request.
+  string idempotency_key = 6;
+}
+
+// MoneyRequest is seen from one rider's side: role is requester or payer (the
+// rider it is for, or who paid it), or viewer for an open request someone
+// else asked for.
+message MoneyRequest {
+  string id = 1;
+  string code = 2;
+  string role = 3;
+  // True when anyone with the code may pay it.
+  bool open = 4;
+  string requester_phone = 5;
+  string payer_phone = 6;
+  string amount = 7;
+  string currency_code = 8;
+  string note = 9;
+  // pending, paid, declined, cancelled or expired.
+  string status = 10;
+  string transfer_id = 11;
+  google.protobuf.Timestamp expires_at = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp closed_at = 14;
+}
+
+message MoneyRequestResponse {
+  MoneyRequest money_request = 1;
+}
+
+message ListMoneyRequestsRequest {
+  string rider_id = 1;
+  string role = 2;
+  string status = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+}
+
+message ListMoneyRequestsResponse {
+  repeated MoneyRequest money_requests = 1;
+  string next_page_token = 2;
+}
+
+message GetMoneyRequestRequest {
+  string rider_id = 1;
+  string code = 2;
+}
+
+message PayMoneyRequestRequest {
+  // The payer: the caller's own rider profile.
+  string rider_id = 1;
+  string code = 2;
+  string pin = 3;
+}
+
+message PayMoneyRequestResponse {
+  MoneyRequest money_request = 1;
+  Transfer transfer = 2;
+  Wallet wallet = 3;
+}
+
+message CloseMoneyRequestRequest {
+  string rider_id = 1;
+  string code = 2;
+}
+
+message GetStatementRequest {
+  OwnerType owner_type = 1;
+  string owner_id = 2;
+  // in (money came in), out (money went out), or empty for both.
+  string direction = 3;
+  repeated TransactionType types = 4;
+  // The period; from defaults to 30 days before to, to to now.
+  google.protobuf.Timestamp from = 5;
+  google.protobuf.Timestamp to = 6;
+  int32 page_size = 7;
+  string page_token = 8;
+}
+
+message GetStatementResponse {
+  repeated Transaction entries = 1;
+  string next_page_token = 2;
+  string currency_code = 3;
+  // The balance before the period and at its end.
+  string opening_balance = 4;
+  string closing_balance = 5;
+  // What came in and what went out during the period (of the entries the
+  // filter keeps), both positive.
+  string total_in = 6;
+  string total_out = 7;
+}
+
+message GetRiderDuesRequest {
+  string rider_id = 1;
+}
+
+message RiderDue {
+  string trip_id = 1;
+  // cancellation or no_show.
+  string kind = 2;
+  string amount = 3;
+  string paid = 4;
+  string outstanding = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message GetRiderDuesResponse {
+  string currency_code = 1;
+  string outstanding = 2;
+  repeated RiderDue dues = 3;
+  // False when the deployment blocks trips until the fees are paid.
+  bool can_request_trips = 4;
 }

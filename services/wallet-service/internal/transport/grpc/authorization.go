@@ -38,6 +38,14 @@ var methodAccess = map[string]accessLevel{
 	"/ride.wallet.v1.WalletService/RecordTripChange":    accessOwner,
 	"/ride.wallet.v1.WalletService/SendTransfer":        accessOwner,
 	"/ride.wallet.v1.WalletService/ListTransfers":       accessOwner,
+	"/ride.wallet.v1.WalletService/CreateMoneyRequest":  accessOwner,
+	"/ride.wallet.v1.WalletService/ListMoneyRequests":   accessOwner,
+	"/ride.wallet.v1.WalletService/GetMoneyRequest":     accessOwner,
+	"/ride.wallet.v1.WalletService/PayMoneyRequest":     accessOwner,
+	"/ride.wallet.v1.WalletService/DeclineMoneyRequest": accessOwner,
+	"/ride.wallet.v1.WalletService/CancelMoneyRequest":  accessOwner,
+	"/ride.wallet.v1.WalletService/GetStatement":        accessOwner,
+	"/ride.wallet.v1.WalletService/GetRiderDues":        accessOwner,
 }
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver) googlegrpc.UnaryServerInterceptor {

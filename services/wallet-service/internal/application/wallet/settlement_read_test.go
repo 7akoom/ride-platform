@@ -200,3 +200,7 @@ func (r *settlementRepoFake) CreditTripChange(
 ) (wallet.ChangeCredit, error) {
 	return wallet.ChangeCredit{}, nil
 }
+
+func (r *settlementRepoFake) ListDues(context.Context, string) ([]wallet.Due, error) {
+	return nil, nil
+}

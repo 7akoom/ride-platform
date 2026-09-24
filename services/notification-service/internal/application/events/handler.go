@@ -120,6 +120,8 @@ func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) err
 		return h.handleDriverArrived(ctx, envelope)
 	case SubjectTransferCompleted:
 		return h.handleTransferCompleted(ctx, envelope)
+	case SubjectMoneyRequested:
+		return h.handleMoneyRequested(ctx, envelope)
 	default:
 		h.logger.WarnContext(ctx, "no notification mapping for subject; skipping", "subject", subject)
 

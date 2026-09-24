@@ -82,7 +82,18 @@ A cancellation or no-show fee (pricing-service, `fare.calculated` with
 cash changed hands: the rider's wallet pays what it holds (it never goes
 negative), and the rest is recorded on the settlement as `due_amount`,
 still owed by the rider. The driver is credited the fee minus the commission
-in full. Collecting what riders owe is part of the full wallet work (P6).
+in full.
+
+What a rider owes is collected by the next money that reaches their wallet
+(a top-up, a transfer in, change credited, …): inside the same transaction,
+under the same wallet lock, the balance pays the oldest fees first, as far as
+it goes, each with a `due_payment` ledger row carrying the fee's trip and
+`trip_settlements.due_paid` raised by as much. A driver's credit never pays
+anything: drivers do not owe fees. `GetRiderDues` (`GET
+/v1/wallets/{riderId}/dues`) lists what is still owed; trip-service asks it
+(internal token) before a rider requests a trip and refuses them while
+`wallet_configs.block_trips_with_dues` is on (the default) and something is
+owed. While wallet-service cannot be reached, trips are not blocked.
 
 ### The suspension threshold
 
@@ -151,6 +162,32 @@ defaults 250 / 1,000,000 / 2,000,000 IQD / 20). Needs
 `IDENTITY_SERVICE_ADDRESS`, and identity-service must share
 `INTERNAL_SERVICE_TOKEN`.
 
+## Money requests
+
+A rider asks for money (`POST /v1/wallets/{riderId}/money-requests`): from
+one registered rider, by phone, or **open** (no payer): anyone with its code
+may pay it, which is what a link or a QR code carries. The code is 10
+characters without 0/O/1/I/L; a request lives 1-168 hours (72 by default) and
+asks for what a transfer may move. A request for a rider writes
+`wallet.money_requested` (outbox): that rider gets a push with the code.
+
+Paying it (`…/{code}:pay`, the payer's PIN) is a transfer from the payer to
+the requester with the key `request:<id>`, in the transaction that locks the
+request row: it is paid once, however many pay at the same time, and paying
+again returns the same payment. The one asked may decline it and the
+requester cancel it while it is pending; a pending request past its end is
+`expired` (never stored: it is computed, and an expired request cannot be
+paid or closed).
+
+## Statements
+
+`GET /v1/wallets/{ownerId}/statement` reads the ledger over a period (30 days
+by default, at most 366): the balance before it and at its end (the
+`balance_after` of the last row before each), what came in and went out, and
+the rows newest first, filtered by direction and type and paged. Rows written
+in one transaction share `created_at`, so `wallet_transactions.seq` (an
+identity column) orders them: a credit, then the fee it paid.
+
 ## Configuration
 
 `wallet_configs` is versioned like `pricing_configs`: change the
@@ -176,9 +213,8 @@ worker):
 - **Dispatch doesn't call `CheckDriverStanding` yet.** It should, so
   suspended drivers are filtered out before assignment. Small change to
   dispatch-service, worth doing next.
-- **No automatic debt recovery from a rider's wallet** if a trip is
-  disputed or refunded — refunds would be an `adjustment` row written by
-  an operator for now.
+- **No refunds of a disputed trip yet** — an `adjustment` row written by an
+  operator for now (staff adjustments and refunds come with P6d).
 - **No admin RPCs** for blocking a wallet or writing adjustments — SQL
   for now.
 

@@ -78,6 +78,9 @@ const (
 	// Money sent to another rider, and received from one.
 	TxTransferOut TransactionType = "transfer_out"
 	TxTransferIn  TransactionType = "transfer_in"
+	// A cancelled trip's fee the rider owed, paid from money that reached
+	// their wallet later.
+	TxDuePayment TransactionType = "due_payment"
 )
 
 type Wallet struct {
@@ -120,7 +123,26 @@ type Config struct {
 	TransferMaxAmount   Money
 	TransferDailyAmount Money
 	TransferDailyCount  int
-	CreatedAt           time.Time
+	// BlockTripsWithDues: a rider who owes fees may not request trips until
+	// they are paid.
+	BlockTripsWithDues bool
+	CreatedAt          time.Time
+}
+
+// Due is a cancelled trip's fee the rider's wallet could not cover at the
+// time, and how much of it is paid since.
+type Due struct {
+	TripID       string
+	Kind         SettlementKind
+	CurrencyCode string
+	Amount       Money
+	Paid         Money
+	CreatedAt    time.Time
+}
+
+// Outstanding is what is still owed.
+func (d Due) Outstanding() Money {
+	return d.Amount.Sub(d.Paid)
 }
 
 // Settlement is the record of how one trip's money was split.
@@ -147,6 +169,9 @@ type Settlement struct {
 	// wallet could not cover, still owed.
 	Kind      SettlementKind
 	DueAmount Money
+	// DuePaid is how much of DueAmount was paid since, from money that
+	// reached the rider's wallet.
+	DuePaid Money
 }
 
 // CommissionFor returns the platform's cut of a fare, rounded to the

@@ -799,6 +799,10 @@ services:
       # pricing-service depends on this service, so this one does not wait
       # for it: quotes are claimed over a lazy connection.
       PRICING_SERVICE_ADDRESS: pricing-service:50057
+      # wallet-service depends on this service too: a rider's unpaid fees
+      # are read over a lazy connection, and while wallet-service is down
+      # trips are not blocked.
+      WALLET_SERVICE_ADDRESS: wallet-service:50058
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro

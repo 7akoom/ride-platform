@@ -97,6 +97,9 @@ type service struct {
 	// quotes claims fare quotes; nil refuses them.
 	quotes QuoteBook
 
+	// standing says whether a rider may request trips; nil lets every rider.
+	standing RiderStanding
+
 	// noShowWait is how long a driver waits at the pickup, after marking
 	// arrival, before they may cancel for a rider no-show.
 	noShowWait time.Duration

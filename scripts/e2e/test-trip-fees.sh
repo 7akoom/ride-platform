@@ -14,7 +14,9 @@
 #   2. the wait beyond the card's free minutes is added to the quoted fare
 #   3. a rider who cancels after the grace minutes pays the cancellation fee;
 #      within them, nothing; the fee comes out of the wallet and what it
-#      cannot cover stays owed; the driver earns the fee minus commission
+#      cannot cover stays owed; the driver earns the fee minus commission;
+#      a rider who owes a fee cannot request a trip until the next money in
+#      their wallet pays it off
 #   4. only the driver reports a no-show, only after arriving and waiting;
 #      the rider pays the no-show fee; a driver who just cancels costs the
 #      rider nothing
@@ -229,6 +231,19 @@ check "from an empty wallet: all of it owed" "cancellation 0 1000" "$(body_field
 expect "the driver's view" 200 GET "/v1/wallets/$DRIVER_ID/trips/$TRIP/settlement?owner_type=OWNER_TYPE_DRIVER" "$DRIVER"
 check "the driver earns the fee minus commission" 800 "$(body_field 'd["driverEarning"]')"
 check "the rider is told" True "$(notified "$RIDER_ID" "$RIDER" trip.cancellation_fee)"
+expect "the rider's unpaid fees" 200 GET "/v1/wallets/$RIDER_ID/dues" "$RIDER"
+check "1000 owed, no trips until it is paid" "1000 False $TRIP" "$(body_field 'd["outstanding"] + " " + str(d.get("canRequestTrips", False)) + " " + d["dues"][0]["tripId"]')"
+expect "a new trip while owing it" 400 POST /v1/trips "$RIDER" "{\"riderId\":\"$RIDER_ID\",\"pickup\":$PICKUP,\"dropoff\":$DROPOFF}"
+check "is refused, with what is owed" True "$(body_field '"owes fees" in d["message"] and "1000" in d["message"]')"
+internal_call "$WALLET_ADDR" ride.wallet.v1.WalletService/TopUp "{\"owner_type\":\"OWNER_TYPE_RIDER\",\"owner_id\":\"$RIDER_ID\",\"amount\":\"1500\",\"idempotency_key\":\"e2e-fees-due-$RUN\"}" > /dev/null
+expect "the rider's wallet after a 1500 top-up" 200 GET "/v1/wallets/$RIDER_ID?owner_type=OWNER_TYPE_RIDER" "$RIDER"
+check "paid the fee from it" 500 "$(body_field 'd["wallet"]["balance"]')"
+expect "the rider's ledger" 200 GET "/v1/wallets/$RIDER_ID/transactions?owner_type=OWNER_TYPE_RIDER" "$RIDER"
+check "a due_payment row for the trip" "TRANSACTION_TYPE_DUE_PAYMENT -1000 $TRIP" "$(body_field '" ".join((d["transactions"][0]["type"], d["transactions"][0]["amount"], d["transactions"][0]["tripId"]))')"
+expect "the settlement" 200 GET "/v1/wallets/$RIDER_ID/trips/$TRIP/settlement?owner_type=OWNER_TYPE_RIDER" "$RIDER"
+check "shows the fee paid" "1000 1000" "$(body_field 'd["dueAmount"] + " " + d["duePaid"]')"
+expect "the unpaid fees" 200 GET "/v1/wallets/$RIDER_ID/dues" "$RIDER"
+check "none, trips again" "0 True" "$(body_field 'd["outstanding"] + " " + str(d.get("canRequestTrips", False))')"
 
 TRIP="$(new_trip "$RIDER" "$RIDER_ID")"
 expect "the rider cancels right away" 200 POST "/v1/trips/$TRIP:cancel" "$RIDER" '{}'
@@ -252,6 +267,9 @@ check "the wallet pays what it holds, the rest is owed" "no_show 1500 500" "$(bo
 expect "the rider's wallet" 200 GET "/v1/wallets/$OTHER_ID?owner_type=OWNER_TYPE_RIDER" "$OTHER"
 check "is empty, never negative" 0 "$(body_field 'd["wallet"]["balance"]')"
 check "the rider is told" True "$(notified "$OTHER_ID" "$OTHER" trip.no_show_fee)"
+internal_call "$WALLET_ADDR" ride.wallet.v1.WalletService/TopUp "{\"owner_type\":\"OWNER_TYPE_RIDER\",\"owner_id\":\"$OTHER_ID\",\"amount\":\"500\",\"idempotency_key\":\"e2e-fees-due-other-$RUN\"}" > /dev/null
+expect "the rider's wallet after a 500 top-up" 200 GET "/v1/wallets/$OTHER_ID?owner_type=OWNER_TYPE_RIDER" "$OTHER"
+check "went to the 500 owed" 0 "$(body_field 'd["wallet"]["balance"]')"
 
 echo "==> [4/4] a driver who just cancels"
 TRIP="$(new_trip "$OTHER" "$OTHER_ID")"
@@ -267,4 +285,4 @@ if [ "$FAILURES" -gt 0 ]; then
   exit 1
 fi
 
-echo "PASS: arrival is checked, waiting is charged, and late cancellations and no-shows cost the rider a fee"
+echo "PASS: arrival is checked, waiting is charged, late cancellations and no-shows cost the rider a fee, and an unpaid fee blocks trips until it is paid"

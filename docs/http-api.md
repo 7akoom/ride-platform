@@ -202,9 +202,17 @@ refused with `FAILED_PRECONDITION` and the rider asks for a new quote.
 |---|---|---|---|
 | GET | `/v1/wallets/{ownerId}?owner_type=OWNER_TYPE_DRIVER` | the owner | `ownerId` is the rider or driver id; balances are decimal strings |
 | GET | `/v1/wallets/{ownerId}/transactions?owner_type=&limit=` | the owner | signed decimal `amount`: negative means money left |
-| GET | `/v1/wallets/{ownerId}/trips/{tripId}/settlement?owner_type=` | the rider or driver of the trip | how the trip's money moved: `kind` (`trip`, or `cancellation` / `no_show` for a cancelled trip's fee), `fareAmount`, `walletAmount`, `cashAmount`, `changeAmount`, and for a fee `dueAmount`: what the rider's wallet could not cover and still owes. The driver also sees `commissionAmount` and `driverEarning` |
+| GET | `/v1/wallets/{ownerId}/trips/{tripId}/settlement?owner_type=` | the rider or driver of the trip | how the trip's money moved: `kind` (`trip`, or `cancellation` / `no_show` for a cancelled trip's fee), `fareAmount`, `walletAmount`, `cashAmount`, `changeAmount`, and for a fee `dueAmount`: what the rider's wallet could not cover, and `duePaid`: how much of it was paid since. The driver also sees `commissionAmount` and `driverEarning` |
+| GET | `/v1/wallets/{ownerId}/statement?owner_type=&from=&to=&direction=&types=&page_size=&page_token=` | the owner | the wallet over a period (`from`/`to` RFC 3339; default the last 30 days, at most 366): `openingBalance` (before `from`), `closingBalance` (at `to`), `totalIn`, `totalOut` (both positive, of the rows the filters keep), and `entries` newest first (50 a page, at most 200). `direction` is `in` or `out`; `types` repeats (`TRANSACTION_TYPE_TOP_UP`, …); 400 for anything else, a reversed or too long period, or a bad token |
+| GET | `/v1/wallets/{riderId}/dues` | the rider | unpaid fees of cancelled trips: `outstanding`, `currencyCode`, `dues` (each `tripId`, `kind`, `amount`, `paid`, `outstanding`, `createdAt`, oldest first) and `canRequestTrips` (false while fees are owed and the deployment blocks trips until they are paid). The next money that reaches the wallet pays them, oldest first |
 | POST | `/v1/wallets/{riderId}/transfers` | the rider | send money to another registered rider: `recipientPhone` (E.164, `+9647…`), `amount`, `note` (at most 140), `pin` (the sender's wallet PIN), `idempotencyKey` (required; the same key again returns the same transfer, with another amount or phone 409). 403 a wrong PIN (the message says how many attempts are left), 400 `FAILED_PRECONDITION` no PIN yet, PIN locked, not enough money, or the 24-hour limits; 404 when no rider signs in with that phone; 400 to oneself, or below/above the per-transfer limits. Returns `transfer` and the sender's `wallet`. The recipient gets a push |
 | GET | `/v1/wallets/{riderId}/transfers?page_size=&page_token=` | the rider | sent and received, newest first: `direction` (`sent` / `received`), `counterpartPhone`, `amount`, `currencyCode`, `note`, `createdAt`; `nextPageToken` |
+| POST | `/v1/wallets/{riderId}/money-requests` | the rider | ask for money: `payerPhone` (a registered rider, E.164) or empty for an open request anyone with its code may pay (a link or a QR code), `amount` (within the transfer limits), `note`, `expiresInHours` (1-168, default 72), `idempotencyKey` (required; the same key again returns the same request, with another amount or phone 409). Returns `moneyRequest` with its `code` (10 characters, no 0/O/1/I/L). The rider asked gets a push whose data carries `money_request_code` |
+| GET | `/v1/wallets/{riderId}/money-requests?role=&status=&page_size=&page_token=` | the rider | `role` `outgoing` (asked by the rider) or `incoming` (for the rider, or paid by them); `status` `pending`, `paid`, `declined`, `cancelled` or `expired`; newest first |
+| GET | `/v1/wallets/{riderId}/money-requests/{code}` | the rider | opens a request by its code (any case). A request for one rider is seen only by that rider and the requester (404 for anyone else); an open one by anyone, who sees `role` `viewer` and the requester's phone masked |
+| POST | `/v1/wallets/{riderId}/money-requests/{code}:pay` | the rider paying | `pin`: a transfer from this rider to the requester, once. Paying again returns the same payment; 400 `FAILED_PRECONDITION` once it is paid (by anyone), declined, cancelled or expired, or for one's own request; the PIN, balance and limit errors of a transfer. Returns `moneyRequest`, `transfer` and the payer's `wallet` |
+| POST | `/v1/wallets/{riderId}/money-requests/{code}:decline` | the rider asked | only a pending request for them (403 otherwise) |
+| POST | `/v1/wallets/{riderId}/money-requests/{code}:cancel` | the requester | only their own pending request (403 otherwise) |
 | GET | `/v1/drivers/{driverId}/standing` | the driver | can they take trips, and the amount due if suspended |
 | POST | `/v1/drivers/{driverId}/payouts` | the driver | `amount` and `idempotencyKey`; a retry with the same key is safe |
 | POST | `/v1/wallet/topups/zaincash` | the driver | returns the ZainCash `redirectUrl` for the webview |
@@ -215,7 +223,13 @@ Top-ups of a rider's wallet and trip settlement are internal: no route.
 A transfer is a `TRANSACTION_TYPE_TRANSFER_OUT` row in the sender's ledger and a
 `TRANSACTION_TYPE_TRANSFER_IN` row in the recipient's, both with its `transferId`.
 The limits (least and most per transfer, how much and how many in any 24 hours)
-are on the wallet config.
+are on the wallet config. A paid money request is such a transfer.
+A cancelled trip's fee the wallet could not cover is paid by the next money that
+reaches it: a `TRANSACTION_TYPE_DUE_PAYMENT` row with the fee's `tripId`, right
+after the credit that paid it. Until then `POST /v1/trips` answers 400
+`FAILED_PRECONDITION` ("the rider owes fees…", with the amount) when the
+deployment blocks trips with unpaid fees (`wallet_configs.block_trips_with_dues`,
+on by default).
 
 ### Files (media)
 

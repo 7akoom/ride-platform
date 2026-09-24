@@ -4533,6 +4533,108 @@
         ]
       }
     },
+    "/v1/wallets/{ownerId}/statement": {
+      "get": {
+        "summary": "GetStatement is the wallet's ledger for a period, with the balance\nbefore and after it and what came in and went out. direction in / out\nand types narrow the entries (and the totals); the opening and closing\nbalances are the wallet's, whatever the filter. Newest first.",
+        "operationId": "WalletService_GetStatement",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetStatementResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ownerId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ownerType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "OWNER_TYPE_UNSPECIFIED",
+              "OWNER_TYPE_RIDER",
+              "OWNER_TYPE_DRIVER"
+            ],
+            "default": "OWNER_TYPE_UNSPECIFIED"
+          },
+          {
+            "name": "direction",
+            "description": "in (money came in), out (money went out), or empty for both.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "types",
+            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "TRANSACTION_TYPE_UNSPECIFIED",
+                "TRANSACTION_TYPE_TOP_UP",
+                "TRANSACTION_TYPE_TRIP_PAYMENT",
+                "TRANSACTION_TYPE_TRIP_EARNING",
+                "TRANSACTION_TYPE_COMMISSION",
+                "TRANSACTION_TYPE_PAYOUT",
+                "TRANSACTION_TYPE_ADJUSTMENT",
+                "TRANSACTION_TYPE_CHANGE_CREDIT",
+                "TRANSACTION_TYPE_TRANSFER_OUT",
+                "TRANSACTION_TYPE_TRANSFER_IN",
+                "TRANSACTION_TYPE_DUE_PAYMENT"
+              ]
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "from",
+            "description": "The period; from defaults to 30 days before to, to to now.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/wallets/{ownerId}/transactions": {
       "get": {
         "summary": "ListTransactions lists the caller's own wallet history: ?owner_type=\u0026limit=.",
@@ -4625,6 +4727,301 @@
               "OWNER_TYPE_DRIVER"
             ],
             "default": "OWNER_TYPE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{riderId}/dues": {
+      "get": {
+        "summary": "GetRiderDues is what a rider still owes from cancelled trips' fees (the\nmoney reaching their wallet pays it off first), and whether they may\nrequest trips meanwhile (trip-service asks, with the internal token).",
+        "operationId": "WalletService_GetRiderDues",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetRiderDuesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{riderId}/money-requests": {
+      "get": {
+        "summary": "ListMoneyRequests: role outgoing (asked by this rider) or incoming (for\nthis rider, or paid by them); status pending, paid, declined, cancelled\nor expired. Newest first.",
+        "operationId": "WalletService_ListMoneyRequests",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListMoneyRequestsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      },
+      "post": {
+        "summary": "Money requests: a rider asks for money, from one registered rider (by\nphone: they are told) or from whoever opens its code (a link or a QR\ncode built from the code). Paying one is a transfer from the payer with\ntheir PIN, within the transfer limits. It stays pending until paid,\ndeclined (by the rider it is for), cancelled (by the requester) or it\nexpires (72 hours by default, 1-168).",
+        "operationId": "WalletService_CreateMoneyRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MoneyRequestResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "description": "The requester: the caller's own rider profile.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceCreateMoneyRequestBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{riderId}/money-requests/{code}": {
+      "get": {
+        "summary": "GetMoneyRequest opens a request by its code (after scanning its QR code\nor following its link). A request for one rider is seen only by that\nrider and the requester.",
+        "operationId": "WalletService_GetMoneyRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MoneyRequestResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{riderId}/money-requests/{code}:cancel": {
+      "post": {
+        "operationId": "WalletService_CancelMoneyRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MoneyRequestResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceCancelMoneyRequestBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{riderId}/money-requests/{code}:decline": {
+      "post": {
+        "operationId": "WalletService_DeclineMoneyRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MoneyRequestResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceDeclineMoneyRequestBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{riderId}/money-requests/{code}:pay": {
+      "post": {
+        "operationId": "WalletService_PayMoneyRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PayMoneyRequestResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "description": "The payer: the caller's own rider profile.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServicePayMoneyRequestBody"
+            }
           }
         ],
         "tags": [
@@ -5187,6 +5584,44 @@
         },
         "location": {
           "$ref": "#/definitions/rideTripV1Coordinates"
+        }
+      }
+    },
+    "WalletServiceCancelMoneyRequestBody": {
+      "type": "object"
+    },
+    "WalletServiceCreateMoneyRequestBody": {
+      "type": "object",
+      "properties": {
+        "payerPhone": {
+          "type": "string",
+          "description": "The rider asked (E.164); empty for an open request anyone with the code\nmay pay."
+        },
+        "amount": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "expiresInHours": {
+          "type": "integer",
+          "format": "int32",
+          "description": "1-168; 0 means 72."
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "description": "Required: a retry with the same key is the same request."
+        }
+      }
+    },
+    "WalletServiceDeclineMoneyRequestBody": {
+      "type": "object"
+    },
+    "WalletServicePayMoneyRequestBody": {
+      "type": "object",
+      "properties": {
+        "pin": {
+          "type": "string"
         }
       }
     },
@@ -6441,6 +6876,28 @@
         }
       }
     },
+    "v1GetRiderDuesResponse": {
+      "type": "object",
+      "properties": {
+        "currencyCode": {
+          "type": "string"
+        },
+        "outstanding": {
+          "type": "string"
+        },
+        "dues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1RiderDue"
+          }
+        },
+        "canRequestTrips": {
+          "type": "boolean",
+          "description": "False when the deployment blocks trips until the fees are paid."
+        }
+      }
+    },
     "v1GetRiderResponse": {
       "type": "object",
       "properties": {
@@ -6474,6 +6931,38 @@
         "polyline": {
           "type": "string",
           "description": "The whole path as a Google encoded polyline with 5 digits of precision (about a\nmetre), ready to decode and draw."
+        }
+      }
+    },
+    "v1GetStatementResponse": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Transaction"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "openingBalance": {
+          "type": "string",
+          "description": "The balance before the period and at its end."
+        },
+        "closingBalance": {
+          "type": "string"
+        },
+        "totalIn": {
+          "type": "string",
+          "description": "What came in and what went out during the period (of the entries the\nfilter keeps), both positive."
+        },
+        "totalOut": {
+          "type": "string"
         }
       }
     },
@@ -6561,6 +7050,10 @@
         },
         "dueAmount": {
           "type": "string"
+        },
+        "duePaid": {
+          "type": "string",
+          "description": "How much of due_amount is paid since (from money that reached the\nrider's wallet)."
         }
       }
     },
@@ -6711,6 +7204,21 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1Driver"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListMoneyRequestsResponse": {
+      "type": "object",
+      "properties": {
+        "moneyRequests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1MoneyRequest"
           }
         },
         "nextPageToken": {
@@ -7062,6 +7570,67 @@
       "default": "MEDIA_STATUS_UNSPECIFIED",
       "description": " - MEDIA_STATUS_PENDING: Reserved, waiting for the bytes and CompleteUpload.\n - MEDIA_STATUS_REJECTED: The bytes failed the checks; the object was deleted.\n - MEDIA_STATUS_EXPIRED: Never completed in time; the reservation was dropped."
     },
+    "v1MoneyRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "open": {
+          "type": "boolean",
+          "description": "True when anyone with the code may pay it."
+        },
+        "requesterPhone": {
+          "type": "string"
+        },
+        "payerPhone": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "pending, paid, declined, cancelled or expired."
+        },
+        "transferId": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "closedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "MoneyRequest is seen from one rider's side: role is requester or payer (the\nrider it is for, or who paid it), or viewer for an open request someone\nelse asked for."
+    },
+    "v1MoneyRequestResponse": {
+      "type": "object",
+      "properties": {
+        "moneyRequest": {
+          "$ref": "#/definitions/v1MoneyRequest"
+        }
+      }
+    },
     "v1Notification": {
       "type": "object",
       "properties": {
@@ -7120,6 +7689,20 @@
         "OWNER_TYPE_DRIVER"
       ],
       "default": "OWNER_TYPE_UNSPECIFIED"
+    },
+    "v1PayMoneyRequestResponse": {
+      "type": "object",
+      "properties": {
+        "moneyRequest": {
+          "$ref": "#/definitions/v1MoneyRequest"
+        },
+        "transfer": {
+          "$ref": "#/definitions/v1Transfer"
+        },
+        "wallet": {
+          "$ref": "#/definitions/v1Wallet"
+        }
+      }
     },
     "v1PaymentMethod": {
       "type": "string",
@@ -7736,6 +8319,31 @@
         }
       }
     },
+    "v1RiderDue": {
+      "type": "object",
+      "properties": {
+        "tripId": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "cancellation or no_show."
+        },
+        "amount": {
+          "type": "string"
+        },
+        "paid": {
+          "type": "string"
+        },
+        "outstanding": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "v1RiderStatus": {
       "type": "string",
       "enum": [
@@ -8196,10 +8804,11 @@
         "TRANSACTION_TYPE_ADJUSTMENT",
         "TRANSACTION_TYPE_CHANGE_CREDIT",
         "TRANSACTION_TYPE_TRANSFER_OUT",
-        "TRANSACTION_TYPE_TRANSFER_IN"
+        "TRANSACTION_TYPE_TRANSFER_IN",
+        "TRANSACTION_TYPE_DUE_PAYMENT"
       ],
       "default": "TRANSACTION_TYPE_UNSPECIFIED",
-      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one."
+      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later."
     },
     "v1Transfer": {
       "type": "object",

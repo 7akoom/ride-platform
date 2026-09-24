@@ -242,13 +242,17 @@ func run() int {
 		cfg.ZainCashFailureURL,
 	)
 
-	walletHandler := grpcserver.NewWalletHandler(walletService, topupService, logger).WithTransfers(
-		transferapp.NewService(
-			postgresrepo.NewTransferStore(walletRepository),
-			clients.NewIdentityClient(identityConn),
-			profileResolver,
-		),
-	)
+	transferStore := postgresrepo.NewTransferStore(walletRepository)
+
+	walletHandler := grpcserver.NewWalletHandler(walletService, topupService, logger).
+		WithTransfers(
+			transferapp.NewService(
+				transferStore,
+				clients.NewIdentityClient(identityConn),
+				profileResolver,
+			).WithRequests(transferStore),
+		).
+		WithStatements(walletRepository)
 
 	eventHandler := events.NewHandler(
 		walletService,

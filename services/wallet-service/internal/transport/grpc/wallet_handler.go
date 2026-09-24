@@ -21,6 +21,7 @@ type WalletHandler struct {
 	walletService wallet.Service
 	topupService  topup.Service
 	transfers     *transfer.Service
+	statements    wallet.StatementReader
 	logger        *slog.Logger
 }
 
@@ -382,6 +383,8 @@ func toProtoTransactionType(t wallet.TransactionType) walletv1.TransactionType {
 		return walletv1.TransactionType_TRANSACTION_TYPE_TRANSFER_OUT
 	case wallet.TxTransferIn:
 		return walletv1.TransactionType_TRANSACTION_TYPE_TRANSFER_IN
+	case wallet.TxDuePayment:
+		return walletv1.TransactionType_TRANSACTION_TYPE_DUE_PAYMENT
 	default:
 		return walletv1.TransactionType_TRANSACTION_TYPE_UNSPECIFIED
 	}

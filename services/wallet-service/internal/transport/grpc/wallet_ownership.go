@@ -84,6 +84,73 @@ var ownerChecks = map[string]ownerCheck{
 
 		return c.ownsRider(ctx, r.GetRiderId())
 	},
+	"/ride.wallet.v1.WalletService/CreateMoneyRequest": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.CreateMoneyRequestRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
+	"/ride.wallet.v1.WalletService/ListMoneyRequests": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.ListMoneyRequestsRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
+	"/ride.wallet.v1.WalletService/GetMoneyRequest": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.GetMoneyRequestRequest)
+		if !ok {
+			return false, nil
+		}
+
+		// Seen as the caller's own rider; whether that rider may see the
+		// request is the service's check.
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
+	"/ride.wallet.v1.WalletService/PayMoneyRequest": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.PayMoneyRequestRequest)
+		if !ok {
+			return false, nil
+		}
+
+		// Paid only from the caller's own wallet.
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
+	"/ride.wallet.v1.WalletService/DeclineMoneyRequest": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.CloseMoneyRequestRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
+	"/ride.wallet.v1.WalletService/CancelMoneyRequest": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.CloseMoneyRequestRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
+	"/ride.wallet.v1.WalletService/GetStatement": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.GetStatementRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return ownsWallet(ctx, c, r.GetOwnerType(), r.GetOwnerId())
+	},
+	"/ride.wallet.v1.WalletService/GetRiderDues": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.GetRiderDuesRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
 }
 
 func ownsWallet(ctx context.Context, c caller, ownerType walletv1.OwnerType, ownerID string) (bool, error) {

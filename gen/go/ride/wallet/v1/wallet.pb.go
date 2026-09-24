@@ -139,21 +139,25 @@ const (
 	// Money sent to another rider, and received from one.
 	TransactionType_TRANSACTION_TYPE_TRANSFER_OUT TransactionType = 8
 	TransactionType_TRANSACTION_TYPE_TRANSFER_IN  TransactionType = 9
+	// A cancelled trip's fee the rider owed, paid from money that reached the
+	// wallet later.
+	TransactionType_TRANSACTION_TYPE_DUE_PAYMENT TransactionType = 10
 )
 
 // Enum value maps for TransactionType.
 var (
 	TransactionType_name = map[int32]string{
-		0: "TRANSACTION_TYPE_UNSPECIFIED",
-		1: "TRANSACTION_TYPE_TOP_UP",
-		2: "TRANSACTION_TYPE_TRIP_PAYMENT",
-		3: "TRANSACTION_TYPE_TRIP_EARNING",
-		4: "TRANSACTION_TYPE_COMMISSION",
-		5: "TRANSACTION_TYPE_PAYOUT",
-		6: "TRANSACTION_TYPE_ADJUSTMENT",
-		7: "TRANSACTION_TYPE_CHANGE_CREDIT",
-		8: "TRANSACTION_TYPE_TRANSFER_OUT",
-		9: "TRANSACTION_TYPE_TRANSFER_IN",
+		0:  "TRANSACTION_TYPE_UNSPECIFIED",
+		1:  "TRANSACTION_TYPE_TOP_UP",
+		2:  "TRANSACTION_TYPE_TRIP_PAYMENT",
+		3:  "TRANSACTION_TYPE_TRIP_EARNING",
+		4:  "TRANSACTION_TYPE_COMMISSION",
+		5:  "TRANSACTION_TYPE_PAYOUT",
+		6:  "TRANSACTION_TYPE_ADJUSTMENT",
+		7:  "TRANSACTION_TYPE_CHANGE_CREDIT",
+		8:  "TRANSACTION_TYPE_TRANSFER_OUT",
+		9:  "TRANSACTION_TYPE_TRANSFER_IN",
+		10: "TRANSACTION_TYPE_DUE_PAYMENT",
 	}
 	TransactionType_value = map[string]int32{
 		"TRANSACTION_TYPE_UNSPECIFIED":   0,
@@ -166,6 +170,7 @@ var (
 		"TRANSACTION_TYPE_CHANGE_CREDIT": 7,
 		"TRANSACTION_TYPE_TRANSFER_OUT":  8,
 		"TRANSACTION_TYPE_TRANSFER_IN":   9,
+		"TRANSACTION_TYPE_DUE_PAYMENT":   10,
 	}
 )
 
@@ -1419,8 +1424,11 @@ type GetTripSettlementResponse struct {
 	// trip, or cancellation / no_show for the fee of a cancelled trip. A fee
 	// is taken from the rider's wallet; what the wallet could not cover is
 	// due_amount, still owed by the rider.
-	Kind          string `protobuf:"bytes,10,opt,name=kind,proto3" json:"kind,omitempty"`
-	DueAmount     string `protobuf:"bytes,11,opt,name=due_amount,json=dueAmount,proto3" json:"due_amount,omitempty"`
+	Kind      string `protobuf:"bytes,10,opt,name=kind,proto3" json:"kind,omitempty"`
+	DueAmount string `protobuf:"bytes,11,opt,name=due_amount,json=dueAmount,proto3" json:"due_amount,omitempty"`
+	// How much of due_amount is paid since (from money that reached the
+	// rider's wallet).
+	DuePaid       string `protobuf:"bytes,12,opt,name=due_paid,json=duePaid,proto3" json:"due_paid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1528,6 +1536,13 @@ func (x *GetTripSettlementResponse) GetKind() string {
 func (x *GetTripSettlementResponse) GetDueAmount() string {
 	if x != nil {
 		return x.DueAmount
+	}
+	return ""
+}
+
+func (x *GetTripSettlementResponse) GetDuePaid() string {
+	if x != nil {
+		return x.DuePaid
 	}
 	return ""
 }
@@ -2020,6 +2035,1040 @@ func (x *ListTransfersResponse) GetNextPageToken() string {
 	return ""
 }
 
+type CreateMoneyRequestRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The requester: the caller's own rider profile.
+	RiderId string `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	// The rider asked (E.164); empty for an open request anyone with the code
+	// may pay.
+	PayerPhone string `protobuf:"bytes,2,opt,name=payer_phone,json=payerPhone,proto3" json:"payer_phone,omitempty"`
+	Amount     string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
+	Note       string `protobuf:"bytes,4,opt,name=note,proto3" json:"note,omitempty"`
+	// 1-168; 0 means 72.
+	ExpiresInHours int32 `protobuf:"varint,5,opt,name=expires_in_hours,json=expiresInHours,proto3" json:"expires_in_hours,omitempty"`
+	// Required: a retry with the same key is the same request.
+	IdempotencyKey string `protobuf:"bytes,6,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CreateMoneyRequestRequest) Reset() {
+	*x = CreateMoneyRequestRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateMoneyRequestRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateMoneyRequestRequest) ProtoMessage() {}
+
+func (x *CreateMoneyRequestRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateMoneyRequestRequest.ProtoReflect.Descriptor instead.
+func (*CreateMoneyRequestRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *CreateMoneyRequestRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *CreateMoneyRequestRequest) GetPayerPhone() string {
+	if x != nil {
+		return x.PayerPhone
+	}
+	return ""
+}
+
+func (x *CreateMoneyRequestRequest) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
+func (x *CreateMoneyRequestRequest) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+func (x *CreateMoneyRequestRequest) GetExpiresInHours() int32 {
+	if x != nil {
+		return x.ExpiresInHours
+	}
+	return 0
+}
+
+func (x *CreateMoneyRequestRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+// MoneyRequest is seen from one rider's side: role is requester or payer (the
+// rider it is for, or who paid it), or viewer for an open request someone
+// else asked for.
+type MoneyRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Code  string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	Role  string                 `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
+	// True when anyone with the code may pay it.
+	Open           bool   `protobuf:"varint,4,opt,name=open,proto3" json:"open,omitempty"`
+	RequesterPhone string `protobuf:"bytes,5,opt,name=requester_phone,json=requesterPhone,proto3" json:"requester_phone,omitempty"`
+	PayerPhone     string `protobuf:"bytes,6,opt,name=payer_phone,json=payerPhone,proto3" json:"payer_phone,omitempty"`
+	Amount         string `protobuf:"bytes,7,opt,name=amount,proto3" json:"amount,omitempty"`
+	CurrencyCode   string `protobuf:"bytes,8,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	Note           string `protobuf:"bytes,9,opt,name=note,proto3" json:"note,omitempty"`
+	// pending, paid, declined, cancelled or expired.
+	Status        string                 `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
+	TransferId    string                 `protobuf:"bytes,11,opt,name=transfer_id,json=transferId,proto3" json:"transfer_id,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ClosedAt      *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=closed_at,json=closedAt,proto3" json:"closed_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoneyRequest) Reset() {
+	*x = MoneyRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoneyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoneyRequest) ProtoMessage() {}
+
+func (x *MoneyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoneyRequest.ProtoReflect.Descriptor instead.
+func (*MoneyRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *MoneyRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *MoneyRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *MoneyRequest) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *MoneyRequest) GetOpen() bool {
+	if x != nil {
+		return x.Open
+	}
+	return false
+}
+
+func (x *MoneyRequest) GetRequesterPhone() string {
+	if x != nil {
+		return x.RequesterPhone
+	}
+	return ""
+}
+
+func (x *MoneyRequest) GetPayerPhone() string {
+	if x != nil {
+		return x.PayerPhone
+	}
+	return ""
+}
+
+func (x *MoneyRequest) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
+func (x *MoneyRequest) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
+	}
+	return ""
+}
+
+func (x *MoneyRequest) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+func (x *MoneyRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *MoneyRequest) GetTransferId() string {
+	if x != nil {
+		return x.TransferId
+	}
+	return ""
+}
+
+func (x *MoneyRequest) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *MoneyRequest) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *MoneyRequest) GetClosedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ClosedAt
+	}
+	return nil
+}
+
+type MoneyRequestResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MoneyRequest  *MoneyRequest          `protobuf:"bytes,1,opt,name=money_request,json=moneyRequest,proto3" json:"money_request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoneyRequestResponse) Reset() {
+	*x = MoneyRequestResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoneyRequestResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoneyRequestResponse) ProtoMessage() {}
+
+func (x *MoneyRequestResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoneyRequestResponse.ProtoReflect.Descriptor instead.
+func (*MoneyRequestResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *MoneyRequestResponse) GetMoneyRequest() *MoneyRequest {
+	if x != nil {
+		return x.MoneyRequest
+	}
+	return nil
+}
+
+type ListMoneyRequestsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	Role          string                 `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMoneyRequestsRequest) Reset() {
+	*x = ListMoneyRequestsRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMoneyRequestsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMoneyRequestsRequest) ProtoMessage() {}
+
+func (x *ListMoneyRequestsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMoneyRequestsRequest.ProtoReflect.Descriptor instead.
+func (*ListMoneyRequestsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ListMoneyRequestsRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *ListMoneyRequestsRequest) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *ListMoneyRequestsRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ListMoneyRequestsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListMoneyRequestsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListMoneyRequestsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MoneyRequests []*MoneyRequest        `protobuf:"bytes,1,rep,name=money_requests,json=moneyRequests,proto3" json:"money_requests,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMoneyRequestsResponse) Reset() {
+	*x = ListMoneyRequestsResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMoneyRequestsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMoneyRequestsResponse) ProtoMessage() {}
+
+func (x *ListMoneyRequestsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMoneyRequestsResponse.ProtoReflect.Descriptor instead.
+func (*ListMoneyRequestsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ListMoneyRequestsResponse) GetMoneyRequests() []*MoneyRequest {
+	if x != nil {
+		return x.MoneyRequests
+	}
+	return nil
+}
+
+func (x *ListMoneyRequestsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type GetMoneyRequestRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMoneyRequestRequest) Reset() {
+	*x = GetMoneyRequestRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMoneyRequestRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMoneyRequestRequest) ProtoMessage() {}
+
+func (x *GetMoneyRequestRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMoneyRequestRequest.ProtoReflect.Descriptor instead.
+func (*GetMoneyRequestRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *GetMoneyRequestRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *GetMoneyRequestRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type PayMoneyRequestRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The payer: the caller's own rider profile.
+	RiderId       string `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	Code          string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	Pin           string `protobuf:"bytes,3,opt,name=pin,proto3" json:"pin,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PayMoneyRequestRequest) Reset() {
+	*x = PayMoneyRequestRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PayMoneyRequestRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PayMoneyRequestRequest) ProtoMessage() {}
+
+func (x *PayMoneyRequestRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PayMoneyRequestRequest.ProtoReflect.Descriptor instead.
+func (*PayMoneyRequestRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *PayMoneyRequestRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *PayMoneyRequestRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *PayMoneyRequestRequest) GetPin() string {
+	if x != nil {
+		return x.Pin
+	}
+	return ""
+}
+
+type PayMoneyRequestResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MoneyRequest  *MoneyRequest          `protobuf:"bytes,1,opt,name=money_request,json=moneyRequest,proto3" json:"money_request,omitempty"`
+	Transfer      *Transfer              `protobuf:"bytes,2,opt,name=transfer,proto3" json:"transfer,omitempty"`
+	Wallet        *Wallet                `protobuf:"bytes,3,opt,name=wallet,proto3" json:"wallet,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PayMoneyRequestResponse) Reset() {
+	*x = PayMoneyRequestResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PayMoneyRequestResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PayMoneyRequestResponse) ProtoMessage() {}
+
+func (x *PayMoneyRequestResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PayMoneyRequestResponse.ProtoReflect.Descriptor instead.
+func (*PayMoneyRequestResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *PayMoneyRequestResponse) GetMoneyRequest() *MoneyRequest {
+	if x != nil {
+		return x.MoneyRequest
+	}
+	return nil
+}
+
+func (x *PayMoneyRequestResponse) GetTransfer() *Transfer {
+	if x != nil {
+		return x.Transfer
+	}
+	return nil
+}
+
+func (x *PayMoneyRequestResponse) GetWallet() *Wallet {
+	if x != nil {
+		return x.Wallet
+	}
+	return nil
+}
+
+type CloseMoneyRequestRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CloseMoneyRequestRequest) Reset() {
+	*x = CloseMoneyRequestRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CloseMoneyRequestRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CloseMoneyRequestRequest) ProtoMessage() {}
+
+func (x *CloseMoneyRequestRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CloseMoneyRequestRequest.ProtoReflect.Descriptor instead.
+func (*CloseMoneyRequestRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *CloseMoneyRequestRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *CloseMoneyRequestRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type GetStatementRequest struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	OwnerType OwnerType              `protobuf:"varint,1,opt,name=owner_type,json=ownerType,proto3,enum=ride.wallet.v1.OwnerType" json:"owner_type,omitempty"`
+	OwnerId   string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	// in (money came in), out (money went out), or empty for both.
+	Direction string            `protobuf:"bytes,3,opt,name=direction,proto3" json:"direction,omitempty"`
+	Types     []TransactionType `protobuf:"varint,4,rep,packed,name=types,proto3,enum=ride.wallet.v1.TransactionType" json:"types,omitempty"`
+	// The period; from defaults to 30 days before to, to to now.
+	From          *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=to,proto3" json:"to,omitempty"`
+	PageSize      int32                  `protobuf:"varint,7,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,8,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStatementRequest) Reset() {
+	*x = GetStatementRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStatementRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStatementRequest) ProtoMessage() {}
+
+func (x *GetStatementRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStatementRequest.ProtoReflect.Descriptor instead.
+func (*GetStatementRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *GetStatementRequest) GetOwnerType() OwnerType {
+	if x != nil {
+		return x.OwnerType
+	}
+	return OwnerType_OWNER_TYPE_UNSPECIFIED
+}
+
+func (x *GetStatementRequest) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
+}
+
+func (x *GetStatementRequest) GetDirection() string {
+	if x != nil {
+		return x.Direction
+	}
+	return ""
+}
+
+func (x *GetStatementRequest) GetTypes() []TransactionType {
+	if x != nil {
+		return x.Types
+	}
+	return nil
+}
+
+func (x *GetStatementRequest) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *GetStatementRequest) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *GetStatementRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *GetStatementRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type GetStatementResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entries       []*Transaction         `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	CurrencyCode  string                 `protobuf:"bytes,3,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	// The balance before the period and at its end.
+	OpeningBalance string `protobuf:"bytes,4,opt,name=opening_balance,json=openingBalance,proto3" json:"opening_balance,omitempty"`
+	ClosingBalance string `protobuf:"bytes,5,opt,name=closing_balance,json=closingBalance,proto3" json:"closing_balance,omitempty"`
+	// What came in and what went out during the period (of the entries the
+	// filter keeps), both positive.
+	TotalIn       string `protobuf:"bytes,6,opt,name=total_in,json=totalIn,proto3" json:"total_in,omitempty"`
+	TotalOut      string `protobuf:"bytes,7,opt,name=total_out,json=totalOut,proto3" json:"total_out,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStatementResponse) Reset() {
+	*x = GetStatementResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStatementResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStatementResponse) ProtoMessage() {}
+
+func (x *GetStatementResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStatementResponse.ProtoReflect.Descriptor instead.
+func (*GetStatementResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *GetStatementResponse) GetEntries() []*Transaction {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+func (x *GetStatementResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+func (x *GetStatementResponse) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
+	}
+	return ""
+}
+
+func (x *GetStatementResponse) GetOpeningBalance() string {
+	if x != nil {
+		return x.OpeningBalance
+	}
+	return ""
+}
+
+func (x *GetStatementResponse) GetClosingBalance() string {
+	if x != nil {
+		return x.ClosingBalance
+	}
+	return ""
+}
+
+func (x *GetStatementResponse) GetTotalIn() string {
+	if x != nil {
+		return x.TotalIn
+	}
+	return ""
+}
+
+func (x *GetStatementResponse) GetTotalOut() string {
+	if x != nil {
+		return x.TotalOut
+	}
+	return ""
+}
+
+type GetRiderDuesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRiderDuesRequest) Reset() {
+	*x = GetRiderDuesRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRiderDuesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRiderDuesRequest) ProtoMessage() {}
+
+func (x *GetRiderDuesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRiderDuesRequest.ProtoReflect.Descriptor instead.
+func (*GetRiderDuesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *GetRiderDuesRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+type RiderDue struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	TripId string                 `protobuf:"bytes,1,opt,name=trip_id,json=tripId,proto3" json:"trip_id,omitempty"`
+	// cancellation or no_show.
+	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Amount        string                 `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
+	Paid          string                 `protobuf:"bytes,4,opt,name=paid,proto3" json:"paid,omitempty"`
+	Outstanding   string                 `protobuf:"bytes,5,opt,name=outstanding,proto3" json:"outstanding,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RiderDue) Reset() {
+	*x = RiderDue{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RiderDue) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RiderDue) ProtoMessage() {}
+
+func (x *RiderDue) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RiderDue.ProtoReflect.Descriptor instead.
+func (*RiderDue) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *RiderDue) GetTripId() string {
+	if x != nil {
+		return x.TripId
+	}
+	return ""
+}
+
+func (x *RiderDue) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *RiderDue) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
+func (x *RiderDue) GetPaid() string {
+	if x != nil {
+		return x.Paid
+	}
+	return ""
+}
+
+func (x *RiderDue) GetOutstanding() string {
+	if x != nil {
+		return x.Outstanding
+	}
+	return ""
+}
+
+func (x *RiderDue) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+type GetRiderDuesResponse struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	CurrencyCode string                 `protobuf:"bytes,1,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	Outstanding  string                 `protobuf:"bytes,2,opt,name=outstanding,proto3" json:"outstanding,omitempty"`
+	Dues         []*RiderDue            `protobuf:"bytes,3,rep,name=dues,proto3" json:"dues,omitempty"`
+	// False when the deployment blocks trips until the fees are paid.
+	CanRequestTrips bool `protobuf:"varint,4,opt,name=can_request_trips,json=canRequestTrips,proto3" json:"can_request_trips,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GetRiderDuesResponse) Reset() {
+	*x = GetRiderDuesResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRiderDuesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRiderDuesResponse) ProtoMessage() {}
+
+func (x *GetRiderDuesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRiderDuesResponse.ProtoReflect.Descriptor instead.
+func (*GetRiderDuesResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *GetRiderDuesResponse) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
+	}
+	return ""
+}
+
+func (x *GetRiderDuesResponse) GetOutstanding() string {
+	if x != nil {
+		return x.Outstanding
+	}
+	return ""
+}
+
+func (x *GetRiderDuesResponse) GetDues() []*RiderDue {
+	if x != nil {
+		return x.Dues
+	}
+	return nil
+}
+
+func (x *GetRiderDuesResponse) GetCanRequestTrips() bool {
+	if x != nil {
+		return x.CanRequestTrips
+	}
+	return false
+}
+
 var File_ride_wallet_v1_wallet_proto protoreflect.FileDescriptor
 
 const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
@@ -2118,7 +3167,7 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\n" +
 	"owner_type\x18\x01 \x01(\x0e2\x19.ride.wallet.v1.OwnerTypeR\townerType\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x17\n" +
-	"\atrip_id\x18\x03 \x01(\tR\x06tripId\"\xb2\x03\n" +
+	"\atrip_id\x18\x03 \x01(\tR\x06tripId\"\xcd\x03\n" +
 	"\x19GetTripSettlementResponse\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12D\n" +
 	"\x0epayment_method\x18\x02 \x01(\x0e2\x1d.ride.wallet.v1.PaymentMethodR\rpaymentMethod\x12#\n" +
@@ -2134,7 +3183,8 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x04kind\x18\n" +
 	" \x01(\tR\x04kind\x12\x1d\n" +
 	"\n" +
-	"due_amount\x18\v \x01(\tR\tdueAmount\"t\n" +
+	"due_amount\x18\v \x01(\tR\tdueAmount\x12\x19\n" +
+	"\bdue_paid\x18\f \x01(\tR\aduePaid\"t\n" +
 	"\x17RecordTripChangeRequest\x12\x1b\n" +
 	"\tdriver_id\x18\x01 \x01(\tR\bdriverId\x12\x17\n" +
 	"\atrip_id\x18\x02 \x01(\tR\x06tripId\x12#\n" +
@@ -2171,7 +3221,95 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"w\n" +
 	"\x15ListTransfersResponse\x126\n" +
 	"\ttransfers\x18\x01 \x03(\v2\x18.ride.wallet.v1.TransferR\ttransfers\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*T\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xd6\x01\n" +
+	"\x19CreateMoneyRequestRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\x12\x1f\n" +
+	"\vpayer_phone\x18\x02 \x01(\tR\n" +
+	"payerPhone\x12\x16\n" +
+	"\x06amount\x18\x03 \x01(\tR\x06amount\x12\x12\n" +
+	"\x04note\x18\x04 \x01(\tR\x04note\x12(\n" +
+	"\x10expires_in_hours\x18\x05 \x01(\x05R\x0eexpiresInHours\x12'\n" +
+	"\x0fidempotency_key\x18\x06 \x01(\tR\x0eidempotencyKey\"\xdd\x03\n" +
+	"\fMoneyRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\x12\x12\n" +
+	"\x04role\x18\x03 \x01(\tR\x04role\x12\x12\n" +
+	"\x04open\x18\x04 \x01(\bR\x04open\x12'\n" +
+	"\x0frequester_phone\x18\x05 \x01(\tR\x0erequesterPhone\x12\x1f\n" +
+	"\vpayer_phone\x18\x06 \x01(\tR\n" +
+	"payerPhone\x12\x16\n" +
+	"\x06amount\x18\a \x01(\tR\x06amount\x12#\n" +
+	"\rcurrency_code\x18\b \x01(\tR\fcurrencyCode\x12\x12\n" +
+	"\x04note\x18\t \x01(\tR\x04note\x12\x16\n" +
+	"\x06status\x18\n" +
+	" \x01(\tR\x06status\x12\x1f\n" +
+	"\vtransfer_id\x18\v \x01(\tR\n" +
+	"transferId\x129\n" +
+	"\n" +
+	"expires_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x129\n" +
+	"\n" +
+	"created_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x127\n" +
+	"\tclosed_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\bclosedAt\"Y\n" +
+	"\x14MoneyRequestResponse\x12A\n" +
+	"\rmoney_request\x18\x01 \x01(\v2\x1c.ride.wallet.v1.MoneyRequestR\fmoneyRequest\"\x9d\x01\n" +
+	"\x18ListMoneyRequestsRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\x12\x12\n" +
+	"\x04role\x18\x02 \x01(\tR\x04role\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x05 \x01(\tR\tpageToken\"\x88\x01\n" +
+	"\x19ListMoneyRequestsResponse\x12C\n" +
+	"\x0emoney_requests\x18\x01 \x03(\v2\x1c.ride.wallet.v1.MoneyRequestR\rmoneyRequests\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"G\n" +
+	"\x16GetMoneyRequestRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\"Y\n" +
+	"\x16PayMoneyRequestRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\x12\x10\n" +
+	"\x03pin\x18\x03 \x01(\tR\x03pin\"\xc2\x01\n" +
+	"\x17PayMoneyRequestResponse\x12A\n" +
+	"\rmoney_request\x18\x01 \x01(\v2\x1c.ride.wallet.v1.MoneyRequestR\fmoneyRequest\x124\n" +
+	"\btransfer\x18\x02 \x01(\v2\x18.ride.wallet.v1.TransferR\btransfer\x12.\n" +
+	"\x06wallet\x18\x03 \x01(\v2\x16.ride.wallet.v1.WalletR\x06wallet\"I\n" +
+	"\x18CloseMoneyRequestRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\"\xd7\x02\n" +
+	"\x13GetStatementRequest\x128\n" +
+	"\n" +
+	"owner_type\x18\x01 \x01(\x0e2\x19.ride.wallet.v1.OwnerTypeR\townerType\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x1c\n" +
+	"\tdirection\x18\x03 \x01(\tR\tdirection\x125\n" +
+	"\x05types\x18\x04 \x03(\x0e2\x1f.ride.wallet.v1.TransactionTypeR\x05types\x12.\n" +
+	"\x04from\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x1b\n" +
+	"\tpage_size\x18\a \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\b \x01(\tR\tpageToken\"\xa4\x02\n" +
+	"\x14GetStatementResponse\x125\n" +
+	"\aentries\x18\x01 \x03(\v2\x1b.ride.wallet.v1.TransactionR\aentries\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12#\n" +
+	"\rcurrency_code\x18\x03 \x01(\tR\fcurrencyCode\x12'\n" +
+	"\x0fopening_balance\x18\x04 \x01(\tR\x0eopeningBalance\x12'\n" +
+	"\x0fclosing_balance\x18\x05 \x01(\tR\x0eclosingBalance\x12\x19\n" +
+	"\btotal_in\x18\x06 \x01(\tR\atotalIn\x12\x1b\n" +
+	"\ttotal_out\x18\a \x01(\tR\btotalOut\"0\n" +
+	"\x13GetRiderDuesRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\"\xc0\x01\n" +
+	"\bRiderDue\x12\x17\n" +
+	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x16\n" +
+	"\x06amount\x18\x03 \x01(\tR\x06amount\x12\x12\n" +
+	"\x04paid\x18\x04 \x01(\tR\x04paid\x12 \n" +
+	"\voutstanding\x18\x05 \x01(\tR\voutstanding\x129\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xb7\x01\n" +
+	"\x14GetRiderDuesResponse\x12#\n" +
+	"\rcurrency_code\x18\x01 \x01(\tR\fcurrencyCode\x12 \n" +
+	"\voutstanding\x18\x02 \x01(\tR\voutstanding\x12,\n" +
+	"\x04dues\x18\x03 \x03(\v2\x18.ride.wallet.v1.RiderDueR\x04dues\x12*\n" +
+	"\x11can_request_trips\x18\x04 \x01(\bR\x0fcanRequestTrips*T\n" +
 	"\tOwnerType\x12\x1a\n" +
 	"\x16OWNER_TYPE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10OWNER_TYPE_RIDER\x10\x01\x12\x15\n" +
@@ -2180,7 +3318,7 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x1aPAYMENT_METHOD_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PAYMENT_METHOD_CASH\x10\x01\x12\x19\n" +
 	"\x15PAYMENT_METHOD_WALLET\x10\x02\x12\x17\n" +
-	"\x13PAYMENT_METHOD_CARD\x10\x03*\xde\x02\n" +
+	"\x13PAYMENT_METHOD_CARD\x10\x03*\x80\x03\n" +
 	"\x0fTransactionType\x12 \n" +
 	"\x1cTRANSACTION_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17TRANSACTION_TYPE_TOP_UP\x10\x01\x12!\n" +
@@ -2191,7 +3329,9 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x1bTRANSACTION_TYPE_ADJUSTMENT\x10\x06\x12\"\n" +
 	"\x1eTRANSACTION_TYPE_CHANGE_CREDIT\x10\a\x12!\n" +
 	"\x1dTRANSACTION_TYPE_TRANSFER_OUT\x10\b\x12 \n" +
-	"\x1cTRANSACTION_TYPE_TRANSFER_IN\x10\t2\xda\f\n" +
+	"\x1cTRANSACTION_TYPE_TRANSFER_IN\x10\t\x12 \n" +
+	"\x1cTRANSACTION_TYPE_DUE_PAYMENT\x10\n" +
+	"2\x9e\x16\n" +
 	"\rWalletService\x12p\n" +
 	"\tGetWallet\x12 .ride.wallet.v1.GetWalletRequest\x1a!.ride.wallet.v1.GetWalletResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/wallets/{owner_id}\x12D\n" +
 	"\x05TopUp\x12\x1c.ride.wallet.v1.TopUpRequest\x1a\x1d.ride.wallet.v1.TopUpResponse\x12S\n" +
@@ -2204,7 +3344,15 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x10RecordTripChange\x12'.ride.wallet.v1.RecordTripChangeRequest\x1a(.ride.wallet.v1.RecordTripChangeResponse\"9\x82\xd3\xe4\x93\x023:\x01*\"./v1/drivers/{driver_id}/trips/{trip_id}/change\x12\x83\x01\n" +
 	"\rInitiateTopUp\x12$.ride.wallet.v1.InitiateTopUpRequest\x1a%.ride.wallet.v1.InitiateTopUpResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v1/wallet/topups/zaincash\x12\x86\x01\n" +
 	"\fSendTransfer\x12#.ride.wallet.v1.SendTransferRequest\x1a$.ride.wallet.v1.SendTransferResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /v1/wallets/{rider_id}/transfers\x12\x86\x01\n" +
-	"\rListTransfers\x12$.ride.wallet.v1.ListTransfersRequest\x1a%.ride.wallet.v1.ListTransfersResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/wallets/{rider_id}/transfers\x12\x9f\x01\n" +
+	"\rListTransfers\x12$.ride.wallet.v1.ListTransfersRequest\x1a%.ride.wallet.v1.ListTransfersResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/wallets/{rider_id}/transfers\x12\x97\x01\n" +
+	"\x12CreateMoneyRequest\x12).ride.wallet.v1.CreateMoneyRequestRequest\x1a$.ride.wallet.v1.MoneyRequestResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/v1/wallets/{rider_id}/money-requests\x12\x97\x01\n" +
+	"\x11ListMoneyRequests\x12(.ride.wallet.v1.ListMoneyRequestsRequest\x1a).ride.wallet.v1.ListMoneyRequestsResponse\"-\x82\xd3\xe4\x93\x02'\x12%/v1/wallets/{rider_id}/money-requests\x12\x95\x01\n" +
+	"\x0fGetMoneyRequest\x12&.ride.wallet.v1.GetMoneyRequestRequest\x1a$.ride.wallet.v1.MoneyRequestResponse\"4\x82\xd3\xe4\x93\x02.\x12,/v1/wallets/{rider_id}/money-requests/{code}\x12\x9f\x01\n" +
+	"\x0fPayMoneyRequest\x12&.ride.wallet.v1.PayMoneyRequestRequest\x1a'.ride.wallet.v1.PayMoneyRequestResponse\";\x82\xd3\xe4\x93\x025:\x01*\"0/v1/wallets/{rider_id}/money-requests/{code}:pay\x12\xa6\x01\n" +
+	"\x13DeclineMoneyRequest\x12(.ride.wallet.v1.CloseMoneyRequestRequest\x1a$.ride.wallet.v1.MoneyRequestResponse\"?\x82\xd3\xe4\x93\x029:\x01*\"4/v1/wallets/{rider_id}/money-requests/{code}:decline\x12\xa4\x01\n" +
+	"\x12CancelMoneyRequest\x12(.ride.wallet.v1.CloseMoneyRequestRequest\x1a$.ride.wallet.v1.MoneyRequestResponse\">\x82\xd3\xe4\x93\x028:\x01*\"3/v1/wallets/{rider_id}/money-requests/{code}:cancel\x12\x83\x01\n" +
+	"\fGetStatement\x12#.ride.wallet.v1.GetStatementRequest\x1a$.ride.wallet.v1.GetStatementResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/wallets/{owner_id}/statement\x12~\n" +
+	"\fGetRiderDues\x12#.ride.wallet.v1.GetRiderDuesRequest\x1a$.ride.wallet.v1.GetRiderDuesResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/wallets/{rider_id}/dues\x12\x9f\x01\n" +
 	"\x16ProcessZainCashWebhook\x12-.ride.wallet.v1.ProcessZainCashWebhookRequest\x1a..ride.wallet.v1.ProcessZainCashWebhookResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/wallet/zaincash/webhookB@Z>github.com/7akoom/ride-platform/gen/go/ride/wallet/v1;walletv1b\x06proto3"
 
 var (
@@ -2220,7 +3368,7 @@ func file_ride_wallet_v1_wallet_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_wallet_v1_wallet_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_ride_wallet_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_ride_wallet_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
 var file_ride_wallet_v1_wallet_proto_goTypes = []any{
 	(OwnerType)(0),                         // 0: ride.wallet.v1.OwnerType
 	(PaymentMethod)(0),                     // 1: ride.wallet.v1.PaymentMethod
@@ -2252,14 +3400,28 @@ var file_ride_wallet_v1_wallet_proto_goTypes = []any{
 	(*SendTransferResponse)(nil),           // 27: ride.wallet.v1.SendTransferResponse
 	(*ListTransfersRequest)(nil),           // 28: ride.wallet.v1.ListTransfersRequest
 	(*ListTransfersResponse)(nil),          // 29: ride.wallet.v1.ListTransfersResponse
-	(*timestamppb.Timestamp)(nil),          // 30: google.protobuf.Timestamp
+	(*CreateMoneyRequestRequest)(nil),      // 30: ride.wallet.v1.CreateMoneyRequestRequest
+	(*MoneyRequest)(nil),                   // 31: ride.wallet.v1.MoneyRequest
+	(*MoneyRequestResponse)(nil),           // 32: ride.wallet.v1.MoneyRequestResponse
+	(*ListMoneyRequestsRequest)(nil),       // 33: ride.wallet.v1.ListMoneyRequestsRequest
+	(*ListMoneyRequestsResponse)(nil),      // 34: ride.wallet.v1.ListMoneyRequestsResponse
+	(*GetMoneyRequestRequest)(nil),         // 35: ride.wallet.v1.GetMoneyRequestRequest
+	(*PayMoneyRequestRequest)(nil),         // 36: ride.wallet.v1.PayMoneyRequestRequest
+	(*PayMoneyRequestResponse)(nil),        // 37: ride.wallet.v1.PayMoneyRequestResponse
+	(*CloseMoneyRequestRequest)(nil),       // 38: ride.wallet.v1.CloseMoneyRequestRequest
+	(*GetStatementRequest)(nil),            // 39: ride.wallet.v1.GetStatementRequest
+	(*GetStatementResponse)(nil),           // 40: ride.wallet.v1.GetStatementResponse
+	(*GetRiderDuesRequest)(nil),            // 41: ride.wallet.v1.GetRiderDuesRequest
+	(*RiderDue)(nil),                       // 42: ride.wallet.v1.RiderDue
+	(*GetRiderDuesResponse)(nil),           // 43: ride.wallet.v1.GetRiderDuesResponse
+	(*timestamppb.Timestamp)(nil),          // 44: google.protobuf.Timestamp
 }
 var file_ride_wallet_v1_wallet_proto_depIdxs = []int32{
 	0,  // 0: ride.wallet.v1.Wallet.owner_type:type_name -> ride.wallet.v1.OwnerType
-	30, // 1: ride.wallet.v1.Wallet.created_at:type_name -> google.protobuf.Timestamp
-	30, // 2: ride.wallet.v1.Wallet.updated_at:type_name -> google.protobuf.Timestamp
+	44, // 1: ride.wallet.v1.Wallet.created_at:type_name -> google.protobuf.Timestamp
+	44, // 2: ride.wallet.v1.Wallet.updated_at:type_name -> google.protobuf.Timestamp
 	2,  // 3: ride.wallet.v1.Transaction.type:type_name -> ride.wallet.v1.TransactionType
-	30, // 4: ride.wallet.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
+	44, // 4: ride.wallet.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 5: ride.wallet.v1.GetWalletRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	3,  // 6: ride.wallet.v1.GetWalletResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	0,  // 7: ride.wallet.v1.TopUpRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
@@ -2272,39 +3434,70 @@ var file_ride_wallet_v1_wallet_proto_depIdxs = []int32{
 	4,  // 14: ride.wallet.v1.RequestPayoutResponse.transaction:type_name -> ride.wallet.v1.Transaction
 	0,  // 15: ride.wallet.v1.GetTripSettlementRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	1,  // 16: ride.wallet.v1.GetTripSettlementResponse.payment_method:type_name -> ride.wallet.v1.PaymentMethod
-	30, // 17: ride.wallet.v1.Transfer.created_at:type_name -> google.protobuf.Timestamp
+	44, // 17: ride.wallet.v1.Transfer.created_at:type_name -> google.protobuf.Timestamp
 	26, // 18: ride.wallet.v1.SendTransferResponse.transfer:type_name -> ride.wallet.v1.Transfer
 	3,  // 19: ride.wallet.v1.SendTransferResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	26, // 20: ride.wallet.v1.ListTransfersResponse.transfers:type_name -> ride.wallet.v1.Transfer
-	5,  // 21: ride.wallet.v1.WalletService.GetWallet:input_type -> ride.wallet.v1.GetWalletRequest
-	7,  // 22: ride.wallet.v1.WalletService.TopUp:input_type -> ride.wallet.v1.TopUpRequest
-	9,  // 23: ride.wallet.v1.WalletService.SettleTrip:input_type -> ride.wallet.v1.SettleTripRequest
-	11, // 24: ride.wallet.v1.WalletService.ListTransactions:input_type -> ride.wallet.v1.ListTransactionsRequest
-	13, // 25: ride.wallet.v1.WalletService.CheckDriverStanding:input_type -> ride.wallet.v1.CheckDriverStandingRequest
-	15, // 26: ride.wallet.v1.WalletService.RequestPayout:input_type -> ride.wallet.v1.RequestPayoutRequest
-	21, // 27: ride.wallet.v1.WalletService.GetTripSettlement:input_type -> ride.wallet.v1.GetTripSettlementRequest
-	23, // 28: ride.wallet.v1.WalletService.RecordTripChange:input_type -> ride.wallet.v1.RecordTripChangeRequest
-	17, // 29: ride.wallet.v1.WalletService.InitiateTopUp:input_type -> ride.wallet.v1.InitiateTopUpRequest
-	25, // 30: ride.wallet.v1.WalletService.SendTransfer:input_type -> ride.wallet.v1.SendTransferRequest
-	28, // 31: ride.wallet.v1.WalletService.ListTransfers:input_type -> ride.wallet.v1.ListTransfersRequest
-	19, // 32: ride.wallet.v1.WalletService.ProcessZainCashWebhook:input_type -> ride.wallet.v1.ProcessZainCashWebhookRequest
-	6,  // 33: ride.wallet.v1.WalletService.GetWallet:output_type -> ride.wallet.v1.GetWalletResponse
-	8,  // 34: ride.wallet.v1.WalletService.TopUp:output_type -> ride.wallet.v1.TopUpResponse
-	10, // 35: ride.wallet.v1.WalletService.SettleTrip:output_type -> ride.wallet.v1.SettleTripResponse
-	12, // 36: ride.wallet.v1.WalletService.ListTransactions:output_type -> ride.wallet.v1.ListTransactionsResponse
-	14, // 37: ride.wallet.v1.WalletService.CheckDriverStanding:output_type -> ride.wallet.v1.CheckDriverStandingResponse
-	16, // 38: ride.wallet.v1.WalletService.RequestPayout:output_type -> ride.wallet.v1.RequestPayoutResponse
-	22, // 39: ride.wallet.v1.WalletService.GetTripSettlement:output_type -> ride.wallet.v1.GetTripSettlementResponse
-	24, // 40: ride.wallet.v1.WalletService.RecordTripChange:output_type -> ride.wallet.v1.RecordTripChangeResponse
-	18, // 41: ride.wallet.v1.WalletService.InitiateTopUp:output_type -> ride.wallet.v1.InitiateTopUpResponse
-	27, // 42: ride.wallet.v1.WalletService.SendTransfer:output_type -> ride.wallet.v1.SendTransferResponse
-	29, // 43: ride.wallet.v1.WalletService.ListTransfers:output_type -> ride.wallet.v1.ListTransfersResponse
-	20, // 44: ride.wallet.v1.WalletService.ProcessZainCashWebhook:output_type -> ride.wallet.v1.ProcessZainCashWebhookResponse
-	33, // [33:45] is the sub-list for method output_type
-	21, // [21:33] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	44, // 21: ride.wallet.v1.MoneyRequest.expires_at:type_name -> google.protobuf.Timestamp
+	44, // 22: ride.wallet.v1.MoneyRequest.created_at:type_name -> google.protobuf.Timestamp
+	44, // 23: ride.wallet.v1.MoneyRequest.closed_at:type_name -> google.protobuf.Timestamp
+	31, // 24: ride.wallet.v1.MoneyRequestResponse.money_request:type_name -> ride.wallet.v1.MoneyRequest
+	31, // 25: ride.wallet.v1.ListMoneyRequestsResponse.money_requests:type_name -> ride.wallet.v1.MoneyRequest
+	31, // 26: ride.wallet.v1.PayMoneyRequestResponse.money_request:type_name -> ride.wallet.v1.MoneyRequest
+	26, // 27: ride.wallet.v1.PayMoneyRequestResponse.transfer:type_name -> ride.wallet.v1.Transfer
+	3,  // 28: ride.wallet.v1.PayMoneyRequestResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	0,  // 29: ride.wallet.v1.GetStatementRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
+	2,  // 30: ride.wallet.v1.GetStatementRequest.types:type_name -> ride.wallet.v1.TransactionType
+	44, // 31: ride.wallet.v1.GetStatementRequest.from:type_name -> google.protobuf.Timestamp
+	44, // 32: ride.wallet.v1.GetStatementRequest.to:type_name -> google.protobuf.Timestamp
+	4,  // 33: ride.wallet.v1.GetStatementResponse.entries:type_name -> ride.wallet.v1.Transaction
+	44, // 34: ride.wallet.v1.RiderDue.created_at:type_name -> google.protobuf.Timestamp
+	42, // 35: ride.wallet.v1.GetRiderDuesResponse.dues:type_name -> ride.wallet.v1.RiderDue
+	5,  // 36: ride.wallet.v1.WalletService.GetWallet:input_type -> ride.wallet.v1.GetWalletRequest
+	7,  // 37: ride.wallet.v1.WalletService.TopUp:input_type -> ride.wallet.v1.TopUpRequest
+	9,  // 38: ride.wallet.v1.WalletService.SettleTrip:input_type -> ride.wallet.v1.SettleTripRequest
+	11, // 39: ride.wallet.v1.WalletService.ListTransactions:input_type -> ride.wallet.v1.ListTransactionsRequest
+	13, // 40: ride.wallet.v1.WalletService.CheckDriverStanding:input_type -> ride.wallet.v1.CheckDriverStandingRequest
+	15, // 41: ride.wallet.v1.WalletService.RequestPayout:input_type -> ride.wallet.v1.RequestPayoutRequest
+	21, // 42: ride.wallet.v1.WalletService.GetTripSettlement:input_type -> ride.wallet.v1.GetTripSettlementRequest
+	23, // 43: ride.wallet.v1.WalletService.RecordTripChange:input_type -> ride.wallet.v1.RecordTripChangeRequest
+	17, // 44: ride.wallet.v1.WalletService.InitiateTopUp:input_type -> ride.wallet.v1.InitiateTopUpRequest
+	25, // 45: ride.wallet.v1.WalletService.SendTransfer:input_type -> ride.wallet.v1.SendTransferRequest
+	28, // 46: ride.wallet.v1.WalletService.ListTransfers:input_type -> ride.wallet.v1.ListTransfersRequest
+	30, // 47: ride.wallet.v1.WalletService.CreateMoneyRequest:input_type -> ride.wallet.v1.CreateMoneyRequestRequest
+	33, // 48: ride.wallet.v1.WalletService.ListMoneyRequests:input_type -> ride.wallet.v1.ListMoneyRequestsRequest
+	35, // 49: ride.wallet.v1.WalletService.GetMoneyRequest:input_type -> ride.wallet.v1.GetMoneyRequestRequest
+	36, // 50: ride.wallet.v1.WalletService.PayMoneyRequest:input_type -> ride.wallet.v1.PayMoneyRequestRequest
+	38, // 51: ride.wallet.v1.WalletService.DeclineMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
+	38, // 52: ride.wallet.v1.WalletService.CancelMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
+	39, // 53: ride.wallet.v1.WalletService.GetStatement:input_type -> ride.wallet.v1.GetStatementRequest
+	41, // 54: ride.wallet.v1.WalletService.GetRiderDues:input_type -> ride.wallet.v1.GetRiderDuesRequest
+	19, // 55: ride.wallet.v1.WalletService.ProcessZainCashWebhook:input_type -> ride.wallet.v1.ProcessZainCashWebhookRequest
+	6,  // 56: ride.wallet.v1.WalletService.GetWallet:output_type -> ride.wallet.v1.GetWalletResponse
+	8,  // 57: ride.wallet.v1.WalletService.TopUp:output_type -> ride.wallet.v1.TopUpResponse
+	10, // 58: ride.wallet.v1.WalletService.SettleTrip:output_type -> ride.wallet.v1.SettleTripResponse
+	12, // 59: ride.wallet.v1.WalletService.ListTransactions:output_type -> ride.wallet.v1.ListTransactionsResponse
+	14, // 60: ride.wallet.v1.WalletService.CheckDriverStanding:output_type -> ride.wallet.v1.CheckDriverStandingResponse
+	16, // 61: ride.wallet.v1.WalletService.RequestPayout:output_type -> ride.wallet.v1.RequestPayoutResponse
+	22, // 62: ride.wallet.v1.WalletService.GetTripSettlement:output_type -> ride.wallet.v1.GetTripSettlementResponse
+	24, // 63: ride.wallet.v1.WalletService.RecordTripChange:output_type -> ride.wallet.v1.RecordTripChangeResponse
+	18, // 64: ride.wallet.v1.WalletService.InitiateTopUp:output_type -> ride.wallet.v1.InitiateTopUpResponse
+	27, // 65: ride.wallet.v1.WalletService.SendTransfer:output_type -> ride.wallet.v1.SendTransferResponse
+	29, // 66: ride.wallet.v1.WalletService.ListTransfers:output_type -> ride.wallet.v1.ListTransfersResponse
+	32, // 67: ride.wallet.v1.WalletService.CreateMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	34, // 68: ride.wallet.v1.WalletService.ListMoneyRequests:output_type -> ride.wallet.v1.ListMoneyRequestsResponse
+	32, // 69: ride.wallet.v1.WalletService.GetMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	37, // 70: ride.wallet.v1.WalletService.PayMoneyRequest:output_type -> ride.wallet.v1.PayMoneyRequestResponse
+	32, // 71: ride.wallet.v1.WalletService.DeclineMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	32, // 72: ride.wallet.v1.WalletService.CancelMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	40, // 73: ride.wallet.v1.WalletService.GetStatement:output_type -> ride.wallet.v1.GetStatementResponse
+	43, // 74: ride.wallet.v1.WalletService.GetRiderDues:output_type -> ride.wallet.v1.GetRiderDuesResponse
+	20, // 75: ride.wallet.v1.WalletService.ProcessZainCashWebhook:output_type -> ride.wallet.v1.ProcessZainCashWebhookResponse
+	56, // [56:76] is the sub-list for method output_type
+	36, // [36:56] is the sub-list for method input_type
+	36, // [36:36] is the sub-list for extension type_name
+	36, // [36:36] is the sub-list for extension extendee
+	0,  // [0:36] is the sub-list for field type_name
 }
 
 func init() { file_ride_wallet_v1_wallet_proto_init() }
@@ -2318,7 +3511,7 @@ func file_ride_wallet_v1_wallet_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_wallet_v1_wallet_proto_rawDesc), len(file_ride_wallet_v1_wallet_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   27,
+			NumMessages:   41,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

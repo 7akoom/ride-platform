@@ -106,8 +106,12 @@ func (h *WalletHandler) mapTransferError(err error) error {
 	case errors.As(err, &locked):
 		return status.Error(codes.FailedPrecondition, locked.Error())
 
-	case errors.Is(err, transfer.ErrRecipientNotFound):
+	case errors.Is(err, transfer.ErrRecipientNotFound),
+		errors.Is(err, transfer.ErrRequestNotFound):
 		return status.Error(codes.NotFound, err.Error())
+
+	case errors.Is(err, transfer.ErrNotYourRequest):
+		return status.Error(codes.PermissionDenied, err.Error())
 
 	case errors.Is(err, transfer.ErrKeyReused):
 		return status.Error(codes.AlreadyExists, err.Error())
@@ -116,7 +120,10 @@ func (h *WalletHandler) mapTransferError(err error) error {
 		errors.Is(err, transfer.ErrDailyLimit),
 		errors.Is(err, transfer.ErrDailyCount),
 		errors.Is(err, wallet.ErrInsufficientFunds),
-		errors.Is(err, wallet.ErrWalletBlocked):
+		errors.Is(err, wallet.ErrWalletBlocked),
+		errors.Is(err, transfer.ErrRequestNotPending),
+		errors.Is(err, transfer.ErrRequestExpired),
+		errors.Is(err, transfer.ErrOwnRequest):
 		return status.Error(codes.FailedPrecondition, err.Error())
 
 	case errors.Is(err, transfer.ErrSenderRequired),
@@ -127,7 +134,10 @@ func (h *WalletHandler) mapTransferError(err error) error {
 		errors.Is(err, transfer.ErrToSelf),
 		errors.Is(err, transfer.ErrBelowMin),
 		errors.Is(err, transfer.ErrAboveMax),
-		errors.Is(err, transfer.ErrInvalidPageToken):
+		errors.Is(err, transfer.ErrInvalidPageToken),
+		errors.Is(err, transfer.ErrInvalidExpiry),
+		errors.Is(err, transfer.ErrInvalidRequestRole),
+		errors.Is(err, transfer.ErrInvalidStatusFilter):
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	case errors.Is(err, transfer.ErrIdentityRequired):
@@ -137,6 +147,9 @@ func (h *WalletHandler) mapTransferError(err error) error {
 		h.logger.Warn("identity-service or rider-service is unavailable", "error", err)
 
 		return status.Error(codes.Unavailable, "transfers are unavailable right now; try again")
+
+	case errors.Is(err, wallet.ErrDuplicateRequest):
+		return status.Error(codes.AlreadyExists, err.Error())
 
 	default:
 		h.logger.Error("unclassified transfer failure", "error", err)
