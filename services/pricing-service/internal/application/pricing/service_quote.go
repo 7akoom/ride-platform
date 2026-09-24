@@ -136,42 +136,16 @@ func (s *service) ClaimQuote(ctx context.Context, quoteID, riderID, tripID strin
 		return Quote{}, ErrQuoteNotFound
 	}
 
-	// The coupon the price used may have ended or run out since: the rider
-	// must not get a discount that is no longer on offer.
-	if quote.Coupon != nil && quote.ClaimedTripID != tripID {
-		if err := s.couponStillUsable(ctx, quote.Coupon.CouponID, riderID); err != nil {
-			return Quote{}, err
-		}
-	}
-
+	// A quote priced with a coupon reserves one of its uses as it is
+	// claimed (the repository checks the coupon is still on offer and has a
+	// use left for the rider, under a lock), so two trips can never both
+	// get the last use.
 	claimed, err := s.repository.ClaimQuote(ctx, quoteID, riderID, tripID, nowFunc())
 	if err != nil {
 		return Quote{}, fmt.Errorf("claim quote: %w", err)
 	}
 
 	return claimed, nil
-}
-
-func (s *service) couponStillUsable(ctx context.Context, couponID, riderID string) error {
-	coupon, err := s.repository.FindCouponByID(ctx, couponID)
-	if err != nil {
-		return fmt.Errorf("read the quote's coupon: %w", err)
-	}
-
-	if !coupon.IsCurrentlyValid(nowFunc()) {
-		return ErrQuoteCouponUnavailable
-	}
-
-	uses, err := s.repository.RiderRedemptionCount(ctx, couponID, riderID)
-	if err != nil {
-		return fmt.Errorf("count the rider's coupon uses: %w", err)
-	}
-
-	if uses >= coupon.PerRiderLimit {
-		return ErrQuoteCouponUnavailable
-	}
-
-	return nil
 }
 
 func (s *service) ReleaseQuote(ctx context.Context, quoteID, tripID string) error {
@@ -193,6 +167,23 @@ func (s *service) ReleaseQuote(ctx context.Context, quoteID, tripID string) erro
 
 	if err := s.repository.ReleaseQuote(ctx, quoteID, tripID); err != nil {
 		return fmt.Errorf("release quote: %w", err)
+	}
+
+	return nil
+}
+
+func (s *service) ReleaseTripCoupon(ctx context.Context, tripID string) error {
+	tripID = strings.TrimSpace(tripID)
+	if tripID == "" {
+		return ErrTripIDRequired
+	}
+
+	if !looksLikeUUID(tripID) {
+		return nil
+	}
+
+	if err := s.repository.ReleaseTripCoupon(ctx, tripID); err != nil {
+		return fmt.Errorf("release the trip's coupon: %w", err)
 	}
 
 	return nil

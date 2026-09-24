@@ -15,6 +15,7 @@ import (
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/events"
 	outboxapp "github.com/7akoom/ride-platform/services/pricing-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
+	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/promotions"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/tariffs"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/config"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/infrastructure/clients"
@@ -271,7 +272,8 @@ func run() int {
 		pricing.WithQuoteTTL(quoteTTL),
 	)
 	tariffService := tariffs.NewService(pricingRepository, locationClient)
-	pricingHandler := grpcserver.NewPricingHandler(pricingService, tariffService, logger)
+	promotionService := promotions.NewService(pricingRepository, locationClient)
+	pricingHandler := grpcserver.NewPricingHandler(pricingService, tariffService, promotionService, logger)
 
 	eventHandler := events.NewHandler(
 		pricingService,

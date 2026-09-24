@@ -36,8 +36,6 @@ var exemptMethods = map[string]struct{}{
 var methodAccess = map[string]accessLevel{
 	"/ride.pricing.v1.PricingService/EstimateFare":  accessOwner,
 	"/ride.pricing.v1.PricingService/CalculateFare": accessInternal,
-	"/ride.pricing.v1.PricingService/CreateCoupon":  accessInternal,
-	"/ride.pricing.v1.PricingService/GetCoupon":     accessInternal,
 
 	"/ride.pricing.v1.PricingService/QuoteTrip":    accessOwner,
 	"/ride.pricing.v1.PricingService/ClaimQuote":   accessInternal,
@@ -53,10 +51,19 @@ var methodAccess = map[string]accessLevel{
 	"/ride.pricing.v1.PricingService/ListZoneSurges":     accessStaff,
 	"/ride.pricing.v1.PricingService/CreateZoneSurge":    accessStaff,
 	"/ride.pricing.v1.PricingService/EndZoneSurge":       accessStaff,
+
+	"/ride.pricing.v1.PricingService/ListCoupons":             accessStaff,
+	"/ride.pricing.v1.PricingService/CreateCoupon":            accessStaff,
+	"/ride.pricing.v1.PricingService/GetCoupon":               accessStaff,
+	"/ride.pricing.v1.PricingService/UpdateCoupon":            accessStaff,
+	"/ride.pricing.v1.PricingService/ListCouponRedemptions":   accessStaff,
+	"/ride.pricing.v1.PricingService/GetPromotionSettings":    accessStaff,
+	"/ride.pricing.v1.PricingService/UpdatePromotionSettings": accessStaff,
 }
 
 // staffPermissions names the staff permission for every accessStaff method.
-// Prices are one permission: whoever may see them may also set them.
+// Prices are one permission: whoever may see them may also set them; so are
+// promotions (coupons and the automatic discounts).
 var staffPermissions = map[string]string{
 	"/ride.pricing.v1.PricingService/ListRateCards":      permissionPricingManage,
 	"/ride.pricing.v1.PricingService/SetRateCard":        permissionPricingManage,
@@ -68,9 +75,20 @@ var staffPermissions = map[string]string{
 	"/ride.pricing.v1.PricingService/ListZoneSurges":     permissionPricingManage,
 	"/ride.pricing.v1.PricingService/CreateZoneSurge":    permissionPricingManage,
 	"/ride.pricing.v1.PricingService/EndZoneSurge":       permissionPricingManage,
+
+	"/ride.pricing.v1.PricingService/ListCoupons":             permissionPromotionsManage,
+	"/ride.pricing.v1.PricingService/CreateCoupon":            permissionPromotionsManage,
+	"/ride.pricing.v1.PricingService/GetCoupon":               permissionPromotionsManage,
+	"/ride.pricing.v1.PricingService/UpdateCoupon":            permissionPromotionsManage,
+	"/ride.pricing.v1.PricingService/ListCouponRedemptions":   permissionPromotionsManage,
+	"/ride.pricing.v1.PricingService/GetPromotionSettings":    permissionPromotionsManage,
+	"/ride.pricing.v1.PricingService/UpdatePromotionSettings": permissionPromotionsManage,
 }
 
-const permissionPricingManage = "pricing.manage"
+const (
+	permissionPricingManage    = "pricing.manage"
+	permissionPromotionsManage = "promotions.manage"
+)
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver, staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {
 	return newAuthorizationInterceptor(methodAccess, ownerChecks, staffPermissions, resolver, staff)

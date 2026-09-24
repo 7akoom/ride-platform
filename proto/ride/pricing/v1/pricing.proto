@@ -15,8 +15,6 @@ service PricingService {
     };
   }
   rpc CalculateFare(CalculateFareRequest) returns (CalculateFareResponse);
-  rpc CreateCoupon(CreateCouponRequest) returns (CreateCouponResponse);
-  rpc GetCoupon(GetCouponRequest) returns (GetCouponResponse);
 
   // QuoteTrip prices a trip for every vehicle class at once, with how far
   // the nearest free driver of each class is. Each quote holds its price for
@@ -106,12 +104,86 @@ service PricingService {
       body: "*"
     };
   }
+
+  // Coupons (staff, promotions.manage). A rider enters a code when asking
+  // for quotes; each quote says whether it applied (FareBreakdown
+  // coupon_status). A claimed quote holds its coupon until the trip
+  // completes (used) or is cancelled (freed again).
+  rpc ListCoupons(ListCouponsRequest) returns (ListCouponsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/coupons"
+    };
+  }
+  rpc CreateCoupon(CreateCouponRequest) returns (CreateCouponResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/coupons"
+      body: "*"
+    };
+  }
+  rpc GetCoupon(GetCouponRequest) returns (GetCouponResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/coupons/{code}"
+    };
+  }
+  // UpdateCoupon changes what may change once riders use a coupon: its
+  // description, end, limits, minimum fare, and whether it is on. The code,
+  // the discount and where it applies never change (make a new coupon).
+  rpc UpdateCoupon(UpdateCouponRequest) returns (CreateCouponResponse) {
+    option (google.api.http) = {
+      patch: "/v1/admin/coupons/{code}"
+      body: "*"
+    };
+  }
+  // ListCouponRedemptions is a coupon's use, newest first.
+  rpc ListCouponRedemptions(ListCouponRedemptionsRequest) returns (ListCouponRedemptionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/coupons/{code}/redemptions"
+    };
+  }
+
+  // The automatic discounts (staff, promotions.manage): on a rider's first
+  // trip and on every Nth one. Only the largest discount applies, coupon or
+  // automatic, never two.
+  rpc GetPromotionSettings(GetPromotionSettingsRequest) returns (PromotionSettingsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/promotion-settings"
+    };
+  }
+  rpc UpdatePromotionSettings(UpdatePromotionSettingsRequest) returns (PromotionSettingsResponse) {
+    option (google.api.http) = {
+      put: "/v1/admin/promotion-settings"
+      body: "*"
+    };
+  }
 }
 
 enum DiscountType {
   DISCOUNT_TYPE_UNSPECIFIED = 0;
   DISCOUNT_TYPE_PERCENTAGE = 1;
   DISCOUNT_TYPE_FIXED_AMOUNT = 2;
+}
+
+// CouponStatus says what became of the code a rider entered.
+enum CouponStatus {
+  // No code was entered.
+  COUPON_STATUS_UNSPECIFIED = 0;
+  COUPON_STATUS_APPLIED = 1;
+  COUPON_STATUS_NOT_FOUND = 2;
+  // Staff turned it off.
+  COUPON_STATUS_ENDED = 3;
+  COUPON_STATUS_NOT_STARTED = 4;
+  COUPON_STATUS_EXPIRED = 5;
+  // Every use is taken.
+  COUPON_STATUS_USED_UP = 6;
+  // This rider used it as many times as allowed.
+  COUPON_STATUS_ALREADY_USED = 7;
+  COUPON_STATUS_NOT_IN_AREA = 8;
+  COUPON_STATUS_NOT_FOR_CLASS = 9;
+  COUPON_STATUS_NEW_RIDERS_ONLY = 10;
+  COUPON_STATUS_BELOW_MINIMUM = 11;
+  // The coupon is valid, but a larger discount (first ride, loyalty)
+  // applies instead: discounts never add up.
+  COUPON_STATUS_BETTER_DISCOUNT = 12;
 }
 
 message Coordinates {
@@ -180,6 +252,9 @@ message FareBreakdown {
   // trip, or for a cancelled trip cancellation / no_show: then total is the
   // fee and the other amounts are zero.
   string kind = 20;
+  // What became of the coupon code in the request (unspecified when there
+  // was none).
+  CouponStatus coupon_status = 21;
 }
 
 message EstimateFareRequest {
@@ -211,6 +286,12 @@ message CalculateFareResponse {
   FareBreakdown fare = 1;
 }
 
+// CreateCouponRequest: code is 3-40 letters, digits, "-" or "_" (stored
+// upper-case). A percentage is 0-100 (at most 2 decimals) and may have a
+// max_discount_amount; a fixed amount is money off. valid_from defaults to
+// now; valid_until is required. max_redemptions 0 means unlimited;
+// per_rider_limit defaults to 1. city_id or zone_id (not both) limit where
+// the pickup may be; vehicle_classes (empty: all) which classes.
 message CreateCouponRequest {
   string code = 1;
   DiscountType discount_type = 2;
@@ -220,6 +301,13 @@ message CreateCouponRequest {
   int32 max_redemptions = 6;
   int32 per_rider_limit = 7;
   string minimum_fare_amount = 8;
+  string description = 9;
+  string max_discount_amount = 10;
+  string city_id = 11;
+  string zone_id = 12;
+  repeated string vehicle_classes = 13;
+  // Only riders who never completed a trip.
+  bool new_riders_only = 14;
 }
 
 message Coupon {
@@ -229,10 +317,28 @@ message Coupon {
   google.protobuf.Timestamp valid_from = 4;
   google.protobuf.Timestamp valid_until = 5;
   int32 max_redemptions = 6;
+  // Uses held: redeemed by completed trips plus reserved by trips under way.
   int32 redemption_count = 7;
   int32 per_rider_limit = 8;
   string minimum_fare_amount = 9;
   bool active = 10;
+  string id = 11;
+  string description = 12;
+  string max_discount_amount = 13;
+  string city_id = 14;
+  string zone_id = 15;
+  repeated string vehicle_classes = 16;
+  bool new_riders_only = 17;
+  string created_by = 18;
+  string updated_by = 19;
+  google.protobuf.Timestamp created_at = 20;
+  google.protobuf.Timestamp updated_at = 21;
+  // running, scheduled, expired, used_up or ended (turned off).
+  string state = 22;
+  // On a single coupon: how many completed trips used it and the discount
+  // they got in total.
+  int32 redeemed_count = 23;
+  string discount_given = 24;
 }
 
 message CreateCouponResponse {
@@ -245,6 +351,86 @@ message GetCouponRequest {
 
 message GetCouponResponse {
   Coupon coupon = 1;
+}
+
+// ListCouponsRequest: state is running, scheduled or finished (expired,
+// used up or turned off); empty lists all. query matches the start of the
+// code. Newest first.
+message ListCouponsRequest {
+  string state = 1;
+  string query = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+message ListCouponsResponse {
+  repeated Coupon coupons = 1;
+  string next_page_token = 2;
+}
+
+// UpdateCouponRequest: only the fields that are set change. valid_until must
+// stay after valid_from; max_redemptions 0 means unlimited.
+message UpdateCouponRequest {
+  string code = 1;
+  optional string description = 2;
+  google.protobuf.Timestamp valid_until = 3;
+  optional int32 max_redemptions = 4;
+  optional int32 per_rider_limit = 5;
+  optional string minimum_fare_amount = 6;
+  optional bool active = 7;
+}
+
+message ListCouponRedemptionsRequest {
+  string code = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// CouponRedemption is one trip's hold on a coupon: reserved while the trip
+// is under way, redeemed when it completed, released when it was cancelled
+// or never created.
+message CouponRedemption {
+  string id = 1;
+  string rider_id = 2;
+  string trip_id = 3;
+  string quote_id = 4;
+  string status = 5;
+  string discount_amount = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp released_at = 8;
+}
+
+message ListCouponRedemptionsResponse {
+  repeated CouponRedemption redemptions = 1;
+  string next_page_token = 2;
+}
+
+message GetPromotionSettingsRequest {}
+
+// PromotionSettings: a percent of 0 turns that discount off, loyalty_every 0
+// too (otherwise 2-100: every Nth completed trip). A max amount (empty: no
+// cap) limits the discount.
+message PromotionSettings {
+  string first_ride_percent = 1;
+  string first_ride_max_amount = 2;
+  int32 loyalty_every = 3;
+  string loyalty_percent = 4;
+  string loyalty_max_amount = 5;
+  string updated_by = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// UpdatePromotionSettingsRequest replaces the settings.
+message UpdatePromotionSettingsRequest {
+  string first_ride_percent = 1;
+  string first_ride_max_amount = 2;
+  int32 loyalty_every = 3;
+  string loyalty_percent = 4;
+  string loyalty_max_amount = 5;
+}
+
+message PromotionSettingsResponse {
+  PromotionSettings settings = 1;
 }
 
 // --- Quotes ----------------------------------------------------------------

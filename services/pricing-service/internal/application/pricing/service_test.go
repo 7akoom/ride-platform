@@ -39,10 +39,16 @@ type fakeRepository struct {
 	quotingRiders int
 
 	couponsByCode map[string]Coupon
-	createCoupon  *Coupon
-	createErr     error
 
 	riderRedemptions map[string]int // couponID -> count
+
+	// promotionSettings nil means the defaults.
+	promotionSettings *PromotionSettings
+
+	// reservedCoupons is the coupon each trip holds (ClaimQuote reserves
+	// it), and releasedTrips the trips ReleaseTripCoupon freed.
+	reservedCoupons map[string]string
+	releasedTrips   []string
 
 	completedTripCount int
 
@@ -52,6 +58,9 @@ type fakeRepository struct {
 
 	persistFareCalls []PersistFareInput
 	persistFareErr   error
+	// couponUnavailable makes PersistFare refuse a fare with a coupon, as
+	// the repository does when no use of it is left.
+	couponUnavailable bool
 
 	quotes     map[string]Quote
 	savedCount int
@@ -66,6 +75,7 @@ func newFakeRepository() *fakeRepository {
 		configsByZone:    map[string]Config{},
 		configsByCity:    map[string]Config{},
 		quotes:           map[string]Quote{},
+		reservedCoupons:  map[string]string{},
 	}
 }
 
@@ -132,18 +142,29 @@ func (r *fakeRepository) FindCouponByID(_ context.Context, id string) (Coupon, e
 	return Coupon{}, ErrCouponNotFound
 }
 
-func (r *fakeRepository) CreateCoupon(_ context.Context, input CreateCouponInput) (Coupon, error) {
-	if r.createErr != nil {
-		return Coupon{}, r.createErr
-	}
-	if r.createCoupon != nil {
-		return *r.createCoupon, nil
-	}
-	return Coupon{Code: input.Code, DiscountType: input.DiscountType, DiscountValue: input.DiscountValue}, nil
-}
-
 func (r *fakeRepository) RiderRedemptionCount(_ context.Context, couponID, _ string) (int, error) {
 	return r.riderRedemptions[couponID], nil
+}
+
+func (r *fakeRepository) GetPromotionSettings(_ context.Context) (PromotionSettings, error) {
+	if r.promotionSettings != nil {
+		return *r.promotionSettings, nil
+	}
+	return DefaultPromotionSettings(), nil
+}
+
+// releaseCoupon mirrors the repository: a trip's reserved use is freed.
+func (r *fakeRepository) releaseCoupon(tripID string) {
+	if couponID, ok := r.reservedCoupons[tripID]; ok {
+		delete(r.reservedCoupons, tripID)
+		r.riderRedemptions[couponID]--
+	}
+}
+
+func (r *fakeRepository) ReleaseTripCoupon(_ context.Context, tripID string) error {
+	r.releasedTrips = append(r.releasedTrips, tripID)
+	r.releaseCoupon(tripID)
+	return nil
 }
 
 func (r *fakeRepository) GetRiderCompletedTripCount(_ context.Context, _ string) (int, error) {
@@ -159,6 +180,9 @@ func (r *fakeRepository) FindFareByTripID(_ context.Context, _ string) (Fare, bo
 
 func (r *fakeRepository) PersistFare(_ context.Context, input PersistFareInput) (Fare, error) {
 	r.persistFareCalls = append(r.persistFareCalls, input)
+	if r.couponUnavailable && input.Coupon != nil {
+		return Fare{}, ErrCouponUnavailable
+	}
 	if r.persistFareErr != nil {
 		return Fare{}, r.persistFareErr
 	}
@@ -199,6 +223,21 @@ func (r *fakeRepository) ClaimQuote(_ context.Context, id, riderID, tripID strin
 	case !now.Before(q.ExpiresAt):
 		return Quote{}, ErrQuoteExpired
 	}
+	// Mirrors the repository: the coupon must still be on offer with a use
+	// left for the rider, and one use is reserved for the trip.
+	if q.Coupon != nil {
+		coupon, found := Coupon{}, false
+		for _, c := range r.couponsByCode {
+			if c.ID == q.Coupon.CouponID {
+				coupon, found = c, true
+			}
+		}
+		if !found || !coupon.IsCurrentlyValid(now) || r.riderRedemptions[coupon.ID] >= coupon.PerRiderLimit {
+			return Quote{}, ErrQuoteCouponUnavailable
+		}
+		r.riderRedemptions[coupon.ID]++
+		r.reservedCoupons[tripID] = coupon.ID
+	}
 	q.ClaimedTripID = tripID
 	r.quotes[id] = q
 	return q, nil
@@ -209,6 +248,7 @@ func (r *fakeRepository) ReleaseQuote(_ context.Context, id, tripID string) erro
 	if q, ok := r.quotes[id]; ok && q.ClaimedTripID == tripID {
 		q.ClaimedTripID = ""
 		r.quotes[id] = q
+		r.releaseCoupon(tripID)
 	}
 	return nil
 }
@@ -552,7 +592,7 @@ func TestService_EstimateFare_AppliesFirstRideDiscountWhenNoTripsYet(t *testing.
 	}
 
 	chargeable := got.Subtotal.Add(got.SurgeAmount)
-	wantDiscount := chargeable.Mul(firstRideDiscountPercent).Div(decimal.NewFromInt(100))
+	wantDiscount := chargeable.Mul(DefaultPromotionSettings().FirstRidePercent).Div(decimal.NewFromInt(100))
 	if !got.DiscountAmount.Equal(wantDiscount) {
 		t.Fatalf("got discount %v, want %v", got.DiscountAmount, wantDiscount)
 	}
@@ -560,7 +600,7 @@ func TestService_EstimateFare_AppliesFirstRideDiscountWhenNoTripsYet(t *testing.
 
 func TestService_EstimateFare_AppliesLoyaltyDiscountOnNthRide(t *testing.T) {
 	h := newHarness()
-	h.repo.completedTripCount = loyaltyRideInterval - 1 // this fare would complete the 10th ride
+	h.repo.completedTripCount = DefaultPromotionSettings().LoyaltyEvery - 1 // this fare would complete the 10th ride
 	svc := h.service()
 
 	got, err := svc.EstimateFare(context.Background(), validEstimateInput())
@@ -603,9 +643,7 @@ func TestService_EstimateFare_CouponWinsOverFirstRideDiscountWhenLarger(t *testi
 	}
 	svc := h.service()
 
-	// evaluateCoupon looks the code up exactly as given (just trimmed) —
-	// unlike CreateCoupon/GetCoupon, it does not upper-case it — so use
-	// the same casing the coupon was stored under above.
+	// Codes are stored upper-case; the rider's code is upper-cased.
 	input := validEstimateInput()
 	input.CouponCode = "BIG70"
 
@@ -843,79 +881,5 @@ func TestService_CalculateFare_PersistsANewFareOnce(t *testing.T) {
 	}
 	if h.repo.persistFareCalls[0].TripID != "trip-1" {
 		t.Fatalf("unexpected PersistFare input: %+v", h.repo.persistFareCalls[0])
-	}
-}
-
-// --- CreateCoupon / GetCoupon -----------------------------------------------
-
-func TestService_CreateCoupon_ValidationErrors(t *testing.T) {
-	validFrom := time.Now()
-	validUntil := validFrom.Add(24 * time.Hour)
-
-	cases := []struct {
-		name    string
-		input   CreateCouponInput
-		wantErr error
-	}{
-		{"empty code", CreateCouponInput{Code: " ", DiscountType: DiscountFixed, DiscountValue: decimal.NewFromInt(100), ValidFrom: validFrom, ValidUntil: validUntil}, ErrCouponCodeRequired},
-		{"invalid discount type", CreateCouponInput{Code: "X", DiscountType: "bogus", DiscountValue: decimal.NewFromInt(100), ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountType},
-		{"percentage over 100", CreateCouponInput{Code: "X", DiscountType: DiscountPercentage, DiscountValue: decimal.NewFromInt(101), ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountValue},
-		{"percentage zero", CreateCouponInput{Code: "X", DiscountType: DiscountPercentage, DiscountValue: decimal.Zero, ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountValue},
-		{"fixed amount zero", CreateCouponInput{Code: "X", DiscountType: DiscountFixed, DiscountValue: decimal.Zero, ValidFrom: validFrom, ValidUntil: validUntil}, ErrInvalidDiscountValue},
-		{"validity window backwards", CreateCouponInput{Code: "X", DiscountType: DiscountFixed, DiscountValue: decimal.NewFromInt(100), ValidFrom: validUntil, ValidUntil: validFrom}, ErrInvalidValidityWindow},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			h := newHarness()
-			svc := h.service()
-
-			_, err := svc.CreateCoupon(context.Background(), tc.input)
-			if !errors.Is(err, tc.wantErr) {
-				t.Fatalf("got %v, want %v", err, tc.wantErr)
-			}
-		})
-	}
-}
-
-func TestService_CreateCoupon_NormalizesCodeAndDefaultsPerRiderLimit(t *testing.T) {
-	h := newHarness()
-	svc := h.service()
-
-	validFrom := time.Now()
-	_, err := svc.CreateCoupon(context.Background(), CreateCouponInput{
-		Code:          "  save10  ",
-		DiscountType:  DiscountPercentage,
-		DiscountValue: decimal.NewFromInt(10),
-		ValidFrom:     validFrom,
-		ValidUntil:    validFrom.Add(time.Hour),
-		PerRiderLimit: 0, // should default to 1
-	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
-func TestService_GetCoupon_NormalizesCodeToUpperCase(t *testing.T) {
-	h := newHarness()
-	h.repo.couponsByCode["SAVE10"] = Coupon{Code: "SAVE10"}
-	svc := h.service()
-
-	got, err := svc.GetCoupon(context.Background(), "  save10  ")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if got.Code != "SAVE10" {
-		t.Fatalf("got %+v", got)
-	}
-}
-
-func TestService_GetCoupon_EmptyCode(t *testing.T) {
-	h := newHarness()
-	svc := h.service()
-
-	_, err := svc.GetCoupon(context.Background(), "   ")
-	if !errors.Is(err, ErrCouponCodeRequired) {
-		t.Fatalf("got %v, want ErrCouponCodeRequired", err)
 	}
 }

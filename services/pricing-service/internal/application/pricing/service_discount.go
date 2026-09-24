@@ -2,134 +2,193 @@ package pricing
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/shopspring/decimal"
 )
 
-// These are simple fixed policies for v1 — a real system would likely
-// make them configurable per deployment the same way pricing_configs
-// is, but that's more surface area than this milestone needs. Easy to
-// find and adjust here, or promote to a config table later.
-var (
-	firstRideDiscountPercent = decimal.NewFromInt(50)
-	loyaltyDiscountPercent   = decimal.NewFromInt(20)
-)
+// promotions is what a rider's discounts depend on, read once per request
+// whatever the number of classes priced.
+type promotions struct {
+	settings       PromotionSettings
+	completedTrips int
 
-const loyaltyRideInterval = 10 // every 10th completed ride
+	// code is the code the rider entered (upper-cased), empty for none;
+	// coupon is that coupon when it exists, and riderUses how many of its
+	// uses this rider holds.
+	code        string
+	coupon      Coupon
+	couponFound bool
+	riderUses   int
+}
+
+// NormalizeCouponCode is how a code is stored and looked up: trimmed and
+// upper-case.
+func NormalizeCouponCode(code string) string {
+	return strings.ToUpper(strings.TrimSpace(code))
+}
+
+func (s *service) readPromotions(ctx context.Context, riderID, couponCode string) (promotions, error) {
+	settings, err := s.repository.GetPromotionSettings(ctx)
+	if err != nil {
+		return promotions{}, fmt.Errorf("read promotion settings: %w", err)
+	}
+
+	completed, err := s.repository.GetRiderCompletedTripCount(ctx, riderID)
+	if err != nil {
+		return promotions{}, fmt.Errorf("read the rider's completed trips: %w", err)
+	}
+
+	p := promotions{settings: settings, completedTrips: completed, code: NormalizeCouponCode(couponCode)}
+	if p.code == "" {
+		return p, nil
+	}
+
+	coupon, err := s.repository.FindCouponByCode(ctx, p.code)
+
+	switch {
+	case errors.Is(err, ErrCouponNotFound):
+		// An unknown code never fails the price: the rider is told.
+		return p, nil
+	case err != nil:
+		return promotions{}, fmt.Errorf("read coupon: %w", err)
+	}
+
+	uses, err := s.repository.RiderRedemptionCount(ctx, coupon.ID, riderID)
+	if err != nil {
+		return promotions{}, fmt.Errorf("count the rider's coupon uses: %w", err)
+	}
+
+	p.coupon, p.couponFound, p.riderUses = coupon, true, uses
+
+	return p, nil
+}
 
 type selectedDiscount struct {
 	Type   DiscountType
 	Label  string
 	Amount decimal.Decimal
 	Coupon *AppliedCoupon // set only when a coupon was the winning discount
+	// CouponStatus is what became of the rider's code.
+	CouponStatus CouponStatus
 }
 
 // selectBestDiscount evaluates every discount the rider might qualify
 // for and returns only the single largest one — coupon, first-ride, and
 // loyalty discounts are never stacked together. This is a deliberate
 // anti-abuse choice: stacking would let a promo-hunting rider combine a
-// coupon with a first-ride discount for a near-free trip.
-func (s *service) selectBestDiscount(
-	ctx context.Context,
-	riderID string,
-	couponCode string,
-	chargeableAmount decimal.Decimal,
-) (selectedDiscount, error) {
+// coupon with a first-ride discount for a near-free trip. A coupon wins a
+// tie.
+func selectBestDiscount(p promotions, zone ServiceZone, class string, chargeable decimal.Decimal, now time.Time) selectedDiscount {
 	best := selectedDiscount{Type: DiscountNone, Amount: decimal.Zero}
 
-	if trimmed := strings.TrimSpace(couponCode); trimmed != "" {
-		candidate, err := s.evaluateCoupon(ctx, trimmed, riderID, chargeableAmount)
-		if err != nil {
-			return selectedDiscount{}, err
-		}
+	couponAmount, status := couponDiscount(p, zone, class, chargeable, now)
+	best.CouponStatus = status
 
-		if candidate.Amount.GreaterThan(best.Amount) {
-			best = candidate
-		}
+	if status == CouponStatusApplied {
+		best.Type = p.coupon.DiscountType
+		best.Label = "Coupon: " + p.coupon.Code
+		best.Amount = couponAmount
+		best.Coupon = &AppliedCoupon{CouponID: p.coupon.ID, DiscountAmount: couponAmount}
 	}
 
-	completedTrips, err := s.repository.GetRiderCompletedTripCount(ctx, riderID)
-	if err != nil {
-		return selectedDiscount{}, err
+	label, automatic := automaticDiscount(p, chargeable)
+	if automatic.GreaterThan(best.Amount) {
+		if status == CouponStatusApplied {
+			best.CouponStatus = CouponStatusBetterDiscount
+		}
+
+		best.Type = DiscountPercentage
+		best.Label = label
+		best.Amount = automatic
+		best.Coupon = nil
 	}
 
-	if completedTrips == 0 {
-		amount := chargeableAmount.Mul(firstRideDiscountPercent).Div(decimal.NewFromInt(100))
-
-		if amount.GreaterThan(best.Amount) {
-			best = selectedDiscount{
-				Type:   DiscountPercentage,
-				Label:  "First ride discount",
-				Amount: amount,
-			}
-		}
-	} else if (completedTrips+1)%loyaltyRideInterval == 0 {
-		// +1 because this fare is for the trip currently being
-		// completed, which isn't counted yet — this check is "is the
-		// trip about to complete the Nth one".
-		amount := chargeableAmount.Mul(loyaltyDiscountPercent).Div(decimal.NewFromInt(100))
-
-		if amount.GreaterThan(best.Amount) {
-			best = selectedDiscount{
-				Type:   DiscountPercentage,
-				Label:  "Loyalty discount",
-				Amount: amount,
-			}
-		}
-	}
-
-	return best, nil
+	return best
 }
 
-func (s *service) evaluateCoupon(
-	ctx context.Context,
-	code string,
-	riderID string,
-	chargeableAmount decimal.Decimal,
-) (selectedDiscount, error) {
-	coupon, err := s.repository.FindCouponByCode(ctx, code)
-	if err != nil {
-		return selectedDiscount{}, err
+// couponDiscount is what the rider's coupon takes off, and why nothing
+// when it takes nothing off.
+func couponDiscount(p promotions, zone ServiceZone, class string, chargeable decimal.Decimal, now time.Time) (decimal.Decimal, CouponStatus) {
+	if p.code == "" {
+		return decimal.Zero, CouponStatusNone
 	}
 
-	if !coupon.IsCurrentlyValid(nowFunc()) {
-		return selectedDiscount{}, nil
+	if !p.couponFound {
+		return decimal.Zero, CouponStatusNotFound
 	}
 
-	if chargeableAmount.LessThan(coupon.MinimumFareAmount) {
-		return selectedDiscount{}, nil
+	c := p.coupon
+
+	switch c.State(now) {
+	case CouponStateEnded:
+		return decimal.Zero, CouponStatusEnded
+	case CouponStateExpired:
+		return decimal.Zero, CouponStatusExpired
+	case CouponStateUsedUp:
+		return decimal.Zero, CouponStatusUsedUp
+	case CouponStateScheduled:
+		return decimal.Zero, CouponStatusNotStarted
 	}
 
-	riderUses, err := s.repository.RiderRedemptionCount(ctx, coupon.ID, riderID)
-	if err != nil {
-		return selectedDiscount{}, err
-	}
-
-	if riderUses >= coupon.PerRiderLimit {
-		return selectedDiscount{}, nil
+	switch {
+	case c.ZoneID != "" && c.ZoneID != zone.ZoneID, c.CityID != "" && c.CityID != zone.CityID:
+		return decimal.Zero, CouponStatusNotInArea
+	case !c.AppliesToClass(class):
+		return decimal.Zero, CouponStatusNotForClass
+	case c.NewRidersOnly && p.completedTrips > 0:
+		return decimal.Zero, CouponStatusNewRidersOnly
+	case p.riderUses >= c.PerRiderLimit:
+		return decimal.Zero, CouponStatusAlreadyUsed
+	case chargeable.LessThan(c.MinimumFareAmount):
+		return decimal.Zero, CouponStatusBelowMinimum
 	}
 
 	amount := decimal.Zero
 
-	switch coupon.DiscountType {
+	switch c.DiscountType {
 	case DiscountPercentage:
-		amount = chargeableAmount.Mul(coupon.DiscountValue).Div(decimal.NewFromInt(100))
+		amount = capped(chargeable.Mul(c.DiscountValue).Div(hundred), c.MaxDiscountAmount)
 	case DiscountFixed:
-		amount = coupon.DiscountValue
+		amount = c.DiscountValue
 	}
 
-	if amount.GreaterThan(chargeableAmount) {
-		amount = chargeableAmount
+	return decimal.Min(amount, chargeable), CouponStatusApplied
+}
+
+// automaticDiscount is the first-ride or the loyalty discount the rider
+// has on this trip, if any.
+func automaticDiscount(p promotions, chargeable decimal.Decimal) (string, decimal.Decimal) {
+	settings := p.settings
+
+	if p.completedTrips == 0 {
+		if !settings.FirstRidePercent.IsPositive() {
+			return "", decimal.Zero
+		}
+
+		amount := capped(chargeable.Mul(settings.FirstRidePercent).Div(hundred), settings.FirstRideMaxAmount)
+
+		return "First ride discount", decimal.Min(amount, chargeable)
 	}
 
-	return selectedDiscount{
-		Type:   coupon.DiscountType,
-		Label:  "Coupon: " + coupon.Code,
-		Amount: amount,
-		Coupon: &AppliedCoupon{
-			CouponID:       coupon.ID,
-			DiscountAmount: amount,
-		},
-	}, nil
+	// +1: this fare is for the trip about to complete, not counted yet —
+	// "is this the Nth one".
+	if settings.LoyaltyEvery > 0 && settings.LoyaltyPercent.IsPositive() && (p.completedTrips+1)%settings.LoyaltyEvery == 0 {
+		amount := capped(chargeable.Mul(settings.LoyaltyPercent).Div(hundred), settings.LoyaltyMaxAmount)
+
+		return "Loyalty discount", decimal.Min(amount, chargeable)
+	}
+
+	return "", decimal.Zero
+}
+
+func capped(amount decimal.Decimal, limit *decimal.Decimal) decimal.Decimal {
+	if limit != nil && amount.GreaterThan(*limit) {
+		return *limit
+	}
+
+	return amount
 }

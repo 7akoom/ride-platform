@@ -251,6 +251,198 @@
         ]
       }
     },
+    "/v1/admin/coupons": {
+      "get": {
+        "summary": "Coupons (staff, promotions.manage). A rider enters a code when asking\nfor quotes; each quote says whether it applied (FareBreakdown\ncoupon_status). A claimed quote holds its coupon until the trip\ncompletes (used) or is cancelled (freed again).",
+        "operationId": "PricingService_ListCoupons",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListCouponsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      },
+      "post": {
+        "operationId": "PricingService_CreateCoupon",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateCouponResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "CreateCouponRequest: code is 3-40 letters, digits, \"-\" or \"_\" (stored\nupper-case). A percentage is 0-100 (at most 2 decimals) and may have a\nmax_discount_amount; a fixed amount is money off. valid_from defaults to\nnow; valid_until is required. max_redemptions 0 means unlimited;\nper_rider_limit defaults to 1. city_id or zone_id (not both) limit where\nthe pickup may be; vehicle_classes (empty: all) which classes.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateCouponRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/admin/coupons/{code}": {
+      "get": {
+        "operationId": "PricingService_GetCoupon",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetCouponResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      },
+      "patch": {
+        "summary": "UpdateCoupon changes what may change once riders use a coupon: its\ndescription, end, limits, minimum fare, and whether it is on. The code,\nthe discount and where it applies never change (make a new coupon).",
+        "operationId": "PricingService_UpdateCoupon",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateCouponResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PricingServiceUpdateCouponBody"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/admin/coupons/{code}/redemptions": {
+      "get": {
+        "summary": "ListCouponRedemptions is a coupon's use, newest first.",
+        "operationId": "PricingService_ListCouponRedemptions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListCouponRedemptionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
     "/v1/admin/drivers": {
       "get": {
         "summary": "ListDrivers lists drivers for the review queue and the admin, newest first,\noptionally by status. Staff with drivers.read, or the internal token.",
@@ -573,6 +765,60 @@
         ],
         "tags": [
           "LocationService"
+        ]
+      }
+    },
+    "/v1/admin/promotion-settings": {
+      "get": {
+        "summary": "The automatic discounts (staff, promotions.manage): on a rider's first\ntrip and on every Nth one. Only the largest discount applies, coupon or\nautomatic, never two.",
+        "operationId": "PricingService_GetPromotionSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PromotionSettingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "PricingService"
+        ]
+      },
+      "put": {
+        "operationId": "PricingService_UpdatePromotionSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PromotionSettingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "UpdatePromotionSettingsRequest replaces the settings.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdatePromotionSettingsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
         ]
       }
     },
@@ -4572,6 +4818,33 @@
         }
       }
     },
+    "PricingServiceUpdateCouponBody": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "maxRedemptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "perRiderLimit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "minimumFareAmount": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        }
+      },
+      "description": "UpdateCouponRequest: only the fields that are set change. valid_until must\nstay after valid_from; max_redemptions 0 means unlimited."
+    },
     "PricingServiceUpdateSurgeRuleBody": {
       "type": "object",
       "properties": {
@@ -5110,6 +5383,149 @@
         }
       }
     },
+    "v1Coupon": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "discountType": {
+          "$ref": "#/definitions/v1DiscountType"
+        },
+        "discountValue": {
+          "type": "string"
+        },
+        "validFrom": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "maxRedemptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "redemptionCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Uses held: redeemed by completed trips plus reserved by trips under way."
+        },
+        "perRiderLimit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "minimumFareAmount": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "maxDiscountAmount": {
+          "type": "string"
+        },
+        "cityId": {
+          "type": "string"
+        },
+        "zoneId": {
+          "type": "string"
+        },
+        "vehicleClasses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "newRidersOnly": {
+          "type": "boolean"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "type": "string",
+          "description": "running, scheduled, expired, used_up or ended (turned off)."
+        },
+        "redeemedCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "On a single coupon: how many completed trips used it and the discount\nthey got in total."
+        },
+        "discountGiven": {
+          "type": "string"
+        }
+      }
+    },
+    "v1CouponRedemption": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "riderId": {
+          "type": "string"
+        },
+        "tripId": {
+          "type": "string"
+        },
+        "quoteId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "discountAmount": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "releasedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "CouponRedemption is one trip's hold on a coupon: reserved while the trip\nis under way, redeemed when it completed, released when it was cancelled\nor never created."
+    },
+    "v1CouponStatus": {
+      "type": "string",
+      "enum": [
+        "COUPON_STATUS_UNSPECIFIED",
+        "COUPON_STATUS_APPLIED",
+        "COUPON_STATUS_NOT_FOUND",
+        "COUPON_STATUS_ENDED",
+        "COUPON_STATUS_NOT_STARTED",
+        "COUPON_STATUS_EXPIRED",
+        "COUPON_STATUS_USED_UP",
+        "COUPON_STATUS_ALREADY_USED",
+        "COUPON_STATUS_NOT_IN_AREA",
+        "COUPON_STATUS_NOT_FOR_CLASS",
+        "COUPON_STATUS_NEW_RIDERS_ONLY",
+        "COUPON_STATUS_BELOW_MINIMUM",
+        "COUPON_STATUS_BETTER_DISCOUNT"
+      ],
+      "default": "COUPON_STATUS_UNSPECIFIED",
+      "description": "CouponStatus says what became of the code a rider entered.\n\n - COUPON_STATUS_UNSPECIFIED: No code was entered.\n - COUPON_STATUS_ENDED: Staff turned it off.\n - COUPON_STATUS_USED_UP: Every use is taken.\n - COUPON_STATUS_ALREADY_USED: This rider used it as many times as allowed.\n - COUPON_STATUS_BETTER_DISCOUNT: The coupon is valid, but a larger discount (first ride, loyalty)\napplies instead: discounts never add up."
+    },
     "v1CreateCityRequest": {
       "type": "object",
       "properties": {
@@ -5127,6 +5543,70 @@
         },
         "center": {
           "$ref": "#/definitions/rideLocationV1Coordinates"
+        }
+      }
+    },
+    "v1CreateCouponRequest": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "discountType": {
+          "$ref": "#/definitions/v1DiscountType"
+        },
+        "discountValue": {
+          "type": "string"
+        },
+        "validFrom": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "maxRedemptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "perRiderLimit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "minimumFareAmount": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "maxDiscountAmount": {
+          "type": "string"
+        },
+        "cityId": {
+          "type": "string"
+        },
+        "zoneId": {
+          "type": "string"
+        },
+        "vehicleClasses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "newRidersOnly": {
+          "type": "boolean",
+          "description": "Only riders who never completed a trip."
+        }
+      },
+      "description": "CreateCouponRequest: code is 3-40 letters, digits, \"-\" or \"_\" (stored\nupper-case). A percentage is 0-100 (at most 2 decimals) and may have a\nmax_discount_amount; a fixed amount is money off. valid_from defaults to\nnow; valid_until is required. max_redemptions 0 means unlimited;\nper_rider_limit defaults to 1. city_id or zone_id (not both) limit where\nthe pickup may be; vehicle_classes (empty: all) which classes."
+    },
+    "v1CreateCouponResponse": {
+      "type": "object",
+      "properties": {
+        "coupon": {
+          "$ref": "#/definitions/v1Coupon"
         }
       }
     },
@@ -5582,6 +6062,10 @@
         "kind": {
           "type": "string",
           "description": "trip, or for a cancelled trip cancellation / no_show: then total is the\nfee and the other amounts are zero."
+        },
+        "couponStatus": {
+          "$ref": "#/definitions/v1CouponStatus",
+          "description": "What became of the coupon code in the request (unspecified when there\nwas none)."
         }
       },
       "description": "Money fields are decimal strings (e.g. \"2451.6\"), never double —\nfloat64 in protobuf would reintroduce exactly the precision problem\nthe underlying NUMERIC columns exist to avoid (same convention as\nwallet.proto). distance_km/duration_minutes stay double: physical\nmeasurements from OSRM, not currency."
@@ -5644,6 +6128,14 @@
         "cancellationRatePercent": {
           "type": "string",
           "title": "decimal string"
+        }
+      }
+    },
+    "v1GetCouponResponse": {
+      "type": "object",
+      "properties": {
+        "coupon": {
+          "$ref": "#/definitions/v1Coupon"
         }
       }
     },
@@ -6008,6 +6500,36 @@
             "type": "object",
             "$ref": "#/definitions/v1City"
           }
+        }
+      }
+    },
+    "v1ListCouponRedemptionsResponse": {
+      "type": "object",
+      "properties": {
+        "redemptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1CouponRedemption"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListCouponsResponse": {
+      "type": "object",
+      "properties": {
+        "coupons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Coupon"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
         }
       }
     },
@@ -6509,6 +7031,43 @@
     },
     "v1ProcessZainCashWebhookResponse": {
       "type": "object"
+    },
+    "v1PromotionSettings": {
+      "type": "object",
+      "properties": {
+        "firstRidePercent": {
+          "type": "string"
+        },
+        "firstRideMaxAmount": {
+          "type": "string"
+        },
+        "loyaltyEvery": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "loyaltyPercent": {
+          "type": "string"
+        },
+        "loyaltyMaxAmount": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "PromotionSettings: a percent of 0 turns that discount off, loyalty_every 0\ntoo (otherwise 2-100: every Nth completed trip). A max amount (empty: no\ncap) limits the discount."
+    },
+    "v1PromotionSettingsResponse": {
+      "type": "object",
+      "properties": {
+        "settings": {
+          "$ref": "#/definitions/v1PromotionSettings"
+        }
+      }
     },
     "v1QuoteTripRequest": {
       "type": "object",
@@ -7694,6 +8253,28 @@
           "format": "date-time"
         }
       }
+    },
+    "v1UpdatePromotionSettingsRequest": {
+      "type": "object",
+      "properties": {
+        "firstRidePercent": {
+          "type": "string"
+        },
+        "firstRideMaxAmount": {
+          "type": "string"
+        },
+        "loyaltyEvery": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "loyaltyPercent": {
+          "type": "string"
+        },
+        "loyaltyMaxAmount": {
+          "type": "string"
+        }
+      },
+      "description": "UpdatePromotionSettingsRequest replaces the settings."
     },
     "v1UpdateRiderProfileResponse": {
       "type": "object",

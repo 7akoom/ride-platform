@@ -123,35 +123,121 @@ type SurgeBreakdown struct {
 }
 
 type Coupon struct {
-	ID                string
-	Code              string
-	DiscountType      DiscountType
-	DiscountValue     decimal.Decimal
+	ID            string
+	Code          string
+	Description   string
+	DiscountType  DiscountType
+	DiscountValue decimal.Decimal
+	// MaxDiscountAmount caps a percentage's discount; nil means no cap.
+	MaxDiscountAmount *decimal.Decimal
 	ValidFrom         time.Time
 	ValidUntil        time.Time
+	// MaxRedemptions nil means unlimited. RedemptionCount is the uses held:
+	// redeemed by completed trips and reserved by trips under way.
 	MaxRedemptions    *int
 	RedemptionCount   int
 	PerRiderLimit     int
 	MinimumFareAmount decimal.Decimal
-	Active            bool
+	// At most one of CityID and ZoneID: where the pickup must be. Empty
+	// VehicleClasses means every class.
+	CityID         string
+	ZoneID         string
+	VehicleClasses []string
+	// NewRidersOnly: only riders who never completed a trip.
+	NewRidersOnly bool
+	Active        bool
+	CreatedBy     string
+	UpdatedBy     string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+// Coupon states, as staff see them.
+const (
+	CouponStateRunning   = "running"
+	CouponStateScheduled = "scheduled"
+	CouponStateExpired   = "expired"
+	CouponStateUsedUp    = "used_up"
+	CouponStateEnded     = "ended"
+)
+
+// State is where the coupon stands at now: turned off, not started, over,
+// every use taken, or running.
+func (c Coupon) State(now time.Time) string {
+	switch {
+	case !c.Active:
+		return CouponStateEnded
+	case now.After(c.ValidUntil):
+		return CouponStateExpired
+	case c.MaxRedemptions != nil && c.RedemptionCount >= *c.MaxRedemptions:
+		return CouponStateUsedUp
+	case now.Before(c.ValidFrom):
+		return CouponStateScheduled
+	default:
+		return CouponStateRunning
+	}
 }
 
 // IsCurrentlyValid checks time window and total-redemption cap only —
 // per-rider usage is checked separately since it needs a DB lookup.
 func (c Coupon) IsCurrentlyValid(now time.Time) bool {
-	if !c.Active {
-		return false
+	return c.State(now) == CouponStateRunning
+}
+
+// AppliesToClass reports whether the coupon may be used for the class.
+func (c Coupon) AppliesToClass(class string) bool {
+	if len(c.VehicleClasses) == 0 {
+		return true
 	}
 
-	if now.Before(c.ValidFrom) || now.After(c.ValidUntil) {
-		return false
+	for _, allowed := range c.VehicleClasses {
+		if allowed == class {
+			return true
+		}
 	}
 
-	if c.MaxRedemptions != nil && c.RedemptionCount >= *c.MaxRedemptions {
-		return false
-	}
+	return false
+}
 
-	return true
+// CouponStatus says what became of the code a rider entered.
+type CouponStatus string
+
+const (
+	CouponStatusNone           CouponStatus = ""
+	CouponStatusApplied        CouponStatus = "applied"
+	CouponStatusNotFound       CouponStatus = "not_found"
+	CouponStatusEnded          CouponStatus = "ended"
+	CouponStatusNotStarted     CouponStatus = "not_started"
+	CouponStatusExpired        CouponStatus = "expired"
+	CouponStatusUsedUp         CouponStatus = "used_up"
+	CouponStatusAlreadyUsed    CouponStatus = "already_used"
+	CouponStatusNotInArea      CouponStatus = "not_in_area"
+	CouponStatusNotForClass    CouponStatus = "not_for_class"
+	CouponStatusNewRidersOnly  CouponStatus = "new_riders_only"
+	CouponStatusBelowMinimum   CouponStatus = "below_minimum"
+	CouponStatusBetterDiscount CouponStatus = "better_discount"
+)
+
+// PromotionSettings are the automatic discounts: on a rider's first
+// completed trip, and on every LoyaltyEvery-th one. A percent of 0 (or
+// LoyaltyEvery 0) turns one off; a max amount (nil: none) caps it.
+type PromotionSettings struct {
+	FirstRidePercent   decimal.Decimal
+	FirstRideMaxAmount *decimal.Decimal
+	LoyaltyEvery       int
+	LoyaltyPercent     decimal.Decimal
+	LoyaltyMaxAmount   *decimal.Decimal
+	UpdatedBy          string
+	UpdatedAt          time.Time
+}
+
+// DefaultPromotionSettings are the discounts before staff change them.
+func DefaultPromotionSettings() PromotionSettings {
+	return PromotionSettings{
+		FirstRidePercent: decimal.NewFromInt(50),
+		LoyaltyEvery:     10,
+		LoyaltyPercent:   decimal.NewFromInt(20),
+	}
 }
 
 // FareBreakdown's money fields are decimal.Decimal, crossing the wire
@@ -187,6 +273,9 @@ type FareBreakdown struct {
 	AppliedDiscountLabel string
 	DiscountAmount       decimal.Decimal
 	Total                decimal.Decimal
+	// CouponStatus is what became of the request's coupon code (none when
+	// there was no code).
+	CouponStatus CouponStatus `json:",omitempty"`
 }
 
 // Fare is the durable record of a calculated (not estimated) fare —

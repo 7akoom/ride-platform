@@ -136,11 +136,51 @@ falls back the same way (at 25 km/h).
 
 ## Discounts: best one wins, never stacked
 
-Three sources are evaluated — coupon code, first-ride, and loyalty
-(every 10th ride) — and only the **single largest** is applied. Discounts
-apply to the **surged** amount. An invalid or unknown coupon code doesn't
-fail the request — the rider still gets a valid price, just without the
-discount.
+Three sources are evaluated — the rider's coupon code, the first-ride
+discount, and the loyalty discount (every Nth completed trip) — and only
+the **single largest** is applied (a coupon wins a tie). Discounts apply to
+the **surged** amount, never to the waiting fee. An invalid or unknown code
+never fails the request: the rider still gets a price, and every breakdown
+says what became of the code (`coupon_status`: applied, not found, ended,
+not started, expired, used up, already used by this rider, not in this
+area, not for this class, new riders only, below the minimum fare, or a
+better discount applied instead).
+
+### Coupons
+
+A coupon is a percentage (with an optional cap on the amount) or a fixed
+amount off, valid between two moments, with an optional total number of
+uses, a number of uses per rider (1 by default), a minimum fare, and
+optionally a city or a zone the pickup must be in, the vehicle classes it is
+for, and "new riders only" (riders who never completed a trip). Codes are
+3-40 letters, digits, `-` and `_`, stored and matched upper-case.
+
+Riders enter a code when asking for quotes; each class's quote says whether
+it applied. Uses are held, not just counted at the end:
+
+```
+quote (priced with the coupon)
+  -> trip requested with it: ClaimQuote reserves one use (under a lock on
+     the coupon: two trips never both get the last one; no use left and
+     the request is refused, the rider asks for a new quote)
+  -> trip completed: the reservation becomes the use (redeemed)
+  -> trip cancelled (trip.cancelled) or never created (ReleaseQuote):
+     the use is released for anyone again
+```
+
+`redemption_count` counts the uses held (reserved and redeemed). Every hold is
+kept in `coupon_redemptions` with its status: the coupon's use log.
+
+Staff change a coupon's description, end, limits, minimum fare and whether it
+is on; the code, the discount and where it applies never change (make a new
+coupon instead), so the use log always means what it says.
+
+### First ride and loyalty
+
+`promotion_settings` (one row, staff-editable): the first-ride percent and
+cap, every how many completed trips the loyalty discount comes and its
+percent and cap. A percent of 0 (or `loyalty_every` 0) turns one off.
+Defaults: 50% off the first ride, 20% off every 10th, no caps.
 
 ## Staff endpoints (`pricing.manage`)
 
@@ -152,9 +192,15 @@ discount.
 | `GET/POST /v1/admin/surge-rules`, `PATCH /v1/admin/surge-rules/{id}`, `POST …:setActive` | Surge by the hour ("HH:MM", local time; a window that ends before it starts runs past midnight). |
 | `GET/POST /v1/admin/zone-surges`, `POST /v1/admin/zone-surges/{id}:end` | Surge on one zone for a while. |
 
-Every call asks staff-service first (fail closed) and is audited there.
-`pricing.manage` is not given to the operations role: only owners hold it
-until they give it to a role of their own.
+| | **`promotions.manage`** |
+| `GET/POST /v1/admin/coupons`, `GET/PATCH /v1/admin/coupons/{code}` | Coupons (list by state and code prefix, paged). |
+| `GET /v1/admin/coupons/{code}/redemptions` | A coupon's use log, newest first. |
+| `GET/PUT /v1/admin/promotion-settings` | The first-ride and loyalty discounts. |
+
+Every call asks staff-service first (fail closed) and is audited there (a
+coupon call with the code as its target). `pricing.manage` and
+`promotions.manage` are not given to the operations role: only owners hold
+them until they give them to a role of their own.
 
 ## Idempotency
 
@@ -189,6 +235,8 @@ trip.
 Migration `00008` seeds a usable IQD rate card and rush-hour rules.
 Migration `00012` adds city cards, fees, quotes and zone surges; existing
 cards keep working with no minimum and no fees until staff set them.
+Migration `00014` adds coupon scopes, caps and the use log statuses, and
+the promotion settings (seeded with the discounts that were built in).
 
 ## Tests
 
@@ -211,4 +259,6 @@ go run ./cmd/pricing-service
 ## Trying it
 
 `scripts/e2e/test-fare-quotes.sh` walks through rate cards, surge, quotes
-and a trip that pays its quote on the real stack.
+and a trip that pays its quote on the real stack;
+`scripts/e2e/test-coupons.sh` through coupons, their uses and the automatic
+discounts.

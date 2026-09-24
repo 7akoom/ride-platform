@@ -13,7 +13,8 @@
 #      fare estimates, push devices and the notification inbox all work for their
 #      owner over HTTP, and answer 403 for everyone else
 #   2. RPCs meant only for other services (Send, FindNearby, CalculateFare,
-#      coupons...) have no route at all
+#      ClaimQuote...) have no route at all (coupons are staff routes, under
+#      /v1/admin)
 #   3. the internal service token is refused at the gateway, and cannot be
 #      smuggled in through a Grpc-Metadata-* header
 #   4. CORS preflight still works
@@ -222,7 +223,7 @@ if [ "$(body_field 'd["removed"]')" = "True" ]; then pass "the device was still 
 echo "==> [7/8] the door is shut for everything else"
 expect_no_route "Send has no route" POST "/v1/notifications" "$T1" '{"recipientType":"RECIPIENT_TYPE_RIDER","recipientId":"x","eventKey":"x"}'
 expect_no_route "FindNearby has no route" POST "/v1/locations:nearby" "$T1" '{}'
-expect_no_route "coupons have no route" GET "/v1/coupons/ANYTHING" "$T1"
+expect_no_route "coupons have no rider route" GET "/v1/coupons/ANYTHING" "$T1"
 expect_no_route "CalculateFare has no route" POST "/v1/fares:calculate" "$T1" '{}'
 expect "an expired token"                               401 GET   "/v1/riders/$RIDER_1" "$TEXPIRED"
 expect "a token that is not a JWT"                      401 GET   "/v1/riders/$RIDER_1" "not-a-token"

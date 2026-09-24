@@ -7,17 +7,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type CreateCouponInput struct {
-	Code              string
-	DiscountType      DiscountType
-	DiscountValue     decimal.Decimal
-	ValidFrom         time.Time
-	ValidUntil        time.Time
-	MaxRedemptions    *int
-	PerRiderLimit     int
-	MinimumFareAmount decimal.Decimal
-}
-
 // AppliedCoupon carries what CalculateFare needs to record a redemption,
 // if a coupon was actually used.
 type AppliedCoupon struct {
@@ -69,15 +58,20 @@ type Repository interface {
 	// the zone since the given moment: the demand side of demand surge.
 	CountQuotingRiders(ctx context.Context, zoneID, excludeRiderID string, since time.Time) (int, error)
 
+	// FindCouponByCode returns ErrCouponNotFound for an unknown code (codes
+	// are stored upper-case).
 	FindCouponByCode(ctx context.Context, code string) (Coupon, error)
 
-	FindCouponByID(ctx context.Context, couponID string) (Coupon, error)
-
-	CreateCoupon(ctx context.Context, input CreateCouponInput) (Coupon, error)
-
-	// RiderRedemptionCount is how many times this rider has already used
-	// this specific coupon — checked against the coupon's per-rider limit.
+	// RiderRedemptionCount is how many uses of the coupon this rider holds
+	// (redeemed and reserved) — checked against its per-rider limit.
 	RiderRedemptionCount(ctx context.Context, couponID, riderID string) (int, error)
+
+	// GetPromotionSettings returns the automatic discounts.
+	GetPromotionSettings(ctx context.Context) (PromotionSettings, error)
+
+	// ReleaseTripCoupon frees the use of a coupon a trip reserved, if it
+	// holds one: the trip was cancelled. Nothing when it holds none.
+	ReleaseTripCoupon(ctx context.Context, tripID string) error
 
 	// GetRiderCompletedTripCount reads the self-contained counter (see
 	// migration 00005) — used for first-ride/loyalty discount checks.
@@ -90,7 +84,9 @@ type Repository interface {
 	FindFareByTripID(ctx context.Context, tripID string) (Fare, bool, error)
 
 	// PersistFare returns ErrFareAlreadyRecorded when the trip already has a
-	// fare (a concurrent call recorded it first).
+	// fare (a concurrent call recorded it first). A fare with a coupon turns
+	// the trip's reservation into a use, or takes a use when the trip holds
+	// none; ErrCouponUnavailable when no use is left (nothing is recorded).
 	PersistFare(ctx context.Context, input PersistFareInput) (Fare, error)
 
 	// SaveQuotes stores the quotes of one QuoteTrip call and returns them
@@ -102,11 +98,15 @@ type Repository interface {
 
 	// ClaimQuote gives the quote to the trip if it is the rider's, has not
 	// expired at now and no other trip has it; claiming it again for the same
-	// trip returns it. Errors: ErrQuoteNotFound (unknown, or another
-	// rider's), ErrQuoteExpired, ErrQuoteAlreadyUsed.
+	// trip returns it. A quote priced with a coupon reserves one of its uses
+	// for the trip in the same transaction. Errors: ErrQuoteNotFound
+	// (unknown, or another rider's), ErrQuoteExpired, ErrQuoteAlreadyUsed,
+	// ErrQuoteCouponUnavailable (the coupon ended or has no use left for
+	// the rider).
 	ClaimQuote(ctx context.Context, quoteID, riderID, tripID string, now time.Time) (Quote, error)
 
-	// ReleaseQuote frees the quote if that trip holds it; otherwise nothing.
+	// ReleaseQuote frees the quote, and the coupon use it reserved, if that
+	// trip holds it; otherwise nothing.
 	ReleaseQuote(ctx context.Context, quoteID, tripID string) error
 
 	// DeleteUnclaimedQuotes removes quotes no trip claimed that expired

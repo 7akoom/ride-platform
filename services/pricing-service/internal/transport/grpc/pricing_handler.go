@@ -7,11 +7,10 @@ import (
 
 	pricingv1 "github.com/7akoom/ride-platform/gen/go/ride/pricing/v1"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
+	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/promotions"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/tariffs"
-	"github.com/shopspring/decimal"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type PricingHandler struct {
@@ -19,12 +18,14 @@ type PricingHandler struct {
 
 	pricingService pricing.Service
 	tariffs        *tariffs.Service
+	promotions     *promotions.Service
 	logger         *slog.Logger
 }
 
 func NewPricingHandler(
 	pricingService pricing.Service,
 	tariffService *tariffs.Service,
+	promotionService *promotions.Service,
 	logger *slog.Logger,
 ) *PricingHandler {
 	if pricingService == nil {
@@ -35,11 +36,15 @@ func NewPricingHandler(
 		panic("tariff service is required")
 	}
 
+	if promotionService == nil {
+		panic("promotion service is required")
+	}
+
 	if logger == nil {
 		panic("logger is required")
 	}
 
-	return &PricingHandler{pricingService: pricingService, tariffs: tariffService, logger: logger}
+	return &PricingHandler{pricingService: pricingService, tariffs: tariffService, promotions: promotionService, logger: logger}
 }
 
 func (h *PricingHandler) EstimateFare(
@@ -103,68 +108,6 @@ func (h *PricingHandler) CalculateFare(
 	return &pricingv1.CalculateFareResponse{Fare: breakdown}, nil
 }
 
-func (h *PricingHandler) CreateCoupon(
-	ctx context.Context,
-	request *pricingv1.CreateCouponRequest,
-) (*pricingv1.CreateCouponResponse, error) {
-	if request == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is required")
-	}
-
-	discountValue, err := parseMoney(request.GetDiscountValue())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "discount_value must be a valid decimal value")
-	}
-
-	minimumFareAmount, err := parseMoney(request.GetMinimumFareAmount())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "minimum_fare_amount must be a valid decimal value")
-	}
-
-	var maxRedemptions *int
-
-	if request.GetMaxRedemptions() > 0 {
-		value := int(request.GetMaxRedemptions())
-		maxRedemptions = &value
-	}
-
-	coupon, err := h.pricingService.CreateCoupon(ctx, pricing.CreateCouponInput{
-		Code:              request.GetCode(),
-		DiscountType:      toDomainDiscountType(request.GetDiscountType()),
-		DiscountValue:     discountValue,
-		ValidFrom:         request.GetValidFrom().AsTime(),
-		ValidUntil:        request.GetValidUntil().AsTime(),
-		MaxRedemptions:    maxRedemptions,
-		PerRiderLimit:     int(request.GetPerRiderLimit()),
-		MinimumFareAmount: minimumFareAmount,
-	})
-	if err != nil {
-		return nil, h.mapPricingError(err)
-	}
-
-	return &pricingv1.CreateCouponResponse{
-		Coupon: toProtoCoupon(coupon),
-	}, nil
-}
-
-func (h *PricingHandler) GetCoupon(
-	ctx context.Context,
-	request *pricingv1.GetCouponRequest,
-) (*pricingv1.GetCouponResponse, error) {
-	if request == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is required")
-	}
-
-	coupon, err := h.pricingService.GetCoupon(ctx, request.GetCode())
-	if err != nil {
-		return nil, h.mapPricingError(err)
-	}
-
-	return &pricingv1.GetCouponResponse{
-		Coupon: toProtoCoupon(coupon),
-	}, nil
-}
-
 // mapPricingError classifies known domain errors into the right gRPC
 // status. Anything unclassified is logged here, server-side, with its
 // real message — then mapped to a generic Internal status for the
@@ -173,12 +116,6 @@ func (h *PricingHandler) GetCoupon(
 // of silent.
 func (h *PricingHandler) mapPricingError(err error) error {
 	switch {
-	case errors.Is(err, pricing.ErrCouponNotFound):
-		return status.Error(codes.NotFound, "coupon not found")
-
-	case errors.Is(err, pricing.ErrCouponAlreadyExists):
-		return status.Error(codes.AlreadyExists, "a coupon with this code already exists")
-
 	case errors.Is(err, pricing.ErrNoActiveConfig):
 		return status.Error(codes.FailedPrecondition, err.Error())
 
@@ -198,10 +135,6 @@ func (h *PricingHandler) mapPricingError(err error) error {
 		errors.Is(err, pricing.ErrTripIDRequired),
 		errors.Is(err, pricing.ErrInvalidLatitude),
 		errors.Is(err, pricing.ErrInvalidLongitude),
-		errors.Is(err, pricing.ErrCouponCodeRequired),
-		errors.Is(err, pricing.ErrInvalidDiscountType),
-		errors.Is(err, pricing.ErrInvalidDiscountValue),
-		errors.Is(err, pricing.ErrInvalidValidityWindow),
 		errors.Is(err, pricing.ErrInvalidVehicleClass),
 		errors.Is(err, pricing.ErrQuoteIDRequired):
 		return status.Error(codes.InvalidArgument, err.Error())
@@ -251,19 +184,6 @@ func toProtoDiscountType(t pricing.DiscountType) pricingv1.DiscountType {
 	}
 }
 
-// parseMoney converts the wire's decimal string into exact decimal.
-// Money crosses the wire as a string, never a float — a float64/double
-// field in protobuf would reintroduce exactly the precision problem
-// the NUMERIC columns exist to avoid (same helper as wallet-service's
-// own transport layer).
-func parseMoney(value string) (decimal.Decimal, error) {
-	if value == "" {
-		return decimal.Zero, nil
-	}
-
-	return decimal.NewFromString(value)
-}
-
 func toProtoFareBreakdown(b pricing.FareBreakdown) *pricingv1.FareBreakdown {
 	return &pricingv1.FareBreakdown{
 		CurrencyCode:          b.CurrencyCode,
@@ -293,26 +213,6 @@ func toProtoFareBreakdown(b pricing.FareBreakdown) *pricingv1.FareBreakdown {
 		AppliedDiscountLabel: b.AppliedDiscountLabel,
 		DiscountAmount:       b.DiscountAmount.String(),
 		Total:                b.Total.String(),
-	}
-}
-
-func toProtoCoupon(c pricing.Coupon) *pricingv1.Coupon {
-	maxRedemptions := int32(0)
-
-	if c.MaxRedemptions != nil {
-		maxRedemptions = int32(*c.MaxRedemptions)
-	}
-
-	return &pricingv1.Coupon{
-		Code:              c.Code,
-		DiscountType:      toProtoDiscountType(c.DiscountType),
-		DiscountValue:     c.DiscountValue.String(),
-		ValidFrom:         timestamppb.New(c.ValidFrom),
-		ValidUntil:        timestamppb.New(c.ValidUntil),
-		MaxRedemptions:    maxRedemptions,
-		RedemptionCount:   int32(c.RedemptionCount),
-		PerRiderLimit:     int32(c.PerRiderLimit),
-		MinimumFareAmount: c.MinimumFareAmount.String(),
-		Active:            c.Active,
+		CouponStatus:         toProtoCouponStatus(b.CouponStatus),
 	}
 }

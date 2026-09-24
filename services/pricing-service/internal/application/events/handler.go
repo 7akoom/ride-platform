@@ -227,6 +227,12 @@ func (h *Handler) chargeCancellation(ctx context.Context, tripID string, trip Tr
 		return nil
 	}
 
+	// A cancelled trip never uses the coupon its quote reserved: the use is
+	// freed for the rider (and everyone else) again.
+	if err := h.pricer.ReleaseTripCoupon(ctx, tripID); err != nil {
+		return h.retryLater(ctx, tripID, err)
+	}
+
 	fare, charged, err := h.pricer.ChargeCancellation(ctx, pricing.CancellationInput{
 		TripID:       tripID,
 		RiderID:      trip.RiderID,

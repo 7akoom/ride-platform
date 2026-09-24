@@ -27,6 +27,15 @@ type fakePricer struct {
 	calls         []pricing.CalculateFareInput
 	cancellations []pricing.CancellationInput
 	err           error
+
+	released   []string
+	releaseErr error
+}
+
+func (f *fakePricer) ReleaseTripCoupon(_ context.Context, tripID string) error {
+	f.released = append(f.released, tripID)
+
+	return f.releaseErr
 }
 
 func (f *fakePricer) CalculateFare(

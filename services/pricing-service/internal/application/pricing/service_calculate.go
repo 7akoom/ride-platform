@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/shopspring/decimal"
 )
 
 func (s *service) EstimateFare(
@@ -68,6 +70,13 @@ func (s *service) CalculateFare(
 	addWaiting(&persist.Breakdown, card, input.ArrivedAt, input.StartedAt, s.fareRoundingIncrement)
 
 	persisted, err := s.repository.PersistFare(ctx, persist)
+	if errors.Is(err, ErrCouponUnavailable) {
+		// The trip held no use of its coupon (quoted before coupons were
+		// reserved, or priced now from a code) and none is left: it is
+		// charged without the coupon rather than never charged.
+		dropCoupon(&persist, card, input, s.fareRoundingIncrement)
+		persisted, err = s.repository.PersistFare(ctx, persist)
+	}
 	if errors.Is(err, ErrFareAlreadyRecorded) {
 		// A concurrent call recorded it first; fares never change, so
 		// its fare is this one.
@@ -86,6 +95,21 @@ func (s *service) CalculateFare(
 	}
 
 	return persisted, nil
+}
+
+// dropCoupon takes the coupon's discount off a fare about to be recorded
+// (no other discount replaces it: the price was the coupon's).
+func dropCoupon(persist *PersistFareInput, card Config, input CalculateFareInput, increment decimal.Decimal) {
+	b := &persist.Breakdown
+	b.AppliedDiscountType = DiscountNone
+	b.AppliedDiscountLabel = ""
+	b.DiscountAmount = decimal.Zero
+	b.CouponStatus = CouponStatusUsedUp
+	b.WaitingMinutes = 0
+	b.Total = roundToIncrement(b.Subtotal.Add(b.SurgeAmount), increment)
+	addWaiting(b, card, input.ArrivedAt, input.StartedAt, increment)
+
+	persist.Coupon = nil
 }
 
 // quotedFare is the fare of a trip requested with a quote: exactly what

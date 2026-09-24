@@ -73,6 +73,24 @@ func TestStaffWithPricingManageSetPrices(t *testing.T) {
 	}
 }
 
+func TestPromotionsNeedPromotionsManage(t *testing.T) {
+	for _, method := range []string{
+		"ListCoupons", "CreateCoupon", "GetCoupon", "UpdateCoupon", "ListCouponRedemptions",
+		"GetPromotionSettings", "UpdatePromotionSettings",
+	} {
+		staff := &fakeStaff{allowed: false}
+
+		ran, err := callAsStaff(t, staff, method, &pricingv1.GetCouponRequest{Code: "SAVE10"}, nil)
+		if ran || status.Code(err) != codes.PermissionDenied {
+			t.Fatalf("%s: ran=%v err=%v", method, ran, err)
+		}
+
+		if staff.asked[0] != "identity-1 promotions.manage /ride.pricing.v1.PricingService/"+method {
+			t.Fatalf("%s: asked %v", method, staff.asked)
+		}
+	}
+}
+
 func TestTheAuditTargetIsWhatTheRequestChanges(t *testing.T) {
 	cases := map[string]struct {
 		method  string
@@ -83,6 +101,8 @@ func TestTheAuditTargetIsWhatTheRequestChanges(t *testing.T) {
 		"a zone surge":  {"EndZoneSurge", &pricingv1.EndZoneSurgeRequest{ZoneSurgeId: "surge-1"}, "surge-1"},
 		"a city's card": {"SetRateCard", &pricingv1.SetRateCardRequest{CityId: "city-1"}, "city-1"},
 		"everywhere":    {"SetRateCard", &pricingv1.SetRateCardRequest{}, ""},
+		"a coupon":      {"UpdateCoupon", &pricingv1.UpdateCouponRequest{Code: "SAVE10"}, "SAVE10"},
+		"a new coupon":  {"CreateCoupon", &pricingv1.CreateCouponRequest{Code: "NEW", CityId: "city-1"}, "NEW"},
 	}
 
 	for name, tc := range cases {

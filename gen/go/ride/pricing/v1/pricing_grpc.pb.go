@@ -19,23 +19,28 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PricingService_EstimateFare_FullMethodName       = "/ride.pricing.v1.PricingService/EstimateFare"
-	PricingService_CalculateFare_FullMethodName      = "/ride.pricing.v1.PricingService/CalculateFare"
-	PricingService_CreateCoupon_FullMethodName       = "/ride.pricing.v1.PricingService/CreateCoupon"
-	PricingService_GetCoupon_FullMethodName          = "/ride.pricing.v1.PricingService/GetCoupon"
-	PricingService_QuoteTrip_FullMethodName          = "/ride.pricing.v1.PricingService/QuoteTrip"
-	PricingService_ClaimQuote_FullMethodName         = "/ride.pricing.v1.PricingService/ClaimQuote"
-	PricingService_ReleaseQuote_FullMethodName       = "/ride.pricing.v1.PricingService/ReleaseQuote"
-	PricingService_ListRateCards_FullMethodName      = "/ride.pricing.v1.PricingService/ListRateCards"
-	PricingService_SetRateCard_FullMethodName        = "/ride.pricing.v1.PricingService/SetRateCard"
-	PricingService_RetireRateCard_FullMethodName     = "/ride.pricing.v1.PricingService/RetireRateCard"
-	PricingService_ListSurgeRules_FullMethodName     = "/ride.pricing.v1.PricingService/ListSurgeRules"
-	PricingService_CreateSurgeRule_FullMethodName    = "/ride.pricing.v1.PricingService/CreateSurgeRule"
-	PricingService_UpdateSurgeRule_FullMethodName    = "/ride.pricing.v1.PricingService/UpdateSurgeRule"
-	PricingService_SetSurgeRuleActive_FullMethodName = "/ride.pricing.v1.PricingService/SetSurgeRuleActive"
-	PricingService_ListZoneSurges_FullMethodName     = "/ride.pricing.v1.PricingService/ListZoneSurges"
-	PricingService_CreateZoneSurge_FullMethodName    = "/ride.pricing.v1.PricingService/CreateZoneSurge"
-	PricingService_EndZoneSurge_FullMethodName       = "/ride.pricing.v1.PricingService/EndZoneSurge"
+	PricingService_EstimateFare_FullMethodName            = "/ride.pricing.v1.PricingService/EstimateFare"
+	PricingService_CalculateFare_FullMethodName           = "/ride.pricing.v1.PricingService/CalculateFare"
+	PricingService_QuoteTrip_FullMethodName               = "/ride.pricing.v1.PricingService/QuoteTrip"
+	PricingService_ClaimQuote_FullMethodName              = "/ride.pricing.v1.PricingService/ClaimQuote"
+	PricingService_ReleaseQuote_FullMethodName            = "/ride.pricing.v1.PricingService/ReleaseQuote"
+	PricingService_ListRateCards_FullMethodName           = "/ride.pricing.v1.PricingService/ListRateCards"
+	PricingService_SetRateCard_FullMethodName             = "/ride.pricing.v1.PricingService/SetRateCard"
+	PricingService_RetireRateCard_FullMethodName          = "/ride.pricing.v1.PricingService/RetireRateCard"
+	PricingService_ListSurgeRules_FullMethodName          = "/ride.pricing.v1.PricingService/ListSurgeRules"
+	PricingService_CreateSurgeRule_FullMethodName         = "/ride.pricing.v1.PricingService/CreateSurgeRule"
+	PricingService_UpdateSurgeRule_FullMethodName         = "/ride.pricing.v1.PricingService/UpdateSurgeRule"
+	PricingService_SetSurgeRuleActive_FullMethodName      = "/ride.pricing.v1.PricingService/SetSurgeRuleActive"
+	PricingService_ListZoneSurges_FullMethodName          = "/ride.pricing.v1.PricingService/ListZoneSurges"
+	PricingService_CreateZoneSurge_FullMethodName         = "/ride.pricing.v1.PricingService/CreateZoneSurge"
+	PricingService_EndZoneSurge_FullMethodName            = "/ride.pricing.v1.PricingService/EndZoneSurge"
+	PricingService_ListCoupons_FullMethodName             = "/ride.pricing.v1.PricingService/ListCoupons"
+	PricingService_CreateCoupon_FullMethodName            = "/ride.pricing.v1.PricingService/CreateCoupon"
+	PricingService_GetCoupon_FullMethodName               = "/ride.pricing.v1.PricingService/GetCoupon"
+	PricingService_UpdateCoupon_FullMethodName            = "/ride.pricing.v1.PricingService/UpdateCoupon"
+	PricingService_ListCouponRedemptions_FullMethodName   = "/ride.pricing.v1.PricingService/ListCouponRedemptions"
+	PricingService_GetPromotionSettings_FullMethodName    = "/ride.pricing.v1.PricingService/GetPromotionSettings"
+	PricingService_UpdatePromotionSettings_FullMethodName = "/ride.pricing.v1.PricingService/UpdatePromotionSettings"
 )
 
 // PricingServiceClient is the client API for PricingService service.
@@ -45,8 +50,6 @@ type PricingServiceClient interface {
 	// EstimateFare quotes a trip for the caller: rider_id must be the caller's own rider profile.
 	EstimateFare(ctx context.Context, in *EstimateFareRequest, opts ...grpc.CallOption) (*EstimateFareResponse, error)
 	CalculateFare(ctx context.Context, in *CalculateFareRequest, opts ...grpc.CallOption) (*CalculateFareResponse, error)
-	CreateCoupon(ctx context.Context, in *CreateCouponRequest, opts ...grpc.CallOption) (*CreateCouponResponse, error)
-	GetCoupon(ctx context.Context, in *GetCouponRequest, opts ...grpc.CallOption) (*GetCouponResponse, error)
 	// QuoteTrip prices a trip for every vehicle class at once, with how far
 	// the nearest free driver of each class is. Each quote holds its price for
 	// a few minutes: a trip requested with its quote_id pays exactly that.
@@ -80,6 +83,24 @@ type PricingServiceClient interface {
 	ListZoneSurges(ctx context.Context, in *ListZoneSurgesRequest, opts ...grpc.CallOption) (*ListZoneSurgesResponse, error)
 	CreateZoneSurge(ctx context.Context, in *CreateZoneSurgeRequest, opts ...grpc.CallOption) (*ZoneSurgeResponse, error)
 	EndZoneSurge(ctx context.Context, in *EndZoneSurgeRequest, opts ...grpc.CallOption) (*ZoneSurgeResponse, error)
+	// Coupons (staff, promotions.manage). A rider enters a code when asking
+	// for quotes; each quote says whether it applied (FareBreakdown
+	// coupon_status). A claimed quote holds its coupon until the trip
+	// completes (used) or is cancelled (freed again).
+	ListCoupons(ctx context.Context, in *ListCouponsRequest, opts ...grpc.CallOption) (*ListCouponsResponse, error)
+	CreateCoupon(ctx context.Context, in *CreateCouponRequest, opts ...grpc.CallOption) (*CreateCouponResponse, error)
+	GetCoupon(ctx context.Context, in *GetCouponRequest, opts ...grpc.CallOption) (*GetCouponResponse, error)
+	// UpdateCoupon changes what may change once riders use a coupon: its
+	// description, end, limits, minimum fare, and whether it is on. The code,
+	// the discount and where it applies never change (make a new coupon).
+	UpdateCoupon(ctx context.Context, in *UpdateCouponRequest, opts ...grpc.CallOption) (*CreateCouponResponse, error)
+	// ListCouponRedemptions is a coupon's use, newest first.
+	ListCouponRedemptions(ctx context.Context, in *ListCouponRedemptionsRequest, opts ...grpc.CallOption) (*ListCouponRedemptionsResponse, error)
+	// The automatic discounts (staff, promotions.manage): on a rider's first
+	// trip and on every Nth one. Only the largest discount applies, coupon or
+	// automatic, never two.
+	GetPromotionSettings(ctx context.Context, in *GetPromotionSettingsRequest, opts ...grpc.CallOption) (*PromotionSettingsResponse, error)
+	UpdatePromotionSettings(ctx context.Context, in *UpdatePromotionSettingsRequest, opts ...grpc.CallOption) (*PromotionSettingsResponse, error)
 }
 
 type pricingServiceClient struct {
@@ -104,26 +125,6 @@ func (c *pricingServiceClient) CalculateFare(ctx context.Context, in *CalculateF
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CalculateFareResponse)
 	err := c.cc.Invoke(ctx, PricingService_CalculateFare_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *pricingServiceClient) CreateCoupon(ctx context.Context, in *CreateCouponRequest, opts ...grpc.CallOption) (*CreateCouponResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateCouponResponse)
-	err := c.cc.Invoke(ctx, PricingService_CreateCoupon_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *pricingServiceClient) GetCoupon(ctx context.Context, in *GetCouponRequest, opts ...grpc.CallOption) (*GetCouponResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetCouponResponse)
-	err := c.cc.Invoke(ctx, PricingService_GetCoupon_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -260,6 +261,76 @@ func (c *pricingServiceClient) EndZoneSurge(ctx context.Context, in *EndZoneSurg
 	return out, nil
 }
 
+func (c *pricingServiceClient) ListCoupons(ctx context.Context, in *ListCouponsRequest, opts ...grpc.CallOption) (*ListCouponsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCouponsResponse)
+	err := c.cc.Invoke(ctx, PricingService_ListCoupons_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) CreateCoupon(ctx context.Context, in *CreateCouponRequest, opts ...grpc.CallOption) (*CreateCouponResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateCouponResponse)
+	err := c.cc.Invoke(ctx, PricingService_CreateCoupon_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) GetCoupon(ctx context.Context, in *GetCouponRequest, opts ...grpc.CallOption) (*GetCouponResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCouponResponse)
+	err := c.cc.Invoke(ctx, PricingService_GetCoupon_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) UpdateCoupon(ctx context.Context, in *UpdateCouponRequest, opts ...grpc.CallOption) (*CreateCouponResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateCouponResponse)
+	err := c.cc.Invoke(ctx, PricingService_UpdateCoupon_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) ListCouponRedemptions(ctx context.Context, in *ListCouponRedemptionsRequest, opts ...grpc.CallOption) (*ListCouponRedemptionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCouponRedemptionsResponse)
+	err := c.cc.Invoke(ctx, PricingService_ListCouponRedemptions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) GetPromotionSettings(ctx context.Context, in *GetPromotionSettingsRequest, opts ...grpc.CallOption) (*PromotionSettingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PromotionSettingsResponse)
+	err := c.cc.Invoke(ctx, PricingService_GetPromotionSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) UpdatePromotionSettings(ctx context.Context, in *UpdatePromotionSettingsRequest, opts ...grpc.CallOption) (*PromotionSettingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PromotionSettingsResponse)
+	err := c.cc.Invoke(ctx, PricingService_UpdatePromotionSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PricingServiceServer is the server API for PricingService service.
 // All implementations must embed UnimplementedPricingServiceServer
 // for forward compatibility.
@@ -267,8 +338,6 @@ type PricingServiceServer interface {
 	// EstimateFare quotes a trip for the caller: rider_id must be the caller's own rider profile.
 	EstimateFare(context.Context, *EstimateFareRequest) (*EstimateFareResponse, error)
 	CalculateFare(context.Context, *CalculateFareRequest) (*CalculateFareResponse, error)
-	CreateCoupon(context.Context, *CreateCouponRequest) (*CreateCouponResponse, error)
-	GetCoupon(context.Context, *GetCouponRequest) (*GetCouponResponse, error)
 	// QuoteTrip prices a trip for every vehicle class at once, with how far
 	// the nearest free driver of each class is. Each quote holds its price for
 	// a few minutes: a trip requested with its quote_id pays exactly that.
@@ -302,6 +371,24 @@ type PricingServiceServer interface {
 	ListZoneSurges(context.Context, *ListZoneSurgesRequest) (*ListZoneSurgesResponse, error)
 	CreateZoneSurge(context.Context, *CreateZoneSurgeRequest) (*ZoneSurgeResponse, error)
 	EndZoneSurge(context.Context, *EndZoneSurgeRequest) (*ZoneSurgeResponse, error)
+	// Coupons (staff, promotions.manage). A rider enters a code when asking
+	// for quotes; each quote says whether it applied (FareBreakdown
+	// coupon_status). A claimed quote holds its coupon until the trip
+	// completes (used) or is cancelled (freed again).
+	ListCoupons(context.Context, *ListCouponsRequest) (*ListCouponsResponse, error)
+	CreateCoupon(context.Context, *CreateCouponRequest) (*CreateCouponResponse, error)
+	GetCoupon(context.Context, *GetCouponRequest) (*GetCouponResponse, error)
+	// UpdateCoupon changes what may change once riders use a coupon: its
+	// description, end, limits, minimum fare, and whether it is on. The code,
+	// the discount and where it applies never change (make a new coupon).
+	UpdateCoupon(context.Context, *UpdateCouponRequest) (*CreateCouponResponse, error)
+	// ListCouponRedemptions is a coupon's use, newest first.
+	ListCouponRedemptions(context.Context, *ListCouponRedemptionsRequest) (*ListCouponRedemptionsResponse, error)
+	// The automatic discounts (staff, promotions.manage): on a rider's first
+	// trip and on every Nth one. Only the largest discount applies, coupon or
+	// automatic, never two.
+	GetPromotionSettings(context.Context, *GetPromotionSettingsRequest) (*PromotionSettingsResponse, error)
+	UpdatePromotionSettings(context.Context, *UpdatePromotionSettingsRequest) (*PromotionSettingsResponse, error)
 	mustEmbedUnimplementedPricingServiceServer()
 }
 
@@ -317,12 +404,6 @@ func (UnimplementedPricingServiceServer) EstimateFare(context.Context, *Estimate
 }
 func (UnimplementedPricingServiceServer) CalculateFare(context.Context, *CalculateFareRequest) (*CalculateFareResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CalculateFare not implemented")
-}
-func (UnimplementedPricingServiceServer) CreateCoupon(context.Context, *CreateCouponRequest) (*CreateCouponResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateCoupon not implemented")
-}
-func (UnimplementedPricingServiceServer) GetCoupon(context.Context, *GetCouponRequest) (*GetCouponResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetCoupon not implemented")
 }
 func (UnimplementedPricingServiceServer) QuoteTrip(context.Context, *QuoteTripRequest) (*QuoteTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method QuoteTrip not implemented")
@@ -362,6 +443,27 @@ func (UnimplementedPricingServiceServer) CreateZoneSurge(context.Context, *Creat
 }
 func (UnimplementedPricingServiceServer) EndZoneSurge(context.Context, *EndZoneSurgeRequest) (*ZoneSurgeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method EndZoneSurge not implemented")
+}
+func (UnimplementedPricingServiceServer) ListCoupons(context.Context, *ListCouponsRequest) (*ListCouponsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCoupons not implemented")
+}
+func (UnimplementedPricingServiceServer) CreateCoupon(context.Context, *CreateCouponRequest) (*CreateCouponResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateCoupon not implemented")
+}
+func (UnimplementedPricingServiceServer) GetCoupon(context.Context, *GetCouponRequest) (*GetCouponResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCoupon not implemented")
+}
+func (UnimplementedPricingServiceServer) UpdateCoupon(context.Context, *UpdateCouponRequest) (*CreateCouponResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateCoupon not implemented")
+}
+func (UnimplementedPricingServiceServer) ListCouponRedemptions(context.Context, *ListCouponRedemptionsRequest) (*ListCouponRedemptionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCouponRedemptions not implemented")
+}
+func (UnimplementedPricingServiceServer) GetPromotionSettings(context.Context, *GetPromotionSettingsRequest) (*PromotionSettingsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPromotionSettings not implemented")
+}
+func (UnimplementedPricingServiceServer) UpdatePromotionSettings(context.Context, *UpdatePromotionSettingsRequest) (*PromotionSettingsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdatePromotionSettings not implemented")
 }
 func (UnimplementedPricingServiceServer) mustEmbedUnimplementedPricingServiceServer() {}
 func (UnimplementedPricingServiceServer) testEmbeddedByValue()                        {}
@@ -416,42 +518,6 @@ func _PricingService_CalculateFare_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PricingServiceServer).CalculateFare(ctx, req.(*CalculateFareRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _PricingService_CreateCoupon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateCouponRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PricingServiceServer).CreateCoupon(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PricingService_CreateCoupon_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PricingServiceServer).CreateCoupon(ctx, req.(*CreateCouponRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _PricingService_GetCoupon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCouponRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PricingServiceServer).GetCoupon(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PricingService_GetCoupon_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PricingServiceServer).GetCoupon(ctx, req.(*GetCouponRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -690,6 +756,132 @@ func _PricingService_EndZoneSurge_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PricingService_ListCoupons_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCouponsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).ListCoupons(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_ListCoupons_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).ListCoupons(ctx, req.(*ListCouponsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_CreateCoupon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCouponRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).CreateCoupon(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_CreateCoupon_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).CreateCoupon(ctx, req.(*CreateCouponRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_GetCoupon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCouponRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).GetCoupon(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_GetCoupon_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).GetCoupon(ctx, req.(*GetCouponRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_UpdateCoupon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateCouponRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).UpdateCoupon(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_UpdateCoupon_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).UpdateCoupon(ctx, req.(*UpdateCouponRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_ListCouponRedemptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCouponRedemptionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).ListCouponRedemptions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_ListCouponRedemptions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).ListCouponRedemptions(ctx, req.(*ListCouponRedemptionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_GetPromotionSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPromotionSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).GetPromotionSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_GetPromotionSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).GetPromotionSettings(ctx, req.(*GetPromotionSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_UpdatePromotionSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePromotionSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).UpdatePromotionSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_UpdatePromotionSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).UpdatePromotionSettings(ctx, req.(*UpdatePromotionSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PricingService_ServiceDesc is the grpc.ServiceDesc for PricingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -704,14 +896,6 @@ var PricingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CalculateFare",
 			Handler:    _PricingService_CalculateFare_Handler,
-		},
-		{
-			MethodName: "CreateCoupon",
-			Handler:    _PricingService_CreateCoupon_Handler,
-		},
-		{
-			MethodName: "GetCoupon",
-			Handler:    _PricingService_GetCoupon_Handler,
 		},
 		{
 			MethodName: "QuoteTrip",
@@ -764,6 +948,34 @@ var PricingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EndZoneSurge",
 			Handler:    _PricingService_EndZoneSurge_Handler,
+		},
+		{
+			MethodName: "ListCoupons",
+			Handler:    _PricingService_ListCoupons_Handler,
+		},
+		{
+			MethodName: "CreateCoupon",
+			Handler:    _PricingService_CreateCoupon_Handler,
+		},
+		{
+			MethodName: "GetCoupon",
+			Handler:    _PricingService_GetCoupon_Handler,
+		},
+		{
+			MethodName: "UpdateCoupon",
+			Handler:    _PricingService_UpdateCoupon_Handler,
+		},
+		{
+			MethodName: "ListCouponRedemptions",
+			Handler:    _PricingService_ListCouponRedemptions_Handler,
+		},
+		{
+			MethodName: "GetPromotionSettings",
+			Handler:    _PricingService_GetPromotionSettings_Handler,
+		},
+		{
+			MethodName: "UpdatePromotionSettings",
+			Handler:    _PricingService_UpdatePromotionSettings_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

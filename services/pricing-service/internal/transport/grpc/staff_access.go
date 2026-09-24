@@ -48,8 +48,13 @@ func runAsStaff(
 }
 
 // staffTargetOf returns the id an admin request is about, for the audit log:
-// the rule or zone surge it changes, else the zone or city it is for.
+// the rule, zone surge or coupon (its code) it changes, else the zone or
+// city it is for.
 func staffTargetOf(request any) string {
+	if r, ok := request.(interface{ GetCode() string }); ok && r.GetCode() != "" {
+		return r.GetCode()
+	}
+
 	if r, ok := request.(interface{ GetRuleId() string }); ok && r.GetRuleId() != "" {
 		return r.GetRuleId()
 	}

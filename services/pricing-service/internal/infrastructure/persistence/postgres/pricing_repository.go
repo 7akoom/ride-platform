@@ -97,116 +97,6 @@ func scanSurgeRule(row pgx.Row) (pricing.SurgeTimeRule, error) {
 	return rule, nil
 }
 
-func (r *PricingRepository) FindCouponByCode(
-	ctx context.Context,
-	code string,
-) (pricing.Coupon, error) {
-	row := r.pool.QueryRow(
-		ctx,
-		`SELECT id, code, discount_type, discount_value,
-		        valid_from, valid_until, max_redemptions, redemption_count,
-		        per_rider_limit, minimum_fare_amount, active
-		 FROM coupons
-		 WHERE code = $1`,
-		code,
-	)
-
-	coupon, err := scanCoupon(row)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return pricing.Coupon{}, pricing.ErrCouponNotFound
-		}
-
-		return pricing.Coupon{}, fmt.Errorf("select coupon: %w", err)
-	}
-
-	return coupon, nil
-}
-
-func (r *PricingRepository) FindCouponByID(
-	ctx context.Context,
-	couponID string,
-) (pricing.Coupon, error) {
-	row := r.pool.QueryRow(
-		ctx,
-		`SELECT id, code, discount_type, discount_value,
-		        valid_from, valid_until, max_redemptions, redemption_count,
-		        per_rider_limit, minimum_fare_amount, active
-		 FROM coupons
-		 WHERE id = $1`,
-		couponID,
-	)
-
-	coupon, err := scanCoupon(row)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return pricing.Coupon{}, pricing.ErrCouponNotFound
-		}
-
-		return pricing.Coupon{}, fmt.Errorf("select coupon: %w", err)
-	}
-
-	return coupon, nil
-}
-
-func (r *PricingRepository) CreateCoupon(
-	ctx context.Context,
-	input pricing.CreateCouponInput,
-) (pricing.Coupon, error) {
-	row := r.pool.QueryRow(
-		ctx,
-		`INSERT INTO coupons
-		    (code, discount_type, discount_value, valid_from, valid_until,
-		     max_redemptions, per_rider_limit, minimum_fare_amount)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		 RETURNING id, code, discount_type, discount_value,
-		           valid_from, valid_until, max_redemptions, redemption_count,
-		           per_rider_limit, minimum_fare_amount, active`,
-		input.Code,
-		string(input.DiscountType),
-		input.DiscountValue,
-		input.ValidFrom,
-		input.ValidUntil,
-		input.MaxRedemptions,
-		input.PerRiderLimit,
-		input.MinimumFareAmount,
-	)
-
-	coupon, err := scanCoupon(row)
-	if err != nil {
-		var pgErr *pgconn.PgError
-
-		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
-			return pricing.Coupon{}, pricing.ErrCouponAlreadyExists
-		}
-
-		return pricing.Coupon{}, fmt.Errorf("insert coupon: %w", err)
-	}
-
-	return coupon, nil
-}
-
-func (r *PricingRepository) RiderRedemptionCount(
-	ctx context.Context,
-	couponID, riderID string,
-) (int, error) {
-	var count int
-
-	err := r.pool.QueryRow(
-		ctx,
-		`SELECT COUNT(*)
-		 FROM coupon_redemptions
-		 WHERE coupon_id = $1 AND rider_id = $2`,
-		couponID,
-		riderID,
-	).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("count rider coupon redemptions: %w", err)
-	}
-
-	return count, nil
-}
-
 func (r *PricingRepository) GetRiderCompletedTripCount(
 	ctx context.Context,
 	riderID string,
@@ -363,27 +253,8 @@ func (r *PricingRepository) PersistFare(
 	}
 
 	if input.Coupon != nil {
-		if _, err := tx.Exec(
-			ctx,
-			`INSERT INTO coupon_redemptions (coupon_id, rider_id, trip_id, discount_amount)
-			 VALUES ($1, $2, $3, $4)`,
-			input.Coupon.CouponID,
-			input.RiderID,
-			input.TripID,
-			input.Coupon.DiscountAmount,
-		); err != nil {
-			return pricing.Fare{}, fmt.Errorf("insert coupon redemption: %w", err)
-		}
-
-		if _, err := tx.Exec(
-			ctx,
-			`UPDATE coupons
-			 SET redemption_count = redemption_count + 1,
-			     updated_at = CURRENT_TIMESTAMP
-			 WHERE id = $1`,
-			input.Coupon.CouponID,
-		); err != nil {
-			return pricing.Fare{}, fmt.Errorf("increment coupon redemption count: %w", err)
+		if err := redeemCoupon(ctx, tx, input); err != nil {
+			return pricing.Fare{}, err
 		}
 	}
 
@@ -420,38 +291,6 @@ func (r *PricingRepository) PersistFare(
 	}
 
 	return fare, nil
-}
-
-func scanCoupon(row pgx.Row) (pricing.Coupon, error) {
-	var coupon pricing.Coupon
-	var discountType string
-	var maxRedemptions *int32
-
-	err := row.Scan(
-		&coupon.ID,
-		&coupon.Code,
-		&discountType,
-		&coupon.DiscountValue,
-		&coupon.ValidFrom,
-		&coupon.ValidUntil,
-		&maxRedemptions,
-		&coupon.RedemptionCount,
-		&coupon.PerRiderLimit,
-		&coupon.MinimumFareAmount,
-		&coupon.Active,
-	)
-	if err != nil {
-		return pricing.Coupon{}, err
-	}
-
-	coupon.DiscountType = pricing.DiscountType(discountType)
-
-	if maxRedemptions != nil {
-		value := int(*maxRedemptions)
-		coupon.MaxRedemptions = &value
-	}
-
-	return coupon, nil
 }
 
 // fareColumns is every fare column, in scanFare's order.

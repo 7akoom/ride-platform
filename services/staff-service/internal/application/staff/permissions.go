@@ -16,6 +16,8 @@ const (
 	PermissionMediaRead     = "media.read"
 	PermissionPlacesManage  = "places.manage"
 	PermissionPricingManage = "pricing.manage"
+	// PermissionPromotionsManage: coupons and the automatic discounts.
+	PermissionPromotionsManage = "promotions.manage"
 )
 
 // RoleKeyOwner is the system role that always holds every permission,
@@ -23,16 +25,17 @@ const (
 const RoleKeyOwner = "owner"
 
 var permissionCatalog = map[string]string{
-	PermissionStaffRead:     "See staff members, roles and permissions",
-	PermissionStaffManage:   "Invite, suspend and reactivate staff, and change their roles",
-	PermissionRolesManage:   "Create, change and delete custom roles",
-	PermissionAuditRead:     "Read the audit log of staff actions",
-	PermissionDriversRead:   "See drivers and the review queue",
-	PermissionDriversReview: "Approve or reject drivers",
-	PermissionZonesManage:   "Create and change cities and service zones",
-	PermissionMediaRead:     "View files users uploaded (driver documents, photos, attachments)",
-	PermissionPlacesManage:  "Create and change curated places (airports, malls, hotels...)",
-	PermissionPricingManage: "See and set prices: rate cards, surge rules and zone surges",
+	PermissionStaffRead:        "See staff members, roles and permissions",
+	PermissionStaffManage:      "Invite, suspend and reactivate staff, and change their roles",
+	PermissionRolesManage:      "Create, change and delete custom roles",
+	PermissionAuditRead:        "Read the audit log of staff actions",
+	PermissionDriversRead:      "See drivers and the review queue",
+	PermissionDriversReview:    "Approve or reject drivers",
+	PermissionZonesManage:      "Create and change cities and service zones",
+	PermissionMediaRead:        "View files users uploaded (driver documents, photos, attachments)",
+	PermissionPlacesManage:     "Create and change curated places (airports, malls, hotels...)",
+	PermissionPricingManage:    "See and set prices: rate cards, surge rules and zone surges",
+	PermissionPromotionsManage: "Create and change coupons and the first-ride and loyalty discounts, and see their use",
 }
 
 // PermissionInfo describes one grantable permission.

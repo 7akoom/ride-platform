@@ -89,6 +89,9 @@ type market struct {
 	staffLabel  string
 
 	weatherPercent decimal.Decimal
+
+	// promotions is what the rider's discounts depend on.
+	promotions promotions
 }
 
 // gatherMarket checks the pickup is served, then reads what the price
@@ -109,14 +112,20 @@ func (s *service) gatherMarket(ctx context.Context, request fareRequest, riderID
 	m := market{request: request, riderID: riderID, zone: zone, now: nowFunc()}
 
 	var (
-		wg                                sync.WaitGroup
-		rulesErr, zoneSurgeErr, demandErr error
-		rules                             []SurgeTimeRule
-		zoneSurge                         ZoneSurge
-		zoneSurgeFound                    bool
+		wg                                          sync.WaitGroup
+		rulesErr, zoneSurgeErr, demandErr, promoErr error
+		rules                                       []SurgeTimeRule
+		zoneSurge                                   ZoneSurge
+		zoneSurgeFound                              bool
 	)
 
-	wg.Add(6)
+	wg.Add(7)
+
+	go func() {
+		defer wg.Done()
+
+		m.promotions, promoErr = s.readPromotions(ctx, riderID, request.CouponCode)
+	}()
 
 	go func() {
 		defer wg.Done()
@@ -164,6 +173,10 @@ func (s *service) gatherMarket(ctx context.Context, request fareRequest, riderID
 
 	if err := errors.Join(rulesErr, zoneSurgeErr, demandErr); err != nil {
 		return market{}, fmt.Errorf("read surge inputs: %w", err)
+	}
+
+	if promoErr != nil {
+		return market{}, promoErr
 	}
 
 	m.timePercent, m.staffLabel = timeRuleSurge(rulesFor(rules, zone), localTime(m.now, zone.TimeZone))
@@ -224,21 +237,12 @@ func (s *service) priceClass(ctx context.Context, m market, vehicleClass string)
 	// rider is paying the most.
 	chargeable := breakdown.Subtotal.Add(breakdown.SurgeAmount)
 
-	discount, err := s.selectBestDiscount(ctx, m.riderID, m.request.CouponCode, chargeable)
-	if err != nil {
-		// A bad or unknown coupon code shouldn't fail the whole fare —
-		// the rider still gets a valid price, just without the discount.
-		// Any other error is a real failure and propagates.
-		if !errors.Is(err, ErrCouponNotFound) {
-			return pricedClass{}, fmt.Errorf("select discount: %w", err)
-		}
-
-		discount = selectedDiscount{Type: DiscountNone, Amount: decimal.Zero}
-	}
+	discount := selectBestDiscount(m.promotions, m.zone, vehicleClass, chargeable, m.now)
 
 	breakdown.AppliedDiscountType = discount.Type
 	breakdown.AppliedDiscountLabel = discount.Label
 	breakdown.DiscountAmount = discount.Amount
+	breakdown.CouponStatus = discount.CouponStatus
 
 	total := chargeable.Sub(discount.Amount)
 	if total.IsNegative() {

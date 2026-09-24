@@ -73,16 +73,17 @@ type TripQuotes struct {
 type Service interface {
 	EstimateFare(ctx context.Context, input EstimateFareInput) (FareBreakdown, error)
 	CalculateFare(ctx context.Context, input CalculateFareInput) (Fare, error)
-	CreateCoupon(ctx context.Context, input CreateCouponInput) (Coupon, error)
-	GetCoupon(ctx context.Context, code string) (Coupon, error)
 
 	// QuoteTrip prices a trip for every vehicle class and holds each price
 	// for the quote TTL.
 	QuoteTrip(ctx context.Context, input QuoteTripInput) (TripQuotes, error)
 	// ClaimQuote gives a quote to the trip being requested with it.
 	ClaimQuote(ctx context.Context, quoteID, riderID, tripID string) (Quote, error)
-	// ReleaseQuote frees a quote whose trip was never created.
+	// ReleaseQuote frees a quote whose trip was never created, and the coupon
+	// use it reserved.
 	ReleaseQuote(ctx context.Context, quoteID, tripID string) error
+	// ReleaseTripCoupon frees the coupon use a cancelled trip reserved.
+	ReleaseTripCoupon(ctx context.Context, tripID string) error
 	// DeleteUnclaimedQuotes removes quotes that expired a while ago without
 	// becoming a trip.
 	DeleteUnclaimedQuotes(ctx context.Context) (int, error)

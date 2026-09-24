@@ -79,3 +79,29 @@ func TestACompletedTripCarriesItsWaiting(t *testing.T) {
 		t.Fatalf("input %+v", got)
 	}
 }
+
+func TestACancelledTripFreesItsCoupon(t *testing.T) {
+	pricer := &fakePricer{}
+	if err := newTestHandler(pricer, &fakeTrips{trip: cancelledTrip()}).Handle(context.Background(), SubjectTripCancelled, envelopeJSON(t, "trip-1", testNow, `{}`)); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(pricer.released) != 1 || pricer.released[0] != "trip-1" {
+		t.Fatalf("released %v", pricer.released)
+	}
+
+	// Freeing it failed: the event comes back, and no fee is charged yet.
+	pricer = &fakePricer{releaseErr: errors.New("database down")}
+	err := newTestHandler(pricer, &fakeTrips{trip: cancelledTrip()}).Handle(context.Background(), SubjectTripCancelled, envelopeJSON(t, "trip-1", testNow, `{}`))
+	if _, retried := retryDelayOf(err); !retried || len(pricer.cancellations) != 0 {
+		t.Fatalf("expected a retry before any fee, got %v, %v", err, pricer.cancellations)
+	}
+
+	// A completed trip keeps it.
+	pricer = &fakePricer{}
+	trip := cancelledTrip()
+	trip.Status = "completed"
+	if err := newTestHandler(pricer, &fakeTrips{trip: trip}).Handle(context.Background(), SubjectTripCompleted, envelopeJSON(t, "trip-1", testNow, `{}`)); err != nil || len(pricer.released) != 0 {
+		t.Fatalf("err %v, released %v", err, pricer.released)
+	}
+}

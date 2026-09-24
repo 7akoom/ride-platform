@@ -100,13 +100,21 @@ func (r *PricingRepository) FindQuote(ctx context.Context, quoteID string) (pric
 }
 
 // ClaimQuote claims in one conditional UPDATE, so two trips can never both
-// take a quote; when it changes nothing, the quote is read to say why.
+// take a quote; when it changes nothing, the quote is read to say why. A
+// quote priced with a coupon reserves one of its uses in the same
+// transaction: no use left means no claim.
 func (r *PricingRepository) ClaimQuote(
 	ctx context.Context,
 	quoteID, riderID, tripID string,
 	now time.Time,
 ) (pricing.Quote, error) {
-	quote, err := scanQuote(r.pool.QueryRow(
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return pricing.Quote{}, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	quote, err := scanQuote(tx.QueryRow(
 		ctx,
 		`UPDATE fare_quotes
 		 SET claimed_trip_id = $3, claimed_at = $4
@@ -119,6 +127,22 @@ func (r *PricingRepository) ClaimQuote(
 
 	switch {
 	case err == nil:
+		if quote.Coupon != nil {
+			err := holdCoupon(ctx, tx, quote.Coupon.CouponID, riderID, tripID, quote.ID,
+				quote.Coupon.DiscountAmount, redemptionReserved, now)
+			if errors.Is(err, pricing.ErrCouponUnavailable) {
+				return pricing.Quote{}, pricing.ErrQuoteCouponUnavailable
+			}
+
+			if err != nil {
+				return pricing.Quote{}, err
+			}
+		}
+
+		if err := tx.Commit(ctx); err != nil {
+			return pricing.Quote{}, fmt.Errorf("commit transaction: %w", err)
+		}
+
 		return quote, nil
 	case errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode:
 		// This trip already holds another quote.
@@ -126,6 +150,8 @@ func (r *PricingRepository) ClaimQuote(
 	case !isNoRows(err):
 		return pricing.Quote{}, fmt.Errorf("claim quote: %w", err)
 	}
+
+	_ = tx.Rollback(ctx)
 
 	current, err := r.FindQuote(ctx, quoteID)
 	if err != nil {
@@ -144,15 +170,34 @@ func (r *PricingRepository) ClaimQuote(
 	}
 }
 
+// ReleaseQuote frees the quote, and the coupon use it reserved, if the trip
+// holds it.
 func (r *PricingRepository) ReleaseQuote(ctx context.Context, quoteID, tripID string) error {
-	if _, err := r.pool.Exec(
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	tag, err := tx.Exec(
 		ctx,
 		`UPDATE fare_quotes
 		 SET claimed_trip_id = NULL, claimed_at = NULL
 		 WHERE id = $1 AND claimed_trip_id = $2`,
 		quoteID, tripID,
-	); err != nil {
+	)
+	if err != nil {
 		return fmt.Errorf("release quote: %w", err)
+	}
+
+	if tag.RowsAffected() == 1 {
+		if err := releaseTripCoupon(ctx, tx, tripID); err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return nil

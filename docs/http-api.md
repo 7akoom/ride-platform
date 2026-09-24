@@ -4,7 +4,7 @@ What the Rider app, the Driver app and the Admin web can call, through the API
 gateway (`infrastructure/gateway`, port 8080; TLS terminates in front of it).
 Every route below is a `google.api.http` annotation in `proto/`; an RPC without an
 annotation is **not reachable** from outside (Send, FindNearby, CalculateFare,
-coupons, dispatch, analytics, AuthorizeStaffAction...).
+ClaimQuote, dispatch, analytics, AuthorizeStaffAction...).
 
 ## Conventions
 
@@ -174,6 +174,17 @@ waited at the pickup (from `:arrived` to `:start`) beyond the card's free minute
 it is never discounted. A cancelled trip's fee is a fare of its own `kind`
 (`cancellation` or `no_show`).
 
+Every breakdown says what became of the `couponCode` in `couponStatus`:
+`COUPON_STATUS_APPLIED`, or why it took nothing off (`NOT_FOUND`, `ENDED`,
+`NOT_STARTED`, `EXPIRED`, `USED_UP`, `ALREADY_USED` by this rider, `NOT_IN_AREA`,
+`NOT_FOR_CLASS`, `NEW_RIDERS_ONLY`, `BELOW_MINIMUM`, or `BETTER_DISCOUNT` when a
+larger first-ride or loyalty discount applies instead: discounts never add up);
+`COUPON_STATUS_UNSPECIFIED` when no code was entered. It is per quote, since a
+coupon may be for some classes only. A trip requested with a quote that used a
+coupon holds one of its uses until the trip completes (the use counts) or is
+cancelled (it is freed); if the last use went meanwhile, the trip request is
+refused with `FAILED_PRECONDITION` and the rider asks for a new quote.
+
 ### Push devices and inbox
 
 | Method | Path | Who | Notes |
@@ -268,6 +279,12 @@ before it runs. A caller who is not staff, or lacks the permission, gets 403.
 | GET | `/v1/admin/zone-surges?zone_id=&include_past=` | `pricing.manage` | running and coming ones (with `include_past`, the latest 100) |
 | POST | `/v1/admin/zone-surges` | `pricing.manage` | `zoneId`, `surgePercent` (up to 300), `reason` (shown to riders), `durationMinutes` (1-1440), optional `startsAt` (up to 7 days ahead). The larger of it and the hour's rule applies, they never add up |
 | POST | `/v1/admin/zone-surges/{zoneSurgeId}:end` | `pricing.manage` | ends it now, or calls off one not started yet |
+| GET | `/v1/admin/coupons?state=&query=&page_size=&page_token=` | `promotions.manage` | newest first; `state` `running`, `scheduled` or `finished` (expired, used up or turned off), `query` the start of the code; `nextPageToken` |
+| POST | `/v1/admin/coupons` | `promotions.manage` | `code` (3-40 letters, digits, `-`, `_`; stored upper-case; 409 when taken), `description`, `discountType` (`DISCOUNT_TYPE_PERCENTAGE` 0-100 with an optional `maxDiscountAmount`, or `DISCOUNT_TYPE_FIXED_AMOUNT`), `discountValue`, `validFrom` (default now), `validUntil`, `maxRedemptions` (0 unlimited), `perRiderLimit` (default 1), `minimumFareAmount`, `cityId` or `zoneId` (not both), `vehicleClasses` (empty: all), `newRidersOnly`. A coupon has `state` (`running`, `scheduled`, `expired`, `used_up`, `ended`) and `redemptionCount` (uses held: completed trips and trips under way) |
+| GET | `/v1/admin/coupons/{code}` | `promotions.manage` | also `redeemedCount` and `discountGiven` (completed trips) |
+| PATCH | `/v1/admin/coupons/{code}` | `promotions.manage` | only the fields sent change: `description`, `validUntil`, `maxRedemptions` (0 unlimited), `perRiderLimit`, `minimumFareAmount`, `active`. The code, the discount and where it applies never change |
+| GET | `/v1/admin/coupons/{code}/redemptions?page_size=&page_token=` | `promotions.manage` | newest first: `riderId`, `tripId`, `quoteId`, `status` (`reserved` while the trip runs, `redeemed`, `released` when it was cancelled), `discountAmount`, `createdAt`, `releasedAt` |
+| GET · PUT | `/v1/admin/promotion-settings` | `promotions.manage` | `firstRidePercent`, `firstRideMaxAmount`, `loyaltyEvery` (every Nth completed trip, 2-100; 0 off), `loyaltyPercent`, `loyaltyMaxAmount` (empty: no cap); a percent of 0 turns that discount off. PUT replaces them all |
 
 ## Not exposed yet
 

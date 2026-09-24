@@ -13,12 +13,11 @@ var (
 	// ErrPickupOutsideServiceZone mirrors trip-service's own check —
 	ErrPickupOutsideServiceZone = errors.New("pickup location is outside every service zone")
 
-	ErrCouponCodeRequired    = errors.New("coupon code is required")
-	ErrCouponNotFound        = errors.New("coupon not found")
-	ErrCouponAlreadyExists   = errors.New("a coupon with this code already exists")
-	ErrInvalidDiscountType   = errors.New("invalid discount type")
-	ErrInvalidDiscountValue  = errors.New("discount value must be positive (and at most 100 for percentage discounts)")
-	ErrInvalidValidityWindow = errors.New("valid_until must be after valid_from")
+	ErrCouponNotFound      = errors.New("coupon not found")
+	ErrCouponAlreadyExists = errors.New("a coupon with this code already exists")
+	// ErrCouponUnavailable: a coupon could not be held for a trip (it ended,
+	// ran out, or the rider reached its limit in the meantime).
+	ErrCouponUnavailable = errors.New("the coupon can no longer be used")
 
 	// ErrFareAlreadyRecorded: the trip already has a fare (a concurrent
 	// CalculateFare recorded it first).
