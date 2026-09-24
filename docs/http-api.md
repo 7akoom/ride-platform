@@ -43,6 +43,8 @@ ClaimQuote, dispatch, analytics, AuthorizeStaffAction...).
 | POST | `/v1/me/identifiers/link` | the user | finish linking with the code |
 | POST | `/v1/me/identifiers/unlink-otp` | the user | start unlinking |
 | POST | `/v1/me/identifiers/unlink` | the user | finish unlinking with the code |
+| GET | `/v1/me/wallet-pin` | the user | `isSet`, `setAt`, `attemptsLeft`, and `lockedUntil` while wrong PINs keep it locked |
+| PUT | `/v1/me/wallet-pin` | the user | `newPin` (4 or 6 digits, not all the same, not a run like 1234 or 654321); to change it also `currentPin` (a wrong one counts: 403). Forgotten PIN: sign in again with a code, then within 10 minutes of signing in `newPin` alone works and lifts a lock. 400 `FAILED_PRECONDITION` when `currentPin` is needed or the PIN is locked |
 
 The public routes need no `Authorization` header. Send the user's language in
 `Accept-Language` (`ar`, `ku` or `en`): it picks the language of the OTP message.
@@ -201,6 +203,8 @@ refused with `FAILED_PRECONDITION` and the rider asks for a new quote.
 | GET | `/v1/wallets/{ownerId}?owner_type=OWNER_TYPE_DRIVER` | the owner | `ownerId` is the rider or driver id; balances are decimal strings |
 | GET | `/v1/wallets/{ownerId}/transactions?owner_type=&limit=` | the owner | signed decimal `amount`: negative means money left |
 | GET | `/v1/wallets/{ownerId}/trips/{tripId}/settlement?owner_type=` | the rider or driver of the trip | how the trip's money moved: `kind` (`trip`, or `cancellation` / `no_show` for a cancelled trip's fee), `fareAmount`, `walletAmount`, `cashAmount`, `changeAmount`, and for a fee `dueAmount`: what the rider's wallet could not cover and still owes. The driver also sees `commissionAmount` and `driverEarning` |
+| POST | `/v1/wallets/{riderId}/transfers` | the rider | send money to another registered rider: `recipientPhone` (E.164, `+9647…`), `amount`, `note` (at most 140), `pin` (the sender's wallet PIN), `idempotencyKey` (required; the same key again returns the same transfer, with another amount or phone 409). 403 a wrong PIN (the message says how many attempts are left), 400 `FAILED_PRECONDITION` no PIN yet, PIN locked, not enough money, or the 24-hour limits; 404 when no rider signs in with that phone; 400 to oneself, or below/above the per-transfer limits. Returns `transfer` and the sender's `wallet`. The recipient gets a push |
+| GET | `/v1/wallets/{riderId}/transfers?page_size=&page_token=` | the rider | sent and received, newest first: `direction` (`sent` / `received`), `counterpartPhone`, `amount`, `currencyCode`, `note`, `createdAt`; `nextPageToken` |
 | GET | `/v1/drivers/{driverId}/standing` | the driver | can they take trips, and the amount due if suspended |
 | POST | `/v1/drivers/{driverId}/payouts` | the driver | `amount` and `idempotencyKey`; a retry with the same key is safe |
 | POST | `/v1/wallet/topups/zaincash` | the driver | returns the ZainCash `redirectUrl` for the webview |
@@ -208,6 +212,10 @@ refused with `FAILED_PRECONDITION` and the rider asks for a new quote.
 
 `owner_type` is a query parameter because an enum cannot be bound in a URL path.
 Top-ups of a rider's wallet and trip settlement are internal: no route.
+A transfer is a `TRANSACTION_TYPE_TRANSFER_OUT` row in the sender's ledger and a
+`TRANSACTION_TYPE_TRANSFER_IN` row in the recipient's, both with its `transferId`.
+The limits (least and most per transfer, how much and how many in any 24 hours)
+are on the wallet config.
 
 ### Files (media)
 

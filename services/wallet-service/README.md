@@ -125,6 +125,32 @@ concern handled outside this platform (a payment provider, or a manual
 transfer by the operator). The ledger row is the instruction and the
 audit trail.
 
+## Transfers between riders
+
+A rider sends money from their wallet to another **registered rider**, found
+by the phone they sign in with (`POST /v1/wallets/{riderId}/transfers`):
+
+1. the sender's **wallet PIN** is checked by identity-service first (a wrong
+   one counts toward its lock; nobody learns whether a phone belongs to a
+   rider without the PIN);
+2. the phone is looked up in identity-service, then the rider profile in
+   rider-service (a person with no rider profile is "not found"); never the
+   sender themselves;
+3. one transaction locks both wallets (in a fixed order: two riders sending
+   to each other at once cannot deadlock), checks the sender's last 24 hours
+   against the limits, and writes the transfer, a `transfer_out` row for the
+   sender, a `transfer_in` row for the recipient, and
+   `wallet.transfer_completed` (outbox, `WALLET_EVENTS` stream), which
+   notification-service turns into a push to the recipient.
+
+The sender's `idempotency_key` is required: the same key again returns the
+same transfer (nothing checked or moved again); with another amount or phone
+it is refused. Limits sit on `wallet_configs` (`transfer_min_amount`,
+`transfer_max_amount`, `transfer_daily_amount`, `transfer_daily_count`;
+defaults 250 / 1,000,000 / 2,000,000 IQD / 20). Needs
+`IDENTITY_SERVICE_ADDRESS`, and identity-service must share
+`INTERNAL_SERVICE_TOKEN`.
+
 ## Configuration
 
 `wallet_configs` is versioned like `pricing_configs`: change the

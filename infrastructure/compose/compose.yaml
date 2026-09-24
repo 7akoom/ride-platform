@@ -586,6 +586,29 @@ services:
 
     restart: "no"
 
+  wallet-nats-bootstrap:
+    image: natsio/nats-box:0.19.7
+    container_name: ride-wallet-nats-bootstrap
+
+    depends_on:
+      nats:
+        condition: service_healthy
+
+    environment:
+      NATS_URL: nats://nats:4222
+      STREAM_NAME: WALLET_EVENTS
+      STREAM_CONFIG: /streams/wallet-events.json
+
+    volumes:
+      - ./nats/bootstrap.sh:/bootstrap.sh:ro
+      - ./nats/streams:/streams:ro
+
+    command:
+      - /bin/sh
+      - /bootstrap.sh
+
+    restart: "no"
+
   # --- Application services -------------------------------------------
   #
   # Each reuses its own services/<name>/.env for everything that doesn't
@@ -912,6 +935,7 @@ services:
       TRIP_SERVICE_ADDRESS: trip-service:50055
       RIDER_SERVICE_ADDRESS: rider-service:50052
       DRIVER_SERVICE_ADDRESS: driver-service:50053
+      IDENTITY_SERVICE_ADDRESS: identity-service:50051
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -921,11 +945,15 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
+      wallet-nats-bootstrap:
+        condition: service_completed_successfully
       trip-service:
         condition: service_started
       rider-service:
         condition: service_started
       driver-service:
+        condition: service_started
+      identity-service:
         condition: service_started
 
     ports:
@@ -963,6 +991,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
+      wallet-nats-bootstrap:
+        condition: service_completed_successfully
       rider-service:
         condition: service_started
       driver-service:

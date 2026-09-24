@@ -11,6 +11,7 @@ import (
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/events"
 	outboxapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/outbox"
 	topupapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
+	transferapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/transfer"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/wallet"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/config"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/clients"
@@ -150,6 +151,22 @@ func run() int {
 
 	profileResolver := grpcserver.NewCachingResolver(clients.NewProfileResolver(riderConn, driverConn))
 
+	// identity-service is dialled lazily: wallet-service starts without it,
+	// and only transfers need it.
+	identityConn, err := grpc.NewClient(
+		cfg.IdentityServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to identity-service", "error", err)
+
+		return 1
+	}
+	defer identityConn.Close()
+
 	natsConnection, err := natsinfra.OpenConnection(
 		natsinfra.ConnectionConfig{
 			URL:            natsConfig.URL,
@@ -205,7 +222,8 @@ func run() int {
 		},
 	)
 
-	walletService := wallet.NewService(postgresrepo.NewWalletRepository(pool))
+	walletRepository := postgresrepo.NewWalletRepository(pool)
+	walletService := wallet.NewService(walletRepository)
 
 	zainCashClient := zaincashinfra.NewClient(zaincashinfra.Config{
 		BaseURL:       cfg.ZainCashBaseURL,
@@ -224,7 +242,13 @@ func run() int {
 		cfg.ZainCashFailureURL,
 	)
 
-	walletHandler := grpcserver.NewWalletHandler(walletService, topupService, logger)
+	walletHandler := grpcserver.NewWalletHandler(walletService, topupService, logger).WithTransfers(
+		transferapp.NewService(
+			postgresrepo.NewTransferStore(walletRepository),
+			clients.NewIdentityClient(identityConn),
+			profileResolver,
+		),
+	)
 
 	eventHandler := events.NewHandler(
 		walletService,

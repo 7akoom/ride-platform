@@ -67,6 +67,23 @@ var ownerChecks = map[string]ownerCheck{
 		// checked by the service against the settlement.
 		return c.ownsDriver(ctx, r.GetDriverId())
 	},
+	"/ride.wallet.v1.WalletService/SendTransfer": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.SendTransferRequest)
+		if !ok {
+			return false, nil
+		}
+
+		// Only a rider sends, and only from their own wallet.
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
+	"/ride.wallet.v1.WalletService/ListTransfers": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.ListTransfersRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
 }
 
 func ownsWallet(ctx context.Context, c caller, ownerType walletv1.OwnerType, ownerID string) (bool, error) {

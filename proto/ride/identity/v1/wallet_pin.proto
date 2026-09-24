@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package ride.identity.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1";
+
+// WalletPinService: the PIN a person confirms money leaving their wallet
+// with (a transfer, paying a request). It is theirs, like the phone they log
+// in with, so identity keeps it. Wrong PINs lock it for a while: 5 in a row
+// lock it for 15 minutes, and each lock after that for twice as long (at
+// most a day). A correct PIN clears the count.
+service WalletPinService {
+  // GetWalletPinStatus says whether the caller has a PIN and whether it is
+  // locked.
+  rpc GetWalletPinStatus(GetWalletPinStatusRequest) returns (WalletPinStatusResponse) {
+    option (google.api.http) = {
+      get: "/v1/me/wallet-pin"
+    };
+  }
+
+  // SetWalletPin sets the caller's PIN: 4 or 6 digits, not all the same and
+  // not a straight run (1234, 654321). The first time, just new_pin. To
+  // change it, current_pin too (a wrong one counts as a wrong attempt). A
+  // forgotten PIN: sign in again (with a one-time code), then set a new one
+  // within 10 minutes of signing in without current_pin; this also lifts a
+  // lock.
+  rpc SetWalletPin(SetWalletPinRequest) returns (WalletPinStatusResponse) {
+    option (google.api.http) = {
+      put: "/v1/me/wallet-pin"
+      body: "*"
+    };
+  }
+
+  // VerifyWalletPin checks a person's PIN (internal: wallet-service, with
+  // the internal service token; no route from outside).
+  rpc VerifyWalletPin(VerifyWalletPinRequest) returns (VerifyWalletPinResponse);
+}
+
+// IdentityDirectoryService finds people by the phone they sign in with
+// (internal only: wallet-service, with the internal service token; no route
+// from outside). Only active identities are found.
+service IdentityDirectoryService {
+  rpc FindIdentityByPhone(FindIdentityByPhoneRequest) returns (FindIdentityByPhoneResponse);
+  rpc GetIdentityPhone(GetIdentityPhoneRequest) returns (GetIdentityPhoneResponse);
+}
+
+message GetWalletPinStatusRequest {}
+
+message WalletPinStatusResponse {
+  bool is_set = 1;
+  google.protobuf.Timestamp set_at = 2;
+  // Set while wrong PINs keep it locked.
+  google.protobuf.Timestamp locked_until = 3;
+  // Wrong PINs left before it locks.
+  int32 attempts_left = 4;
+}
+
+message SetWalletPinRequest {
+  string new_pin = 1;
+  string current_pin = 2;
+}
+
+enum PinCheck {
+  PIN_CHECK_UNSPECIFIED = 0;
+  PIN_CHECK_OK = 1;
+  PIN_CHECK_WRONG = 2;
+  PIN_CHECK_LOCKED = 3;
+  PIN_CHECK_NOT_SET = 4;
+}
+
+message VerifyWalletPinRequest {
+  string identity_id = 1;
+  string pin = 2;
+}
+
+message VerifyWalletPinResponse {
+  PinCheck result = 1;
+  int32 attempts_left = 2;
+  google.protobuf.Timestamp locked_until = 3;
+}
+
+message FindIdentityByPhoneRequest {
+  // E.164, e.g. +9647701234567.
+  string phone_number = 1;
+}
+
+message FindIdentityByPhoneResponse {
+  bool found = 1;
+  string identity_id = 2;
+}
+
+message GetIdentityPhoneRequest {
+  string identity_id = 1;
+}
+
+message GetIdentityPhoneResponse {
+  // The phone the identity signs in with; empty when it has none.
+  string phone_number = 1;
+}

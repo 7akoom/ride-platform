@@ -13,6 +13,7 @@ import (
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
 	outboxapp "github.com/7akoom/ride-platform/services/identity-service/internal/application/outbox"
+	"github.com/7akoom/ride-platform/services/identity-service/internal/application/walletpin"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/config"
 	cleanupinfra "github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/cleanup"
 	clockinfra "github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/clock"
@@ -22,6 +23,7 @@ import (
 	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/otp"
 	postgresrepo "github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/persistence/postgres"
 	valkeyrepo "github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/persistence/valkey"
+	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/pinhash"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/token"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/observability"
 	grpcserver "github.com/7akoom/ride-platform/services/identity-service/internal/transport/grpc"
@@ -133,6 +135,15 @@ func run() int {
 	); err != nil {
 		logger.Error(
 			"invalid production provider configuration",
+			"error", err,
+		)
+
+		return 1
+	}
+
+	if err := config.ValidateSecrets(cfg); err != nil {
+		logger.Error(
+			"invalid internal service token",
 			"error", err,
 		)
 
@@ -592,6 +603,7 @@ func run() int {
 		logger,
 		grpcserver.NewClientContextUnaryInterceptor(trustedProxies),
 		grpcserver.NewRequestSourceUnaryInterceptor(),
+		grpcserver.NewInternalServiceUnaryInterceptor(cfg.InternalServiceToken),
 		grpcserver.NewAuthenticationUnaryInterceptor(
 			func(
 				ctx context.Context,
@@ -619,6 +631,15 @@ func run() int {
 
 	server.RegisterIdentityService(
 		identityHandler,
+	)
+
+	walletPinStore := postgresrepo.NewWalletPinStore(databasePool)
+
+	server.RegisterWalletPinService(
+		grpcserver.NewWalletPinHandler(
+			walletpin.NewService(walletPinStore, pinhash.New(pinhash.DefaultCost), walletPinStore),
+			logger,
+		),
 	)
 
 	logger.Info(

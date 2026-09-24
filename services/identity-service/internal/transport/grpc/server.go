@@ -79,6 +79,16 @@ func (s *Server) RegisterIdentityService(
 	)
 }
 
+// RegisterWalletPinService registers the wallet PIN and the directory.
+func (s *Server) RegisterWalletPinService(handler *WalletPinHandler) {
+	if handler == nil {
+		panic("wallet PIN handler is required")
+	}
+
+	identityv1.RegisterWalletPinServiceServer(s.grpcServer, handler)
+	identityv1.RegisterIdentityDirectoryServiceServer(s.grpcServer, handler.Directory())
+}
+
 func (s *Server) Run() error {
 	listener, err := net.Listen("tcp", s.address)
 	if err != nil {

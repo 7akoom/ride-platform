@@ -64,6 +64,8 @@ func TestWalletOwnersReachTheirOwnWallets(t *testing.T) {
 		{"driver requests own payout", "identity-driver-a", "RequestPayout", &walletv1.RequestPayoutRequest{DriverId: "driver-a"}},
 		{"driver tops up own wallet", "identity-driver-a", "InitiateTopUp", &walletv1.InitiateTopUpRequest{DriverId: "driver-a"}},
 		{"someone who is both reaches each own wallet", "identity-both", "GetWallet", &walletv1.GetWalletRequest{OwnerType: walletv1.OwnerType_OWNER_TYPE_DRIVER, OwnerId: "driver-both"}},
+		{"rider sends from own wallet", "identity-rider-a", "SendTransfer", &walletv1.SendTransferRequest{RiderId: "rider-a"}},
+		{"rider lists own transfers", "identity-rider-a", "ListTransfers", &walletv1.ListTransfersRequest{RiderId: "rider-a"}},
 	}
 
 	for _, tc := range cases {
@@ -93,6 +95,9 @@ func TestWalletNonOwnersAreDenied(t *testing.T) {
 		{"another driver's top-up", "identity-driver-a", "InitiateTopUp", &walletv1.InitiateTopUpRequest{DriverId: "driver-b"}},
 		{"a rider requesting a payout", "identity-rider-a", "RequestPayout", &walletv1.RequestPayoutRequest{DriverId: "driver-a"}},
 		{"a user with no profile at all", "identity-nobody", "GetWallet", &walletv1.GetWalletRequest{OwnerType: walletv1.OwnerType_OWNER_TYPE_RIDER, OwnerId: "rider-a"}},
+		{"a rider sends from another's wallet", "identity-rider-a", "SendTransfer", &walletv1.SendTransferRequest{RiderId: "rider-b"}},
+		{"a driver sends from a driver wallet", "identity-driver-a", "SendTransfer", &walletv1.SendTransferRequest{RiderId: "driver-a"}},
+		{"another rider's transfers", "identity-rider-a", "ListTransfers", &walletv1.ListTransfersRequest{RiderId: "rider-b"}},
 		{"a wrong request type", "identity-rider-a", "GetWallet", &walletv1.TopUpRequest{}},
 	}
 

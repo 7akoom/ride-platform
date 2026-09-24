@@ -37,7 +37,9 @@ func (r *WalletRepository) GetActiveConfig(
 	row := r.pool.QueryRow(
 		ctx,
 		`SELECT id, currency_code, commission_rate, suspension_threshold,
-		        minimum_payout_amount, max_change_credit, created_at
+		        minimum_payout_amount, max_change_credit,
+		        transfer_min_amount, transfer_max_amount, transfer_daily_amount, transfer_daily_count,
+		        created_at
 		 FROM wallet_configs
 		 ORDER BY created_at DESC
 		 LIMIT 1`,
@@ -52,6 +54,10 @@ func (r *WalletRepository) GetActiveConfig(
 		&config.SuspensionThreshold,
 		&config.MinimumPayoutAmount,
 		&config.MaxChangeCredit,
+		&config.TransferMinAmount,
+		&config.TransferMaxAmount,
+		&config.TransferDailyAmount,
+		&config.TransferDailyCount,
 		&config.CreatedAt,
 	)
 	if err != nil {
@@ -480,8 +486,8 @@ func (r *WalletRepository) ListTransactions(
 	rows, err := r.pool.Query(
 		ctx,
 		`SELECT t.id, t.wallet_id, t.type, t.amount, t.balance_after,
-		        COALESCE(t.trip_id::text, ''), COALESCE(t.description, ''),
-		        t.created_at
+		        COALESCE(t.trip_id::text, ''), COALESCE(t.transfer_id::text, ''),
+		        COALESCE(t.description, ''), t.created_at
 		 FROM wallet_transactions t
 		 JOIN wallets w ON w.id = t.wallet_id
 		 WHERE w.owner_type = $1 AND w.owner_id = $2
@@ -509,6 +515,7 @@ func (r *WalletRepository) ListTransactions(
 			&transaction.Amount,
 			&transaction.BalanceAfter,
 			&transaction.TripID,
+			&transaction.TransferID,
 			&transaction.Description,
 			&transaction.CreatedAt,
 		); err != nil {
@@ -625,7 +632,7 @@ func applyMovementTx(
 		return wallet.Wallet{}, wallet.Transaction{}, fmt.Errorf("update wallet balance: %w", err)
 	}
 
-	var idempotencyKey, tripID, description *string
+	var idempotencyKey, tripID, transferID, description *string
 
 	if input.IdempotencyKey != "" {
 		idempotencyKey = &input.IdempotencyKey
@@ -633,6 +640,10 @@ func applyMovementTx(
 
 	if input.TripID != "" {
 		tripID = &input.TripID
+	}
+
+	if input.TransferID != "" {
+		transferID = &input.TransferID
 	}
 
 	if input.Description != "" {
@@ -646,11 +657,11 @@ func applyMovementTx(
 		ctx,
 		`INSERT INTO wallet_transactions
 		    (wallet_id, type, amount, balance_after, trip_id,
-		     idempotency_key, description)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		     idempotency_key, description, transfer_id)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		 RETURNING id, wallet_id, type, amount, balance_after,
-		           COALESCE(trip_id::text, ''), COALESCE(description, ''),
-		           created_at`,
+		           COALESCE(trip_id::text, ''), COALESCE(transfer_id::text, ''),
+		           COALESCE(description, ''), created_at`,
 		target.ID,
 		string(input.Type),
 		input.Amount,
@@ -658,6 +669,7 @@ func applyMovementTx(
 		tripID,
 		idempotencyKey,
 		description,
+		transferID,
 	)
 
 	if err := txRow.Scan(
@@ -667,6 +679,7 @@ func applyMovementTx(
 		&transaction.Amount,
 		&transaction.BalanceAfter,
 		&transaction.TripID,
+		&transaction.TransferID,
 		&transaction.Description,
 		&transaction.CreatedAt,
 	); err != nil {

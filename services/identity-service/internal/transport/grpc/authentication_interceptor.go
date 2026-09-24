@@ -101,6 +101,12 @@ func NewAuthenticationUnaryInterceptor(
 func requiresAuthentication(
 	fullMethod string,
 ) bool {
+	// Internal methods take the internal service token, not an access
+	// token: the internal service interceptor checks them.
+	if isInternalMethod(fullMethod) {
+		return false
+	}
+
 	switch fullMethod {
 	case identityv1.IdentityService_RequestLoginOTP_FullMethodName,
 		identityv1.IdentityService_VerifyLoginOTP_FullMethodName,

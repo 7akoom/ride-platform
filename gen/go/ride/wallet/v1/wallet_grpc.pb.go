@@ -28,6 +28,8 @@ const (
 	WalletService_GetTripSettlement_FullMethodName      = "/ride.wallet.v1.WalletService/GetTripSettlement"
 	WalletService_RecordTripChange_FullMethodName       = "/ride.wallet.v1.WalletService/RecordTripChange"
 	WalletService_InitiateTopUp_FullMethodName          = "/ride.wallet.v1.WalletService/InitiateTopUp"
+	WalletService_SendTransfer_FullMethodName           = "/ride.wallet.v1.WalletService/SendTransfer"
+	WalletService_ListTransfers_FullMethodName          = "/ride.wallet.v1.WalletService/ListTransfers"
 	WalletService_ProcessZainCashWebhook_FullMethodName = "/ride.wallet.v1.WalletService/ProcessZainCashWebhook"
 )
 
@@ -62,6 +64,16 @@ type WalletServiceClient interface {
 	// a pending record and opens a ZainCash payment session, returning
 	// the URL the driver's browser/webview should be sent to.
 	InitiateTopUp(ctx context.Context, in *InitiateTopUpRequest, opts ...grpc.CallOption) (*InitiateTopUpResponse, error)
+	// SendTransfer sends money from the rider's wallet to another registered
+	// rider's, by the phone the other signs in with (E.164, e.g.
+	// +9647701234567), confirmed with the sender's wallet PIN. The same
+	// idempotency_key again is the same transfer (never a second one); with
+	// another recipient or amount it is refused. Limits: the least and most
+	// one transfer may move, and how much and how many in any 24 hours
+	// (wallet config). The recipient is told (push).
+	SendTransfer(ctx context.Context, in *SendTransferRequest, opts ...grpc.CallOption) (*SendTransferResponse, error)
+	// ListTransfers is the rider's transfers, sent and received, newest first.
+	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersResponse, error)
 	// ProcessZainCashWebhook receives ZainCash's server-to-server payment
 	// notification. Called directly by ZainCash, not by an authenticated
 	// platform client — exempted from the auth interceptor same as the
@@ -167,6 +179,26 @@ func (c *walletServiceClient) InitiateTopUp(ctx context.Context, in *InitiateTop
 	return out, nil
 }
 
+func (c *walletServiceClient) SendTransfer(ctx context.Context, in *SendTransferRequest, opts ...grpc.CallOption) (*SendTransferResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendTransferResponse)
+	err := c.cc.Invoke(ctx, WalletService_SendTransfer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTransfersResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListTransfers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *walletServiceClient) ProcessZainCashWebhook(ctx context.Context, in *ProcessZainCashWebhookRequest, opts ...grpc.CallOption) (*ProcessZainCashWebhookResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ProcessZainCashWebhookResponse)
@@ -208,6 +240,16 @@ type WalletServiceServer interface {
 	// a pending record and opens a ZainCash payment session, returning
 	// the URL the driver's browser/webview should be sent to.
 	InitiateTopUp(context.Context, *InitiateTopUpRequest) (*InitiateTopUpResponse, error)
+	// SendTransfer sends money from the rider's wallet to another registered
+	// rider's, by the phone the other signs in with (E.164, e.g.
+	// +9647701234567), confirmed with the sender's wallet PIN. The same
+	// idempotency_key again is the same transfer (never a second one); with
+	// another recipient or amount it is refused. Limits: the least and most
+	// one transfer may move, and how much and how many in any 24 hours
+	// (wallet config). The recipient is told (push).
+	SendTransfer(context.Context, *SendTransferRequest) (*SendTransferResponse, error)
+	// ListTransfers is the rider's transfers, sent and received, newest first.
+	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error)
 	// ProcessZainCashWebhook receives ZainCash's server-to-server payment
 	// notification. Called directly by ZainCash, not by an authenticated
 	// platform client — exempted from the auth interceptor same as the
@@ -249,6 +291,12 @@ func (UnimplementedWalletServiceServer) RecordTripChange(context.Context, *Recor
 }
 func (UnimplementedWalletServiceServer) InitiateTopUp(context.Context, *InitiateTopUpRequest) (*InitiateTopUpResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InitiateTopUp not implemented")
+}
+func (UnimplementedWalletServiceServer) SendTransfer(context.Context, *SendTransferRequest) (*SendTransferResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendTransfer not implemented")
+}
+func (UnimplementedWalletServiceServer) ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTransfers not implemented")
 }
 func (UnimplementedWalletServiceServer) ProcessZainCashWebhook(context.Context, *ProcessZainCashWebhookRequest) (*ProcessZainCashWebhookResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ProcessZainCashWebhook not implemented")
@@ -436,6 +484,42 @@ func _WalletService_InitiateTopUp_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WalletService_SendTransfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendTransferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).SendTransfer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_SendTransfer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).SendTransfer(ctx, req.(*SendTransferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListTransfers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTransfersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListTransfers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListTransfers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListTransfers(ctx, req.(*ListTransfersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WalletService_ProcessZainCashWebhook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ProcessZainCashWebhookRequest)
 	if err := dec(in); err != nil {
@@ -496,6 +580,14 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InitiateTopUp",
 			Handler:    _WalletService_InitiateTopUp_Handler,
+		},
+		{
+			MethodName: "SendTransfer",
+			Handler:    _WalletService_SendTransfer_Handler,
+		},
+		{
+			MethodName: "ListTransfers",
+			Handler:    _WalletService_ListTransfers_Handler,
 		},
 		{
 			MethodName: "ProcessZainCashWebhook",

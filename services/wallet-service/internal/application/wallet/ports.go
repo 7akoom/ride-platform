@@ -10,6 +10,7 @@ type MovementInput struct {
 	Type           TransactionType
 	Amount         Money // signed
 	TripID         string
+	TransferID     string
 	IdempotencyKey string
 	Description    string
 

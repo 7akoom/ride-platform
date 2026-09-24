@@ -94,6 +94,11 @@ type Config struct {
 	OTPRequestEventRetention string
 	OTPChallengeRetention    string
 	AuthSessionRetention     string
+
+	// InternalServiceToken is what other services (wallet-service) call the
+	// internal methods with: verifying a wallet PIN, finding a person by
+	// phone.
+	InternalServiceToken string
 }
 
 func Load() Config {
@@ -106,7 +111,13 @@ func Load() Config {
 			"OTP_WEBHOOK_ADDRESS",
 			":8081",
 		),
-		DatabaseURL:   getEnv("DATABASE_URL", ""),
+		DatabaseURL: getEnv("DATABASE_URL", ""),
+
+		InternalServiceToken: getEnv(
+			"INTERNAL_SERVICE_TOKEN",
+			developmentInternalServiceToken,
+		),
+
 		OTPHashSecret: getEnv("OTP_HASH_SECRET", ""),
 
 		OTPBrandName:           getEnv("OTP_BRAND_NAME", "Ride"),

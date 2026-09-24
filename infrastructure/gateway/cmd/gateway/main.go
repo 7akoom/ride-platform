@@ -162,6 +162,14 @@ func run() int {
 		return 1
 	}
 
+	// The wallet PIN (GET/PUT /v1/me/wallet-pin). VerifyWalletPin and the
+	// directory have no route: they are internal.
+	if err := identityv1.RegisterWalletPinServiceHandler(ctx, mux, identityConn); err != nil {
+		logger.Error("failed to register the wallet PIN gateway handler", "error", err)
+
+		return 1
+	}
+
 	staffConn, err := dialBackend(cfg.StaffServiceAddress)
 	if err != nil {
 		logger.Error("failed to connect to staff-service", "error", err)

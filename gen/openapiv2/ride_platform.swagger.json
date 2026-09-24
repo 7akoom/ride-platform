@@ -18,6 +18,14 @@
       "name": "IdentityService"
     },
     {
+      "name": "WalletPinService",
+      "description": "WalletPinService: the PIN a person confirms money leaving their wallet\nwith (a transfer, paying a request). It is theirs, like the phone they log\nin with, so identity keeps it. Wrong PINs lock it for a while: 5 in a row\nlock it for 15 minutes, and each lock after that for twice as long (at\nmost a day). A correct PIN clears the count."
+    },
+    {
+      "name": "IdentityDirectoryService",
+      "description": "IdentityDirectoryService finds people by the phone they sign in with\n(internal only: wallet-service, with the internal service token; no route\nfrom outside). Only active identities are found."
+    },
+    {
       "name": "LocationService"
     },
     {
@@ -2840,6 +2848,60 @@
         ]
       }
     },
+    "/v1/me/wallet-pin": {
+      "get": {
+        "summary": "GetWalletPinStatus says whether the caller has a PIN and whether it is\nlocked.",
+        "operationId": "WalletPinService_GetWalletPinStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1WalletPinStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "WalletPinService"
+        ]
+      },
+      "put": {
+        "summary": "SetWalletPin sets the caller's PIN: 4 or 6 digits, not all the same and\nnot a straight run (1234, 654321). The first time, just new_pin. To\nchange it, current_pin too (a wrong one counts as a wrong attempt). A\nforgotten PIN: sign in again (with a one-time code), then set a new one\nwithin 10 minutes of signing in without current_pin; this also lifts a\nlock.",
+        "operationId": "WalletPinService_SetWalletPin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1WalletPinStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1SetWalletPinRequest"
+            }
+          }
+        ],
+        "tags": [
+          "WalletPinService"
+        ]
+      }
+    },
     "/v1/media/{mediaId}": {
       "get": {
         "summary": "GetMedia reads a file's details. Its owner, staff with media.read, or a service.",
@@ -4570,6 +4632,89 @@
         ]
       }
     },
+    "/v1/wallets/{riderId}/transfers": {
+      "get": {
+        "summary": "ListTransfers is the rider's transfers, sent and received, newest first.",
+        "operationId": "WalletService_ListTransfers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListTransfersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "description": "Default 20, at most 100.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      },
+      "post": {
+        "summary": "SendTransfer sends money from the rider's wallet to another registered\nrider's, by the phone the other signs in with (E.164, e.g.\n+9647701234567), confirmed with the sender's wallet PIN. The same\nidempotency_key again is the same transfer (never a second one); with\nanother recipient or amount it is refused. Limits: the least and most\none transfer may move, and how much and how many in any 24 hours\n(wallet config). The recipient is told (push).",
+        "operationId": "WalletService_SendTransfer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SendTransferResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "description": "The sender: the caller's own rider profile.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceSendTransferBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/zones": {
       "get": {
         "summary": "ListZones lists service zones, optionally for one city (?city_id=).",
@@ -5062,6 +5207,31 @@
         },
         "idempotencyKey": {
           "type": "string"
+        }
+      }
+    },
+    "WalletServiceSendTransferBody": {
+      "type": "object",
+      "properties": {
+        "recipientPhone": {
+          "type": "string",
+          "description": "The recipient's phone, E.164."
+        },
+        "amount": {
+          "type": "string",
+          "description": "Decimal string."
+        },
+        "note": {
+          "type": "string",
+          "description": "At most 140 characters, shown to both."
+        },
+        "pin": {
+          "type": "string",
+          "description": "The sender's wallet PIN."
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "description": "Required: a retry with the same key is the same transfer."
         }
       }
     },
@@ -6693,6 +6863,21 @@
         }
       }
     },
+    "v1ListTransfersResponse": {
+      "type": "object",
+      "properties": {
+        "transfers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Transfer"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListTripsResponse": {
       "type": "object",
       "properties": {
@@ -7680,6 +7865,18 @@
         }
       }
     },
+    "v1SendTransferResponse": {
+      "type": "object",
+      "properties": {
+        "transfer": {
+          "$ref": "#/definitions/v1Transfer"
+        },
+        "wallet": {
+          "$ref": "#/definitions/v1Wallet",
+          "description": "The sender's wallet after it."
+        }
+      }
+    },
     "v1Session": {
       "type": "object",
       "properties": {
@@ -7773,6 +7970,17 @@
         },
         "weatherSurge": {
           "type": "boolean"
+        }
+      }
+    },
+    "v1SetWalletPinRequest": {
+      "type": "object",
+      "properties": {
+        "newPin": {
+          "type": "string"
+        },
+        "currentPin": {
+          "type": "string"
         }
       }
     },
@@ -7969,6 +8177,10 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "transferId": {
+          "type": "string",
+          "description": "The transfer a transfer_out / transfer_in row is one side of."
         }
       }
     },
@@ -7982,10 +8194,40 @@
         "TRANSACTION_TYPE_COMMISSION",
         "TRANSACTION_TYPE_PAYOUT",
         "TRANSACTION_TYPE_ADJUSTMENT",
-        "TRANSACTION_TYPE_CHANGE_CREDIT"
+        "TRANSACTION_TYPE_CHANGE_CREDIT",
+        "TRANSACTION_TYPE_TRANSFER_OUT",
+        "TRANSACTION_TYPE_TRANSFER_IN"
       ],
       "default": "TRANSACTION_TYPE_UNSPECIFIED",
-      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet."
+      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one."
+    },
+    "v1Transfer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "direction": {
+          "type": "string"
+        },
+        "counterpartPhone": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "Transfer is seen from one rider's side: direction is sent or received and\ncounterpart_phone is the other rider's phone."
     },
     "v1TriggerSOSResponse": {
       "type": "object",
@@ -8421,6 +8663,28 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "v1WalletPinStatusResponse": {
+      "type": "object",
+      "properties": {
+        "isSet": {
+          "type": "boolean"
+        },
+        "setAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lockedUntil": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Set while wrong PINs keep it locked."
+        },
+        "attemptsLeft": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Wrong PINs left before it locks."
         }
       }
     },

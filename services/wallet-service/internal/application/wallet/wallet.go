@@ -75,6 +75,9 @@ const (
 	TxCommission  TransactionType = "commission"
 	TxPayout      TransactionType = "payout"
 	TxAdjustment  TransactionType = "adjustment"
+	// Money sent to another rider, and received from one.
+	TxTransferOut TransactionType = "transfer_out"
+	TxTransferIn  TransactionType = "transfer_in"
 )
 
 type Wallet struct {
@@ -95,8 +98,11 @@ type Transaction struct {
 	Amount       Money // signed: negative means money left the wallet
 	BalanceAfter Money
 	TripID       string
-	Description  string
-	CreatedAt    time.Time
+	// TransferID is the transfer a transfer_out / transfer_in row is one
+	// side of.
+	TransferID  string
+	Description string
+	CreatedAt   time.Time
 }
 
 // Config is the active commission/limits card for this deployment.
@@ -108,7 +114,13 @@ type Config struct {
 	MinimumPayoutAmount Money
 	// The most change one trip may credit to a rider's wallet (see RecordTripChange).
 	MaxChangeCredit Money
-	CreatedAt       time.Time
+	// Transfers between riders: the least and most one may move, and how
+	// much and how many a rider may send in any 24 hours.
+	TransferMinAmount   Money
+	TransferMaxAmount   Money
+	TransferDailyAmount Money
+	TransferDailyCount  int
+	CreatedAt           time.Time
 }
 
 // Settlement is the record of how one trip's money was split.

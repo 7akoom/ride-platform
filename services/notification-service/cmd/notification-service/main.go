@@ -33,6 +33,8 @@ const (
 	// tripArrivalsDurable is a consumer of its own, so the trip events one's
 	// filter never changes under it.
 	tripArrivalsDurable = "notification-trip-arrivals"
+
+	walletEventsDurable = "notification-wallet-events"
 )
 
 func main() {
@@ -243,6 +245,22 @@ func run() int {
 		return 1
 	}
 	defer pricingSubscription.Stop()
+
+	walletSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		"WALLET_EVENTS",
+		walletEventsDurable,
+		[]string{events.SubjectTransferCompleted},
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to wallet events", "error", err)
+
+		return 1
+	}
+	defer walletSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

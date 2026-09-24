@@ -11,6 +11,9 @@ type Config struct {
 	TripServiceAddress   string
 	RiderServiceAddress  string
 	DriverServiceAddress string
+	// IdentityServiceAddress is where wallet PINs are checked and riders are
+	// found by phone (transfers).
+	IdentityServiceAddress string
 
 	NATSURL            string
 	NATSPublishTimeout string
@@ -79,6 +82,8 @@ func Load() Config {
 		TripServiceAddress:   getEnv("TRIP_SERVICE_ADDRESS", "localhost:50055"),
 		RiderServiceAddress:  getEnv("RIDER_SERVICE_ADDRESS", "localhost:50052"),
 		DriverServiceAddress: getEnv("DRIVER_SERVICE_ADDRESS", "localhost:50053"),
+
+		IdentityServiceAddress: getEnv("IDENTITY_SERVICE_ADDRESS", "localhost:50051"),
 
 		NATSURL: getEnv(
 			"NATS_URL",

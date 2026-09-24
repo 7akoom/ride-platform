@@ -69,6 +69,27 @@ service WalletService {
     };
   }
 
+  // SendTransfer sends money from the rider's wallet to another registered
+  // rider's, by the phone the other signs in with (E.164, e.g.
+  // +9647701234567), confirmed with the sender's wallet PIN. The same
+  // idempotency_key again is the same transfer (never a second one); with
+  // another recipient or amount it is refused. Limits: the least and most
+  // one transfer may move, and how much and how many in any 24 hours
+  // (wallet config). The recipient is told (push).
+  rpc SendTransfer(SendTransferRequest) returns (SendTransferResponse) {
+    option (google.api.http) = {
+      post: "/v1/wallets/{rider_id}/transfers"
+      body: "*"
+    };
+  }
+
+  // ListTransfers is the rider's transfers, sent and received, newest first.
+  rpc ListTransfers(ListTransfersRequest) returns (ListTransfersResponse) {
+    option (google.api.http) = {
+      get: "/v1/wallets/{rider_id}/transfers"
+    };
+  }
+
   // ProcessZainCashWebhook receives ZainCash's server-to-server payment
   // notification. Called directly by ZainCash, not by an authenticated
   // platform client — exempted from the auth interceptor same as the
@@ -104,6 +125,9 @@ enum TransactionType {
   TRANSACTION_TYPE_ADJUSTMENT = 6;
   // Change the driver could not return in cash, credited to the rider's wallet.
   TRANSACTION_TYPE_CHANGE_CREDIT = 7;
+  // Money sent to another rider, and received from one.
+  TRANSACTION_TYPE_TRANSFER_OUT = 8;
+  TRANSACTION_TYPE_TRANSFER_IN = 9;
 }
 
 message Wallet {
@@ -129,6 +153,8 @@ message Transaction {
   string trip_id = 6;
   string description = 7;
   google.protobuf.Timestamp created_at = 8;
+  // The transfer a transfer_out / transfer_in row is one side of.
+  string transfer_id = 9;
 }
 
 message GetWalletRequest {
@@ -275,4 +301,49 @@ message RecordTripChangeResponse {
   string cash_due = 3;
   string cash_received = 4;
   string change_amount = 5;
+}
+
+message SendTransferRequest {
+  // The sender: the caller's own rider profile.
+  string rider_id = 1;
+  // The recipient's phone, E.164.
+  string recipient_phone = 2;
+  // Decimal string.
+  string amount = 3;
+  // At most 140 characters, shown to both.
+  string note = 4;
+  // The sender's wallet PIN.
+  string pin = 5;
+  // Required: a retry with the same key is the same transfer.
+  string idempotency_key = 6;
+}
+
+// Transfer is seen from one rider's side: direction is sent or received and
+// counterpart_phone is the other rider's phone.
+message Transfer {
+  string id = 1;
+  string direction = 2;
+  string counterpart_phone = 3;
+  string amount = 4;
+  string currency_code = 5;
+  string note = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message SendTransferResponse {
+  Transfer transfer = 1;
+  // The sender's wallet after it.
+  Wallet wallet = 2;
+}
+
+message ListTransfersRequest {
+  string rider_id = 1;
+  // Default 20, at most 100.
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListTransfersResponse {
+  repeated Transfer transfers = 1;
+  string next_page_token = 2;
 }

@@ -24,6 +24,7 @@ func main() {
 	issuer := flag.String("iss", envOr("ACCESS_TOKEN_ISSUER", "ride-identity"), "issuer")
 	audience := flag.String("aud", envOr("ACCESS_TOKEN_AUDIENCE", "ride-platform"), "audience")
 	ttl := flag.Duration("ttl", 10*time.Minute, "token lifetime; a negative value mints an already expired token")
+	session := flag.String("sid", "", "session id to put in the token; identity-service only accepts a session it has on file (default: a made-up one)")
 	flag.Parse()
 
 	if *subject == "" {
@@ -50,7 +51,7 @@ func main() {
 		fail("the signing key is not Ed25519")
 	}
 
-	token, err := mint(key, *keyID, *issuer, *audience, *subject, *ttl, time.Now())
+	token, err := mint(key, *keyID, *issuer, *audience, *subject, *session, *ttl, time.Now())
 	if err != nil {
 		fail(err.Error())
 	}
@@ -58,7 +59,7 @@ func main() {
 	fmt.Println(token)
 }
 
-func mint(key ed25519.PrivateKey, keyID, issuer, audience, subject string, ttl time.Duration, now time.Time) (string, error) {
+func mint(key ed25519.PrivateKey, keyID, issuer, audience, subject, session string, ttl time.Duration, now time.Time) (string, error) {
 	header, err := json.Marshal(map[string]string{"alg": "EdDSA", "typ": "JWT", "kid": keyID})
 	if err != nil {
 		return "", err
@@ -69,11 +70,15 @@ func mint(key ed25519.PrivateKey, keyID, issuer, audience, subject string, ttl t
 		return "", err
 	}
 
+	if session == "" {
+		session = "devtoken-" + hex.EncodeToString(jti[:4])
+	}
+
 	claims, err := json.Marshal(map[string]any{
 		"iss": issuer,
 		"aud": []string{audience},
 		"sub": subject,
-		"sid": "devtoken-" + hex.EncodeToString(jti[:4]),
+		"sid": session,
 		"jti": hex.EncodeToString(jti),
 		"iat": now.Unix(),
 		"nbf": now.Add(-time.Minute).Unix(),
