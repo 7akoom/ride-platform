@@ -252,6 +252,34 @@ all is refused without counting.
 must be a real secret (32+ characters) and must never change once vouchers
 are issued: codes issued under the old key stop working.
 
+## Top-ups through a payment provider
+
+A rider or a driver tops up their own wallet (`POST /v1/wallets/{ownerId}/topups`)
+through a payment provider: `topup.Provider` opens a session on the
+provider's own page and verifies the provider's signed notification. The
+customer pays on that page, so a card number or a wallet PIN never reaches
+the platform, and no provider may ask for one; a card processor is one more
+adapter in the `providers` map in `main.go`. ZainCash is the one every
+deployment has (`internal/infrastructure/zaincash`, whole dinars only).
+
+`provider_topups` keeps each attempt (owner, provider, amount, status). The
+provider's notification (`/v1/wallet/zaincash/webhook` for ZainCash) credits
+the wallet through `wallet.Service.TopUp` with the key
+`<provider>:<provider transaction id>`, so a notification delivered twice, or
+a retry after a crash between the credit and the record, never credits twice;
+a late failure never undoes a success. `GET /v1/wallets/{ownerId}/topups/{id}`
+tells the app how it ended. Limits: `wallet_configs.topup_min_amount` and
+`topup_max_amount` (1,000 and 1,000,000 by default).
+
+## Tips
+
+A rider tips the driver of a completed trip from their wallet
+(`POST /v1/wallets/{riderId}/trips/{tripId}/tip`): once per trip, within 72
+hours of its settlement, between `tip_min_amount` and `tip_max_amount` (250 and
+25,000 by default). All of it reaches the driver (no commission): a `tip` row
+on each wallet, a `trip_tips` row, and `wallet.tip_received` for the driver's
+notification. The trip's settlement shows it (`tipAmount`).
+
 ## Configuration
 
 `wallet_configs` is versioned like `pricing_configs`: change the
@@ -279,8 +307,11 @@ worker):
   dispatch-service, worth doing next.
 - **No admin RPC to block a wallet by hand** — a driver's suspension follows
   their balance; anything else is SQL for now.
-- **No push when a payout is paid or rejected** — the driver sees it in their
-  list (notification templates for the new events come with P11).
+- **No push when a payout is paid or rejected, or a tip arrives** — the
+  driver sees them in the app; `wallet.tip_received` is written already, the
+  notification templates for the new events come with P11.
+- **One provider so far** — ZainCash. A card processor is an adapter to write
+  once one is chosen for the market.
 
 ## Running locally
 

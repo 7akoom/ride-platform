@@ -68,12 +68,36 @@ service WalletService {
     };
   }
 
-  // InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
-  // a pending record and opens a ZainCash payment session, returning
-  // the URL the driver's browser/webview should be sent to.
+  // InitiateTopUp starts a top-up of the caller's own wallet (a rider's or
+  // a driver's) through a payment provider (zaincash, the default): a
+  // pending record and a payment session on the provider's own page, whose
+  // URL the app opens. The customer pays there, so a card number or a
+  // wallet PIN never reaches the platform. The wallet is credited when the
+  // provider's notification says the payment succeeded; GetTopUp tells the
+  // app how it ended. Within the deployment's top-up limits.
   rpc InitiateTopUp(InitiateTopUpRequest) returns (InitiateTopUpResponse) {
     option (google.api.http) = {
       post: "/v1/wallet/topups/zaincash"
+      body: "*"
+      additional_bindings {
+        post: "/v1/wallets/{owner_id}/topups"
+        body: "*"
+      }
+    };
+  }
+  rpc GetTopUp(GetTopUpRequest) returns (GetTopUpResponse) {
+    option (google.api.http) = {
+      get: "/v1/wallets/{owner_id}/topups/{top_up_id}"
+    };
+  }
+
+  // TipDriver gives the trip's driver a tip from the rider's wallet: once
+  // per trip, within 72 hours of a completed (settled) trip, within the
+  // deployment's tip limits; the driver gets all of it (no commission). The
+  // same idempotency_key again is the same tip.
+  rpc TipDriver(TipDriverRequest) returns (TipDriverResponse) {
+    option (google.api.http) = {
+      post: "/v1/wallets/{rider_id}/trips/{trip_id}/tip"
       body: "*"
     };
   }
@@ -345,6 +369,8 @@ enum TransactionType {
   TRANSACTION_TYPE_REFUND = 12;
   // A rejected payout's held amount, back in the driver's wallet.
   TRANSACTION_TYPE_PAYOUT_RETURN = 13;
+  // A tip: out of the rider's wallet, into the driver's.
+  TRANSACTION_TYPE_TIP = 14;
 }
 
 message Wallet {
@@ -518,9 +544,15 @@ message RejectPayoutRequest {
 }
 
 message InitiateTopUpRequest {
+  // The driver topping up (the older form; owner_type and owner_id say the
+  // same for any wallet).
   string driver_id = 1;
   // Decimal string, e.g. "25000".
   string amount = 2;
+  OwnerType owner_type = 3;
+  string owner_id = 4;
+  // The payment provider; empty means zaincash.
+  string provider = 5;
 }
 
 message InitiateTopUpResponse {
@@ -528,6 +560,23 @@ message InitiateTopUpResponse {
   // pending | succeeded | failed
   string status = 2;
   string redirect_url = 3;
+}
+
+message GetTopUpRequest {
+  OwnerType owner_type = 1;
+  string owner_id = 2;
+  string top_up_id = 3;
+}
+
+message GetTopUpResponse {
+  string top_up_id = 1;
+  string provider = 2;
+  // pending | succeeded | failed
+  string status = 3;
+  string amount = 4;
+  string currency_code = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
 }
 
 message ProcessZainCashWebhookRequest {
@@ -566,6 +615,8 @@ message GetTripSettlementResponse {
   // How much of due_amount is paid since (from money that reached the
   // rider's wallet).
   string due_paid = 12;
+  // What the rider tipped the driver for this trip. "0" if nothing.
+  string tip_amount = 13;
 }
 
 message RecordTripChangeRequest {
@@ -956,4 +1007,27 @@ message ListTripRefundsResponse {
   // is refunded so far.
   string paid_amount = 2;
   string refunded_amount = 3;
+}
+
+message TipDriverRequest {
+  // The caller's own rider profile.
+  string rider_id = 1;
+  string trip_id = 2;
+  string amount = 3;
+  // Required: a retry with the same key is the same tip.
+  string idempotency_key = 4;
+}
+
+message Tip {
+  string id = 1;
+  string trip_id = 2;
+  string amount = 3;
+  string currency_code = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message TipDriverResponse {
+  Tip tip = 1;
+  // The rider's wallet after it.
+  Wallet wallet = 2;
 }

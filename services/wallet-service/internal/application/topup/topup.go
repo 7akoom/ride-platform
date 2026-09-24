@@ -1,12 +1,12 @@
-// Package topup orchestrates a driver funding their wallet via
-// ZainCash: creating a payment session, then reconciling the result
-// (webhook or manual inquiry) against wallet.Service.TopUp — the one
-// place a balance actually changes. This package owns none of the
-// ledger; it only tracks payment-attempt state and decides when to
-// call into wallet.Service.
+// Package topup is a wallet funded through a payment provider: a payment
+// session on the provider's own page, then the provider's notification of
+// how it ended, reconciled against wallet.Service.TopUp, the one place a
+// balance changes. This package owns none of the ledger; it tracks the
+// payment attempt and decides when to credit.
 package topup
 
 import (
+	"context"
 	"time"
 
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/wallet"
@@ -20,67 +20,66 @@ const (
 	StatusFailed    Status = "failed"
 )
 
-func (s Status) Valid() bool {
-	switch s {
-	case StatusPending, StatusSucceeded, StatusFailed:
-		return true
-	default:
-		return false
-	}
-}
+// ProviderZainCash is the provider every deployment has, and the default.
+const ProviderZainCash = "zaincash"
 
 type TopUp struct {
 	ID                    string
-	DriverID              string
+	OwnerType             wallet.OwnerType
+	OwnerID               string
+	Provider              string
 	ExternalReferenceID   string
-	ZainCashTransactionID string
+	ProviderTransactionID string
 	Amount                wallet.Money
+	CurrencyCode          string
 	Status                Status
 	FailureReason         string
 	CreatedAt             time.Time
 	UpdatedAt             time.Time
 }
 
-// InitTransactionInput/Result and WebhookEvent are this package's OWN
-// view of a ZainCash payment session — deliberately not the
-// infrastructure/zaincash package's types, so this domain package
-// doesn't depend on that HTTP/JWT client directly (see
-// infrastructure/zaincash's adapter, which implements ZainCashClient
-// below by translating to/from these).
-type InitTransactionInput struct {
-	Language            string
-	ExternalReferenceID  string
-	OrderID              string
-	ServiceType          string
-	AmountValue          string
-	CustomerPhone        string
-	SuccessURL           string
-	FailureURL           string
+// StartInput is a payment session to open at the provider.
+type StartInput struct {
+	// ReferenceID is ours: the provider echoes it back in its notification.
+	ReferenceID  string
+	OrderID      string
+	OwnerType    wallet.OwnerType
+	Amount       wallet.Money
+	CurrencyCode string
+	SuccessURL   string
+	FailureURL   string
 }
 
-type InitTransactionResult struct {
-	TransactionID string
-	RedirectURL   string
+// StartResult is the provider's session: its id, and the page the customer
+// pays on.
+type StartResult struct {
+	ProviderTransactionID string
+	RedirectURL           string
 }
 
-// WebhookEvent is the decoded, signature-verified content of a
-// ZainCash webhook or redirect-callback token.
-type WebhookEvent struct {
-	EventID             string
-	EventType           string
-	TransactionID       string
-	MerchantReferenceID string
-	OrderID             string
-	CurrentStatus       string
-	PreviousStatus      string
-}
+// Outcome is where the provider says a payment stands.
+type Outcome string
 
-// zainCashStatusSuccess/Failed are the transaction status values (see
-// ZainCash's docs) that this package treats as final. Every other
-// status (PENDING, OTP_SENT, CUSTOMER_AUTHENTICATION_REQUIRED,
-// EXPIRED, ...) is left alone: ProcessWebhook only acts on a
-// definitive outcome.
 const (
-	zainCashStatusSuccess = "SUCCESS"
-	zainCashStatusFailed  = "FAILED"
+	OutcomePending   Outcome = "pending"
+	OutcomeSucceeded Outcome = "succeeded"
+	OutcomeFailed    Outcome = "failed"
 )
+
+// Notice is a provider's verified notification about a payment.
+type Notice struct {
+	ReferenceID           string
+	ProviderTransactionID string
+	Outcome               Outcome
+}
+
+// Provider is a payment provider with a hosted payment page: the customer
+// pays on the provider's page, so a card number or a wallet PIN never
+// reaches the platform, and no provider here may ask for one. A card
+// processor is one more Provider.
+type Provider interface {
+	Start(ctx context.Context, input StartInput) (StartResult, error)
+	// Verify checks a notification's signature and reads it; an error means
+	// it is not the provider's.
+	Verify(token string) (Notice, error)
+}

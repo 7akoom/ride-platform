@@ -29,6 +29,8 @@ const (
 	WalletService_GetTripSettlement_FullMethodName      = "/ride.wallet.v1.WalletService/GetTripSettlement"
 	WalletService_RecordTripChange_FullMethodName       = "/ride.wallet.v1.WalletService/RecordTripChange"
 	WalletService_InitiateTopUp_FullMethodName          = "/ride.wallet.v1.WalletService/InitiateTopUp"
+	WalletService_GetTopUp_FullMethodName               = "/ride.wallet.v1.WalletService/GetTopUp"
+	WalletService_TipDriver_FullMethodName              = "/ride.wallet.v1.WalletService/TipDriver"
 	WalletService_SendTransfer_FullMethodName           = "/ride.wallet.v1.WalletService/SendTransfer"
 	WalletService_ListTransfers_FullMethodName          = "/ride.wallet.v1.WalletService/ListTransfers"
 	WalletService_CreateMoneyRequest_FullMethodName     = "/ride.wallet.v1.WalletService/CreateMoneyRequest"
@@ -91,10 +93,20 @@ type WalletServiceClient interface {
 	// own driver, after the trip is settled, once per trip (the same amount again is harmless),
 	// and at most the deployment's max_change_credit.
 	RecordTripChange(ctx context.Context, in *RecordTripChangeRequest, opts ...grpc.CallOption) (*RecordTripChangeResponse, error)
-	// InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
-	// a pending record and opens a ZainCash payment session, returning
-	// the URL the driver's browser/webview should be sent to.
+	// InitiateTopUp starts a top-up of the caller's own wallet (a rider's or
+	// a driver's) through a payment provider (zaincash, the default): a
+	// pending record and a payment session on the provider's own page, whose
+	// URL the app opens. The customer pays there, so a card number or a
+	// wallet PIN never reaches the platform. The wallet is credited when the
+	// provider's notification says the payment succeeded; GetTopUp tells the
+	// app how it ended. Within the deployment's top-up limits.
 	InitiateTopUp(ctx context.Context, in *InitiateTopUpRequest, opts ...grpc.CallOption) (*InitiateTopUpResponse, error)
+	GetTopUp(ctx context.Context, in *GetTopUpRequest, opts ...grpc.CallOption) (*GetTopUpResponse, error)
+	// TipDriver gives the trip's driver a tip from the rider's wallet: once
+	// per trip, within 72 hours of a completed (settled) trip, within the
+	// deployment's tip limits; the driver gets all of it (no commission). The
+	// same idempotency_key again is the same tip.
+	TipDriver(ctx context.Context, in *TipDriverRequest, opts ...grpc.CallOption) (*TipDriverResponse, error)
 	// SendTransfer sends money from the rider's wallet to another registered
 	// rider's, by the phone the other signs in with (E.164, e.g.
 	// +9647701234567), confirmed with the sender's wallet PIN. The same
@@ -293,6 +305,26 @@ func (c *walletServiceClient) InitiateTopUp(ctx context.Context, in *InitiateTop
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InitiateTopUpResponse)
 	err := c.cc.Invoke(ctx, WalletService_InitiateTopUp_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) GetTopUp(ctx context.Context, in *GetTopUpRequest, opts ...grpc.CallOption) (*GetTopUpResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTopUpResponse)
+	err := c.cc.Invoke(ctx, WalletService_GetTopUp_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) TipDriver(ctx context.Context, in *TipDriverRequest, opts ...grpc.CallOption) (*TipDriverResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TipDriverResponse)
+	err := c.cc.Invoke(ctx, WalletService_TipDriver_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -611,10 +643,20 @@ type WalletServiceServer interface {
 	// own driver, after the trip is settled, once per trip (the same amount again is harmless),
 	// and at most the deployment's max_change_credit.
 	RecordTripChange(context.Context, *RecordTripChangeRequest) (*RecordTripChangeResponse, error)
-	// InitiateTopUp starts a ZainCash-funded top-up for a driver: creates
-	// a pending record and opens a ZainCash payment session, returning
-	// the URL the driver's browser/webview should be sent to.
+	// InitiateTopUp starts a top-up of the caller's own wallet (a rider's or
+	// a driver's) through a payment provider (zaincash, the default): a
+	// pending record and a payment session on the provider's own page, whose
+	// URL the app opens. The customer pays there, so a card number or a
+	// wallet PIN never reaches the platform. The wallet is credited when the
+	// provider's notification says the payment succeeded; GetTopUp tells the
+	// app how it ended. Within the deployment's top-up limits.
 	InitiateTopUp(context.Context, *InitiateTopUpRequest) (*InitiateTopUpResponse, error)
+	GetTopUp(context.Context, *GetTopUpRequest) (*GetTopUpResponse, error)
+	// TipDriver gives the trip's driver a tip from the rider's wallet: once
+	// per trip, within 72 hours of a completed (settled) trip, within the
+	// deployment's tip limits; the driver gets all of it (no commission). The
+	// same idempotency_key again is the same tip.
+	TipDriver(context.Context, *TipDriverRequest) (*TipDriverResponse, error)
 	// SendTransfer sends money from the rider's wallet to another registered
 	// rider's, by the phone the other signs in with (E.164, e.g.
 	// +9647701234567), confirmed with the sender's wallet PIN. The same
@@ -748,6 +790,12 @@ func (UnimplementedWalletServiceServer) RecordTripChange(context.Context, *Recor
 }
 func (UnimplementedWalletServiceServer) InitiateTopUp(context.Context, *InitiateTopUpRequest) (*InitiateTopUpResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InitiateTopUp not implemented")
+}
+func (UnimplementedWalletServiceServer) GetTopUp(context.Context, *GetTopUpRequest) (*GetTopUpResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTopUp not implemented")
+}
+func (UnimplementedWalletServiceServer) TipDriver(context.Context, *TipDriverRequest) (*TipDriverResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TipDriver not implemented")
 }
 func (UnimplementedWalletServiceServer) SendTransfer(context.Context, *SendTransferRequest) (*SendTransferResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendTransfer not implemented")
@@ -1030,6 +1078,42 @@ func _WalletService_InitiateTopUp_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WalletServiceServer).InitiateTopUp(ctx, req.(*InitiateTopUpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_GetTopUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTopUpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetTopUp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetTopUp_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetTopUp(ctx, req.(*GetTopUpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_TipDriver_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TipDriverRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).TipDriver(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_TipDriver_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).TipDriver(ctx, req.(*TipDriverRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1584,6 +1668,14 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InitiateTopUp",
 			Handler:    _WalletService_InitiateTopUp_Handler,
+		},
+		{
+			MethodName: "GetTopUp",
+			Handler:    _WalletService_GetTopUp_Handler,
+		},
+		{
+			MethodName: "TipDriver",
+			Handler:    _WalletService_TipDriver_Handler,
 		},
 		{
 			MethodName: "SendTransfer",

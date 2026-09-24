@@ -51,6 +51,8 @@ var methodAccess = map[string]accessLevel{
 	"/ride.wallet.v1.WalletService/GetRiderDues":        accessOwner,
 	"/ride.wallet.v1.WalletService/RedeemVoucher":       accessOwner,
 	"/ride.wallet.v1.WalletService/ListPayouts":         accessOwner,
+	"/ride.wallet.v1.WalletService/GetTopUp":            accessOwner,
+	"/ride.wallet.v1.WalletService/TipDriver":           accessOwner,
 
 	"/ride.wallet.v1.WalletService/CreateVoucherBatch": accessStaff,
 	"/ride.wallet.v1.WalletService/ListVoucherBatches": accessStaff,

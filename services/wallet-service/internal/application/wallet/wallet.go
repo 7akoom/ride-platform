@@ -86,6 +86,8 @@ const (
 	// Money given back for a trip, and a rejected payout's held amount.
 	TxRefund       TransactionType = "refund"
 	TxPayoutReturn TransactionType = "payout_return"
+	// A tip: out of the rider's wallet, into the driver's.
+	TxTip TransactionType = "tip"
 )
 
 type Wallet struct {
@@ -131,7 +133,12 @@ type Config struct {
 	// BlockTripsWithDues: a rider who owes fees may not request trips until
 	// they are paid.
 	BlockTripsWithDues bool
-	CreatedAt          time.Time
+	// The least and most one provider top-up may bring, and one tip may give.
+	TopUpMinAmount Money
+	TopUpMaxAmount Money
+	TipMinAmount   Money
+	TipMaxAmount   Money
+	CreatedAt      time.Time
 }
 
 // Due is a cancelled trip's fee the rider's wallet could not cover at the
@@ -177,6 +184,8 @@ type Settlement struct {
 	// DuePaid is how much of DueAmount was paid since, from money that
 	// reached the rider's wallet.
 	DuePaid Money
+	// TipAmount is what the rider tipped the driver for the trip.
+	TipAmount Money
 }
 
 // CommissionFor returns the platform's cut of a fare, rounded to the

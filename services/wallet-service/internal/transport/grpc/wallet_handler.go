@@ -7,6 +7,7 @@ import (
 
 	walletv1 "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/operations"
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/tips"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/transfer"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/voucher"
@@ -26,6 +27,7 @@ type WalletHandler struct {
 	statements    wallet.StatementReader
 	vouchers      *voucher.Service
 	operations    *operations.Service
+	tips          *tips.Service
 	logger        *slog.Logger
 }
 
@@ -179,11 +181,9 @@ func (h *WalletHandler) CheckDriverStanding(
 	}, nil
 }
 
-// InitiateTopUp starts a ZainCash-funded top-up: creates a pending
-// record and opens a ZainCash payment session, returning the URL the
-// driver's browser/webview should be sent to. Exposed over REST via
-// the API Gateway (POST /v1/wallet/topups/zaincash) — a normal
-// authenticated driver call, unlike ProcessZainCashWebhook below.
+// InitiateTopUp starts a top-up of the caller's own wallet through a payment
+// provider, returning the page the app opens. The older form names only a
+// driver (driver_id); owner_type and owner_id name any wallet.
 func (h *WalletHandler) InitiateTopUp(
 	ctx context.Context,
 	request *walletv1.InitiateTopUpRequest,
@@ -197,9 +197,13 @@ func (h *WalletHandler) InitiateTopUp(
 		return nil, status.Error(codes.InvalidArgument, "amount must be a valid decimal value")
 	}
 
+	ownerType, ownerID := topUpOwner(request)
+
 	created, redirectURL, err := h.topupService.Initiate(ctx, topup.InitiateInput{
-		DriverID: request.GetDriverId(),
-		Amount:   amount,
+		OwnerType: ownerType,
+		OwnerID:   ownerID,
+		Amount:    amount,
+		Provider:  request.GetProvider(),
 	})
 	if err != nil {
 		return nil, h.mapTopUpError(err)
@@ -212,10 +216,42 @@ func (h *WalletHandler) InitiateTopUp(
 	}, nil
 }
 
+// topUpOwner is the wallet a top-up is for: owner_type and owner_id, or the
+// driver of the older form.
+func topUpOwner(request *walletv1.InitiateTopUpRequest) (wallet.OwnerType, string) {
+	if request.GetOwnerId() != "" {
+		return toDomainOwnerType(request.GetOwnerType()), request.GetOwnerId()
+	}
+
+	return wallet.OwnerDriver, request.GetDriverId()
+}
+
+// GetTopUp tells the app how the owner's top-up stands (after the provider's
+// page sent the customer back).
+func (h *WalletHandler) GetTopUp(
+	ctx context.Context,
+	request *walletv1.GetTopUpRequest,
+) (*walletv1.GetTopUpResponse, error) {
+	found, err := h.topupService.Get(ctx, toDomainOwnerType(request.GetOwnerType()), request.GetOwnerId(), request.GetTopUpId())
+	if err != nil {
+		return nil, h.mapTopUpError(err)
+	}
+
+	return &walletv1.GetTopUpResponse{
+		TopUpId:      found.ID,
+		Provider:     found.Provider,
+		Status:       string(found.Status),
+		Amount:       found.Amount.String(),
+		CurrencyCode: found.CurrencyCode,
+		CreatedAt:    timestamppb.New(found.CreatedAt),
+		UpdatedAt:    timestamppb.New(found.UpdatedAt),
+	}, nil
+}
+
 // ProcessZainCashWebhook receives ZainCash's server-to-server payment
 // notification. Exempted from the auth interceptor (see
 // authentication_interceptor.go) — the JWT signature check inside
-// topup.Service.ProcessWebhookToken is this endpoint's only credential
+// topup.Service.ProcessNotice is this endpoint's only credential
 // check.
 func (h *WalletHandler) ProcessZainCashWebhook(
 	ctx context.Context,
@@ -225,7 +261,7 @@ func (h *WalletHandler) ProcessZainCashWebhook(
 		return nil, status.Error(codes.InvalidArgument, "request is required")
 	}
 
-	if err := h.topupService.ProcessWebhookToken(ctx, request.GetToken()); err != nil {
+	if err := h.topupService.ProcessNotice(ctx, topup.ProviderZainCash, request.GetToken()); err != nil {
 		return nil, h.mapTopUpError(err)
 	}
 
@@ -294,8 +330,14 @@ func (h *WalletHandler) mapTopUpError(err error) error {
 	case errors.Is(err, topup.ErrTopUpNotFound):
 		return status.Error(codes.NotFound, "top-up not found")
 
-	case errors.Is(err, topup.ErrDriverIDRequired),
+	case errors.Is(err, topup.ErrBelowMinimum),
+		errors.Is(err, topup.ErrAboveMaximum),
+		errors.Is(err, topup.ErrAmountNotSupported):
+		return status.Error(codes.FailedPrecondition, err.Error())
+
+	case errors.Is(err, topup.ErrOwnerRequired),
 		errors.Is(err, topup.ErrInvalidAmount),
+		errors.Is(err, topup.ErrUnknownProvider),
 		errors.Is(err, topup.ErrInvalidWebhookToken):
 		return status.Error(codes.InvalidArgument, err.Error())
 
@@ -367,6 +409,8 @@ func toProtoTransactionType(t wallet.TransactionType) walletv1.TransactionType {
 		return walletv1.TransactionType_TRANSACTION_TYPE_REFUND
 	case wallet.TxPayoutReturn:
 		return walletv1.TransactionType_TRANSACTION_TYPE_PAYOUT_RETURN
+	case wallet.TxTip:
+		return walletv1.TransactionType_TRANSACTION_TYPE_TIP
 	default:
 		return walletv1.TransactionType_TRANSACTION_TYPE_UNSPECIFIED
 	}

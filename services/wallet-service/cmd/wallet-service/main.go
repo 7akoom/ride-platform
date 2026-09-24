@@ -11,6 +11,7 @@ import (
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/events"
 	operationsapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/operations"
 	outboxapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/outbox"
+	tipsapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/tips"
 	topupapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
 	transferapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/transfer"
 	voucherapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/voucher"
@@ -265,11 +266,16 @@ func run() int {
 		Scope:         cfg.ZainCashScope,
 		WebhookSecret: cfg.ZainCashWebhookSecret,
 	})
-	zainCashAdapter := zaincashinfra.NewAdapter(zainCashClient)
+	// Payment providers for top-ups, by name. A provider has a hosted
+	// payment page: a card processor joins this map as one more adapter.
+	paymentProviders := map[string]topupapp.Provider{
+		topupapp.ProviderZainCash: zaincashinfra.NewAdapter(zainCashClient),
+	}
 
 	topupService := topupapp.NewService(
 		postgresrepo.NewTopUpRepository(pool),
-		zainCashAdapter,
+		walletRepository,
+		paymentProviders,
 		walletService,
 		cfg.ZainCashSuccessURL,
 		cfg.ZainCashFailureURL,
@@ -291,7 +297,8 @@ func run() int {
 			voucherCodec,
 			voucherapp.Limits{MaxFailures: voucherConfig.MaxFailures, Window: voucherConfig.Window},
 		)).
-		WithOperations(operationsapp.NewService(postgresrepo.NewOperationsStore(walletRepository), walletService))
+		WithOperations(operationsapp.NewService(postgresrepo.NewOperationsStore(walletRepository), walletService)).
+		WithTips(tipsapp.NewService(postgresrepo.NewTipStore(walletRepository)))
 
 	eventHandler := events.NewHandler(
 		walletService,

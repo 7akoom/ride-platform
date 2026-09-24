@@ -45,7 +45,21 @@ var ownerChecks = map[string]ownerCheck{
 			return false, nil
 		}
 
+		// The same wallet the handler tops up (see topUpOwner): owner_type
+		// and owner_id, or the driver of the older form.
+		if r.GetOwnerId() != "" {
+			return ownsWallet(ctx, c, r.GetOwnerType(), r.GetOwnerId())
+		}
+
 		return c.ownsDriver(ctx, r.GetDriverId())
+	},
+	"/ride.wallet.v1.WalletService/GetTopUp": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.GetTopUpRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return ownsWallet(ctx, c, r.GetOwnerType(), r.GetOwnerId())
 	},
 	"/ride.wallet.v1.WalletService/GetTripSettlement": func(ctx context.Context, c caller, request any) (bool, error) {
 		r, ok := request.(*walletv1.GetTripSettlementRequest)
@@ -158,6 +172,16 @@ var ownerChecks = map[string]ownerCheck{
 		}
 
 		// A rider redeems into their own wallet only.
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
+	"/ride.wallet.v1.WalletService/TipDriver": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.TipDriverRequest)
+		if !ok {
+			return false, nil
+		}
+
+		// Only a rider tips, from their own wallet; that the trip is theirs
+		// is checked against its settlement.
 		return c.ownsRider(ctx, r.GetRiderId())
 	},
 	"/ride.wallet.v1.WalletService/ListPayouts": func(ctx context.Context, c caller, request any) (bool, error) {

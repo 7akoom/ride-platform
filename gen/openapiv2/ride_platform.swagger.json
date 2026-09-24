@@ -2075,7 +2075,7 @@
           },
           {
             "name": "types",
-            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.",
+            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -2095,7 +2095,8 @@
                 "TRANSACTION_TYPE_DUE_PAYMENT",
                 "TRANSACTION_TYPE_VOUCHER",
                 "TRANSACTION_TYPE_REFUND",
-                "TRANSACTION_TYPE_PAYOUT_RETURN"
+                "TRANSACTION_TYPE_PAYOUT_RETURN",
+                "TRANSACTION_TYPE_TIP"
               ]
             },
             "collectionFormat": "multi"
@@ -5135,7 +5136,7 @@
     },
     "/v1/wallet/topups/zaincash": {
       "post": {
-        "summary": "InitiateTopUp starts a ZainCash-funded top-up for a driver: creates\na pending record and opens a ZainCash payment session, returning\nthe URL the driver's browser/webview should be sent to.",
+        "summary": "InitiateTopUp starts a top-up of the caller's own wallet (a rider's or\na driver's) through a payment provider (zaincash, the default): a\npending record and a payment session on the provider's own page, whose\nURL the app opens. The customer pays there, so a card number or a\nwallet PIN never reaches the platform. The wallet is credited when the\nprovider's notification says the payment succeeded; GetTopUp tells the\napp how it ended. Within the deployment's top-up limits.",
         "operationId": "WalletService_InitiateTopUp",
         "responses": {
           "200": {
@@ -5288,7 +5289,7 @@
           },
           {
             "name": "types",
-            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.",
+            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -5308,7 +5309,8 @@
                 "TRANSACTION_TYPE_DUE_PAYMENT",
                 "TRANSACTION_TYPE_VOUCHER",
                 "TRANSACTION_TYPE_REFUND",
-                "TRANSACTION_TYPE_PAYOUT_RETURN"
+                "TRANSACTION_TYPE_PAYOUT_RETURN",
+                "TRANSACTION_TYPE_TIP"
               ]
             },
             "collectionFormat": "multi"
@@ -5340,6 +5342,93 @@
             "in": "query",
             "required": false,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{ownerId}/topups": {
+      "post": {
+        "summary": "InitiateTopUp starts a top-up of the caller's own wallet (a rider's or\na driver's) through a payment provider (zaincash, the default): a\npending record and a payment session on the provider's own page, whose\nURL the app opens. The customer pays there, so a card number or a\nwallet PIN never reaches the platform. The wallet is credited when the\nprovider's notification says the payment succeeded; GetTopUp tells the\napp how it ended. Within the deployment's top-up limits.",
+        "operationId": "WalletService_InitiateTopUp2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1InitiateTopUpResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ownerId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceInitiateTopUpBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{ownerId}/topups/{topUpId}": {
+      "get": {
+        "operationId": "WalletService_GetTopUp",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTopUpResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ownerId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "topUpId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ownerType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "OWNER_TYPE_UNSPECIFIED",
+              "OWNER_TYPE_RIDER",
+              "OWNER_TYPE_DRIVER"
+            ],
+            "default": "OWNER_TYPE_UNSPECIFIED"
           }
         ],
         "tags": [
@@ -5816,6 +5905,52 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/WalletServiceSendTransferBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{riderId}/trips/{tripId}/tip": {
+      "post": {
+        "summary": "TipDriver gives the trip's driver a tip from the rider's wallet: once\nper trip, within 72 hours of a completed (settled) trip, within the\ndeployment's tip limits; the driver gets all of it (no commission). The\nsame idempotency_key again is the same tip.",
+        "operationId": "WalletService_TipDriver",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TipDriverResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "description": "The caller's own rider profile.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceTipDriverBody"
             }
           }
         ],
@@ -6404,6 +6539,26 @@
     "WalletServiceExportVoucherBatchBody": {
       "type": "object"
     },
+    "WalletServiceInitiateTopUpBody": {
+      "type": "object",
+      "properties": {
+        "driverId": {
+          "type": "string",
+          "description": "The driver topping up (the older form; owner_type and owner_id say the\nsame for any wallet)."
+        },
+        "amount": {
+          "type": "string",
+          "description": "Decimal string, e.g. \"25000\"."
+        },
+        "ownerType": {
+          "$ref": "#/definitions/v1OwnerType"
+        },
+        "provider": {
+          "type": "string",
+          "description": "The payment provider; empty means zaincash."
+        }
+      }
+    },
     "WalletServiceMarkPayoutPaidBody": {
       "type": "object",
       "properties": {
@@ -6504,6 +6659,18 @@
         "idempotencyKey": {
           "type": "string",
           "description": "Required: a retry with the same key is the same transfer."
+        }
+      }
+    },
+    "WalletServiceTipDriverBody": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string"
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "description": "Required: a retry with the same key is the same tip."
         }
       }
     },
@@ -7934,6 +8101,35 @@
         }
       }
     },
+    "v1GetTopUpResponse": {
+      "type": "object",
+      "properties": {
+        "topUpId": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "title": "pending | succeeded | failed"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "v1GetTripDriverResponse": {
       "type": "object",
       "properties": {
@@ -8022,6 +8218,10 @@
         "duePaid": {
           "type": "string",
           "description": "How much of due_amount is paid since (from money that reached the\nrider's wallet)."
+        },
+        "tipAmount": {
+          "type": "string",
+          "description": "What the rider tipped the driver for this trip. \"0\" if nothing."
         }
       }
     },
@@ -8067,11 +8267,22 @@
       "type": "object",
       "properties": {
         "driverId": {
-          "type": "string"
+          "type": "string",
+          "description": "The driver topping up (the older form; owner_type and owner_id say the\nsame for any wallet)."
         },
         "amount": {
           "type": "string",
           "description": "Decimal string, e.g. \"25000\"."
+        },
+        "ownerType": {
+          "$ref": "#/definitions/v1OwnerType"
+        },
+        "ownerId": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string",
+          "description": "The payment provider; empty means zaincash."
         }
       }
     },
@@ -9883,6 +10094,39 @@
         }
       }
     },
+    "v1Tip": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tripId": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1TipDriverResponse": {
+      "type": "object",
+      "properties": {
+        "tip": {
+          "$ref": "#/definitions/v1Tip"
+        },
+        "wallet": {
+          "$ref": "#/definitions/v1Wallet",
+          "description": "The rider's wallet after it."
+        }
+      }
+    },
     "v1Transaction": {
       "type": "object",
       "properties": {
@@ -9934,10 +10178,11 @@
         "TRANSACTION_TYPE_DUE_PAYMENT",
         "TRANSACTION_TYPE_VOUCHER",
         "TRANSACTION_TYPE_REFUND",
-        "TRANSACTION_TYPE_PAYOUT_RETURN"
+        "TRANSACTION_TYPE_PAYOUT_RETURN",
+        "TRANSACTION_TYPE_TIP"
       ],
       "default": "TRANSACTION_TYPE_UNSPECIFIED",
-      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet."
+      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's."
     },
     "v1Transfer": {
       "type": "object",

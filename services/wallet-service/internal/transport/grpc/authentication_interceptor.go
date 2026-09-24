@@ -24,7 +24,7 @@ const internalServicePrincipalID = "internal-service"
 // check: ZainCash calls this endpoint directly (via the API Gateway's
 // REST facade) with no platform access token or internal-service
 // token — its own HS256 JWT (verified inside the handler via
-// topup.Service.ProcessWebhookToken) is the only credential it can
+// topup.Service.ProcessNotice) is the only credential it can
 // present.
 const zainCashWebhookFullMethod = "/ride.wallet.v1.WalletService/ProcessZainCashWebhook"
 

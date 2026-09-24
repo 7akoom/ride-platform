@@ -351,6 +351,8 @@ func toDomainTransactionType(t walletv1.TransactionType) (wallet.TransactionType
 		return wallet.TxRefund, true
 	case walletv1.TransactionType_TRANSACTION_TYPE_PAYOUT_RETURN:
 		return wallet.TxPayoutReturn, true
+	case walletv1.TransactionType_TRANSACTION_TYPE_TIP:
+		return wallet.TxTip, true
 	default:
 		return "", false
 	}
