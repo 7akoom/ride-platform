@@ -21,12 +21,6 @@ type SettleTripInput struct {
 	Kind SettlementKind
 }
 
-type PayoutInput struct {
-	DriverID       string
-	Amount         Money
-	IdempotencyKey string
-}
-
 // DriverStanding answers "should this driver be given work right now".
 type DriverStanding struct {
 	CanTakeTrips        bool
@@ -43,7 +37,6 @@ type Service interface {
 	SettleTrip(ctx context.Context, input SettleTripInput) (Settlement, error)
 	ListTransactions(ctx context.Context, ownerType OwnerType, ownerID string, limit int) ([]Transaction, error)
 	CheckDriverStanding(ctx context.Context, driverID string) (DriverStanding, error)
-	RequestPayout(ctx context.Context, input PayoutInput) (Wallet, Transaction, error)
 	// GetTripSettlement returns how a settled trip's fare was paid. Only the rider
 	// and the driver of that trip may see it; anyone else gets ErrSettlementNotFound.
 	GetTripSettlement(ctx context.Context, ownerType OwnerType, ownerID string, tripID string) (Settlement, error)

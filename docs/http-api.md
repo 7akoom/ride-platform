@@ -215,7 +215,8 @@ refused with `FAILED_PRECONDITION` and the rider asks for a new quote.
 | POST | `/v1/wallets/{riderId}/money-requests/{code}:cancel` | the requester | only their own pending request (403 otherwise) |
 | POST | `/v1/wallets/{riderId}/vouchers:redeem` | the rider | `code` as printed (spaces, dashes and case do not matter): the voucher's amount reaches the wallet (paying unpaid fees first). Returns `serial`, `amount`, `currencyCode`, the `wallet` and the `transaction` (`TRANSACTION_TYPE_VOUCHER`); the same rider again gets the same redemption. 404 not a valid code (or not on sale yet), 400 `FAILED_PRECONDITION` already used, cancelled or expired, 400 `INVALID_ARGUMENT` not in the form of a code (not counted). Every other failed code counts: after 5 in an hour (deployment settings) 429 `RESOURCE_EXHAUSTED`, the message says until when |
 | GET | `/v1/drivers/{driverId}/standing` | the driver | can they take trips, and the amount due if suspended |
-| POST | `/v1/drivers/{driverId}/payouts` | the driver | `amount` and `idempotencyKey`; a retry with the same key is safe |
+| POST | `/v1/drivers/{driverId}/payouts` | the driver | `amount` (at least the minimum payout), `destination` (where to send it, at most 120), `idempotencyKey` (the same key again returns the same request; for another amount 409). The amount is held at once: `payout` (`status` `pending`), the `wallet` and the hold's `transaction`. 400 `FAILED_PRECONDITION` below the minimum, more than the balance, a suspended driver, or a request still open |
+| GET | `/v1/drivers/{driverId}/payouts?page_size=&page_token=` | the driver | their requests, newest first: `status` `pending`, `approved`, `paid` (with `paidReference`) or `rejected` (with `rejectReason`; the amount came back) |
 | POST | `/v1/wallet/topups/zaincash` | the driver | returns the ZainCash `redirectUrl` for the webview |
 | POST | `/v1/wallet/zaincash/webhook` | ZainCash | not a user: wallet-service exempts it from authentication and verifies the JWT in the body |
 
@@ -315,6 +316,15 @@ before it runs. A caller who is not staff, or lacks the permission, gets 403.
 | POST | `/v1/admin/voucher-batches/{batchId}:cancel` | `vouchers.manage` | `reason` (3-300): no voucher of it is redeemable any more; redeemed ones stay |
 | GET | `/v1/admin/vouchers/{serial}` | `vouchers.manage` | by the serial printed on the card (`V12-00042`): `status` (`available`, `redeemed`, `void`), `redeemable` now, `redeemedByRiderId`, `redeemedAt`, `transactionId`, `voidedAt`, `voidReason` |
 | POST | `/v1/admin/vouchers/{serial}:void` | `vouchers.manage` | `reason` (3-300): one voucher not redeemed yet (a card reported lost) |
+| GET | `/v1/admin/wallets/{ownerId}?owner_type=` | `wallets.read` | any wallet: `wallet`, `recentTransactions` (20), `outstandingDues` (a rider's unpaid fees), `openPayouts` (a driver's) |
+| GET | `/v1/admin/wallets/{ownerId}/statement?owner_type=&from=&to=&direction=&types=&page_size=&page_token=` | `wallets.read` | the statement of any wallet, as above |
+| POST | `/v1/admin/wallets/{ownerId}/adjustments` | `wallets.adjust` | `ownerType`, `amount` (signed: positive credits, negative debits), `reason` (3-300, written on the ledger row), `idempotencyKey`. A rider's balance never goes below zero (400); a driver's may, and the suspension follows. Returns `adjustment` and the `wallet` |
+| POST | `/v1/admin/trips/{tripId}/refunds` | `wallets.adjust` | `amount` (to the rider), `driverAmount` (0 to `amount`: taken back from the trip's driver; the platform pays the rest), `reason`, `idempotencyKey`. 404 a trip not settled; 400 `FAILED_PRECONDITION` when the trip's refunds would pass its fare (or fee). Rows of type `TRANSACTION_TYPE_REFUND` |
+| GET | `/v1/admin/trips/{tripId}/refunds` | `wallets.read` | `refunds`, `paidAmount` (the fare or fee), `refundedAmount` |
+| GET | `/v1/admin/payouts?status=&page_size=&page_token=` | `payouts.manage` | the queue, oldest first |
+| POST | `/v1/admin/payouts/{payoutId}:approve` | `payouts.manage` | a pending request |
+| POST | `/v1/admin/payouts/{payoutId}:markPaid` | `payouts.manage` | `reference` (1-120): a pending or approved request, once the money reached the driver |
+| POST | `/v1/admin/payouts/{payoutId}:reject` | `payouts.manage` | `reason` (3-300, the driver sees it): the held amount comes back (`TRANSACTION_TYPE_PAYOUT_RETURN`); not once paid |
 
 ## Not exposed yet
 

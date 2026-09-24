@@ -27,11 +27,20 @@ service WalletService {
       get: "/v1/drivers/{driver_id}/standing"
     };
   }
-  // RequestPayout withdraws from the driver's own wallet; idempotency_key makes a retry safe.
+  // RequestPayout asks for the driver's own money: the amount is held (it
+  // leaves the balance now) and a payout request waits for staff, who pay it
+  // outside the platform and mark it paid, or reject it (the money comes
+  // back). One open request at a time; idempotency_key makes a retry safe.
   rpc RequestPayout(RequestPayoutRequest) returns (RequestPayoutResponse) {
     option (google.api.http) = {
       post: "/v1/drivers/{driver_id}/payouts"
       body: "*"
+    };
+  }
+  // ListPayouts is the driver's own payout requests, newest first.
+  rpc ListPayouts(ListPayoutsRequest) returns (ListPayoutsResponse) {
+    option (google.api.http) = {
+      get: "/v1/drivers/{driver_id}/payouts"
     };
   }
 
@@ -221,6 +230,73 @@ service WalletService {
     };
   }
 
+  // Staff money operations. wallets.read: look at any wallet and its
+  // statement. wallets.adjust: correct a balance, refund a trip.
+  // payouts.manage: work the payout queue. Every call is audited.
+  rpc InspectWallet(InspectWalletRequest) returns (InspectWalletResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/wallets/{owner_id}"
+    };
+  }
+  rpc GetStatementForStaff(GetStatementRequest) returns (GetStatementResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/wallets/{owner_id}/statement"
+    };
+  }
+  // AdjustWallet credits (positive) or debits (negative) a wallet with a
+  // reason: an adjustment row. A rider's balance never goes below zero; a
+  // driver's may (their commission balance), with the suspension rule.
+  rpc AdjustWallet(AdjustWalletRequest) returns (AdjustmentResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/wallets/{owner_id}/adjustments"
+      body: "*"
+    };
+  }
+  // RefundTrip gives a rider back money for a settled trip (or a cancelled
+  // trip's fee), paid by the platform, or partly taken back from the driver
+  // (driver_amount). All the refunds of a trip add up to at most its fare (or
+  // fee). Like any money reaching the wallet it pays unpaid fees first, so
+  // refunding a fee still owed waives it.
+  rpc RefundTrip(RefundTripRequest) returns (AdjustmentResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/trips/{trip_id}/refunds"
+      body: "*"
+    };
+  }
+  rpc ListTripRefunds(ListTripRefundsRequest) returns (ListTripRefundsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/trips/{trip_id}/refunds"
+    };
+  }
+  // The payout queue: status pending, approved, paid or rejected; oldest
+  // first, so the queue is worked in order.
+  rpc ListPayoutRequests(ListPayoutRequestsRequest) returns (ListPayoutsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/payouts"
+    };
+  }
+  rpc ApprovePayout(ApprovePayoutRequest) returns (PayoutResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/payouts/{payout_id}:approve"
+      body: "*"
+    };
+  }
+  // MarkPayoutPaid records that the money reached the driver (a pending or
+  // approved request), with the transfer's reference.
+  rpc MarkPayoutPaid(MarkPayoutPaidRequest) returns (PayoutResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/payouts/{payout_id}:markPaid"
+      body: "*"
+    };
+  }
+  // RejectPayout gives the held amount back to the driver's wallet.
+  rpc RejectPayout(RejectPayoutRequest) returns (PayoutResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/payouts/{payout_id}:reject"
+      body: "*"
+    };
+  }
+
   // ProcessZainCashWebhook receives ZainCash's server-to-server payment
   // notification. Called directly by ZainCash, not by an authenticated
   // platform client — exempted from the auth interceptor same as the
@@ -264,6 +340,11 @@ enum TransactionType {
   TRANSACTION_TYPE_DUE_PAYMENT = 10;
   // A voucher redeemed into the rider's wallet.
   TRANSACTION_TYPE_VOUCHER = 11;
+  // Money given back for a trip (to the rider; from the driver when they
+  // share it).
+  TRANSACTION_TYPE_REFUND = 12;
+  // A rejected payout's held amount, back in the driver's wallet.
+  TRANSACTION_TYPE_PAYOUT_RETURN = 13;
 }
 
 message Wallet {
@@ -368,11 +449,72 @@ message RequestPayoutRequest {
   string driver_id = 1;
   string amount = 2;
   string idempotency_key = 3;
+  // Where the money should go (a ZainCash number, "cash at the office"...),
+  // at most 120 characters, shown to staff.
+  string destination = 4;
 }
 
 message RequestPayoutResponse {
   Wallet wallet = 1;
+  // The hold: the payout row of the driver's ledger.
   Transaction transaction = 2;
+  Payout payout = 3;
+}
+
+message Payout {
+  string id = 1;
+  string driver_id = 2;
+  string amount = 3;
+  string currency_code = 4;
+  string destination = 5;
+  // pending, approved, paid or rejected.
+  string status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp approved_at = 8;
+  google.protobuf.Timestamp paid_at = 9;
+  // The transfer's reference, once paid.
+  string paid_reference = 10;
+  google.protobuf.Timestamp rejected_at = 11;
+  string reject_reason = 12;
+}
+
+message PayoutResponse {
+  Payout payout = 1;
+}
+
+message ListPayoutsRequest {
+  string driver_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListPayoutsResponse {
+  repeated Payout payouts = 1;
+  string next_page_token = 2;
+}
+
+message ListPayoutRequestsRequest {
+  // Empty for every status.
+  string status = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ApprovePayoutRequest {
+  string payout_id = 1;
+}
+
+message MarkPayoutPaidRequest {
+  string payout_id = 1;
+  // The transfer's reference (ZainCash transaction id, receipt number...),
+  // 1-120 characters.
+  string reference = 2;
+}
+
+message RejectPayoutRequest {
+  string payout_id = 1;
+  // Why, 3-300 characters; the driver sees it.
+  string reason = 2;
 }
 
 message InitiateTopUpRequest {
@@ -740,4 +882,78 @@ message RedeemVoucherResponse {
   Wallet wallet = 4;
   // The voucher's ledger row.
   Transaction transaction = 5;
+}
+
+message InspectWalletRequest {
+  OwnerType owner_type = 1;
+  string owner_id = 2;
+}
+
+message InspectWalletResponse {
+  Wallet wallet = 1;
+  // The latest 20 ledger rows, newest first.
+  repeated Transaction recent_transactions = 2;
+  // A rider's unpaid trip fees.
+  string outstanding_dues = 3;
+  // A driver's payout requests still open (pending or approved).
+  repeated Payout open_payouts = 4;
+}
+
+message AdjustWalletRequest {
+  OwnerType owner_type = 1;
+  string owner_id = 2;
+  // Signed decimal string: positive credits, negative debits.
+  string amount = 3;
+  // Why, 3-300 characters, written on the ledger row.
+  string reason = 4;
+  // Required: a retry with the same key is the same adjustment.
+  string idempotency_key = 5;
+}
+
+// Adjustment is a staff member's correction or refund.
+message Adjustment {
+  string id = 1;
+  // adjustment or refund.
+  string kind = 2;
+  OwnerType owner_type = 3;
+  string owner_id = 4;
+  string amount = 5;
+  string currency_code = 6;
+  string trip_id = 7;
+  // For a refund: what was taken back from the driver.
+  string driver_id = 8;
+  string driver_amount = 9;
+  string reason = 10;
+  string transaction_id = 11;
+  string created_by = 12;
+  google.protobuf.Timestamp created_at = 13;
+}
+
+message AdjustmentResponse {
+  Adjustment adjustment = 1;
+  // The wallet credited or debited (the rider's, for a refund).
+  Wallet wallet = 2;
+}
+
+message RefundTripRequest {
+  string trip_id = 1;
+  // What the rider gets back, positive.
+  string amount = 2;
+  // How much of it is taken back from the trip's driver (0 to amount; the
+  // platform pays the rest).
+  string driver_amount = 3;
+  string reason = 4;
+  string idempotency_key = 5;
+}
+
+message ListTripRefundsRequest {
+  string trip_id = 1;
+}
+
+message ListTripRefundsResponse {
+  repeated Adjustment refunds = 1;
+  // The trip's fare (or fee): the most its refunds may add up to; and what
+  // is refunded so far.
+  string paid_amount = 2;
+  string refunded_amount = 3;
 }

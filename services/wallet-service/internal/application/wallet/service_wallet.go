@@ -128,51 +128,6 @@ func (s *service) ListTransactions(
 	return transactions, nil
 }
 
-// RequestPayout moves money out of a driver's wallet toward their bank
-// account. This service only records the intent and debits the balance —
-// actually moving money to a bank is a separate concern handled outside
-// this platform (a payment provider, or a manual bank transfer by the
-// operator). The ledger row is the instruction and the audit trail.
-func (s *service) RequestPayout(
-	ctx context.Context,
-	input PayoutInput,
-) (Wallet, Transaction, error) {
-	driverID := strings.TrimSpace(input.DriverID)
-	if driverID == "" {
-		return Wallet{}, Transaction{}, ErrDriverIDRequired
-	}
-
-	if !input.Amount.IsPositive() {
-		return Wallet{}, Transaction{}, ErrInvalidAmount
-	}
-
-	config, err := s.repository.GetActiveConfig(ctx)
-	if err != nil {
-		return Wallet{}, Transaction{}, fmt.Errorf("get active wallet config: %w", err)
-	}
-
-	if input.Amount.LessThan(config.MinimumPayoutAmount) {
-		return Wallet{}, Transaction{}, ErrBelowMinimumPayout
-	}
-
-	// Payouts never use AllowNegative — a driver can only withdraw money
-	// they actually have. The repository rejects the movement if the
-	// balance would go below zero.
-	updated, transaction, err := s.repository.ApplyMovement(ctx, MovementInput{
-		OwnerType:      OwnerDriver,
-		OwnerID:        driverID,
-		Type:           TxPayout,
-		Amount:         input.Amount.Neg(),
-		IdempotencyKey: strings.TrimSpace(input.IdempotencyKey),
-		Description:    "Payout to driver",
-	})
-	if err != nil {
-		return Wallet{}, Transaction{}, fmt.Errorf("apply payout: %w", err)
-	}
-
-	return updated, transaction, nil
-}
-
 func (s *service) RiderDues(ctx context.Context, riderID string) (RiderDues, error) {
 	riderID = strings.TrimSpace(riderID)
 	if riderID == "" {

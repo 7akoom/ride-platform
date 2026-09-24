@@ -25,6 +25,7 @@ const (
 	WalletService_ListTransactions_FullMethodName       = "/ride.wallet.v1.WalletService/ListTransactions"
 	WalletService_CheckDriverStanding_FullMethodName    = "/ride.wallet.v1.WalletService/CheckDriverStanding"
 	WalletService_RequestPayout_FullMethodName          = "/ride.wallet.v1.WalletService/RequestPayout"
+	WalletService_ListPayouts_FullMethodName            = "/ride.wallet.v1.WalletService/ListPayouts"
 	WalletService_GetTripSettlement_FullMethodName      = "/ride.wallet.v1.WalletService/GetTripSettlement"
 	WalletService_RecordTripChange_FullMethodName       = "/ride.wallet.v1.WalletService/RecordTripChange"
 	WalletService_InitiateTopUp_FullMethodName          = "/ride.wallet.v1.WalletService/InitiateTopUp"
@@ -46,6 +47,15 @@ const (
 	WalletService_GetVoucher_FullMethodName             = "/ride.wallet.v1.WalletService/GetVoucher"
 	WalletService_VoidVoucher_FullMethodName            = "/ride.wallet.v1.WalletService/VoidVoucher"
 	WalletService_RedeemVoucher_FullMethodName          = "/ride.wallet.v1.WalletService/RedeemVoucher"
+	WalletService_InspectWallet_FullMethodName          = "/ride.wallet.v1.WalletService/InspectWallet"
+	WalletService_GetStatementForStaff_FullMethodName   = "/ride.wallet.v1.WalletService/GetStatementForStaff"
+	WalletService_AdjustWallet_FullMethodName           = "/ride.wallet.v1.WalletService/AdjustWallet"
+	WalletService_RefundTrip_FullMethodName             = "/ride.wallet.v1.WalletService/RefundTrip"
+	WalletService_ListTripRefunds_FullMethodName        = "/ride.wallet.v1.WalletService/ListTripRefunds"
+	WalletService_ListPayoutRequests_FullMethodName     = "/ride.wallet.v1.WalletService/ListPayoutRequests"
+	WalletService_ApprovePayout_FullMethodName          = "/ride.wallet.v1.WalletService/ApprovePayout"
+	WalletService_MarkPayoutPaid_FullMethodName         = "/ride.wallet.v1.WalletService/MarkPayoutPaid"
+	WalletService_RejectPayout_FullMethodName           = "/ride.wallet.v1.WalletService/RejectPayout"
 	WalletService_ProcessZainCashWebhook_FullMethodName = "/ride.wallet.v1.WalletService/ProcessZainCashWebhook"
 )
 
@@ -61,8 +71,13 @@ type WalletServiceClient interface {
 	ListTransactions(ctx context.Context, in *ListTransactionsRequest, opts ...grpc.CallOption) (*ListTransactionsResponse, error)
 	// CheckDriverStanding tells a driver whether they can take trips and how much to deposit if not.
 	CheckDriverStanding(ctx context.Context, in *CheckDriverStandingRequest, opts ...grpc.CallOption) (*CheckDriverStandingResponse, error)
-	// RequestPayout withdraws from the driver's own wallet; idempotency_key makes a retry safe.
+	// RequestPayout asks for the driver's own money: the amount is held (it
+	// leaves the balance now) and a payout request waits for staff, who pay it
+	// outside the platform and mark it paid, or reject it (the money comes
+	// back). One open request at a time; idempotency_key makes a retry safe.
 	RequestPayout(ctx context.Context, in *RequestPayoutRequest, opts ...grpc.CallOption) (*RequestPayoutResponse, error)
+	// ListPayouts is the driver's own payout requests, newest first.
+	ListPayouts(ctx context.Context, in *ListPayoutsRequest, opts ...grpc.CallOption) (*ListPayoutsResponse, error)
 	// GetTripSettlement tells how a settled trip's fare was paid: what left the rider's
 	// wallet and how much cash the driver collects. ?owner_type=&owner_id= is the caller's
 	// own wallet, and only the rider and the driver of the trip can read it (anyone else,
@@ -144,6 +159,31 @@ type WalletServiceClient interface {
 	// Wrong codes are counted: after too many in a while the rider waits
 	// (RESOURCE_EXHAUSTED).
 	RedeemVoucher(ctx context.Context, in *RedeemVoucherRequest, opts ...grpc.CallOption) (*RedeemVoucherResponse, error)
+	// Staff money operations. wallets.read: look at any wallet and its
+	// statement. wallets.adjust: correct a balance, refund a trip.
+	// payouts.manage: work the payout queue. Every call is audited.
+	InspectWallet(ctx context.Context, in *InspectWalletRequest, opts ...grpc.CallOption) (*InspectWalletResponse, error)
+	GetStatementForStaff(ctx context.Context, in *GetStatementRequest, opts ...grpc.CallOption) (*GetStatementResponse, error)
+	// AdjustWallet credits (positive) or debits (negative) a wallet with a
+	// reason: an adjustment row. A rider's balance never goes below zero; a
+	// driver's may (their commission balance), with the suspension rule.
+	AdjustWallet(ctx context.Context, in *AdjustWalletRequest, opts ...grpc.CallOption) (*AdjustmentResponse, error)
+	// RefundTrip gives a rider back money for a settled trip (or a cancelled
+	// trip's fee), paid by the platform, or partly taken back from the driver
+	// (driver_amount). All the refunds of a trip add up to at most its fare (or
+	// fee). Like any money reaching the wallet it pays unpaid fees first, so
+	// refunding a fee still owed waives it.
+	RefundTrip(ctx context.Context, in *RefundTripRequest, opts ...grpc.CallOption) (*AdjustmentResponse, error)
+	ListTripRefunds(ctx context.Context, in *ListTripRefundsRequest, opts ...grpc.CallOption) (*ListTripRefundsResponse, error)
+	// The payout queue: status pending, approved, paid or rejected; oldest
+	// first, so the queue is worked in order.
+	ListPayoutRequests(ctx context.Context, in *ListPayoutRequestsRequest, opts ...grpc.CallOption) (*ListPayoutsResponse, error)
+	ApprovePayout(ctx context.Context, in *ApprovePayoutRequest, opts ...grpc.CallOption) (*PayoutResponse, error)
+	// MarkPayoutPaid records that the money reached the driver (a pending or
+	// approved request), with the transfer's reference.
+	MarkPayoutPaid(ctx context.Context, in *MarkPayoutPaidRequest, opts ...grpc.CallOption) (*PayoutResponse, error)
+	// RejectPayout gives the held amount back to the driver's wallet.
+	RejectPayout(ctx context.Context, in *RejectPayoutRequest, opts ...grpc.CallOption) (*PayoutResponse, error)
 	// ProcessZainCashWebhook receives ZainCash's server-to-server payment
 	// notification. Called directly by ZainCash, not by an authenticated
 	// platform client — exempted from the auth interceptor same as the
@@ -213,6 +253,16 @@ func (c *walletServiceClient) RequestPayout(ctx context.Context, in *RequestPayo
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RequestPayoutResponse)
 	err := c.cc.Invoke(ctx, WalletService_RequestPayout_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListPayouts(ctx context.Context, in *ListPayoutsRequest, opts ...grpc.CallOption) (*ListPayoutsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPayoutsResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListPayouts_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -429,6 +479,96 @@ func (c *walletServiceClient) RedeemVoucher(ctx context.Context, in *RedeemVouch
 	return out, nil
 }
 
+func (c *walletServiceClient) InspectWallet(ctx context.Context, in *InspectWalletRequest, opts ...grpc.CallOption) (*InspectWalletResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InspectWalletResponse)
+	err := c.cc.Invoke(ctx, WalletService_InspectWallet_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) GetStatementForStaff(ctx context.Context, in *GetStatementRequest, opts ...grpc.CallOption) (*GetStatementResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStatementResponse)
+	err := c.cc.Invoke(ctx, WalletService_GetStatementForStaff_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) AdjustWallet(ctx context.Context, in *AdjustWalletRequest, opts ...grpc.CallOption) (*AdjustmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdjustmentResponse)
+	err := c.cc.Invoke(ctx, WalletService_AdjustWallet_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) RefundTrip(ctx context.Context, in *RefundTripRequest, opts ...grpc.CallOption) (*AdjustmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdjustmentResponse)
+	err := c.cc.Invoke(ctx, WalletService_RefundTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListTripRefunds(ctx context.Context, in *ListTripRefundsRequest, opts ...grpc.CallOption) (*ListTripRefundsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTripRefundsResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListTripRefunds_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListPayoutRequests(ctx context.Context, in *ListPayoutRequestsRequest, opts ...grpc.CallOption) (*ListPayoutsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPayoutsResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListPayoutRequests_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ApprovePayout(ctx context.Context, in *ApprovePayoutRequest, opts ...grpc.CallOption) (*PayoutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PayoutResponse)
+	err := c.cc.Invoke(ctx, WalletService_ApprovePayout_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) MarkPayoutPaid(ctx context.Context, in *MarkPayoutPaidRequest, opts ...grpc.CallOption) (*PayoutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PayoutResponse)
+	err := c.cc.Invoke(ctx, WalletService_MarkPayoutPaid_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) RejectPayout(ctx context.Context, in *RejectPayoutRequest, opts ...grpc.CallOption) (*PayoutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PayoutResponse)
+	err := c.cc.Invoke(ctx, WalletService_RejectPayout_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *walletServiceClient) ProcessZainCashWebhook(ctx context.Context, in *ProcessZainCashWebhookRequest, opts ...grpc.CallOption) (*ProcessZainCashWebhookResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ProcessZainCashWebhookResponse)
@@ -451,8 +591,13 @@ type WalletServiceServer interface {
 	ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error)
 	// CheckDriverStanding tells a driver whether they can take trips and how much to deposit if not.
 	CheckDriverStanding(context.Context, *CheckDriverStandingRequest) (*CheckDriverStandingResponse, error)
-	// RequestPayout withdraws from the driver's own wallet; idempotency_key makes a retry safe.
+	// RequestPayout asks for the driver's own money: the amount is held (it
+	// leaves the balance now) and a payout request waits for staff, who pay it
+	// outside the platform and mark it paid, or reject it (the money comes
+	// back). One open request at a time; idempotency_key makes a retry safe.
 	RequestPayout(context.Context, *RequestPayoutRequest) (*RequestPayoutResponse, error)
+	// ListPayouts is the driver's own payout requests, newest first.
+	ListPayouts(context.Context, *ListPayoutsRequest) (*ListPayoutsResponse, error)
 	// GetTripSettlement tells how a settled trip's fare was paid: what left the rider's
 	// wallet and how much cash the driver collects. ?owner_type=&owner_id= is the caller's
 	// own wallet, and only the rider and the driver of the trip can read it (anyone else,
@@ -534,6 +679,31 @@ type WalletServiceServer interface {
 	// Wrong codes are counted: after too many in a while the rider waits
 	// (RESOURCE_EXHAUSTED).
 	RedeemVoucher(context.Context, *RedeemVoucherRequest) (*RedeemVoucherResponse, error)
+	// Staff money operations. wallets.read: look at any wallet and its
+	// statement. wallets.adjust: correct a balance, refund a trip.
+	// payouts.manage: work the payout queue. Every call is audited.
+	InspectWallet(context.Context, *InspectWalletRequest) (*InspectWalletResponse, error)
+	GetStatementForStaff(context.Context, *GetStatementRequest) (*GetStatementResponse, error)
+	// AdjustWallet credits (positive) or debits (negative) a wallet with a
+	// reason: an adjustment row. A rider's balance never goes below zero; a
+	// driver's may (their commission balance), with the suspension rule.
+	AdjustWallet(context.Context, *AdjustWalletRequest) (*AdjustmentResponse, error)
+	// RefundTrip gives a rider back money for a settled trip (or a cancelled
+	// trip's fee), paid by the platform, or partly taken back from the driver
+	// (driver_amount). All the refunds of a trip add up to at most its fare (or
+	// fee). Like any money reaching the wallet it pays unpaid fees first, so
+	// refunding a fee still owed waives it.
+	RefundTrip(context.Context, *RefundTripRequest) (*AdjustmentResponse, error)
+	ListTripRefunds(context.Context, *ListTripRefundsRequest) (*ListTripRefundsResponse, error)
+	// The payout queue: status pending, approved, paid or rejected; oldest
+	// first, so the queue is worked in order.
+	ListPayoutRequests(context.Context, *ListPayoutRequestsRequest) (*ListPayoutsResponse, error)
+	ApprovePayout(context.Context, *ApprovePayoutRequest) (*PayoutResponse, error)
+	// MarkPayoutPaid records that the money reached the driver (a pending or
+	// approved request), with the transfer's reference.
+	MarkPayoutPaid(context.Context, *MarkPayoutPaidRequest) (*PayoutResponse, error)
+	// RejectPayout gives the held amount back to the driver's wallet.
+	RejectPayout(context.Context, *RejectPayoutRequest) (*PayoutResponse, error)
 	// ProcessZainCashWebhook receives ZainCash's server-to-server payment
 	// notification. Called directly by ZainCash, not by an authenticated
 	// platform client — exempted from the auth interceptor same as the
@@ -566,6 +736,9 @@ func (UnimplementedWalletServiceServer) CheckDriverStanding(context.Context, *Ch
 }
 func (UnimplementedWalletServiceServer) RequestPayout(context.Context, *RequestPayoutRequest) (*RequestPayoutResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RequestPayout not implemented")
+}
+func (UnimplementedWalletServiceServer) ListPayouts(context.Context, *ListPayoutsRequest) (*ListPayoutsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPayouts not implemented")
 }
 func (UnimplementedWalletServiceServer) GetTripSettlement(context.Context, *GetTripSettlementRequest) (*GetTripSettlementResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTripSettlement not implemented")
@@ -629,6 +802,33 @@ func (UnimplementedWalletServiceServer) VoidVoucher(context.Context, *VoidVouche
 }
 func (UnimplementedWalletServiceServer) RedeemVoucher(context.Context, *RedeemVoucherRequest) (*RedeemVoucherResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RedeemVoucher not implemented")
+}
+func (UnimplementedWalletServiceServer) InspectWallet(context.Context, *InspectWalletRequest) (*InspectWalletResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InspectWallet not implemented")
+}
+func (UnimplementedWalletServiceServer) GetStatementForStaff(context.Context, *GetStatementRequest) (*GetStatementResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStatementForStaff not implemented")
+}
+func (UnimplementedWalletServiceServer) AdjustWallet(context.Context, *AdjustWalletRequest) (*AdjustmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdjustWallet not implemented")
+}
+func (UnimplementedWalletServiceServer) RefundTrip(context.Context, *RefundTripRequest) (*AdjustmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RefundTrip not implemented")
+}
+func (UnimplementedWalletServiceServer) ListTripRefunds(context.Context, *ListTripRefundsRequest) (*ListTripRefundsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTripRefunds not implemented")
+}
+func (UnimplementedWalletServiceServer) ListPayoutRequests(context.Context, *ListPayoutRequestsRequest) (*ListPayoutsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPayoutRequests not implemented")
+}
+func (UnimplementedWalletServiceServer) ApprovePayout(context.Context, *ApprovePayoutRequest) (*PayoutResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ApprovePayout not implemented")
+}
+func (UnimplementedWalletServiceServer) MarkPayoutPaid(context.Context, *MarkPayoutPaidRequest) (*PayoutResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method MarkPayoutPaid not implemented")
+}
+func (UnimplementedWalletServiceServer) RejectPayout(context.Context, *RejectPayoutRequest) (*PayoutResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RejectPayout not implemented")
 }
 func (UnimplementedWalletServiceServer) ProcessZainCashWebhook(context.Context, *ProcessZainCashWebhookRequest) (*ProcessZainCashWebhookResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ProcessZainCashWebhook not implemented")
@@ -758,6 +958,24 @@ func _WalletService_RequestPayout_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WalletServiceServer).RequestPayout(ctx, req.(*RequestPayoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListPayouts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPayoutsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListPayouts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListPayouts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListPayouts(ctx, req.(*ListPayoutsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1140,6 +1358,168 @@ func _WalletService_RedeemVoucher_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WalletService_InspectWallet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InspectWalletRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).InspectWallet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_InspectWallet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).InspectWallet(ctx, req.(*InspectWalletRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_GetStatementForStaff_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStatementRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetStatementForStaff(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetStatementForStaff_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetStatementForStaff(ctx, req.(*GetStatementRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_AdjustWallet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdjustWalletRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).AdjustWallet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_AdjustWallet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).AdjustWallet(ctx, req.(*AdjustWalletRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_RefundTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefundTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).RefundTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_RefundTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).RefundTrip(ctx, req.(*RefundTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListTripRefunds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTripRefundsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListTripRefunds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListTripRefunds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListTripRefunds(ctx, req.(*ListTripRefundsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListPayoutRequests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPayoutRequestsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListPayoutRequests(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListPayoutRequests_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListPayoutRequests(ctx, req.(*ListPayoutRequestsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ApprovePayout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApprovePayoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ApprovePayout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ApprovePayout_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ApprovePayout(ctx, req.(*ApprovePayoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_MarkPayoutPaid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkPayoutPaidRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).MarkPayoutPaid(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_MarkPayoutPaid_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).MarkPayoutPaid(ctx, req.(*MarkPayoutPaidRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_RejectPayout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RejectPayoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).RejectPayout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_RejectPayout_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).RejectPayout(ctx, req.(*RejectPayoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WalletService_ProcessZainCashWebhook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ProcessZainCashWebhookRequest)
 	if err := dec(in); err != nil {
@@ -1188,6 +1568,10 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestPayout",
 			Handler:    _WalletService_RequestPayout_Handler,
+		},
+		{
+			MethodName: "ListPayouts",
+			Handler:    _WalletService_ListPayouts_Handler,
 		},
 		{
 			MethodName: "GetTripSettlement",
@@ -1272,6 +1656,42 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RedeemVoucher",
 			Handler:    _WalletService_RedeemVoucher_Handler,
+		},
+		{
+			MethodName: "InspectWallet",
+			Handler:    _WalletService_InspectWallet_Handler,
+		},
+		{
+			MethodName: "GetStatementForStaff",
+			Handler:    _WalletService_GetStatementForStaff_Handler,
+		},
+		{
+			MethodName: "AdjustWallet",
+			Handler:    _WalletService_AdjustWallet_Handler,
+		},
+		{
+			MethodName: "RefundTrip",
+			Handler:    _WalletService_RefundTrip_Handler,
+		},
+		{
+			MethodName: "ListTripRefunds",
+			Handler:    _WalletService_ListTripRefunds_Handler,
+		},
+		{
+			MethodName: "ListPayoutRequests",
+			Handler:    _WalletService_ListPayoutRequests_Handler,
+		},
+		{
+			MethodName: "ApprovePayout",
+			Handler:    _WalletService_ApprovePayout_Handler,
+		},
+		{
+			MethodName: "MarkPayoutPaid",
+			Handler:    _WalletService_MarkPayoutPaid_Handler,
+		},
+		{
+			MethodName: "RejectPayout",
+			Handler:    _WalletService_RejectPayout_Handler,
 		},
 		{
 			MethodName: "ProcessZainCashWebhook",

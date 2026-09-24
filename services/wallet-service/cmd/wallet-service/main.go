@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/events"
+	operationsapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/operations"
 	outboxapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/outbox"
 	topupapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
 	transferapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/transfer"
@@ -289,7 +290,8 @@ func run() int {
 			postgresrepo.NewVoucherStore(walletRepository),
 			voucherCodec,
 			voucherapp.Limits{MaxFailures: voucherConfig.MaxFailures, Window: voucherConfig.Window},
-		))
+		)).
+		WithOperations(operationsapp.NewService(postgresrepo.NewOperationsStore(walletRepository), walletService))
 
 	eventHandler := events.NewHandler(
 		walletService,

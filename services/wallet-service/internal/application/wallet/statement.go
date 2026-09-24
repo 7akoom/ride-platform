@@ -71,7 +71,7 @@ type StatementInput struct {
 var knownTypes = map[TransactionType]bool{
 	TxTopUp: true, TxTripPayment: true, TxTripEarning: true, TxCommission: true, TxPayout: true,
 	TxAdjustment: true, TxChangeCredit: true, TxTransferOut: true, TxTransferIn: true, TxDuePayment: true,
-	TxVoucher: true,
+	TxVoucher: true, TxRefund: true, TxPayoutReturn: true,
 }
 
 // GetStatement checks the input and reads the statement.

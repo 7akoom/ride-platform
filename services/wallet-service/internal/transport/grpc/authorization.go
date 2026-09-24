@@ -50,6 +50,7 @@ var methodAccess = map[string]accessLevel{
 	"/ride.wallet.v1.WalletService/GetStatement":        accessOwner,
 	"/ride.wallet.v1.WalletService/GetRiderDues":        accessOwner,
 	"/ride.wallet.v1.WalletService/RedeemVoucher":       accessOwner,
+	"/ride.wallet.v1.WalletService/ListPayouts":         accessOwner,
 
 	"/ride.wallet.v1.WalletService/CreateVoucherBatch": accessStaff,
 	"/ride.wallet.v1.WalletService/ListVoucherBatches": accessStaff,
@@ -58,11 +59,22 @@ var methodAccess = map[string]accessLevel{
 	"/ride.wallet.v1.WalletService/CancelVoucherBatch": accessStaff,
 	"/ride.wallet.v1.WalletService/GetVoucher":         accessStaff,
 	"/ride.wallet.v1.WalletService/VoidVoucher":        accessStaff,
+
+	"/ride.wallet.v1.WalletService/InspectWallet":        accessStaff,
+	"/ride.wallet.v1.WalletService/GetStatementForStaff": accessStaff,
+	"/ride.wallet.v1.WalletService/AdjustWallet":         accessStaff,
+	"/ride.wallet.v1.WalletService/RefundTrip":           accessStaff,
+	"/ride.wallet.v1.WalletService/ListTripRefunds":      accessStaff,
+	"/ride.wallet.v1.WalletService/ListPayoutRequests":   accessStaff,
+	"/ride.wallet.v1.WalletService/ApprovePayout":        accessStaff,
+	"/ride.wallet.v1.WalletService/MarkPayoutPaid":       accessStaff,
+	"/ride.wallet.v1.WalletService/RejectPayout":         accessStaff,
 }
 
 // staffPermissions names the staff permission for every accessStaff method.
 // Vouchers are one permission: whoever may issue them may also see, export,
-// cancel and void them.
+// cancel and void them. Looking at wallets is apart from moving money in
+// them; the payout queue is its own.
 var staffPermissions = map[string]string{
 	"/ride.wallet.v1.WalletService/CreateVoucherBatch": permissionVouchersManage,
 	"/ride.wallet.v1.WalletService/ListVoucherBatches": permissionVouchersManage,
@@ -71,9 +83,24 @@ var staffPermissions = map[string]string{
 	"/ride.wallet.v1.WalletService/CancelVoucherBatch": permissionVouchersManage,
 	"/ride.wallet.v1.WalletService/GetVoucher":         permissionVouchersManage,
 	"/ride.wallet.v1.WalletService/VoidVoucher":        permissionVouchersManage,
+
+	"/ride.wallet.v1.WalletService/InspectWallet":        permissionWalletsRead,
+	"/ride.wallet.v1.WalletService/GetStatementForStaff": permissionWalletsRead,
+	"/ride.wallet.v1.WalletService/ListTripRefunds":      permissionWalletsRead,
+	"/ride.wallet.v1.WalletService/AdjustWallet":         permissionWalletsAdjust,
+	"/ride.wallet.v1.WalletService/RefundTrip":           permissionWalletsAdjust,
+	"/ride.wallet.v1.WalletService/ListPayoutRequests":   permissionPayoutsManage,
+	"/ride.wallet.v1.WalletService/ApprovePayout":        permissionPayoutsManage,
+	"/ride.wallet.v1.WalletService/MarkPayoutPaid":       permissionPayoutsManage,
+	"/ride.wallet.v1.WalletService/RejectPayout":         permissionPayoutsManage,
 }
 
-const permissionVouchersManage = "vouchers.manage"
+const (
+	permissionVouchersManage = "vouchers.manage"
+	permissionWalletsRead    = "wallets.read"
+	permissionWalletsAdjust  = "wallets.adjust"
+	permissionPayoutsManage  = "payouts.manage"
+)
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver, staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {
 	return newAuthorizationInterceptor(methodAccess, ownerChecks, staffPermissions, resolver, staff)

@@ -21,6 +21,10 @@ const (
 	// PermissionVouchersManage: prepaid wallet vouchers (issue, export,
 	// cancel, void, look up).
 	PermissionVouchersManage = "vouchers.manage"
+	// Wallets: looking at any wallet is apart from moving money in one.
+	PermissionWalletsRead   = "wallets.read"
+	PermissionWalletsAdjust = "wallets.adjust"
+	PermissionPayoutsManage = "payouts.manage"
 )
 
 // RoleKeyOwner is the system role that always holds every permission,
@@ -40,6 +44,9 @@ var permissionCatalog = map[string]string{
 	PermissionPricingManage:    "See and set prices: rate cards, surge rules and zone surges",
 	PermissionPromotionsManage: "Create and change coupons and the first-ride and loyalty discounts, and see their use",
 	PermissionVouchersManage:   "Issue and export wallet voucher batches, cancel batches, void and look up vouchers",
+	PermissionWalletsRead:      "Look at any rider's or driver's wallet, its statement and a trip's refunds",
+	PermissionWalletsAdjust:    "Credit or debit a wallet with a reason, and refund trips (optionally charging the driver)",
+	PermissionPayoutsManage:    "Work the drivers' payout queue: approve, mark paid, reject",
 }
 
 // PermissionInfo describes one grantable permission.

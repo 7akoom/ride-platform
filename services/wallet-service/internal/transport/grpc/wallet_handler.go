@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	walletv1 "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1"
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/operations"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/transfer"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/voucher"
@@ -24,6 +25,7 @@ type WalletHandler struct {
 	transfers     *transfer.Service
 	statements    wallet.StatementReader
 	vouchers      *voucher.Service
+	operations    *operations.Service
 	logger        *slog.Logger
 }
 
@@ -174,34 +176,6 @@ func (h *WalletHandler) CheckDriverStanding(
 		SuspensionThreshold: standing.SuspensionThreshold.String(),
 		AmountDue:           standing.AmountDue.String(),
 		Reason:              standing.Reason,
-	}, nil
-}
-
-func (h *WalletHandler) RequestPayout(
-	ctx context.Context,
-	request *walletv1.RequestPayoutRequest,
-) (*walletv1.RequestPayoutResponse, error) {
-	if request == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is required")
-	}
-
-	amount, err := parseMoney(request.GetAmount())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "amount must be a valid decimal value")
-	}
-
-	updated, transaction, err := h.walletService.RequestPayout(ctx, wallet.PayoutInput{
-		DriverID:       request.GetDriverId(),
-		Amount:         amount,
-		IdempotencyKey: request.GetIdempotencyKey(),
-	})
-	if err != nil {
-		return nil, h.mapWalletError(err)
-	}
-
-	return &walletv1.RequestPayoutResponse{
-		Wallet:      toProtoWallet(updated),
-		Transaction: toProtoTransaction(transaction),
 	}, nil
 }
 
@@ -389,6 +363,10 @@ func toProtoTransactionType(t wallet.TransactionType) walletv1.TransactionType {
 		return walletv1.TransactionType_TRANSACTION_TYPE_DUE_PAYMENT
 	case wallet.TxVoucher:
 		return walletv1.TransactionType_TRANSACTION_TYPE_VOUCHER
+	case wallet.TxRefund:
+		return walletv1.TransactionType_TRANSACTION_TYPE_REFUND
+	case wallet.TxPayoutReturn:
+		return walletv1.TransactionType_TRANSACTION_TYPE_PAYOUT_RETURN
 	default:
 		return walletv1.TransactionType_TRANSACTION_TYPE_UNSPECIFIED
 	}

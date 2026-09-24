@@ -406,57 +406,6 @@ func TestService_ListTransactions_ClampsLimit(t *testing.T) {
 	}
 }
 
-// --- RequestPayout ----------------------------------------------------------
-
-func TestService_RequestPayout_ValidationErrors(t *testing.T) {
-	repo := newFakeRepository()
-	repo.config = defaultConfig()
-	svc := newService(repo)
-
-	if _, _, err := svc.RequestPayout(context.Background(), wallet.PayoutInput{DriverID: " ", Amount: d("1000")}); !errors.Is(err, wallet.ErrDriverIDRequired) {
-		t.Fatalf("got %v, want ErrDriverIDRequired", err)
-	}
-	if _, _, err := svc.RequestPayout(context.Background(), wallet.PayoutInput{DriverID: "driver-1", Amount: d("0")}); !errors.Is(err, wallet.ErrInvalidAmount) {
-		t.Fatalf("got %v, want ErrInvalidAmount", err)
-	}
-}
-
-func TestService_RequestPayout_RejectsBelowMinimum(t *testing.T) {
-	repo := newFakeRepository()
-	repo.config = defaultConfig() // minimum 10000
-	svc := newService(repo)
-
-	_, _, err := svc.RequestPayout(context.Background(), wallet.PayoutInput{
-		DriverID: "driver-1",
-		Amount:   d("9999.99"),
-	})
-	if !errors.Is(err, wallet.ErrBelowMinimumPayout) {
-		t.Fatalf("got %v, want ErrBelowMinimumPayout", err)
-	}
-}
-
-func TestService_RequestPayout_DebitsWithoutAllowNegative(t *testing.T) {
-	repo := newFakeRepository()
-	repo.config = defaultConfig()
-	svc := newService(repo)
-
-	_, _, err := svc.RequestPayout(context.Background(), wallet.PayoutInput{
-		DriverID: "driver-1",
-		Amount:   d("15000"),
-	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	call := repo.applyMovementCalls[0]
-	if call.AllowNegative {
-		t.Fatal("expected a payout to never allow a negative balance")
-	}
-	if !call.Amount.Equal(d("-15000")) {
-		t.Fatalf("expected the movement amount to be negative, got %s", call.Amount)
-	}
-}
-
 // --- SettleTrip -----------------------------------------------------------
 
 func validSettleInput() wallet.SettleTripInput {

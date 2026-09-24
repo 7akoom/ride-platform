@@ -48,7 +48,8 @@ func runAsStaff(
 }
 
 // staffTargetOf returns what an admin request is about, for the audit log:
-// the voucher batch, or the voucher (its serial).
+// the voucher batch, the voucher (its serial), the payout request, the trip,
+// or the wallet's owner.
 func staffTargetOf(request any) string {
 	if r, ok := request.(interface{ GetBatchId() string }); ok && r.GetBatchId() != "" {
 		return r.GetBatchId()
@@ -56,6 +57,18 @@ func staffTargetOf(request any) string {
 
 	if r, ok := request.(interface{ GetSerial() string }); ok && r.GetSerial() != "" {
 		return r.GetSerial()
+	}
+
+	if r, ok := request.(interface{ GetPayoutId() string }); ok && r.GetPayoutId() != "" {
+		return r.GetPayoutId()
+	}
+
+	if r, ok := request.(interface{ GetTripId() string }); ok && r.GetTripId() != "" {
+		return r.GetTripId()
+	}
+
+	if r, ok := request.(interface{ GetOwnerId() string }); ok && r.GetOwnerId() != "" {
+		return r.GetOwnerId()
 	}
 
 	return ""

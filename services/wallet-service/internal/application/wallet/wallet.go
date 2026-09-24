@@ -83,6 +83,9 @@ const (
 	TxDuePayment TransactionType = "due_payment"
 	// A voucher redeemed into the rider's wallet.
 	TxVoucher TransactionType = "voucher"
+	// Money given back for a trip, and a rejected payout's held amount.
+	TxRefund       TransactionType = "refund"
+	TxPayoutReturn TransactionType = "payout_return"
 )
 
 type Wallet struct {

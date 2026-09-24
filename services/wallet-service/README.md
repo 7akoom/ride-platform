@@ -130,11 +130,36 @@ audited against the wallet without replaying everything.
 
 ## Payouts
 
-`RequestPayout` debits the driver's balance and records the intent in
-the ledger. It does **not** move money to a bank — that's a separate
-concern handled outside this platform (a payment provider, or a manual
-transfer by the operator). The ledger row is the instruction and the
-audit trail.
+A driver asks for their money (`POST /v1/drivers/{driverId}/payouts`, at
+least the config's minimum payout, with an optional `destination` such as a
+ZainCash number): the amount is **held** at once (a `payout` ledger row; it
+never takes the balance below zero, and a suspended driver cannot ask) and a
+`payout_requests` row waits for staff. One request is open at a time (a
+partial unique index). Staff holding `payouts.manage` work the queue oldest
+first: approve it, mark it paid with the transfer's reference once the money
+reached the driver outside the platform (ZainCash, cash at the office), or
+reject it with a reason, which puts the held amount back (a `payout_return`
+row, the suspension re-checked). The driver sees their requests with
+`GET /v1/drivers/{driverId}/payouts`.
+
+## Staff money operations
+
+Staff holding `wallets.read` look at any wallet (`/v1/admin/wallets/{ownerId}`:
+the balance, the latest rows, a rider's unpaid fees, a driver's open payouts)
+and its statement. With `wallets.adjust` they:
+
+- **adjust** a wallet with a reason (an `adjustment` row, `Adjustment: <reason>`).
+  A rider's balance never goes below zero; a driver's may, like their
+  commission balance, and the suspension follows the new balance;
+- **refund** a settled trip (`/v1/admin/trips/{tripId}/refunds`): a `refund`
+  row credits the rider, paid by the platform, or partly taken back from the
+  trip's driver (`driverAmount`, a negative `refund` row on their wallet). The
+  refunds of a trip add up to at most its fare (or fee), checked with the
+  settlement row locked. The credit pays unpaid fees first like any other, so
+  refunding a fee still owed waives it.
+
+Each is a `wallet_adjustments` row with its ledger rows and the staff member,
+made once per idempotency key; staff-service audits every call.
 
 ## Transfers between riders
 
@@ -252,10 +277,10 @@ worker):
 - **Dispatch doesn't call `CheckDriverStanding` yet.** It should, so
   suspended drivers are filtered out before assignment. Small change to
   dispatch-service, worth doing next.
-- **No refunds of a disputed trip yet** — an `adjustment` row written by an
-  operator for now (staff adjustments and refunds come with P6d).
-- **No admin RPCs** for blocking a wallet or writing adjustments — SQL
-  for now.
+- **No admin RPC to block a wallet by hand** — a driver's suspension follows
+  their balance; anything else is SQL for now.
+- **No push when a payout is paid or rejected** — the driver sees it in their
+  list (notification templates for the new events come with P11).
 
 ## Running locally
 
