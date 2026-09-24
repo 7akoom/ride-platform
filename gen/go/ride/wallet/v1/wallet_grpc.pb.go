@@ -38,6 +38,14 @@ const (
 	WalletService_CancelMoneyRequest_FullMethodName     = "/ride.wallet.v1.WalletService/CancelMoneyRequest"
 	WalletService_GetStatement_FullMethodName           = "/ride.wallet.v1.WalletService/GetStatement"
 	WalletService_GetRiderDues_FullMethodName           = "/ride.wallet.v1.WalletService/GetRiderDues"
+	WalletService_CreateVoucherBatch_FullMethodName     = "/ride.wallet.v1.WalletService/CreateVoucherBatch"
+	WalletService_ListVoucherBatches_FullMethodName     = "/ride.wallet.v1.WalletService/ListVoucherBatches"
+	WalletService_GetVoucherBatch_FullMethodName        = "/ride.wallet.v1.WalletService/GetVoucherBatch"
+	WalletService_ExportVoucherBatch_FullMethodName     = "/ride.wallet.v1.WalletService/ExportVoucherBatch"
+	WalletService_CancelVoucherBatch_FullMethodName     = "/ride.wallet.v1.WalletService/CancelVoucherBatch"
+	WalletService_GetVoucher_FullMethodName             = "/ride.wallet.v1.WalletService/GetVoucher"
+	WalletService_VoidVoucher_FullMethodName            = "/ride.wallet.v1.WalletService/VoidVoucher"
+	WalletService_RedeemVoucher_FullMethodName          = "/ride.wallet.v1.WalletService/RedeemVoucher"
 	WalletService_ProcessZainCashWebhook_FullMethodName = "/ride.wallet.v1.WalletService/ProcessZainCashWebhook"
 )
 
@@ -109,6 +117,33 @@ type WalletServiceClient interface {
 	// money reaching their wallet pays it off first), and whether they may
 	// request trips meanwhile (trip-service asks, with the internal token).
 	GetRiderDues(ctx context.Context, in *GetRiderDuesRequest, opts ...grpc.CallOption) (*GetRiderDuesResponse, error)
+	// Vouchers: prepaid codes the platform issues in batches and sells through
+	// a seller (ZainCash, shops); a rider types one in to credit their wallet.
+	// Staff with vouchers.manage create a batch (its codes are generated here
+	// and kept encrypted), export it ONCE (the only time the codes are shown;
+	// after that only their hashes remain), and may cancel a batch or void one
+	// voucher. A voucher is redeemable once its batch is exported, until it
+	// expires, once.
+	CreateVoucherBatch(ctx context.Context, in *CreateVoucherBatchRequest, opts ...grpc.CallOption) (*VoucherBatchResponse, error)
+	// ListVoucherBatches: newest first; status created, exported or cancelled.
+	ListVoucherBatches(ctx context.Context, in *ListVoucherBatchesRequest, opts ...grpc.CallOption) (*ListVoucherBatchesResponse, error)
+	GetVoucherBatch(ctx context.Context, in *GetVoucherBatchRequest, opts ...grpc.CallOption) (*VoucherBatchResponse, error)
+	// ExportVoucherBatch returns every code of a created batch, once, and makes
+	// the batch redeemable. The codes are not kept: a lost export is a batch to
+	// cancel and issue again.
+	ExportVoucherBatch(ctx context.Context, in *ExportVoucherBatchRequest, opts ...grpc.CallOption) (*ExportVoucherBatchResponse, error)
+	// CancelVoucherBatch stops every voucher of the batch not redeemed yet.
+	CancelVoucherBatch(ctx context.Context, in *CancelVoucherBatchRequest, opts ...grpc.CallOption) (*VoucherBatchResponse, error)
+	// GetVoucher looks one voucher up by the serial printed next to its code.
+	GetVoucher(ctx context.Context, in *GetVoucherRequest, opts ...grpc.CallOption) (*VoucherResponse, error)
+	// VoidVoucher stops one voucher not redeemed yet (a card reported lost).
+	VoidVoucher(ctx context.Context, in *VoidVoucherRequest, opts ...grpc.CallOption) (*VoucherResponse, error)
+	// RedeemVoucher credits the rider's wallet with a voucher's amount (what
+	// they owe from cancelled trips' fees is paid from it first). The same
+	// rider redeeming the same code again gets the same redemption back.
+	// Wrong codes are counted: after too many in a while the rider waits
+	// (RESOURCE_EXHAUSTED).
+	RedeemVoucher(ctx context.Context, in *RedeemVoucherRequest, opts ...grpc.CallOption) (*RedeemVoucherResponse, error)
 	// ProcessZainCashWebhook receives ZainCash's server-to-server payment
 	// notification. Called directly by ZainCash, not by an authenticated
 	// platform client — exempted from the auth interceptor same as the
@@ -314,6 +349,86 @@ func (c *walletServiceClient) GetRiderDues(ctx context.Context, in *GetRiderDues
 	return out, nil
 }
 
+func (c *walletServiceClient) CreateVoucherBatch(ctx context.Context, in *CreateVoucherBatchRequest, opts ...grpc.CallOption) (*VoucherBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VoucherBatchResponse)
+	err := c.cc.Invoke(ctx, WalletService_CreateVoucherBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListVoucherBatches(ctx context.Context, in *ListVoucherBatchesRequest, opts ...grpc.CallOption) (*ListVoucherBatchesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListVoucherBatchesResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListVoucherBatches_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) GetVoucherBatch(ctx context.Context, in *GetVoucherBatchRequest, opts ...grpc.CallOption) (*VoucherBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VoucherBatchResponse)
+	err := c.cc.Invoke(ctx, WalletService_GetVoucherBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ExportVoucherBatch(ctx context.Context, in *ExportVoucherBatchRequest, opts ...grpc.CallOption) (*ExportVoucherBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExportVoucherBatchResponse)
+	err := c.cc.Invoke(ctx, WalletService_ExportVoucherBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) CancelVoucherBatch(ctx context.Context, in *CancelVoucherBatchRequest, opts ...grpc.CallOption) (*VoucherBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VoucherBatchResponse)
+	err := c.cc.Invoke(ctx, WalletService_CancelVoucherBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) GetVoucher(ctx context.Context, in *GetVoucherRequest, opts ...grpc.CallOption) (*VoucherResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VoucherResponse)
+	err := c.cc.Invoke(ctx, WalletService_GetVoucher_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) VoidVoucher(ctx context.Context, in *VoidVoucherRequest, opts ...grpc.CallOption) (*VoucherResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VoucherResponse)
+	err := c.cc.Invoke(ctx, WalletService_VoidVoucher_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) RedeemVoucher(ctx context.Context, in *RedeemVoucherRequest, opts ...grpc.CallOption) (*RedeemVoucherResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RedeemVoucherResponse)
+	err := c.cc.Invoke(ctx, WalletService_RedeemVoucher_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *walletServiceClient) ProcessZainCashWebhook(ctx context.Context, in *ProcessZainCashWebhookRequest, opts ...grpc.CallOption) (*ProcessZainCashWebhookResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ProcessZainCashWebhookResponse)
@@ -392,6 +507,33 @@ type WalletServiceServer interface {
 	// money reaching their wallet pays it off first), and whether they may
 	// request trips meanwhile (trip-service asks, with the internal token).
 	GetRiderDues(context.Context, *GetRiderDuesRequest) (*GetRiderDuesResponse, error)
+	// Vouchers: prepaid codes the platform issues in batches and sells through
+	// a seller (ZainCash, shops); a rider types one in to credit their wallet.
+	// Staff with vouchers.manage create a batch (its codes are generated here
+	// and kept encrypted), export it ONCE (the only time the codes are shown;
+	// after that only their hashes remain), and may cancel a batch or void one
+	// voucher. A voucher is redeemable once its batch is exported, until it
+	// expires, once.
+	CreateVoucherBatch(context.Context, *CreateVoucherBatchRequest) (*VoucherBatchResponse, error)
+	// ListVoucherBatches: newest first; status created, exported or cancelled.
+	ListVoucherBatches(context.Context, *ListVoucherBatchesRequest) (*ListVoucherBatchesResponse, error)
+	GetVoucherBatch(context.Context, *GetVoucherBatchRequest) (*VoucherBatchResponse, error)
+	// ExportVoucherBatch returns every code of a created batch, once, and makes
+	// the batch redeemable. The codes are not kept: a lost export is a batch to
+	// cancel and issue again.
+	ExportVoucherBatch(context.Context, *ExportVoucherBatchRequest) (*ExportVoucherBatchResponse, error)
+	// CancelVoucherBatch stops every voucher of the batch not redeemed yet.
+	CancelVoucherBatch(context.Context, *CancelVoucherBatchRequest) (*VoucherBatchResponse, error)
+	// GetVoucher looks one voucher up by the serial printed next to its code.
+	GetVoucher(context.Context, *GetVoucherRequest) (*VoucherResponse, error)
+	// VoidVoucher stops one voucher not redeemed yet (a card reported lost).
+	VoidVoucher(context.Context, *VoidVoucherRequest) (*VoucherResponse, error)
+	// RedeemVoucher credits the rider's wallet with a voucher's amount (what
+	// they owe from cancelled trips' fees is paid from it first). The same
+	// rider redeeming the same code again gets the same redemption back.
+	// Wrong codes are counted: after too many in a while the rider waits
+	// (RESOURCE_EXHAUSTED).
+	RedeemVoucher(context.Context, *RedeemVoucherRequest) (*RedeemVoucherResponse, error)
 	// ProcessZainCashWebhook receives ZainCash's server-to-server payment
 	// notification. Called directly by ZainCash, not by an authenticated
 	// platform client — exempted from the auth interceptor same as the
@@ -463,6 +605,30 @@ func (UnimplementedWalletServiceServer) GetStatement(context.Context, *GetStatem
 }
 func (UnimplementedWalletServiceServer) GetRiderDues(context.Context, *GetRiderDuesRequest) (*GetRiderDuesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRiderDues not implemented")
+}
+func (UnimplementedWalletServiceServer) CreateVoucherBatch(context.Context, *CreateVoucherBatchRequest) (*VoucherBatchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateVoucherBatch not implemented")
+}
+func (UnimplementedWalletServiceServer) ListVoucherBatches(context.Context, *ListVoucherBatchesRequest) (*ListVoucherBatchesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListVoucherBatches not implemented")
+}
+func (UnimplementedWalletServiceServer) GetVoucherBatch(context.Context, *GetVoucherBatchRequest) (*VoucherBatchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetVoucherBatch not implemented")
+}
+func (UnimplementedWalletServiceServer) ExportVoucherBatch(context.Context, *ExportVoucherBatchRequest) (*ExportVoucherBatchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExportVoucherBatch not implemented")
+}
+func (UnimplementedWalletServiceServer) CancelVoucherBatch(context.Context, *CancelVoucherBatchRequest) (*VoucherBatchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelVoucherBatch not implemented")
+}
+func (UnimplementedWalletServiceServer) GetVoucher(context.Context, *GetVoucherRequest) (*VoucherResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetVoucher not implemented")
+}
+func (UnimplementedWalletServiceServer) VoidVoucher(context.Context, *VoidVoucherRequest) (*VoucherResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VoidVoucher not implemented")
+}
+func (UnimplementedWalletServiceServer) RedeemVoucher(context.Context, *RedeemVoucherRequest) (*RedeemVoucherResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RedeemVoucher not implemented")
 }
 func (UnimplementedWalletServiceServer) ProcessZainCashWebhook(context.Context, *ProcessZainCashWebhookRequest) (*ProcessZainCashWebhookResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ProcessZainCashWebhook not implemented")
@@ -830,6 +996,150 @@ func _WalletService_GetRiderDues_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WalletService_CreateVoucherBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateVoucherBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).CreateVoucherBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_CreateVoucherBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).CreateVoucherBatch(ctx, req.(*CreateVoucherBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListVoucherBatches_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListVoucherBatchesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListVoucherBatches(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListVoucherBatches_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListVoucherBatches(ctx, req.(*ListVoucherBatchesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_GetVoucherBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVoucherBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetVoucherBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetVoucherBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetVoucherBatch(ctx, req.(*GetVoucherBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ExportVoucherBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportVoucherBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ExportVoucherBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ExportVoucherBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ExportVoucherBatch(ctx, req.(*ExportVoucherBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_CancelVoucherBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelVoucherBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).CancelVoucherBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_CancelVoucherBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).CancelVoucherBatch(ctx, req.(*CancelVoucherBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_GetVoucher_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVoucherRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetVoucher(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetVoucher_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetVoucher(ctx, req.(*GetVoucherRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_VoidVoucher_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VoidVoucherRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).VoidVoucher(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_VoidVoucher_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).VoidVoucher(ctx, req.(*VoidVoucherRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_RedeemVoucher_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RedeemVoucherRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).RedeemVoucher(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_RedeemVoucher_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).RedeemVoucher(ctx, req.(*RedeemVoucherRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WalletService_ProcessZainCashWebhook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ProcessZainCashWebhookRequest)
 	if err := dec(in); err != nil {
@@ -930,6 +1240,38 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRiderDues",
 			Handler:    _WalletService_GetRiderDues_Handler,
+		},
+		{
+			MethodName: "CreateVoucherBatch",
+			Handler:    _WalletService_CreateVoucherBatch_Handler,
+		},
+		{
+			MethodName: "ListVoucherBatches",
+			Handler:    _WalletService_ListVoucherBatches_Handler,
+		},
+		{
+			MethodName: "GetVoucherBatch",
+			Handler:    _WalletService_GetVoucherBatch_Handler,
+		},
+		{
+			MethodName: "ExportVoucherBatch",
+			Handler:    _WalletService_ExportVoucherBatch_Handler,
+		},
+		{
+			MethodName: "CancelVoucherBatch",
+			Handler:    _WalletService_CancelVoucherBatch_Handler,
+		},
+		{
+			MethodName: "GetVoucher",
+			Handler:    _WalletService_GetVoucher_Handler,
+		},
+		{
+			MethodName: "VoidVoucher",
+			Handler:    _WalletService_VoidVoucher_Handler,
+		},
+		{
+			MethodName: "RedeemVoucher",
+			Handler:    _WalletService_RedeemVoucher_Handler,
 		},
 		{
 			MethodName: "ProcessZainCashWebhook",

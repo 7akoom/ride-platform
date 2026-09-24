@@ -43,7 +43,7 @@ func runAuthorizationCase(
 		testOwnerMethod:    accessOwner,
 		testUnwiredMethod:  accessOwner,
 		testPublicMethod:   accessAuthenticated,
-	}, checks, resolver)
+	}, checks, nil, resolver, nil)
 
 	ctx := context.Background()
 	if principal != nil {

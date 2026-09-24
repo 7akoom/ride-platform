@@ -142,6 +142,8 @@ const (
 	// A cancelled trip's fee the rider owed, paid from money that reached the
 	// wallet later.
 	TransactionType_TRANSACTION_TYPE_DUE_PAYMENT TransactionType = 10
+	// A voucher redeemed into the rider's wallet.
+	TransactionType_TRANSACTION_TYPE_VOUCHER TransactionType = 11
 )
 
 // Enum value maps for TransactionType.
@@ -158,6 +160,7 @@ var (
 		8:  "TRANSACTION_TYPE_TRANSFER_OUT",
 		9:  "TRANSACTION_TYPE_TRANSFER_IN",
 		10: "TRANSACTION_TYPE_DUE_PAYMENT",
+		11: "TRANSACTION_TYPE_VOUCHER",
 	}
 	TransactionType_value = map[string]int32{
 		"TRANSACTION_TYPE_UNSPECIFIED":   0,
@@ -171,6 +174,7 @@ var (
 		"TRANSACTION_TYPE_TRANSFER_OUT":  8,
 		"TRANSACTION_TYPE_TRANSFER_IN":   9,
 		"TRANSACTION_TYPE_DUE_PAYMENT":   10,
+		"TRANSACTION_TYPE_VOUCHER":       11,
 	}
 )
 
@@ -3069,6 +3073,1092 @@ func (x *GetRiderDuesResponse) GetCanRequestTrips() bool {
 	return false
 }
 
+type CreateVoucherBatchRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// What staff call the batch, e.g. "ZainCash October 5000".
+	Label string `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	// Who sells it (e.g. zaincash); free text, at most 60 characters.
+	Seller string `protobuf:"bytes,2,opt,name=seller,proto3" json:"seller,omitempty"`
+	// What each voucher credits, a decimal string in the deployment's currency.
+	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
+	// 1-10000.
+	Quantity int32 `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	// When the vouchers stop working: at least an hour and at most three years
+	// ahead; unset means a year.
+	ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	// Required: a retry with the same key is the same batch.
+	IdempotencyKey string `protobuf:"bytes,6,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CreateVoucherBatchRequest) Reset() {
+	*x = CreateVoucherBatchRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateVoucherBatchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateVoucherBatchRequest) ProtoMessage() {}
+
+func (x *CreateVoucherBatchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateVoucherBatchRequest.ProtoReflect.Descriptor instead.
+func (*CreateVoucherBatchRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *CreateVoucherBatchRequest) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *CreateVoucherBatchRequest) GetSeller() string {
+	if x != nil {
+		return x.Seller
+	}
+	return ""
+}
+
+func (x *CreateVoucherBatchRequest) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
+func (x *CreateVoucherBatchRequest) GetQuantity() int32 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *CreateVoucherBatchRequest) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *CreateVoucherBatchRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+type VoucherBatch struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The batch's number, the start of every serial (V<number>-<index>).
+	Number       int64  `protobuf:"varint,2,opt,name=number,proto3" json:"number,omitempty"`
+	Label        string `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
+	Seller       string `protobuf:"bytes,4,opt,name=seller,proto3" json:"seller,omitempty"`
+	Amount       string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
+	CurrencyCode string `protobuf:"bytes,6,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	Quantity     int32  `protobuf:"varint,7,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	// created (codes not exported yet: nothing is redeemable), exported
+	// (redeemable) or cancelled.
+	Status       string                 `protobuf:"bytes,8,opt,name=status,proto3" json:"status,omitempty"`
+	ExpiresAt    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ExportedAt   *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=exported_at,json=exportedAt,proto3" json:"exported_at,omitempty"`
+	CancelledAt  *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=cancelled_at,json=cancelledAt,proto3" json:"cancelled_at,omitempty"`
+	CancelReason string                 `protobuf:"bytes,13,opt,name=cancel_reason,json=cancelReason,proto3" json:"cancel_reason,omitempty"`
+	// How the vouchers stand.
+	RedeemedCount  int32  `protobuf:"varint,14,opt,name=redeemed_count,json=redeemedCount,proto3" json:"redeemed_count,omitempty"`
+	VoidCount      int32  `protobuf:"varint,15,opt,name=void_count,json=voidCount,proto3" json:"void_count,omitempty"`
+	RedeemedAmount string `protobuf:"bytes,16,opt,name=redeemed_amount,json=redeemedAmount,proto3" json:"redeemed_amount,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *VoucherBatch) Reset() {
+	*x = VoucherBatch{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VoucherBatch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VoucherBatch) ProtoMessage() {}
+
+func (x *VoucherBatch) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VoucherBatch.ProtoReflect.Descriptor instead.
+func (*VoucherBatch) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *VoucherBatch) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *VoucherBatch) GetNumber() int64 {
+	if x != nil {
+		return x.Number
+	}
+	return 0
+}
+
+func (x *VoucherBatch) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *VoucherBatch) GetSeller() string {
+	if x != nil {
+		return x.Seller
+	}
+	return ""
+}
+
+func (x *VoucherBatch) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
+func (x *VoucherBatch) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
+	}
+	return ""
+}
+
+func (x *VoucherBatch) GetQuantity() int32 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *VoucherBatch) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *VoucherBatch) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *VoucherBatch) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *VoucherBatch) GetExportedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExportedAt
+	}
+	return nil
+}
+
+func (x *VoucherBatch) GetCancelledAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CancelledAt
+	}
+	return nil
+}
+
+func (x *VoucherBatch) GetCancelReason() string {
+	if x != nil {
+		return x.CancelReason
+	}
+	return ""
+}
+
+func (x *VoucherBatch) GetRedeemedCount() int32 {
+	if x != nil {
+		return x.RedeemedCount
+	}
+	return 0
+}
+
+func (x *VoucherBatch) GetVoidCount() int32 {
+	if x != nil {
+		return x.VoidCount
+	}
+	return 0
+}
+
+func (x *VoucherBatch) GetRedeemedAmount() string {
+	if x != nil {
+		return x.RedeemedAmount
+	}
+	return ""
+}
+
+type VoucherBatchResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Batch         *VoucherBatch          `protobuf:"bytes,1,opt,name=batch,proto3" json:"batch,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VoucherBatchResponse) Reset() {
+	*x = VoucherBatchResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VoucherBatchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VoucherBatchResponse) ProtoMessage() {}
+
+func (x *VoucherBatchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VoucherBatchResponse.ProtoReflect.Descriptor instead.
+func (*VoucherBatchResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *VoucherBatchResponse) GetBatch() *VoucherBatch {
+	if x != nil {
+		return x.Batch
+	}
+	return nil
+}
+
+type ListVoucherBatchesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListVoucherBatchesRequest) Reset() {
+	*x = ListVoucherBatchesRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListVoucherBatchesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListVoucherBatchesRequest) ProtoMessage() {}
+
+func (x *ListVoucherBatchesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListVoucherBatchesRequest.ProtoReflect.Descriptor instead.
+func (*ListVoucherBatchesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *ListVoucherBatchesRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ListVoucherBatchesRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListVoucherBatchesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListVoucherBatchesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Batches       []*VoucherBatch        `protobuf:"bytes,1,rep,name=batches,proto3" json:"batches,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListVoucherBatchesResponse) Reset() {
+	*x = ListVoucherBatchesResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListVoucherBatchesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListVoucherBatchesResponse) ProtoMessage() {}
+
+func (x *ListVoucherBatchesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListVoucherBatchesResponse.ProtoReflect.Descriptor instead.
+func (*ListVoucherBatchesResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *ListVoucherBatchesResponse) GetBatches() []*VoucherBatch {
+	if x != nil {
+		return x.Batches
+	}
+	return nil
+}
+
+func (x *ListVoucherBatchesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type GetVoucherBatchRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BatchId       string                 `protobuf:"bytes,1,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVoucherBatchRequest) Reset() {
+	*x = GetVoucherBatchRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVoucherBatchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVoucherBatchRequest) ProtoMessage() {}
+
+func (x *GetVoucherBatchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVoucherBatchRequest.ProtoReflect.Descriptor instead.
+func (*GetVoucherBatchRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *GetVoucherBatchRequest) GetBatchId() string {
+	if x != nil {
+		return x.BatchId
+	}
+	return ""
+}
+
+type ExportVoucherBatchRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BatchId       string                 `protobuf:"bytes,1,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportVoucherBatchRequest) Reset() {
+	*x = ExportVoucherBatchRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportVoucherBatchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportVoucherBatchRequest) ProtoMessage() {}
+
+func (x *ExportVoucherBatchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportVoucherBatchRequest.ProtoReflect.Descriptor instead.
+func (*ExportVoucherBatchRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *ExportVoucherBatchRequest) GetBatchId() string {
+	if x != nil {
+		return x.BatchId
+	}
+	return ""
+}
+
+type ExportedVoucher struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Serial string                 `protobuf:"bytes,1,opt,name=serial,proto3" json:"serial,omitempty"`
+	// The code riders type, grouped in fours (XXXX-XXXX-XXXX-XXXX).
+	Code          string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportedVoucher) Reset() {
+	*x = ExportedVoucher{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportedVoucher) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportedVoucher) ProtoMessage() {}
+
+func (x *ExportedVoucher) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportedVoucher.ProtoReflect.Descriptor instead.
+func (*ExportedVoucher) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *ExportedVoucher) GetSerial() string {
+	if x != nil {
+		return x.Serial
+	}
+	return ""
+}
+
+func (x *ExportedVoucher) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type ExportVoucherBatchResponse struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Batch    *VoucherBatch          `protobuf:"bytes,1,opt,name=batch,proto3" json:"batch,omitempty"`
+	Vouchers []*ExportedVoucher     `protobuf:"bytes,2,rep,name=vouchers,proto3" json:"vouchers,omitempty"`
+	// The same as CSV (serial,code,amount,currency,expires_at) for the seller.
+	Csv           string `protobuf:"bytes,3,opt,name=csv,proto3" json:"csv,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportVoucherBatchResponse) Reset() {
+	*x = ExportVoucherBatchResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportVoucherBatchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportVoucherBatchResponse) ProtoMessage() {}
+
+func (x *ExportVoucherBatchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportVoucherBatchResponse.ProtoReflect.Descriptor instead.
+func (*ExportVoucherBatchResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *ExportVoucherBatchResponse) GetBatch() *VoucherBatch {
+	if x != nil {
+		return x.Batch
+	}
+	return nil
+}
+
+func (x *ExportVoucherBatchResponse) GetVouchers() []*ExportedVoucher {
+	if x != nil {
+		return x.Vouchers
+	}
+	return nil
+}
+
+func (x *ExportVoucherBatchResponse) GetCsv() string {
+	if x != nil {
+		return x.Csv
+	}
+	return ""
+}
+
+type CancelVoucherBatchRequest struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	BatchId string                 `protobuf:"bytes,1,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"`
+	// Why, 3-300 characters, kept with the batch.
+	Reason        string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelVoucherBatchRequest) Reset() {
+	*x = CancelVoucherBatchRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelVoucherBatchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelVoucherBatchRequest) ProtoMessage() {}
+
+func (x *CancelVoucherBatchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelVoucherBatchRequest.ProtoReflect.Descriptor instead.
+func (*CancelVoucherBatchRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *CancelVoucherBatchRequest) GetBatchId() string {
+	if x != nil {
+		return x.BatchId
+	}
+	return ""
+}
+
+func (x *CancelVoucherBatchRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type Voucher struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Serial       string                 `protobuf:"bytes,1,opt,name=serial,proto3" json:"serial,omitempty"`
+	BatchId      string                 `protobuf:"bytes,2,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"`
+	BatchLabel   string                 `protobuf:"bytes,3,opt,name=batch_label,json=batchLabel,proto3" json:"batch_label,omitempty"`
+	Amount       string                 `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
+	CurrencyCode string                 `protobuf:"bytes,5,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	// available, redeemed or void.
+	Status string `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+	// True when a rider could redeem it now: available, its batch exported and
+	// not cancelled, and not expired.
+	Redeemable        bool                   `protobuf:"varint,7,opt,name=redeemable,proto3" json:"redeemable,omitempty"`
+	ExpiresAt         *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	RedeemedByRiderId string                 `protobuf:"bytes,9,opt,name=redeemed_by_rider_id,json=redeemedByRiderId,proto3" json:"redeemed_by_rider_id,omitempty"`
+	RedeemedAt        *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=redeemed_at,json=redeemedAt,proto3" json:"redeemed_at,omitempty"`
+	TransactionId     string                 `protobuf:"bytes,11,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"`
+	VoidedAt          *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=voided_at,json=voidedAt,proto3" json:"voided_at,omitempty"`
+	VoidReason        string                 `protobuf:"bytes,13,opt,name=void_reason,json=voidReason,proto3" json:"void_reason,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *Voucher) Reset() {
+	*x = Voucher{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Voucher) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Voucher) ProtoMessage() {}
+
+func (x *Voucher) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Voucher.ProtoReflect.Descriptor instead.
+func (*Voucher) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *Voucher) GetSerial() string {
+	if x != nil {
+		return x.Serial
+	}
+	return ""
+}
+
+func (x *Voucher) GetBatchId() string {
+	if x != nil {
+		return x.BatchId
+	}
+	return ""
+}
+
+func (x *Voucher) GetBatchLabel() string {
+	if x != nil {
+		return x.BatchLabel
+	}
+	return ""
+}
+
+func (x *Voucher) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
+func (x *Voucher) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
+	}
+	return ""
+}
+
+func (x *Voucher) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Voucher) GetRedeemable() bool {
+	if x != nil {
+		return x.Redeemable
+	}
+	return false
+}
+
+func (x *Voucher) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *Voucher) GetRedeemedByRiderId() string {
+	if x != nil {
+		return x.RedeemedByRiderId
+	}
+	return ""
+}
+
+func (x *Voucher) GetRedeemedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RedeemedAt
+	}
+	return nil
+}
+
+func (x *Voucher) GetTransactionId() string {
+	if x != nil {
+		return x.TransactionId
+	}
+	return ""
+}
+
+func (x *Voucher) GetVoidedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.VoidedAt
+	}
+	return nil
+}
+
+func (x *Voucher) GetVoidReason() string {
+	if x != nil {
+		return x.VoidReason
+	}
+	return ""
+}
+
+type VoucherResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Voucher       *Voucher               `protobuf:"bytes,1,opt,name=voucher,proto3" json:"voucher,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VoucherResponse) Reset() {
+	*x = VoucherResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VoucherResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VoucherResponse) ProtoMessage() {}
+
+func (x *VoucherResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VoucherResponse.ProtoReflect.Descriptor instead.
+func (*VoucherResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *VoucherResponse) GetVoucher() *Voucher {
+	if x != nil {
+		return x.Voucher
+	}
+	return nil
+}
+
+type GetVoucherRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Serial        string                 `protobuf:"bytes,1,opt,name=serial,proto3" json:"serial,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVoucherRequest) Reset() {
+	*x = GetVoucherRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVoucherRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVoucherRequest) ProtoMessage() {}
+
+func (x *GetVoucherRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVoucherRequest.ProtoReflect.Descriptor instead.
+func (*GetVoucherRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{53}
+}
+
+func (x *GetVoucherRequest) GetSerial() string {
+	if x != nil {
+		return x.Serial
+	}
+	return ""
+}
+
+type VoidVoucherRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Serial string                 `protobuf:"bytes,1,opt,name=serial,proto3" json:"serial,omitempty"`
+	// Why, 3-300 characters.
+	Reason        string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VoidVoucherRequest) Reset() {
+	*x = VoidVoucherRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VoidVoucherRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VoidVoucherRequest) ProtoMessage() {}
+
+func (x *VoidVoucherRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VoidVoucherRequest.ProtoReflect.Descriptor instead.
+func (*VoidVoucherRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *VoidVoucherRequest) GetSerial() string {
+	if x != nil {
+		return x.Serial
+	}
+	return ""
+}
+
+func (x *VoidVoucherRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type RedeemVoucherRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The caller's own rider profile.
+	RiderId string `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	// As printed; spaces, dashes and case do not matter.
+	Code          string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RedeemVoucherRequest) Reset() {
+	*x = RedeemVoucherRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RedeemVoucherRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RedeemVoucherRequest) ProtoMessage() {}
+
+func (x *RedeemVoucherRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RedeemVoucherRequest.ProtoReflect.Descriptor instead.
+func (*RedeemVoucherRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *RedeemVoucherRequest) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *RedeemVoucherRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type RedeemVoucherResponse struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Serial       string                 `protobuf:"bytes,1,opt,name=serial,proto3" json:"serial,omitempty"`
+	Amount       string                 `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	CurrencyCode string                 `protobuf:"bytes,3,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	// The rider's wallet after it.
+	Wallet *Wallet `protobuf:"bytes,4,opt,name=wallet,proto3" json:"wallet,omitempty"`
+	// The voucher's ledger row.
+	Transaction   *Transaction `protobuf:"bytes,5,opt,name=transaction,proto3" json:"transaction,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RedeemVoucherResponse) Reset() {
+	*x = RedeemVoucherResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RedeemVoucherResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RedeemVoucherResponse) ProtoMessage() {}
+
+func (x *RedeemVoucherResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RedeemVoucherResponse.ProtoReflect.Descriptor instead.
+func (*RedeemVoucherResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *RedeemVoucherResponse) GetSerial() string {
+	if x != nil {
+		return x.Serial
+	}
+	return ""
+}
+
+func (x *RedeemVoucherResponse) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
+func (x *RedeemVoucherResponse) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
+	}
+	return ""
+}
+
+func (x *RedeemVoucherResponse) GetWallet() *Wallet {
+	if x != nil {
+		return x.Wallet
+	}
+	return nil
+}
+
+func (x *RedeemVoucherResponse) GetTransaction() *Transaction {
+	if x != nil {
+		return x.Transaction
+	}
+	return nil
+}
+
 var File_ride_wallet_v1_wallet_proto protoreflect.FileDescriptor
 
 const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
@@ -3309,7 +4399,98 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\rcurrency_code\x18\x01 \x01(\tR\fcurrencyCode\x12 \n" +
 	"\voutstanding\x18\x02 \x01(\tR\voutstanding\x12,\n" +
 	"\x04dues\x18\x03 \x03(\v2\x18.ride.wallet.v1.RiderDueR\x04dues\x12*\n" +
-	"\x11can_request_trips\x18\x04 \x01(\bR\x0fcanRequestTrips*T\n" +
+	"\x11can_request_trips\x18\x04 \x01(\bR\x0fcanRequestTrips\"\xe1\x01\n" +
+	"\x19CreateVoucherBatchRequest\x12\x14\n" +
+	"\x05label\x18\x01 \x01(\tR\x05label\x12\x16\n" +
+	"\x06seller\x18\x02 \x01(\tR\x06seller\x12\x16\n" +
+	"\x06amount\x18\x03 \x01(\tR\x06amount\x12\x1a\n" +
+	"\bquantity\x18\x04 \x01(\x05R\bquantity\x129\n" +
+	"\n" +
+	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12'\n" +
+	"\x0fidempotency_key\x18\x06 \x01(\tR\x0eidempotencyKey\"\xdb\x04\n" +
+	"\fVoucherBatch\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
+	"\x06number\x18\x02 \x01(\x03R\x06number\x12\x14\n" +
+	"\x05label\x18\x03 \x01(\tR\x05label\x12\x16\n" +
+	"\x06seller\x18\x04 \x01(\tR\x06seller\x12\x16\n" +
+	"\x06amount\x18\x05 \x01(\tR\x06amount\x12#\n" +
+	"\rcurrency_code\x18\x06 \x01(\tR\fcurrencyCode\x12\x1a\n" +
+	"\bquantity\x18\a \x01(\x05R\bquantity\x12\x16\n" +
+	"\x06status\x18\b \x01(\tR\x06status\x129\n" +
+	"\n" +
+	"expires_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x129\n" +
+	"\n" +
+	"created_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12;\n" +
+	"\vexported_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"exportedAt\x12=\n" +
+	"\fcancelled_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\vcancelledAt\x12#\n" +
+	"\rcancel_reason\x18\r \x01(\tR\fcancelReason\x12%\n" +
+	"\x0eredeemed_count\x18\x0e \x01(\x05R\rredeemedCount\x12\x1d\n" +
+	"\n" +
+	"void_count\x18\x0f \x01(\x05R\tvoidCount\x12'\n" +
+	"\x0fredeemed_amount\x18\x10 \x01(\tR\x0eredeemedAmount\"J\n" +
+	"\x14VoucherBatchResponse\x122\n" +
+	"\x05batch\x18\x01 \x01(\v2\x1c.ride.wallet.v1.VoucherBatchR\x05batch\"o\n" +
+	"\x19ListVoucherBatchesRequest\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\"|\n" +
+	"\x1aListVoucherBatchesResponse\x126\n" +
+	"\abatches\x18\x01 \x03(\v2\x1c.ride.wallet.v1.VoucherBatchR\abatches\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"3\n" +
+	"\x16GetVoucherBatchRequest\x12\x19\n" +
+	"\bbatch_id\x18\x01 \x01(\tR\abatchId\"6\n" +
+	"\x19ExportVoucherBatchRequest\x12\x19\n" +
+	"\bbatch_id\x18\x01 \x01(\tR\abatchId\"=\n" +
+	"\x0fExportedVoucher\x12\x16\n" +
+	"\x06serial\x18\x01 \x01(\tR\x06serial\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\"\x9f\x01\n" +
+	"\x1aExportVoucherBatchResponse\x122\n" +
+	"\x05batch\x18\x01 \x01(\v2\x1c.ride.wallet.v1.VoucherBatchR\x05batch\x12;\n" +
+	"\bvouchers\x18\x02 \x03(\v2\x1f.ride.wallet.v1.ExportedVoucherR\bvouchers\x12\x10\n" +
+	"\x03csv\x18\x03 \x01(\tR\x03csv\"N\n" +
+	"\x19CancelVoucherBatchRequest\x12\x19\n" +
+	"\bbatch_id\x18\x01 \x01(\tR\abatchId\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"\xfc\x03\n" +
+	"\aVoucher\x12\x16\n" +
+	"\x06serial\x18\x01 \x01(\tR\x06serial\x12\x19\n" +
+	"\bbatch_id\x18\x02 \x01(\tR\abatchId\x12\x1f\n" +
+	"\vbatch_label\x18\x03 \x01(\tR\n" +
+	"batchLabel\x12\x16\n" +
+	"\x06amount\x18\x04 \x01(\tR\x06amount\x12#\n" +
+	"\rcurrency_code\x18\x05 \x01(\tR\fcurrencyCode\x12\x16\n" +
+	"\x06status\x18\x06 \x01(\tR\x06status\x12\x1e\n" +
+	"\n" +
+	"redeemable\x18\a \x01(\bR\n" +
+	"redeemable\x129\n" +
+	"\n" +
+	"expires_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12/\n" +
+	"\x14redeemed_by_rider_id\x18\t \x01(\tR\x11redeemedByRiderId\x12;\n" +
+	"\vredeemed_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"redeemedAt\x12%\n" +
+	"\x0etransaction_id\x18\v \x01(\tR\rtransactionId\x127\n" +
+	"\tvoided_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\bvoidedAt\x12\x1f\n" +
+	"\vvoid_reason\x18\r \x01(\tR\n" +
+	"voidReason\"D\n" +
+	"\x0fVoucherResponse\x121\n" +
+	"\avoucher\x18\x01 \x01(\v2\x17.ride.wallet.v1.VoucherR\avoucher\"+\n" +
+	"\x11GetVoucherRequest\x12\x16\n" +
+	"\x06serial\x18\x01 \x01(\tR\x06serial\"D\n" +
+	"\x12VoidVoucherRequest\x12\x16\n" +
+	"\x06serial\x18\x01 \x01(\tR\x06serial\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"E\n" +
+	"\x14RedeemVoucherRequest\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\"\xdb\x01\n" +
+	"\x15RedeemVoucherResponse\x12\x16\n" +
+	"\x06serial\x18\x01 \x01(\tR\x06serial\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\tR\x06amount\x12#\n" +
+	"\rcurrency_code\x18\x03 \x01(\tR\fcurrencyCode\x12.\n" +
+	"\x06wallet\x18\x04 \x01(\v2\x16.ride.wallet.v1.WalletR\x06wallet\x12=\n" +
+	"\vtransaction\x18\x05 \x01(\v2\x1b.ride.wallet.v1.TransactionR\vtransaction*T\n" +
 	"\tOwnerType\x12\x1a\n" +
 	"\x16OWNER_TYPE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10OWNER_TYPE_RIDER\x10\x01\x12\x15\n" +
@@ -3318,7 +4499,7 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x1aPAYMENT_METHOD_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PAYMENT_METHOD_CASH\x10\x01\x12\x19\n" +
 	"\x15PAYMENT_METHOD_WALLET\x10\x02\x12\x17\n" +
-	"\x13PAYMENT_METHOD_CARD\x10\x03*\x80\x03\n" +
+	"\x13PAYMENT_METHOD_CARD\x10\x03*\x9e\x03\n" +
 	"\x0fTransactionType\x12 \n" +
 	"\x1cTRANSACTION_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17TRANSACTION_TYPE_TOP_UP\x10\x01\x12!\n" +
@@ -3331,7 +4512,8 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x1dTRANSACTION_TYPE_TRANSFER_OUT\x10\b\x12 \n" +
 	"\x1cTRANSACTION_TYPE_TRANSFER_IN\x10\t\x12 \n" +
 	"\x1cTRANSACTION_TYPE_DUE_PAYMENT\x10\n" +
-	"2\x9e\x16\n" +
+	"\x12\x1c\n" +
+	"\x18TRANSACTION_TYPE_VOUCHER\x10\v2\x9d\x1f\n" +
 	"\rWalletService\x12p\n" +
 	"\tGetWallet\x12 .ride.wallet.v1.GetWalletRequest\x1a!.ride.wallet.v1.GetWalletResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/wallets/{owner_id}\x12D\n" +
 	"\x05TopUp\x12\x1c.ride.wallet.v1.TopUpRequest\x1a\x1d.ride.wallet.v1.TopUpResponse\x12S\n" +
@@ -3352,7 +4534,16 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x13DeclineMoneyRequest\x12(.ride.wallet.v1.CloseMoneyRequestRequest\x1a$.ride.wallet.v1.MoneyRequestResponse\"?\x82\xd3\xe4\x93\x029:\x01*\"4/v1/wallets/{rider_id}/money-requests/{code}:decline\x12\xa4\x01\n" +
 	"\x12CancelMoneyRequest\x12(.ride.wallet.v1.CloseMoneyRequestRequest\x1a$.ride.wallet.v1.MoneyRequestResponse\">\x82\xd3\xe4\x93\x028:\x01*\"3/v1/wallets/{rider_id}/money-requests/{code}:cancel\x12\x83\x01\n" +
 	"\fGetStatement\x12#.ride.wallet.v1.GetStatementRequest\x1a$.ride.wallet.v1.GetStatementResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/wallets/{owner_id}/statement\x12~\n" +
-	"\fGetRiderDues\x12#.ride.wallet.v1.GetRiderDuesRequest\x1a$.ride.wallet.v1.GetRiderDuesResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/wallets/{rider_id}/dues\x12\x9f\x01\n" +
+	"\fGetRiderDues\x12#.ride.wallet.v1.GetRiderDuesRequest\x1a$.ride.wallet.v1.GetRiderDuesResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/wallets/{rider_id}/dues\x12\x8b\x01\n" +
+	"\x12CreateVoucherBatch\x12).ride.wallet.v1.CreateVoucherBatchRequest\x1a$.ride.wallet.v1.VoucherBatchResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/admin/voucher-batches\x12\x8e\x01\n" +
+	"\x12ListVoucherBatches\x12).ride.wallet.v1.ListVoucherBatchesRequest\x1a*.ride.wallet.v1.ListVoucherBatchesResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/admin/voucher-batches\x12\x8d\x01\n" +
+	"\x0fGetVoucherBatch\x12&.ride.wallet.v1.GetVoucherBatchRequest\x1a$.ride.wallet.v1.VoucherBatchResponse\",\x82\xd3\xe4\x93\x02&\x12$/v1/admin/voucher-batches/{batch_id}\x12\xa3\x01\n" +
+	"\x12ExportVoucherBatch\x12).ride.wallet.v1.ExportVoucherBatchRequest\x1a*.ride.wallet.v1.ExportVoucherBatchResponse\"6\x82\xd3\xe4\x93\x020:\x01*\"+/v1/admin/voucher-batches/{batch_id}:export\x12\x9d\x01\n" +
+	"\x12CancelVoucherBatch\x12).ride.wallet.v1.CancelVoucherBatchRequest\x1a$.ride.wallet.v1.VoucherBatchResponse\"6\x82\xd3\xe4\x93\x020:\x01*\"+/v1/admin/voucher-batches/{batch_id}:cancel\x12u\n" +
+	"\n" +
+	"GetVoucher\x12!.ride.wallet.v1.GetVoucherRequest\x1a\x1f.ride.wallet.v1.VoucherResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/admin/vouchers/{serial}\x12\x7f\n" +
+	"\vVoidVoucher\x12\".ride.wallet.v1.VoidVoucherRequest\x1a\x1f.ride.wallet.v1.VoucherResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /v1/admin/vouchers/{serial}:void\x12\x8f\x01\n" +
+	"\rRedeemVoucher\x12$.ride.wallet.v1.RedeemVoucherRequest\x1a%.ride.wallet.v1.RedeemVoucherResponse\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/v1/wallets/{rider_id}/vouchers:redeem\x12\x9f\x01\n" +
 	"\x16ProcessZainCashWebhook\x12-.ride.wallet.v1.ProcessZainCashWebhookRequest\x1a..ride.wallet.v1.ProcessZainCashWebhookResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/wallet/zaincash/webhookB@Z>github.com/7akoom/ride-platform/gen/go/ride/wallet/v1;walletv1b\x06proto3"
 
 var (
@@ -3368,7 +4559,7 @@ func file_ride_wallet_v1_wallet_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_wallet_v1_wallet_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_ride_wallet_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
+var file_ride_wallet_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 57)
 var file_ride_wallet_v1_wallet_proto_goTypes = []any{
 	(OwnerType)(0),                         // 0: ride.wallet.v1.OwnerType
 	(PaymentMethod)(0),                     // 1: ride.wallet.v1.PaymentMethod
@@ -3414,14 +4605,30 @@ var file_ride_wallet_v1_wallet_proto_goTypes = []any{
 	(*GetRiderDuesRequest)(nil),            // 41: ride.wallet.v1.GetRiderDuesRequest
 	(*RiderDue)(nil),                       // 42: ride.wallet.v1.RiderDue
 	(*GetRiderDuesResponse)(nil),           // 43: ride.wallet.v1.GetRiderDuesResponse
-	(*timestamppb.Timestamp)(nil),          // 44: google.protobuf.Timestamp
+	(*CreateVoucherBatchRequest)(nil),      // 44: ride.wallet.v1.CreateVoucherBatchRequest
+	(*VoucherBatch)(nil),                   // 45: ride.wallet.v1.VoucherBatch
+	(*VoucherBatchResponse)(nil),           // 46: ride.wallet.v1.VoucherBatchResponse
+	(*ListVoucherBatchesRequest)(nil),      // 47: ride.wallet.v1.ListVoucherBatchesRequest
+	(*ListVoucherBatchesResponse)(nil),     // 48: ride.wallet.v1.ListVoucherBatchesResponse
+	(*GetVoucherBatchRequest)(nil),         // 49: ride.wallet.v1.GetVoucherBatchRequest
+	(*ExportVoucherBatchRequest)(nil),      // 50: ride.wallet.v1.ExportVoucherBatchRequest
+	(*ExportedVoucher)(nil),                // 51: ride.wallet.v1.ExportedVoucher
+	(*ExportVoucherBatchResponse)(nil),     // 52: ride.wallet.v1.ExportVoucherBatchResponse
+	(*CancelVoucherBatchRequest)(nil),      // 53: ride.wallet.v1.CancelVoucherBatchRequest
+	(*Voucher)(nil),                        // 54: ride.wallet.v1.Voucher
+	(*VoucherResponse)(nil),                // 55: ride.wallet.v1.VoucherResponse
+	(*GetVoucherRequest)(nil),              // 56: ride.wallet.v1.GetVoucherRequest
+	(*VoidVoucherRequest)(nil),             // 57: ride.wallet.v1.VoidVoucherRequest
+	(*RedeemVoucherRequest)(nil),           // 58: ride.wallet.v1.RedeemVoucherRequest
+	(*RedeemVoucherResponse)(nil),          // 59: ride.wallet.v1.RedeemVoucherResponse
+	(*timestamppb.Timestamp)(nil),          // 60: google.protobuf.Timestamp
 }
 var file_ride_wallet_v1_wallet_proto_depIdxs = []int32{
 	0,  // 0: ride.wallet.v1.Wallet.owner_type:type_name -> ride.wallet.v1.OwnerType
-	44, // 1: ride.wallet.v1.Wallet.created_at:type_name -> google.protobuf.Timestamp
-	44, // 2: ride.wallet.v1.Wallet.updated_at:type_name -> google.protobuf.Timestamp
+	60, // 1: ride.wallet.v1.Wallet.created_at:type_name -> google.protobuf.Timestamp
+	60, // 2: ride.wallet.v1.Wallet.updated_at:type_name -> google.protobuf.Timestamp
 	2,  // 3: ride.wallet.v1.Transaction.type:type_name -> ride.wallet.v1.TransactionType
-	44, // 4: ride.wallet.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
+	60, // 4: ride.wallet.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 5: ride.wallet.v1.GetWalletRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	3,  // 6: ride.wallet.v1.GetWalletResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	0,  // 7: ride.wallet.v1.TopUpRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
@@ -3434,13 +4641,13 @@ var file_ride_wallet_v1_wallet_proto_depIdxs = []int32{
 	4,  // 14: ride.wallet.v1.RequestPayoutResponse.transaction:type_name -> ride.wallet.v1.Transaction
 	0,  // 15: ride.wallet.v1.GetTripSettlementRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	1,  // 16: ride.wallet.v1.GetTripSettlementResponse.payment_method:type_name -> ride.wallet.v1.PaymentMethod
-	44, // 17: ride.wallet.v1.Transfer.created_at:type_name -> google.protobuf.Timestamp
+	60, // 17: ride.wallet.v1.Transfer.created_at:type_name -> google.protobuf.Timestamp
 	26, // 18: ride.wallet.v1.SendTransferResponse.transfer:type_name -> ride.wallet.v1.Transfer
 	3,  // 19: ride.wallet.v1.SendTransferResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	26, // 20: ride.wallet.v1.ListTransfersResponse.transfers:type_name -> ride.wallet.v1.Transfer
-	44, // 21: ride.wallet.v1.MoneyRequest.expires_at:type_name -> google.protobuf.Timestamp
-	44, // 22: ride.wallet.v1.MoneyRequest.created_at:type_name -> google.protobuf.Timestamp
-	44, // 23: ride.wallet.v1.MoneyRequest.closed_at:type_name -> google.protobuf.Timestamp
+	60, // 21: ride.wallet.v1.MoneyRequest.expires_at:type_name -> google.protobuf.Timestamp
+	60, // 22: ride.wallet.v1.MoneyRequest.created_at:type_name -> google.protobuf.Timestamp
+	60, // 23: ride.wallet.v1.MoneyRequest.closed_at:type_name -> google.protobuf.Timestamp
 	31, // 24: ride.wallet.v1.MoneyRequestResponse.money_request:type_name -> ride.wallet.v1.MoneyRequest
 	31, // 25: ride.wallet.v1.ListMoneyRequestsResponse.money_requests:type_name -> ride.wallet.v1.MoneyRequest
 	31, // 26: ride.wallet.v1.PayMoneyRequestResponse.money_request:type_name -> ride.wallet.v1.MoneyRequest
@@ -3448,56 +4655,87 @@ var file_ride_wallet_v1_wallet_proto_depIdxs = []int32{
 	3,  // 28: ride.wallet.v1.PayMoneyRequestResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	0,  // 29: ride.wallet.v1.GetStatementRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	2,  // 30: ride.wallet.v1.GetStatementRequest.types:type_name -> ride.wallet.v1.TransactionType
-	44, // 31: ride.wallet.v1.GetStatementRequest.from:type_name -> google.protobuf.Timestamp
-	44, // 32: ride.wallet.v1.GetStatementRequest.to:type_name -> google.protobuf.Timestamp
+	60, // 31: ride.wallet.v1.GetStatementRequest.from:type_name -> google.protobuf.Timestamp
+	60, // 32: ride.wallet.v1.GetStatementRequest.to:type_name -> google.protobuf.Timestamp
 	4,  // 33: ride.wallet.v1.GetStatementResponse.entries:type_name -> ride.wallet.v1.Transaction
-	44, // 34: ride.wallet.v1.RiderDue.created_at:type_name -> google.protobuf.Timestamp
+	60, // 34: ride.wallet.v1.RiderDue.created_at:type_name -> google.protobuf.Timestamp
 	42, // 35: ride.wallet.v1.GetRiderDuesResponse.dues:type_name -> ride.wallet.v1.RiderDue
-	5,  // 36: ride.wallet.v1.WalletService.GetWallet:input_type -> ride.wallet.v1.GetWalletRequest
-	7,  // 37: ride.wallet.v1.WalletService.TopUp:input_type -> ride.wallet.v1.TopUpRequest
-	9,  // 38: ride.wallet.v1.WalletService.SettleTrip:input_type -> ride.wallet.v1.SettleTripRequest
-	11, // 39: ride.wallet.v1.WalletService.ListTransactions:input_type -> ride.wallet.v1.ListTransactionsRequest
-	13, // 40: ride.wallet.v1.WalletService.CheckDriverStanding:input_type -> ride.wallet.v1.CheckDriverStandingRequest
-	15, // 41: ride.wallet.v1.WalletService.RequestPayout:input_type -> ride.wallet.v1.RequestPayoutRequest
-	21, // 42: ride.wallet.v1.WalletService.GetTripSettlement:input_type -> ride.wallet.v1.GetTripSettlementRequest
-	23, // 43: ride.wallet.v1.WalletService.RecordTripChange:input_type -> ride.wallet.v1.RecordTripChangeRequest
-	17, // 44: ride.wallet.v1.WalletService.InitiateTopUp:input_type -> ride.wallet.v1.InitiateTopUpRequest
-	25, // 45: ride.wallet.v1.WalletService.SendTransfer:input_type -> ride.wallet.v1.SendTransferRequest
-	28, // 46: ride.wallet.v1.WalletService.ListTransfers:input_type -> ride.wallet.v1.ListTransfersRequest
-	30, // 47: ride.wallet.v1.WalletService.CreateMoneyRequest:input_type -> ride.wallet.v1.CreateMoneyRequestRequest
-	33, // 48: ride.wallet.v1.WalletService.ListMoneyRequests:input_type -> ride.wallet.v1.ListMoneyRequestsRequest
-	35, // 49: ride.wallet.v1.WalletService.GetMoneyRequest:input_type -> ride.wallet.v1.GetMoneyRequestRequest
-	36, // 50: ride.wallet.v1.WalletService.PayMoneyRequest:input_type -> ride.wallet.v1.PayMoneyRequestRequest
-	38, // 51: ride.wallet.v1.WalletService.DeclineMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
-	38, // 52: ride.wallet.v1.WalletService.CancelMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
-	39, // 53: ride.wallet.v1.WalletService.GetStatement:input_type -> ride.wallet.v1.GetStatementRequest
-	41, // 54: ride.wallet.v1.WalletService.GetRiderDues:input_type -> ride.wallet.v1.GetRiderDuesRequest
-	19, // 55: ride.wallet.v1.WalletService.ProcessZainCashWebhook:input_type -> ride.wallet.v1.ProcessZainCashWebhookRequest
-	6,  // 56: ride.wallet.v1.WalletService.GetWallet:output_type -> ride.wallet.v1.GetWalletResponse
-	8,  // 57: ride.wallet.v1.WalletService.TopUp:output_type -> ride.wallet.v1.TopUpResponse
-	10, // 58: ride.wallet.v1.WalletService.SettleTrip:output_type -> ride.wallet.v1.SettleTripResponse
-	12, // 59: ride.wallet.v1.WalletService.ListTransactions:output_type -> ride.wallet.v1.ListTransactionsResponse
-	14, // 60: ride.wallet.v1.WalletService.CheckDriverStanding:output_type -> ride.wallet.v1.CheckDriverStandingResponse
-	16, // 61: ride.wallet.v1.WalletService.RequestPayout:output_type -> ride.wallet.v1.RequestPayoutResponse
-	22, // 62: ride.wallet.v1.WalletService.GetTripSettlement:output_type -> ride.wallet.v1.GetTripSettlementResponse
-	24, // 63: ride.wallet.v1.WalletService.RecordTripChange:output_type -> ride.wallet.v1.RecordTripChangeResponse
-	18, // 64: ride.wallet.v1.WalletService.InitiateTopUp:output_type -> ride.wallet.v1.InitiateTopUpResponse
-	27, // 65: ride.wallet.v1.WalletService.SendTransfer:output_type -> ride.wallet.v1.SendTransferResponse
-	29, // 66: ride.wallet.v1.WalletService.ListTransfers:output_type -> ride.wallet.v1.ListTransfersResponse
-	32, // 67: ride.wallet.v1.WalletService.CreateMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	34, // 68: ride.wallet.v1.WalletService.ListMoneyRequests:output_type -> ride.wallet.v1.ListMoneyRequestsResponse
-	32, // 69: ride.wallet.v1.WalletService.GetMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	37, // 70: ride.wallet.v1.WalletService.PayMoneyRequest:output_type -> ride.wallet.v1.PayMoneyRequestResponse
-	32, // 71: ride.wallet.v1.WalletService.DeclineMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	32, // 72: ride.wallet.v1.WalletService.CancelMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	40, // 73: ride.wallet.v1.WalletService.GetStatement:output_type -> ride.wallet.v1.GetStatementResponse
-	43, // 74: ride.wallet.v1.WalletService.GetRiderDues:output_type -> ride.wallet.v1.GetRiderDuesResponse
-	20, // 75: ride.wallet.v1.WalletService.ProcessZainCashWebhook:output_type -> ride.wallet.v1.ProcessZainCashWebhookResponse
-	56, // [56:76] is the sub-list for method output_type
-	36, // [36:56] is the sub-list for method input_type
-	36, // [36:36] is the sub-list for extension type_name
-	36, // [36:36] is the sub-list for extension extendee
-	0,  // [0:36] is the sub-list for field type_name
+	60, // 36: ride.wallet.v1.CreateVoucherBatchRequest.expires_at:type_name -> google.protobuf.Timestamp
+	60, // 37: ride.wallet.v1.VoucherBatch.expires_at:type_name -> google.protobuf.Timestamp
+	60, // 38: ride.wallet.v1.VoucherBatch.created_at:type_name -> google.protobuf.Timestamp
+	60, // 39: ride.wallet.v1.VoucherBatch.exported_at:type_name -> google.protobuf.Timestamp
+	60, // 40: ride.wallet.v1.VoucherBatch.cancelled_at:type_name -> google.protobuf.Timestamp
+	45, // 41: ride.wallet.v1.VoucherBatchResponse.batch:type_name -> ride.wallet.v1.VoucherBatch
+	45, // 42: ride.wallet.v1.ListVoucherBatchesResponse.batches:type_name -> ride.wallet.v1.VoucherBatch
+	45, // 43: ride.wallet.v1.ExportVoucherBatchResponse.batch:type_name -> ride.wallet.v1.VoucherBatch
+	51, // 44: ride.wallet.v1.ExportVoucherBatchResponse.vouchers:type_name -> ride.wallet.v1.ExportedVoucher
+	60, // 45: ride.wallet.v1.Voucher.expires_at:type_name -> google.protobuf.Timestamp
+	60, // 46: ride.wallet.v1.Voucher.redeemed_at:type_name -> google.protobuf.Timestamp
+	60, // 47: ride.wallet.v1.Voucher.voided_at:type_name -> google.protobuf.Timestamp
+	54, // 48: ride.wallet.v1.VoucherResponse.voucher:type_name -> ride.wallet.v1.Voucher
+	3,  // 49: ride.wallet.v1.RedeemVoucherResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	4,  // 50: ride.wallet.v1.RedeemVoucherResponse.transaction:type_name -> ride.wallet.v1.Transaction
+	5,  // 51: ride.wallet.v1.WalletService.GetWallet:input_type -> ride.wallet.v1.GetWalletRequest
+	7,  // 52: ride.wallet.v1.WalletService.TopUp:input_type -> ride.wallet.v1.TopUpRequest
+	9,  // 53: ride.wallet.v1.WalletService.SettleTrip:input_type -> ride.wallet.v1.SettleTripRequest
+	11, // 54: ride.wallet.v1.WalletService.ListTransactions:input_type -> ride.wallet.v1.ListTransactionsRequest
+	13, // 55: ride.wallet.v1.WalletService.CheckDriverStanding:input_type -> ride.wallet.v1.CheckDriverStandingRequest
+	15, // 56: ride.wallet.v1.WalletService.RequestPayout:input_type -> ride.wallet.v1.RequestPayoutRequest
+	21, // 57: ride.wallet.v1.WalletService.GetTripSettlement:input_type -> ride.wallet.v1.GetTripSettlementRequest
+	23, // 58: ride.wallet.v1.WalletService.RecordTripChange:input_type -> ride.wallet.v1.RecordTripChangeRequest
+	17, // 59: ride.wallet.v1.WalletService.InitiateTopUp:input_type -> ride.wallet.v1.InitiateTopUpRequest
+	25, // 60: ride.wallet.v1.WalletService.SendTransfer:input_type -> ride.wallet.v1.SendTransferRequest
+	28, // 61: ride.wallet.v1.WalletService.ListTransfers:input_type -> ride.wallet.v1.ListTransfersRequest
+	30, // 62: ride.wallet.v1.WalletService.CreateMoneyRequest:input_type -> ride.wallet.v1.CreateMoneyRequestRequest
+	33, // 63: ride.wallet.v1.WalletService.ListMoneyRequests:input_type -> ride.wallet.v1.ListMoneyRequestsRequest
+	35, // 64: ride.wallet.v1.WalletService.GetMoneyRequest:input_type -> ride.wallet.v1.GetMoneyRequestRequest
+	36, // 65: ride.wallet.v1.WalletService.PayMoneyRequest:input_type -> ride.wallet.v1.PayMoneyRequestRequest
+	38, // 66: ride.wallet.v1.WalletService.DeclineMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
+	38, // 67: ride.wallet.v1.WalletService.CancelMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
+	39, // 68: ride.wallet.v1.WalletService.GetStatement:input_type -> ride.wallet.v1.GetStatementRequest
+	41, // 69: ride.wallet.v1.WalletService.GetRiderDues:input_type -> ride.wallet.v1.GetRiderDuesRequest
+	44, // 70: ride.wallet.v1.WalletService.CreateVoucherBatch:input_type -> ride.wallet.v1.CreateVoucherBatchRequest
+	47, // 71: ride.wallet.v1.WalletService.ListVoucherBatches:input_type -> ride.wallet.v1.ListVoucherBatchesRequest
+	49, // 72: ride.wallet.v1.WalletService.GetVoucherBatch:input_type -> ride.wallet.v1.GetVoucherBatchRequest
+	50, // 73: ride.wallet.v1.WalletService.ExportVoucherBatch:input_type -> ride.wallet.v1.ExportVoucherBatchRequest
+	53, // 74: ride.wallet.v1.WalletService.CancelVoucherBatch:input_type -> ride.wallet.v1.CancelVoucherBatchRequest
+	56, // 75: ride.wallet.v1.WalletService.GetVoucher:input_type -> ride.wallet.v1.GetVoucherRequest
+	57, // 76: ride.wallet.v1.WalletService.VoidVoucher:input_type -> ride.wallet.v1.VoidVoucherRequest
+	58, // 77: ride.wallet.v1.WalletService.RedeemVoucher:input_type -> ride.wallet.v1.RedeemVoucherRequest
+	19, // 78: ride.wallet.v1.WalletService.ProcessZainCashWebhook:input_type -> ride.wallet.v1.ProcessZainCashWebhookRequest
+	6,  // 79: ride.wallet.v1.WalletService.GetWallet:output_type -> ride.wallet.v1.GetWalletResponse
+	8,  // 80: ride.wallet.v1.WalletService.TopUp:output_type -> ride.wallet.v1.TopUpResponse
+	10, // 81: ride.wallet.v1.WalletService.SettleTrip:output_type -> ride.wallet.v1.SettleTripResponse
+	12, // 82: ride.wallet.v1.WalletService.ListTransactions:output_type -> ride.wallet.v1.ListTransactionsResponse
+	14, // 83: ride.wallet.v1.WalletService.CheckDriverStanding:output_type -> ride.wallet.v1.CheckDriverStandingResponse
+	16, // 84: ride.wallet.v1.WalletService.RequestPayout:output_type -> ride.wallet.v1.RequestPayoutResponse
+	22, // 85: ride.wallet.v1.WalletService.GetTripSettlement:output_type -> ride.wallet.v1.GetTripSettlementResponse
+	24, // 86: ride.wallet.v1.WalletService.RecordTripChange:output_type -> ride.wallet.v1.RecordTripChangeResponse
+	18, // 87: ride.wallet.v1.WalletService.InitiateTopUp:output_type -> ride.wallet.v1.InitiateTopUpResponse
+	27, // 88: ride.wallet.v1.WalletService.SendTransfer:output_type -> ride.wallet.v1.SendTransferResponse
+	29, // 89: ride.wallet.v1.WalletService.ListTransfers:output_type -> ride.wallet.v1.ListTransfersResponse
+	32, // 90: ride.wallet.v1.WalletService.CreateMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	34, // 91: ride.wallet.v1.WalletService.ListMoneyRequests:output_type -> ride.wallet.v1.ListMoneyRequestsResponse
+	32, // 92: ride.wallet.v1.WalletService.GetMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	37, // 93: ride.wallet.v1.WalletService.PayMoneyRequest:output_type -> ride.wallet.v1.PayMoneyRequestResponse
+	32, // 94: ride.wallet.v1.WalletService.DeclineMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	32, // 95: ride.wallet.v1.WalletService.CancelMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	40, // 96: ride.wallet.v1.WalletService.GetStatement:output_type -> ride.wallet.v1.GetStatementResponse
+	43, // 97: ride.wallet.v1.WalletService.GetRiderDues:output_type -> ride.wallet.v1.GetRiderDuesResponse
+	46, // 98: ride.wallet.v1.WalletService.CreateVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
+	48, // 99: ride.wallet.v1.WalletService.ListVoucherBatches:output_type -> ride.wallet.v1.ListVoucherBatchesResponse
+	46, // 100: ride.wallet.v1.WalletService.GetVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
+	52, // 101: ride.wallet.v1.WalletService.ExportVoucherBatch:output_type -> ride.wallet.v1.ExportVoucherBatchResponse
+	46, // 102: ride.wallet.v1.WalletService.CancelVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
+	55, // 103: ride.wallet.v1.WalletService.GetVoucher:output_type -> ride.wallet.v1.VoucherResponse
+	55, // 104: ride.wallet.v1.WalletService.VoidVoucher:output_type -> ride.wallet.v1.VoucherResponse
+	59, // 105: ride.wallet.v1.WalletService.RedeemVoucher:output_type -> ride.wallet.v1.RedeemVoucherResponse
+	20, // 106: ride.wallet.v1.WalletService.ProcessZainCashWebhook:output_type -> ride.wallet.v1.ProcessZainCashWebhookResponse
+	79, // [79:107] is the sub-list for method output_type
+	51, // [51:79] is the sub-list for method input_type
+	51, // [51:51] is the sub-list for extension type_name
+	51, // [51:51] is the sub-list for extension extendee
+	0,  // [0:51] is the sub-list for field type_name
 }
 
 func init() { file_ride_wallet_v1_wallet_proto_init() }
@@ -3511,7 +4749,7 @@ func file_ride_wallet_v1_wallet_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_wallet_v1_wallet_proto_rawDesc), len(file_ride_wallet_v1_wallet_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   41,
+			NumMessages:   57,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

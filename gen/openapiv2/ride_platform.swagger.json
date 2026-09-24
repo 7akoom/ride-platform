@@ -1467,6 +1467,259 @@
         ]
       }
     },
+    "/v1/admin/voucher-batches": {
+      "get": {
+        "summary": "ListVoucherBatches: newest first; status created, exported or cancelled.",
+        "operationId": "WalletService_ListVoucherBatches",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListVoucherBatchesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      },
+      "post": {
+        "summary": "Vouchers: prepaid codes the platform issues in batches and sells through\na seller (ZainCash, shops); a rider types one in to credit their wallet.\nStaff with vouchers.manage create a batch (its codes are generated here\nand kept encrypted), export it ONCE (the only time the codes are shown;\nafter that only their hashes remain), and may cancel a batch or void one\nvoucher. A voucher is redeemable once its batch is exported, until it\nexpires, once.",
+        "operationId": "WalletService_CreateVoucherBatch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VoucherBatchResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateVoucherBatchRequest"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/admin/voucher-batches/{batchId}": {
+      "get": {
+        "operationId": "WalletService_GetVoucherBatch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VoucherBatchResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/admin/voucher-batches/{batchId}:cancel": {
+      "post": {
+        "summary": "CancelVoucherBatch stops every voucher of the batch not redeemed yet.",
+        "operationId": "WalletService_CancelVoucherBatch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VoucherBatchResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceCancelVoucherBatchBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/admin/voucher-batches/{batchId}:export": {
+      "post": {
+        "summary": "ExportVoucherBatch returns every code of a created batch, once, and makes\nthe batch redeemable. The codes are not kept: a lost export is a batch to\ncancel and issue again.",
+        "operationId": "WalletService_ExportVoucherBatch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ExportVoucherBatchResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceExportVoucherBatchBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/admin/vouchers/{serial}": {
+      "get": {
+        "summary": "GetVoucher looks one voucher up by the serial printed next to its code.",
+        "operationId": "WalletService_GetVoucher",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VoucherResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "serial",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/admin/vouchers/{serial}:void": {
+      "post": {
+        "summary": "VoidVoucher stops one voucher not redeemed yet (a card reported lost).",
+        "operationId": "WalletService_VoidVoucher",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VoucherResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "serial",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceVoidVoucherBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/admin/zone-surges": {
       "get": {
         "summary": "A surge staff put on one zone for a while (a concert, a storm), on top\nof what the hour and the demand add (staff, pricing.manage).",
@@ -4579,7 +4832,7 @@
           },
           {
             "name": "types",
-            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.",
+            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -4596,7 +4849,8 @@
                 "TRANSACTION_TYPE_CHANGE_CREDIT",
                 "TRANSACTION_TYPE_TRANSFER_OUT",
                 "TRANSACTION_TYPE_TRANSFER_IN",
-                "TRANSACTION_TYPE_DUE_PAYMENT"
+                "TRANSACTION_TYPE_DUE_PAYMENT",
+                "TRANSACTION_TYPE_VOUCHER"
               ]
             },
             "collectionFormat": "multi"
@@ -5112,6 +5366,46 @@
         ]
       }
     },
+    "/v1/wallets/{riderId}/vouchers:redeem": {
+      "post": {
+        "summary": "RedeemVoucher credits the rider's wallet with a voucher's amount (what\nthey owe from cancelled trips' fees is paid from it first). The same\nrider redeeming the same code again gets the same redemption back.\nWrong codes are counted: after too many in a while the rider waits\n(RESOURCE_EXHAUSTED).",
+        "operationId": "WalletService_RedeemVoucher",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RedeemVoucherResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "description": "The caller's own rider profile.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceRedeemVoucherBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/zones": {
       "get": {
         "summary": "ListZones lists service zones, optionally for one city (?city_id=).",
@@ -5590,6 +5884,15 @@
     "WalletServiceCancelMoneyRequestBody": {
       "type": "object"
     },
+    "WalletServiceCancelVoucherBatchBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "Why, 3-300 characters, kept with the batch."
+        }
+      }
+    },
     "WalletServiceCreateMoneyRequestBody": {
       "type": "object",
       "properties": {
@@ -5617,6 +5920,9 @@
     "WalletServiceDeclineMoneyRequestBody": {
       "type": "object"
     },
+    "WalletServiceExportVoucherBatchBody": {
+      "type": "object"
+    },
     "WalletServicePayMoneyRequestBody": {
       "type": "object",
       "properties": {
@@ -5631,6 +5937,15 @@
         "cashReceived": {
           "type": "string",
           "description": "Decimal string: all the cash the rider handed over for this trip."
+        }
+      }
+    },
+    "WalletServiceRedeemVoucherBody": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "As printed; spaces, dashes and case do not matter."
         }
       }
     },
@@ -5667,6 +5982,15 @@
         "idempotencyKey": {
           "type": "string",
           "description": "Required: a retry with the same key is the same transfer."
+        }
+      }
+    },
+    "WalletServiceVoidVoucherBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "Why, 3-300 characters."
         }
       }
     },
@@ -6372,6 +6696,37 @@
         }
       }
     },
+    "v1CreateVoucherBatchRequest": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "What staff call the batch, e.g. \"ZainCash October 5000\"."
+        },
+        "seller": {
+          "type": "string",
+          "description": "Who sells it (e.g. zaincash); free text, at most 60 characters."
+        },
+        "amount": {
+          "type": "string",
+          "description": "What each voucher credits, a decimal string in the deployment's currency."
+        },
+        "quantity": {
+          "type": "integer",
+          "format": "int32",
+          "description": "1-10000."
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the vouchers stop working: at least an hour and at most three years\nahead; unset means a year."
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "description": "Required: a retry with the same key is the same batch."
+        }
+      }
+    },
     "v1CreateZoneRequest": {
       "type": "object",
       "properties": {
@@ -6593,6 +6948,37 @@
       "properties": {
         "fare": {
           "$ref": "#/definitions/v1FareBreakdown"
+        }
+      }
+    },
+    "v1ExportVoucherBatchResponse": {
+      "type": "object",
+      "properties": {
+        "batch": {
+          "$ref": "#/definitions/v1VoucherBatch"
+        },
+        "vouchers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ExportedVoucher"
+          }
+        },
+        "csv": {
+          "type": "string",
+          "description": "The same as CSV (serial,code,amount,currency,expires_at) for the seller."
+        }
+      }
+    },
+    "v1ExportedVoucher": {
+      "type": "object",
+      "properties": {
+        "serial": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string",
+          "description": "The code riders type, grouped in fours (XXXX-XXXX-XXXX-XXXX)."
         }
       }
     },
@@ -7403,6 +7789,21 @@
         }
       }
     },
+    "v1ListVoucherBatchesResponse": {
+      "type": "object",
+      "properties": {
+        "batches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1VoucherBatch"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListZoneSurgesResponse": {
       "type": "object",
       "properties": {
@@ -8016,6 +8417,28 @@
     "v1RecordWaypointResponse": {
       "type": "object",
       "description": "Empty on purpose: a throttled-away duplicate and a freshly recorded\npoint both succeed identically — the caller doesn't need to\ndistinguish them, so there's nothing worth returning either way."
+    },
+    "v1RedeemVoucherResponse": {
+      "type": "object",
+      "properties": {
+        "serial": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "wallet": {
+          "$ref": "#/definitions/v1Wallet",
+          "description": "The rider's wallet after it."
+        },
+        "transaction": {
+          "$ref": "#/definitions/v1Transaction",
+          "description": "The voucher's ledger row."
+        }
+      }
     },
     "v1RefreshTokenRequest": {
       "type": "object",
@@ -8805,10 +9228,11 @@
         "TRANSACTION_TYPE_CHANGE_CREDIT",
         "TRANSACTION_TYPE_TRANSFER_OUT",
         "TRANSACTION_TYPE_TRANSFER_IN",
-        "TRANSACTION_TYPE_DUE_PAYMENT"
+        "TRANSACTION_TYPE_DUE_PAYMENT",
+        "TRANSACTION_TYPE_VOUCHER"
       ],
       "default": "TRANSACTION_TYPE_UNSPECIFIED",
-      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later."
+      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet."
     },
     "v1Transfer": {
       "type": "object",
@@ -9240,6 +9664,135 @@
         "accessTokenExpiresInSeconds": {
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "v1Voucher": {
+      "type": "object",
+      "properties": {
+        "serial": {
+          "type": "string"
+        },
+        "batchId": {
+          "type": "string"
+        },
+        "batchLabel": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "available, redeemed or void."
+        },
+        "redeemable": {
+          "type": "boolean",
+          "description": "True when a rider could redeem it now: available, its batch exported and\nnot cancelled, and not expired."
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "redeemedByRiderId": {
+          "type": "string"
+        },
+        "redeemedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "voidedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "voidReason": {
+          "type": "string"
+        }
+      }
+    },
+    "v1VoucherBatch": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string",
+          "format": "int64",
+          "description": "The batch's number, the start of every serial (V\u003cnumber\u003e-\u003cindex\u003e)."
+        },
+        "label": {
+          "type": "string"
+        },
+        "seller": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "status": {
+          "type": "string",
+          "description": "created (codes not exported yet: nothing is redeemable), exported\n(redeemable) or cancelled."
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "exportedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cancelledAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cancelReason": {
+          "type": "string"
+        },
+        "redeemedCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "How the vouchers stand."
+        },
+        "voidCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "redeemedAmount": {
+          "type": "string"
+        }
+      }
+    },
+    "v1VoucherBatchResponse": {
+      "type": "object",
+      "properties": {
+        "batch": {
+          "$ref": "#/definitions/v1VoucherBatch"
+        }
+      }
+    },
+    "v1VoucherResponse": {
+      "type": "object",
+      "properties": {
+        "voucher": {
+          "$ref": "#/definitions/v1Voucher"
         }
       }
     },

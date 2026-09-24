@@ -18,6 +18,9 @@ const (
 	PermissionPricingManage = "pricing.manage"
 	// PermissionPromotionsManage: coupons and the automatic discounts.
 	PermissionPromotionsManage = "promotions.manage"
+	// PermissionVouchersManage: prepaid wallet vouchers (issue, export,
+	// cancel, void, look up).
+	PermissionVouchersManage = "vouchers.manage"
 )
 
 // RoleKeyOwner is the system role that always holds every permission,
@@ -36,6 +39,7 @@ var permissionCatalog = map[string]string{
 	PermissionPlacesManage:     "Create and change curated places (airports, malls, hotels...)",
 	PermissionPricingManage:    "See and set prices: rate cards, surge rules and zone surges",
 	PermissionPromotionsManage: "Create and change coupons and the first-ride and loyalty discounts, and see their use",
+	PermissionVouchersManage:   "Issue and export wallet voucher batches, cancel batches, void and look up vouchers",
 }
 
 // PermissionInfo describes one grantable permission.

@@ -345,6 +345,8 @@ func toDomainTransactionType(t walletv1.TransactionType) (wallet.TransactionType
 		return wallet.TxTransferIn, true
 	case walletv1.TransactionType_TRANSACTION_TYPE_DUE_PAYMENT:
 		return wallet.TxDuePayment, true
+	case walletv1.TransactionType_TRANSACTION_TYPE_VOUCHER:
+		return wallet.TxVoucher, true
 	default:
 		return "", false
 	}

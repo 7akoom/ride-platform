@@ -14,6 +14,9 @@ type Config struct {
 	// IdentityServiceAddress is where wallet PINs are checked and riders are
 	// found by phone (transfers).
 	IdentityServiceAddress string
+	// StaffServiceAddress is asked, for every voucher admin call, whether the
+	// staff member holds vouchers.manage (it audits the call).
+	StaffServiceAddress string
 
 	NATSURL            string
 	NATSPublishTimeout string
@@ -70,6 +73,12 @@ type Config struct {
 	// Placeholder pages until the driver app exists.
 	ZainCashSuccessURL string
 	ZainCashFailureURL string
+
+	// Vouchers (see config/vouchers.go). VoucherCodeKey hashes and seals the
+	// codes; keep it secret and never change it once vouchers are issued.
+	VoucherCodeKey           string
+	VoucherRedeemMaxFailures string
+	VoucherRedeemWindow      string
 }
 
 func Load() Config {
@@ -84,6 +93,7 @@ func Load() Config {
 		DriverServiceAddress: getEnv("DRIVER_SERVICE_ADDRESS", "localhost:50053"),
 
 		IdentityServiceAddress: getEnv("IDENTITY_SERVICE_ADDRESS", "localhost:50051"),
+		StaffServiceAddress:    getEnv("STAFF_SERVICE_ADDRESS", "localhost:50061"),
 
 		NATSURL: getEnv(
 			"NATS_URL",
@@ -210,6 +220,10 @@ func Load() Config {
 			"ZAINCASH_FAILURE_URL",
 			"https://example.com/wallet/topup/failure",
 		),
+
+		VoucherCodeKey:           getEnv("VOUCHER_CODE_KEY", developmentVoucherCodeKey),
+		VoucherRedeemMaxFailures: getEnv("VOUCHER_REDEEM_MAX_FAILURES", "5"),
+		VoucherRedeemWindow:      getEnv("VOUCHER_REDEEM_WINDOW", "1h"),
 	}
 }
 

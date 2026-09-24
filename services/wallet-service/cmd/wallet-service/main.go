@@ -12,6 +12,7 @@ import (
 	outboxapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/outbox"
 	topupapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
 	transferapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/transfer"
+	voucherapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/voucher"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/wallet"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/config"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/infrastructure/clients"
@@ -67,6 +68,20 @@ func run() int {
 	outboxConfig, err := config.ParseOutbox(cfg)
 	if err != nil {
 		logger.Error("invalid outbox configuration", "error", err)
+
+		return 1
+	}
+
+	voucherConfig, err := config.ParseVouchers(cfg)
+	if err != nil {
+		logger.Error("invalid voucher configuration", "error", err)
+
+		return 1
+	}
+
+	voucherCodec, err := voucherapp.NewCodec(voucherConfig.CodeKey)
+	if err != nil {
+		logger.Error("invalid voucher configuration", "error", err)
 
 		return 1
 	}
@@ -167,6 +182,23 @@ func run() int {
 	}
 	defer identityConn.Close()
 
+	// Staff permissions for the voucher admin endpoints: every call asks
+	// staff-service (with the internal token), which audits it. Dialled
+	// lazily: only those endpoints need it.
+	staffConn, err := grpc.NewClient(
+		cfg.StaffServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to staff-service", "error", err)
+
+		return 1
+	}
+	defer staffConn.Close()
+
 	natsConnection, err := natsinfra.OpenConnection(
 		natsinfra.ConnectionConfig{
 			URL:            natsConfig.URL,
@@ -252,7 +284,12 @@ func run() int {
 				profileResolver,
 			).WithRequests(transferStore),
 		).
-		WithStatements(walletRepository)
+		WithStatements(walletRepository).
+		WithVouchers(voucherapp.NewService(
+			postgresrepo.NewVoucherStore(walletRepository),
+			voucherCodec,
+			voucherapp.Limits{MaxFailures: voucherConfig.MaxFailures, Window: voucherConfig.Window},
+		))
 
 	eventHandler := events.NewHandler(
 		walletService,
@@ -303,7 +340,7 @@ func run() int {
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
-		grpcserver.NewAuthorizationUnaryInterceptor(profileResolver),
+		grpcserver.NewAuthorizationUnaryInterceptor(profileResolver, clients.NewStaffAuthorizer(staffConn, logger)),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterWalletService(walletHandler)

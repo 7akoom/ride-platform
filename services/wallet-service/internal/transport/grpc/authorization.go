@@ -15,6 +15,9 @@ const (
 	accessInternal accessLevel = iota + 1
 	accessOwner
 	accessAuthenticated
+	// accessStaff methods are for staff holding the permission named in
+	// staffPermissions (and for the internal token).
+	accessStaff
 )
 
 type ownerCheck func(ctx context.Context, c caller, request any) (bool, error)
@@ -46,16 +49,42 @@ var methodAccess = map[string]accessLevel{
 	"/ride.wallet.v1.WalletService/CancelMoneyRequest":  accessOwner,
 	"/ride.wallet.v1.WalletService/GetStatement":        accessOwner,
 	"/ride.wallet.v1.WalletService/GetRiderDues":        accessOwner,
+	"/ride.wallet.v1.WalletService/RedeemVoucher":       accessOwner,
+
+	"/ride.wallet.v1.WalletService/CreateVoucherBatch": accessStaff,
+	"/ride.wallet.v1.WalletService/ListVoucherBatches": accessStaff,
+	"/ride.wallet.v1.WalletService/GetVoucherBatch":    accessStaff,
+	"/ride.wallet.v1.WalletService/ExportVoucherBatch": accessStaff,
+	"/ride.wallet.v1.WalletService/CancelVoucherBatch": accessStaff,
+	"/ride.wallet.v1.WalletService/GetVoucher":         accessStaff,
+	"/ride.wallet.v1.WalletService/VoidVoucher":        accessStaff,
 }
 
-func NewAuthorizationUnaryInterceptor(resolver CallerResolver) googlegrpc.UnaryServerInterceptor {
-	return newAuthorizationInterceptor(methodAccess, ownerChecks, resolver)
+// staffPermissions names the staff permission for every accessStaff method.
+// Vouchers are one permission: whoever may issue them may also see, export,
+// cancel and void them.
+var staffPermissions = map[string]string{
+	"/ride.wallet.v1.WalletService/CreateVoucherBatch": permissionVouchersManage,
+	"/ride.wallet.v1.WalletService/ListVoucherBatches": permissionVouchersManage,
+	"/ride.wallet.v1.WalletService/GetVoucherBatch":    permissionVouchersManage,
+	"/ride.wallet.v1.WalletService/ExportVoucherBatch": permissionVouchersManage,
+	"/ride.wallet.v1.WalletService/CancelVoucherBatch": permissionVouchersManage,
+	"/ride.wallet.v1.WalletService/GetVoucher":         permissionVouchersManage,
+	"/ride.wallet.v1.WalletService/VoidVoucher":        permissionVouchersManage,
+}
+
+const permissionVouchersManage = "vouchers.manage"
+
+func NewAuthorizationUnaryInterceptor(resolver CallerResolver, staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {
+	return newAuthorizationInterceptor(methodAccess, ownerChecks, staffPermissions, resolver, staff)
 }
 
 func newAuthorizationInterceptor(
 	levels map[string]accessLevel,
 	checks map[string]ownerCheck,
+	permissions map[string]string,
 	resolver CallerResolver,
+	staff StaffAuthorizer,
 ) googlegrpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -98,6 +127,9 @@ func newAuthorizationInterceptor(
 			if allowed {
 				return handler(ctx, request)
 			}
+
+		case accessStaff:
+			return runAsStaff(ctx, staff, principal.IdentityID, permissions[info.FullMethod], info, request, handler)
 		}
 
 		return nil, status.Error(codes.PermissionDenied, "permission denied")

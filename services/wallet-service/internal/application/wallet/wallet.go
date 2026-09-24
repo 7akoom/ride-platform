@@ -81,6 +81,8 @@ const (
 	// A cancelled trip's fee the rider owed, paid from money that reached
 	// their wallet later.
 	TxDuePayment TransactionType = "due_payment"
+	// A voucher redeemed into the rider's wallet.
+	TxVoucher TransactionType = "voucher"
 )
 
 type Wallet struct {

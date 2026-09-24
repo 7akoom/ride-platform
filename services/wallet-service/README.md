@@ -188,6 +188,45 @@ the rows newest first, filtered by direction and type and paged. Rows written
 in one transaction share `created_at`, so `wallet_transactions.seq` (an
 identity column) orders them: a credit, then the fee it paid.
 
+## Vouchers
+
+Prepaid codes the platform sells through a seller (ZainCash, shops); a rider
+types one in and its amount reaches their wallet. Staff holding
+`vouchers.manage` (only the owner role by default) run them under
+`/v1/admin/voucher-batches` and `/v1/admin/vouchers`; every call is
+authorized and audited by staff-service.
+
+- **Create** a batch (label, seller, amount, 1-10,000 vouchers, an end at
+  least an hour and at most three years ahead, a year by default, and an
+  idempotency key). The service generates the codes: 16 symbols without
+  0/O/1/I/L (about 79 bits each), shown as `XXXX-XXXX-XXXX-XXXX`, with a serial
+  `V<batch number>-<index>` printed next to each. Nothing is redeemable yet.
+- **Export** it, once (`…/{batchId}:export`): the codes come back (and as a
+  CSV for the seller) and the batch becomes redeemable. The database keeps a
+  code sealed (AES-GCM) only until then; after the export only its HMAC
+  remains, so neither a second export nor a copy of the database gives the
+  codes back. An export that did not reach you is a batch to cancel and
+  issue again.
+- **Cancel** a batch (with a reason) or **void** one voucher by its serial (a
+  card reported lost); vouchers already redeemed stay redeemed. **Look up** a
+  voucher by serial: its batch, whether it could be redeemed now, who
+  redeemed it and the ledger row.
+
+A rider redeems with `POST /v1/wallets/{riderId}/vouchers:redeem` (spaces,
+dashes and case do not matter). The voucher row is locked in the same
+transaction as the credit (a `voucher` ledger row with the key
+`voucher:<id>`), so it is redeemed once however many try at once; the same
+rider again gets the same redemption back. Like any money reaching a rider's
+wallet it pays their unpaid trip fees first. Every failed code (unknown, used,
+cancelled, expired) is counted: `VOUCHER_REDEEM_MAX_FAILURES` of them within
+`VOUCHER_REDEEM_WINDOW` (5 in an hour by default) and the rider waits
+(`429`) until the oldest leaves the window; a typo that cannot be a code at
+all is refused without counting.
+
+`VOUCHER_CODE_KEY` derives the hash and the seal keys. Outside development it
+must be a real secret (32+ characters) and must never change once vouchers
+are issued: codes issued under the old key stop working.
+
 ## Configuration
 
 `wallet_configs` is versioned like `pricing_configs`: change the

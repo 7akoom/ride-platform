@@ -156,6 +156,71 @@ service WalletService {
     };
   }
 
+  // Vouchers: prepaid codes the platform issues in batches and sells through
+  // a seller (ZainCash, shops); a rider types one in to credit their wallet.
+  // Staff with vouchers.manage create a batch (its codes are generated here
+  // and kept encrypted), export it ONCE (the only time the codes are shown;
+  // after that only their hashes remain), and may cancel a batch or void one
+  // voucher. A voucher is redeemable once its batch is exported, until it
+  // expires, once.
+  rpc CreateVoucherBatch(CreateVoucherBatchRequest) returns (VoucherBatchResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/voucher-batches"
+      body: "*"
+    };
+  }
+  // ListVoucherBatches: newest first; status created, exported or cancelled.
+  rpc ListVoucherBatches(ListVoucherBatchesRequest) returns (ListVoucherBatchesResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/voucher-batches"
+    };
+  }
+  rpc GetVoucherBatch(GetVoucherBatchRequest) returns (VoucherBatchResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/voucher-batches/{batch_id}"
+    };
+  }
+  // ExportVoucherBatch returns every code of a created batch, once, and makes
+  // the batch redeemable. The codes are not kept: a lost export is a batch to
+  // cancel and issue again.
+  rpc ExportVoucherBatch(ExportVoucherBatchRequest) returns (ExportVoucherBatchResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/voucher-batches/{batch_id}:export"
+      body: "*"
+    };
+  }
+  // CancelVoucherBatch stops every voucher of the batch not redeemed yet.
+  rpc CancelVoucherBatch(CancelVoucherBatchRequest) returns (VoucherBatchResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/voucher-batches/{batch_id}:cancel"
+      body: "*"
+    };
+  }
+  // GetVoucher looks one voucher up by the serial printed next to its code.
+  rpc GetVoucher(GetVoucherRequest) returns (VoucherResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/vouchers/{serial}"
+    };
+  }
+  // VoidVoucher stops one voucher not redeemed yet (a card reported lost).
+  rpc VoidVoucher(VoidVoucherRequest) returns (VoucherResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/vouchers/{serial}:void"
+      body: "*"
+    };
+  }
+  // RedeemVoucher credits the rider's wallet with a voucher's amount (what
+  // they owe from cancelled trips' fees is paid from it first). The same
+  // rider redeeming the same code again gets the same redemption back.
+  // Wrong codes are counted: after too many in a while the rider waits
+  // (RESOURCE_EXHAUSTED).
+  rpc RedeemVoucher(RedeemVoucherRequest) returns (RedeemVoucherResponse) {
+    option (google.api.http) = {
+      post: "/v1/wallets/{rider_id}/vouchers:redeem"
+      body: "*"
+    };
+  }
+
   // ProcessZainCashWebhook receives ZainCash's server-to-server payment
   // notification. Called directly by ZainCash, not by an authenticated
   // platform client — exempted from the auth interceptor same as the
@@ -197,6 +262,8 @@ enum TransactionType {
   // A cancelled trip's fee the rider owed, paid from money that reached the
   // wallet later.
   TRANSACTION_TYPE_DUE_PAYMENT = 10;
+  // A voucher redeemed into the rider's wallet.
+  TRANSACTION_TYPE_VOUCHER = 11;
 }
 
 message Wallet {
@@ -542,4 +609,135 @@ message GetRiderDuesResponse {
   repeated RiderDue dues = 3;
   // False when the deployment blocks trips until the fees are paid.
   bool can_request_trips = 4;
+}
+
+message CreateVoucherBatchRequest {
+  // What staff call the batch, e.g. "ZainCash October 5000".
+  string label = 1;
+  // Who sells it (e.g. zaincash); free text, at most 60 characters.
+  string seller = 2;
+  // What each voucher credits, a decimal string in the deployment's currency.
+  string amount = 3;
+  // 1-10000.
+  int32 quantity = 4;
+  // When the vouchers stop working: at least an hour and at most three years
+  // ahead; unset means a year.
+  google.protobuf.Timestamp expires_at = 5;
+  // Required: a retry with the same key is the same batch.
+  string idempotency_key = 6;
+}
+
+message VoucherBatch {
+  string id = 1;
+  // The batch's number, the start of every serial (V<number>-<index>).
+  int64 number = 2;
+  string label = 3;
+  string seller = 4;
+  string amount = 5;
+  string currency_code = 6;
+  int32 quantity = 7;
+  // created (codes not exported yet: nothing is redeemable), exported
+  // (redeemable) or cancelled.
+  string status = 8;
+  google.protobuf.Timestamp expires_at = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp exported_at = 11;
+  google.protobuf.Timestamp cancelled_at = 12;
+  string cancel_reason = 13;
+  // How the vouchers stand.
+  int32 redeemed_count = 14;
+  int32 void_count = 15;
+  string redeemed_amount = 16;
+}
+
+message VoucherBatchResponse {
+  VoucherBatch batch = 1;
+}
+
+message ListVoucherBatchesRequest {
+  string status = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListVoucherBatchesResponse {
+  repeated VoucherBatch batches = 1;
+  string next_page_token = 2;
+}
+
+message GetVoucherBatchRequest {
+  string batch_id = 1;
+}
+
+message ExportVoucherBatchRequest {
+  string batch_id = 1;
+}
+
+message ExportedVoucher {
+  string serial = 1;
+  // The code riders type, grouped in fours (XXXX-XXXX-XXXX-XXXX).
+  string code = 2;
+}
+
+message ExportVoucherBatchResponse {
+  VoucherBatch batch = 1;
+  repeated ExportedVoucher vouchers = 2;
+  // The same as CSV (serial,code,amount,currency,expires_at) for the seller.
+  string csv = 3;
+}
+
+message CancelVoucherBatchRequest {
+  string batch_id = 1;
+  // Why, 3-300 characters, kept with the batch.
+  string reason = 2;
+}
+
+message Voucher {
+  string serial = 1;
+  string batch_id = 2;
+  string batch_label = 3;
+  string amount = 4;
+  string currency_code = 5;
+  // available, redeemed or void.
+  string status = 6;
+  // True when a rider could redeem it now: available, its batch exported and
+  // not cancelled, and not expired.
+  bool redeemable = 7;
+  google.protobuf.Timestamp expires_at = 8;
+  string redeemed_by_rider_id = 9;
+  google.protobuf.Timestamp redeemed_at = 10;
+  string transaction_id = 11;
+  google.protobuf.Timestamp voided_at = 12;
+  string void_reason = 13;
+}
+
+message VoucherResponse {
+  Voucher voucher = 1;
+}
+
+message GetVoucherRequest {
+  string serial = 1;
+}
+
+message VoidVoucherRequest {
+  string serial = 1;
+  // Why, 3-300 characters.
+  string reason = 2;
+}
+
+message RedeemVoucherRequest {
+  // The caller's own rider profile.
+  string rider_id = 1;
+  // As printed; spaces, dashes and case do not matter.
+  string code = 2;
+}
+
+message RedeemVoucherResponse {
+  string serial = 1;
+  string amount = 2;
+  string currency_code = 3;
+  // The rider's wallet after it.
+  Wallet wallet = 4;
+  // The voucher's ledger row.
+  Transaction transaction = 5;
 }

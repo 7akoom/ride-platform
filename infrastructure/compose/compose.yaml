@@ -940,6 +940,7 @@ services:
       RIDER_SERVICE_ADDRESS: rider-service:50052
       DRIVER_SERVICE_ADDRESS: driver-service:50053
       IDENTITY_SERVICE_ADDRESS: identity-service:50051
+      STAFF_SERVICE_ADDRESS: staff-service:50061
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -958,6 +959,8 @@ services:
       driver-service:
         condition: service_started
       identity-service:
+        condition: service_started
+      staff-service:
         condition: service_started
 
     ports:

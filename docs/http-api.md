@@ -213,6 +213,7 @@ refused with `FAILED_PRECONDITION` and the rider asks for a new quote.
 | POST | `/v1/wallets/{riderId}/money-requests/{code}:pay` | the rider paying | `pin`: a transfer from this rider to the requester, once. Paying again returns the same payment; 400 `FAILED_PRECONDITION` once it is paid (by anyone), declined, cancelled or expired, or for one's own request; the PIN, balance and limit errors of a transfer. Returns `moneyRequest`, `transfer` and the payer's `wallet` |
 | POST | `/v1/wallets/{riderId}/money-requests/{code}:decline` | the rider asked | only a pending request for them (403 otherwise) |
 | POST | `/v1/wallets/{riderId}/money-requests/{code}:cancel` | the requester | only their own pending request (403 otherwise) |
+| POST | `/v1/wallets/{riderId}/vouchers:redeem` | the rider | `code` as printed (spaces, dashes and case do not matter): the voucher's amount reaches the wallet (paying unpaid fees first). Returns `serial`, `amount`, `currencyCode`, the `wallet` and the `transaction` (`TRANSACTION_TYPE_VOUCHER`); the same rider again gets the same redemption. 404 not a valid code (or not on sale yet), 400 `FAILED_PRECONDITION` already used, cancelled or expired, 400 `INVALID_ARGUMENT` not in the form of a code (not counted). Every other failed code counts: after 5 in an hour (deployment settings) 429 `RESOURCE_EXHAUSTED`, the message says until when |
 | GET | `/v1/drivers/{driverId}/standing` | the driver | can they take trips, and the amount due if suspended |
 | POST | `/v1/drivers/{driverId}/payouts` | the driver | `amount` and `idempotencyKey`; a retry with the same key is safe |
 | POST | `/v1/wallet/topups/zaincash` | the driver | returns the ZainCash `redirectUrl` for the webview |
@@ -307,6 +308,13 @@ before it runs. A caller who is not staff, or lacks the permission, gets 403.
 | PATCH | `/v1/admin/coupons/{code}` | `promotions.manage` | only the fields sent change: `description`, `validUntil`, `maxRedemptions` (0 unlimited), `perRiderLimit`, `minimumFareAmount`, `active`. The code, the discount and where it applies never change |
 | GET | `/v1/admin/coupons/{code}/redemptions?page_size=&page_token=` | `promotions.manage` | newest first: `riderId`, `tripId`, `quoteId`, `status` (`reserved` while the trip runs, `redeemed`, `released` when it was cancelled), `discountAmount`, `createdAt`, `releasedAt` |
 | GET · PUT | `/v1/admin/promotion-settings` | `promotions.manage` | `firstRidePercent`, `firstRideMaxAmount`, `loyaltyEvery` (every Nth completed trip, 2-100; 0 off), `loyaltyPercent`, `loyaltyMaxAmount` (empty: no cap); a percent of 0 turns that discount off. PUT replaces them all |
+| GET | `/v1/admin/voucher-batches?status=&page_size=&page_token=` | `vouchers.manage` | newest first; `status` `created`, `exported` or `cancelled`. A batch has `number`, `label`, `seller`, `amount`, `currencyCode`, `quantity`, `status`, `expiresAt`, `redeemedCount`, `voidCount`, `redeemedAmount` |
+| POST | `/v1/admin/voucher-batches` | `vouchers.manage` | `label` (1-120), `seller` (at most 60), `amount`, `quantity` (1-10000), `expiresAt` (1 hour to 3 years ahead; default a year), `idempotencyKey` (required; the same key again returns the same batch, for another batch 409). The codes are generated and kept sealed; nothing is redeemable until the export |
+| GET | `/v1/admin/voucher-batches/{batchId}` | `vouchers.manage` | the batch with its counts |
+| POST | `/v1/admin/voucher-batches/{batchId}:export` | `vouchers.manage` | ONCE: `vouchers` (`serial`, `code` as `XXXX-XXXX-XXXX-XXXX`) and `csv` (`serial,code,amount,currency,expires_at`) for the seller; the batch becomes `exported` (redeemable) and the codes are wiped. 400 `FAILED_PRECONDITION` for a batch exported or cancelled already. A lost export is a batch to cancel and issue again |
+| POST | `/v1/admin/voucher-batches/{batchId}:cancel` | `vouchers.manage` | `reason` (3-300): no voucher of it is redeemable any more; redeemed ones stay |
+| GET | `/v1/admin/vouchers/{serial}` | `vouchers.manage` | by the serial printed on the card (`V12-00042`): `status` (`available`, `redeemed`, `void`), `redeemable` now, `redeemedByRiderId`, `redeemedAt`, `transactionId`, `voidedAt`, `voidReason` |
+| POST | `/v1/admin/vouchers/{serial}:void` | `vouchers.manage` | `reason` (3-300): one voucher not redeemed yet (a card reported lost) |
 
 ## Not exposed yet
 

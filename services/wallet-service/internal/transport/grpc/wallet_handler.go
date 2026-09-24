@@ -8,6 +8,7 @@ import (
 	walletv1 "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/transfer"
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/voucher"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/wallet"
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc/codes"
@@ -22,6 +23,7 @@ type WalletHandler struct {
 	topupService  topup.Service
 	transfers     *transfer.Service
 	statements    wallet.StatementReader
+	vouchers      *voucher.Service
 	logger        *slog.Logger
 }
 
@@ -385,6 +387,8 @@ func toProtoTransactionType(t wallet.TransactionType) walletv1.TransactionType {
 		return walletv1.TransactionType_TRANSACTION_TYPE_TRANSFER_IN
 	case wallet.TxDuePayment:
 		return walletv1.TransactionType_TRANSACTION_TYPE_DUE_PAYMENT
+	case wallet.TxVoucher:
+		return walletv1.TransactionType_TRANSACTION_TYPE_VOUCHER
 	default:
 		return walletv1.TransactionType_TRANSACTION_TYPE_UNSPECIFIED
 	}

@@ -151,6 +151,15 @@ var ownerChecks = map[string]ownerCheck{
 
 		return c.ownsRider(ctx, r.GetRiderId())
 	},
+	"/ride.wallet.v1.WalletService/RedeemVoucher": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.RedeemVoucherRequest)
+		if !ok {
+			return false, nil
+		}
+
+		// A rider redeems into their own wallet only.
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
 }
 
 func ownsWallet(ctx context.Context, c caller, ownerType walletv1.OwnerType, ownerID string) (bool, error) {
