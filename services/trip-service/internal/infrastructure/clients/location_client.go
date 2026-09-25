@@ -36,3 +36,16 @@ func (c *LocationClient) CheckServiceZone(
 
 	return response.GetServed(), nil
 }
+
+// Locate is CheckServiceZone with the pickup city's time zone (for trips
+// booked ahead).
+func (c *LocationClient) Locate(ctx context.Context, latitude, longitude float64) (bool, string, error) {
+	response, err := c.client.CheckServiceZone(ctx, &locationv1.CheckServiceZoneRequest{
+		Coordinates: &locationv1.Coordinates{Latitude: latitude, Longitude: longitude},
+	})
+	if err != nil {
+		return false, "", fmt.Errorf("call location-service CheckServiceZone: %w", err)
+	}
+
+	return response.GetServed(), response.GetTimeZone(), nil
+}

@@ -31,6 +31,14 @@ type RequestTripInput struct {
 	// A fare quote of the rider's (see WithQuotes): the trip pays its price
 	// and is for its class.
 	QuoteID string
+
+	// Booking for someone else: both or neither.
+	PassengerName  string
+	PassengerPhone string
+
+	// ScheduledTripID is set only by the scheduler: the trip takes this id
+	// (the booking's), so dispatching it twice cannot make two trips.
+	ScheduledTripID string
 }
 
 type Service interface {

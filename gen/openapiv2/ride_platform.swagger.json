@@ -4399,6 +4399,43 @@
         ]
       }
     },
+    "/v1/riders/{riderId}/scheduled-trips": {
+      "get": {
+        "summary": "ListScheduledTrips: the rider's upcoming ones, soonest first (with\ninclude_past, the latest 50 of any status, newest first).",
+        "operationId": "TripService_ListScheduledTrips",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListScheduledTripsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "includePast",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/routes:compute": {
       "post": {
         "summary": "GetRoute returns the best route by road between two points: how far, how long, and\nthe line to draw on a map. Any signed-in user may ask.",
@@ -4429,6 +4466,78 @@
         ],
         "tags": [
           "LocationService"
+        ]
+      }
+    },
+    "/v1/scheduled-trips": {
+      "post": {
+        "summary": "Scheduled trips: a rider books a trip for later (30 minutes to 7 days\nahead, at most 3 upcoming). It becomes a real trip, with the same id,\n10 minutes before the time and is dispatched like any other; if it\ncannot be then (say the rider is on another trip) it is tried again\nuntil 10 minutes after the time, then it fails. It is priced when it\ncompletes, like a trip without a quote.",
+        "operationId": "TripService_ScheduleTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ScheduledTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ScheduleTripRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/scheduled-trips/{scheduledTripId}:cancel": {
+      "post": {
+        "summary": "CancelScheduledTrip cancels one not dispatched yet, free.",
+        "operationId": "TripService_CancelScheduledTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ScheduledTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "scheduledTripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceCancelScheduledTripBody"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
         ]
       }
     },
@@ -6411,6 +6520,15 @@
       "properties": {
         "driverId": {
           "type": "string"
+        }
+      }
+    },
+    "TripServiceCancelScheduledTripBody": {
+      "type": "object",
+      "properties": {
+        "riderId": {
+          "type": "string",
+          "description": "The caller's own rider profile."
         }
       }
     },
@@ -8554,6 +8672,18 @@
         }
       }
     },
+    "v1ListScheduledTripsResponse": {
+      "type": "object",
+      "properties": {
+        "scheduledTrips": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ScheduledTrip"
+          }
+        }
+      }
+    },
     "v1ListStaffMembersResponse": {
       "type": "object",
       "properties": {
@@ -9541,6 +9671,13 @@
         "quoteId": {
           "type": "string",
           "description": "A quote from pricing-service QuoteTrip that is the rider's and has not\nexpired or been used. The trip keeps its price, and is for its vehicle\nclass; pickup and dropoff (or the saved addresses) must be within 50\nmetres of the quoted points."
+        },
+        "passengerName": {
+          "type": "string",
+          "description": "Booking for someone else: their name (1-80 characters) and phone (E.164,\ne.g. +9647701234567), both or neither. The rider pays; the driver sees\nthem once the trip is accepted."
+        },
+        "passengerPhone": {
+          "type": "string"
         }
       }
     },
@@ -9795,6 +9932,132 @@
       "properties": {
         "address": {
           "$ref": "#/definitions/v1SavedAddress"
+        }
+      }
+    },
+    "v1ScheduleTripRequest": {
+      "type": "object",
+      "properties": {
+        "riderId": {
+          "type": "string",
+          "description": "The caller's own rider profile."
+        },
+        "pickup": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "dropoff": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "pickupAddress": {
+          "type": "string"
+        },
+        "dropoffAddress": {
+          "type": "string"
+        },
+        "pickupSavedAddressId": {
+          "type": "string",
+          "description": "One of the rider's saved addresses, read again when the trip is\ndispatched (if it is gone by then, the point and address kept now are\nused)."
+        },
+        "dropoffSavedAddressId": {
+          "type": "string"
+        },
+        "vehicleClass": {
+          "type": "string"
+        },
+        "paymentMethod": {
+          "type": "string"
+        },
+        "passengerName": {
+          "type": "string"
+        },
+        "passengerPhone": {
+          "type": "string"
+        },
+        "scheduledAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When to be picked up: 30 minutes to 7 days from now."
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "description": "Required: a retry with the same key is the same booking."
+        }
+      }
+    },
+    "v1ScheduledTrip": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "riderId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "scheduled, dispatched (trip_id is the trip), cancelled or failed."
+        },
+        "scheduledAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timeZone": {
+          "type": "string",
+          "description": "The pickup city's time zone, and the time in it (\"2026-09-26 08:30\")."
+        },
+        "scheduledLocal": {
+          "type": "string"
+        },
+        "pickup": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "dropoff": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "pickupAddress": {
+          "type": "string"
+        },
+        "dropoffAddress": {
+          "type": "string"
+        },
+        "vehicleClass": {
+          "type": "string"
+        },
+        "paymentMethod": {
+          "type": "string"
+        },
+        "passengerName": {
+          "type": "string"
+        },
+        "passengerPhone": {
+          "type": "string"
+        },
+        "tripId": {
+          "type": "string"
+        },
+        "failureReason": {
+          "type": "string",
+          "description": "Why it failed (the last reason it could not be dispatched)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cancelledAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "dispatchedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1ScheduledTripResponse": {
+      "type": "object",
+      "properties": {
+        "scheduledTrip": {
+          "$ref": "#/definitions/v1ScheduledTrip"
         }
       }
     },
@@ -10314,6 +10577,17 @@
         },
         "riderNoShow": {
           "type": "boolean"
+        },
+        "passengerName": {
+          "type": "string",
+          "description": "A trip booked for someone else: who the driver picks up. The phone is\nshown only while the trip is under way."
+        },
+        "passengerPhone": {
+          "type": "string"
+        },
+        "scheduled": {
+          "type": "boolean",
+          "description": "The scheduled trip it came from (the same id), when it was booked ahead."
         }
       }
     },

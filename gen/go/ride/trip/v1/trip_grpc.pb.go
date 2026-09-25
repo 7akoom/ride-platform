@@ -40,6 +40,9 @@ const (
 	TripService_GetPickupPhoto_FullMethodName         = "/ride.trip.v1.TripService/GetPickupPhoto"
 	TripService_ListRecentDestinations_FullMethodName = "/ride.trip.v1.TripService/ListRecentDestinations"
 	TripService_RateTrip_FullMethodName               = "/ride.trip.v1.TripService/RateTrip"
+	TripService_ScheduleTrip_FullMethodName           = "/ride.trip.v1.TripService/ScheduleTrip"
+	TripService_ListScheduledTrips_FullMethodName     = "/ride.trip.v1.TripService/ListScheduledTrips"
+	TripService_CancelScheduledTrip_FullMethodName    = "/ride.trip.v1.TripService/CancelScheduledTrip"
 )
 
 // TripServiceClient is the client API for TripService service.
@@ -138,6 +141,18 @@ type TripServiceClient interface {
 	// numbers from 1 to 5; the comment is optional (500 characters at most) and is kept for
 	// the operating company only: the person rated never sees it.
 	RateTrip(ctx context.Context, in *RateTripRequest, opts ...grpc.CallOption) (*RateTripResponse, error)
+	// Scheduled trips: a rider books a trip for later (30 minutes to 7 days
+	// ahead, at most 3 upcoming). It becomes a real trip, with the same id,
+	// 10 minutes before the time and is dispatched like any other; if it
+	// cannot be then (say the rider is on another trip) it is tried again
+	// until 10 minutes after the time, then it fails. It is priced when it
+	// completes, like a trip without a quote.
+	ScheduleTrip(ctx context.Context, in *ScheduleTripRequest, opts ...grpc.CallOption) (*ScheduledTripResponse, error)
+	// ListScheduledTrips: the rider's upcoming ones, soonest first (with
+	// include_past, the latest 50 of any status, newest first).
+	ListScheduledTrips(ctx context.Context, in *ListScheduledTripsRequest, opts ...grpc.CallOption) (*ListScheduledTripsResponse, error)
+	// CancelScheduledTrip cancels one not dispatched yet, free.
+	CancelScheduledTrip(ctx context.Context, in *CancelScheduledTripRequest, opts ...grpc.CallOption) (*ScheduledTripResponse, error)
 }
 
 type tripServiceClient struct {
@@ -358,6 +373,36 @@ func (c *tripServiceClient) RateTrip(ctx context.Context, in *RateTripRequest, o
 	return out, nil
 }
 
+func (c *tripServiceClient) ScheduleTrip(ctx context.Context, in *ScheduleTripRequest, opts ...grpc.CallOption) (*ScheduledTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ScheduledTripResponse)
+	err := c.cc.Invoke(ctx, TripService_ScheduleTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) ListScheduledTrips(ctx context.Context, in *ListScheduledTripsRequest, opts ...grpc.CallOption) (*ListScheduledTripsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListScheduledTripsResponse)
+	err := c.cc.Invoke(ctx, TripService_ListScheduledTrips_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) CancelScheduledTrip(ctx context.Context, in *CancelScheduledTripRequest, opts ...grpc.CallOption) (*ScheduledTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ScheduledTripResponse)
+	err := c.cc.Invoke(ctx, TripService_CancelScheduledTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TripServiceServer is the server API for TripService service.
 // All implementations must embed UnimplementedTripServiceServer
 // for forward compatibility.
@@ -454,6 +499,18 @@ type TripServiceServer interface {
 	// numbers from 1 to 5; the comment is optional (500 characters at most) and is kept for
 	// the operating company only: the person rated never sees it.
 	RateTrip(context.Context, *RateTripRequest) (*RateTripResponse, error)
+	// Scheduled trips: a rider books a trip for later (30 minutes to 7 days
+	// ahead, at most 3 upcoming). It becomes a real trip, with the same id,
+	// 10 minutes before the time and is dispatched like any other; if it
+	// cannot be then (say the rider is on another trip) it is tried again
+	// until 10 minutes after the time, then it fails. It is priced when it
+	// completes, like a trip without a quote.
+	ScheduleTrip(context.Context, *ScheduleTripRequest) (*ScheduledTripResponse, error)
+	// ListScheduledTrips: the rider's upcoming ones, soonest first (with
+	// include_past, the latest 50 of any status, newest first).
+	ListScheduledTrips(context.Context, *ListScheduledTripsRequest) (*ListScheduledTripsResponse, error)
+	// CancelScheduledTrip cancels one not dispatched yet, free.
+	CancelScheduledTrip(context.Context, *CancelScheduledTripRequest) (*ScheduledTripResponse, error)
 	mustEmbedUnimplementedTripServiceServer()
 }
 
@@ -526,6 +583,15 @@ func (UnimplementedTripServiceServer) ListRecentDestinations(context.Context, *L
 }
 func (UnimplementedTripServiceServer) RateTrip(context.Context, *RateTripRequest) (*RateTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RateTrip not implemented")
+}
+func (UnimplementedTripServiceServer) ScheduleTrip(context.Context, *ScheduleTripRequest) (*ScheduledTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ScheduleTrip not implemented")
+}
+func (UnimplementedTripServiceServer) ListScheduledTrips(context.Context, *ListScheduledTripsRequest) (*ListScheduledTripsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListScheduledTrips not implemented")
+}
+func (UnimplementedTripServiceServer) CancelScheduledTrip(context.Context, *CancelScheduledTripRequest) (*ScheduledTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelScheduledTrip not implemented")
 }
 func (UnimplementedTripServiceServer) mustEmbedUnimplementedTripServiceServer() {}
 func (UnimplementedTripServiceServer) testEmbeddedByValue()                     {}
@@ -926,6 +992,60 @@ func _TripService_RateTrip_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_ScheduleTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ScheduleTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).ScheduleTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_ScheduleTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).ScheduleTrip(ctx, req.(*ScheduleTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_ListScheduledTrips_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListScheduledTripsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).ListScheduledTrips(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_ListScheduledTrips_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).ListScheduledTrips(ctx, req.(*ListScheduledTripsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_CancelScheduledTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelScheduledTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).CancelScheduledTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_CancelScheduledTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).CancelScheduledTrip(ctx, req.(*CancelScheduledTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TripService_ServiceDesc is the grpc.ServiceDesc for TripService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1016,6 +1136,18 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RateTrip",
 			Handler:    _TripService_RateTrip_Handler,
+		},
+		{
+			MethodName: "ScheduleTrip",
+			Handler:    _TripService_ScheduleTrip_Handler,
+		},
+		{
+			MethodName: "ListScheduledTrips",
+			Handler:    _TripService_ListScheduledTrips_Handler,
+		},
+		{
+			MethodName: "CancelScheduledTrip",
+			Handler:    _TripService_CancelScheduledTrip_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

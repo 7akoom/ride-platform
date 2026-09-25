@@ -24,6 +24,10 @@ var (
 
 	ErrAddressTooLong = errors.New("an address is longer than 300 characters")
 
+	// ErrInvalidPassenger: a trip for someone else needs their name (1-80
+	// characters) and phone (E.164), both.
+	ErrInvalidPassenger = errors.New("passenger_name (1-80 characters) and passenger_phone (E.164, like +9647701234567) go together")
+
 	// ErrSavedAddressesUnavailable: a saved address was named but this
 	// service cannot read saved addresses.
 	ErrSavedAddressesUnavailable = errors.New("saved addresses are not available")

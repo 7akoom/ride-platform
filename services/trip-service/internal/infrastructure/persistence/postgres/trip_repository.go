@@ -51,11 +51,12 @@ func (r *TripRepository) Create(
 		    (id, rider_id, pickup_latitude, pickup_longitude,
 		     dropoff_latitude, dropoff_longitude, vehicle_class, payment_method,
 		     pickup_address, dropoff_address, pickup_details, pickup_note, pickup_photo_media_id,
-		     quote_id, quoted_fare, currency_code)
+		     quote_id, quoted_fare, currency_code, passenger_name, passenger_phone, scheduled)
 		 VALUES ($1, $2, $3, $4, $5, $6, COALESCE(NULLIF($7::text, ''), 'economy'),
 		         COALESCE(NULLIF($8::text, ''), 'cash'),
 		         $9, $10, $11, $12, NULLIF($13::text, '')::uuid,
-		         NULLIF($14::text, '')::uuid, NULLIF($15::text, '')::numeric, NULLIF($16::text, ''))
+		         NULLIF($14::text, '')::uuid, NULLIF($15::text, '')::numeric, NULLIF($16::text, ''),
+		         $17, $18, $19)
 		 RETURNING `+tripColumns,
 		input.ID,
 		input.RiderID,
@@ -73,6 +74,9 @@ func (r *TripRepository) Create(
 		input.QuoteID,
 		input.QuotedFare,
 		input.CurrencyCode,
+		input.PassengerName,
+		input.PassengerPhone,
+		input.Scheduled,
 	)
 
 	if err := scanTrip(row, &created); err != nil {
@@ -423,7 +427,8 @@ const tripColumns = `id, rider_id, driver_id, status,
 	pickup_address, dropoff_address, pickup_details, pickup_note,
 	COALESCE(pickup_photo_media_id::text, ''),
 	COALESCE(quote_id::text, ''), COALESCE(quoted_fare::text, ''), COALESCE(currency_code, ''),
-	arrived_at, COALESCE(cancelled_by, ''), rider_no_show`
+	arrived_at, COALESCE(cancelled_by, ''), rider_no_show,
+	passenger_name, passenger_phone, scheduled`
 
 func scanTrip(row pgx.Row, dest *trip.Trip) error {
 	var status string
@@ -460,6 +465,9 @@ func scanTrip(row pgx.Row, dest *trip.Trip) error {
 		&dest.ArrivedAt,
 		&cancelledBy,
 		&dest.RiderNoShow,
+		&dest.PassengerName,
+		&dest.PassengerPhone,
+		&dest.Scheduled,
 	)
 	if err != nil {
 		return err

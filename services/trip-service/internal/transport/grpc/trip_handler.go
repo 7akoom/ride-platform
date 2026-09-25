@@ -7,6 +7,7 @@ import (
 	"time"
 
 	tripv1 "github.com/7akoom/ride-platform/gen/go/ride/trip/v1"
+	"github.com/7akoom/ride-platform/services/trip-service/internal/application/schedule"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,10 +23,17 @@ type TripHandler struct {
 	// participants tells whether the caller is a trip's rider or driver, to
 	// record who cancelled.
 	participants CallerResolver
+
+	schedules *schedule.Service
 }
 
 // HandlerOption customises a TripHandler.
 type HandlerOption func(*TripHandler)
+
+// WithSchedules lets riders book trips ahead.
+func WithSchedules(schedules *schedule.Service) HandlerOption {
+	return func(h *TripHandler) { h.schedules = schedules }
+}
 
 // WithParticipants lets CancelTrip record whether the rider or the driver
 // cancelled. Without it a user's cancellation is refused.
@@ -85,6 +93,8 @@ func (h *TripHandler) RequestTrip(
 			PickupSavedAddressID:  request.GetPickupSavedAddressId(),
 			QuoteID:               request.GetQuoteId(),
 			DropoffSavedAddressID: request.GetDropoffSavedAddressId(),
+			PassengerName:         request.GetPassengerName(),
+			PassengerPhone:        request.GetPassengerPhone(),
 		},
 	)
 	if err != nil {
@@ -366,6 +376,7 @@ func (h *TripHandler) mapTripError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	case errors.Is(err, trip.ErrAddressTooLong),
+		errors.Is(err, trip.ErrInvalidPassenger),
 		errors.Is(err, trip.ErrInvalidLimit):
 		return status.Error(codes.InvalidArgument, err.Error())
 
@@ -463,5 +474,19 @@ func toProtoTrip(t trip.Trip) *tripv1.Trip {
 		ArrivedAt:          optionalTimestamp(t.ArrivedAt),
 		CancelledBy:        string(t.CancelledBy),
 		RiderNoShow:        t.RiderNoShow,
+		PassengerName:      t.PassengerName,
+		PassengerPhone:     livePassengerPhone(t),
+		Scheduled:          t.Scheduled,
+	}
+}
+
+// livePassengerPhone is the passenger's phone while the trip is under way;
+// once it is over nobody reads it from the trip any more.
+func livePassengerPhone(t trip.Trip) string {
+	switch t.Status {
+	case trip.StatusRequested, trip.StatusAccepted, trip.StatusInProgress:
+		return t.PassengerPhone
+	default:
+		return ""
 	}
 }

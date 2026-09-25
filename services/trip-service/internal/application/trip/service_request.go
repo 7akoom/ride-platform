@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -47,6 +48,20 @@ func (s *service) RequestTrip(
 		return Trip{}, err
 	}
 
+	passengerName, passengerPhone, err := NormalizePassenger(input.PassengerName, input.PassengerPhone)
+	if err != nil {
+		return Trip{}, err
+	}
+
+	tripID := s.idGenerator.NewID()
+	if scheduled := strings.TrimSpace(input.ScheduledTripID); scheduled != "" {
+		if !looksLikeUUID(scheduled) {
+			return Trip{}, ErrTripIDRequired
+		}
+
+		tripID = scheduled
+	}
+
 	pickup, err := NewCoordinates(input.PickupLat, input.PickupLng)
 	if err != nil {
 		return Trip{}, err
@@ -81,7 +96,7 @@ func (s *service) RequestTrip(
 	}
 
 	create := CreateInput{
-		ID:            s.idGenerator.NewID(),
+		ID:            tripID,
 		RiderID:       riderID,
 		Pickup:        pickup,
 		Dropoff:       dropoff,
@@ -93,6 +108,10 @@ func (s *service) RequestTrip(
 		PickupDetails:      texts.PickupDetails,
 		PickupNote:         texts.PickupNote,
 		PickupPhotoMediaID: texts.PickupPhotoMediaID,
+
+		PassengerName:  passengerName,
+		PassengerPhone: passengerPhone,
+		Scheduled:      tripID != "" && tripID == strings.TrimSpace(input.ScheduledTripID),
 	}
 
 	if quoteID != "" {
@@ -129,6 +148,26 @@ func (s *service) RequestTrip(
 // can still use it. Best effort: if it fails, the rider asks for a new quote.
 func (s *service) releaseQuote(ctx context.Context, quoteID, tripID string) {
 	_ = s.quotes.Release(context.WithoutCancel(ctx), quoteID, tripID)
+}
+
+const maxPassengerNameLength = 80
+
+var passengerPhonePattern = regexp.MustCompile(`^\+[1-9][0-9]{7,14}$`)
+
+// NormalizePassenger checks a trip booked for someone else: their name and phone,
+// both or neither.
+func NormalizePassenger(name, phone string) (string, string, error) {
+	name, phone = strings.TrimSpace(name), strings.TrimSpace(phone)
+
+	switch {
+	case name == "" && phone == "":
+		return "", "", nil
+	case name == "" || utf8.RuneCountInString(name) > maxPassengerNameLength,
+		!passengerPhonePattern.MatchString(phone):
+		return "", "", ErrInvalidPassenger
+	}
+
+	return name, phone, nil
 }
 
 // Longest texts a trip keeps, the same as a saved address allows.

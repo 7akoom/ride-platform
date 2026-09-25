@@ -55,6 +55,14 @@ type Config struct {
 	// arrival before they may cancel for a rider no-show (a Go duration).
 	NoShowWait string
 
+	// Trips booked ahead (see config/schedule.go).
+	ScheduleMinAhead     string
+	ScheduleMaxAhead     string
+	ScheduleMaxUpcoming  string
+	ScheduleDispatchLead string
+	ScheduleGrace        string
+	SchedulePollInterval string
+
 	// Per-caller token-bucket rate limit (see
 	// transport/grpc/rate_limit_interceptor.go). Defaults are generous
 	// for a single mobile-app client under normal use, tight enough to
@@ -180,6 +188,13 @@ func Load() Config {
 			"TRIP_NO_SHOW_WAIT",
 			"5m",
 		),
+
+		ScheduleMinAhead:     getEnv("TRIP_SCHEDULE_MIN_AHEAD", "30m"),
+		ScheduleMaxAhead:     getEnv("TRIP_SCHEDULE_MAX_AHEAD", "168h"),
+		ScheduleMaxUpcoming:  getEnv("TRIP_SCHEDULE_MAX_UPCOMING", "3"),
+		ScheduleDispatchLead: getEnv("TRIP_SCHEDULE_DISPATCH_LEAD", "10m"),
+		ScheduleGrace:        getEnv("TRIP_SCHEDULE_GRACE", "10m"),
+		SchedulePollInterval: getEnv("TRIP_SCHEDULE_POLL_INTERVAL", "15s"),
 
 		RateLimitRequestsPerSecond: getEnv(
 			"RATE_LIMIT_REQUESTS_PER_SECOND",

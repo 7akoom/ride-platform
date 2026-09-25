@@ -23,6 +23,10 @@ type CreateInput struct {
 	QuoteID      string
 	QuotedFare   string
 	CurrencyCode string
+
+	PassengerName  string
+	PassengerPhone string
+	Scheduled      bool
 }
 
 // Repository is the persistence port for the trip aggregate. Every

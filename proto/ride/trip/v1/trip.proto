@@ -202,6 +202,33 @@ service TripService {
       body: "*"
     };
   }
+
+  // Scheduled trips: a rider books a trip for later (30 minutes to 7 days
+  // ahead, at most 3 upcoming). It becomes a real trip, with the same id,
+  // 10 minutes before the time and is dispatched like any other; if it
+  // cannot be then (say the rider is on another trip) it is tried again
+  // until 10 minutes after the time, then it fails. It is priced when it
+  // completes, like a trip without a quote.
+  rpc ScheduleTrip(ScheduleTripRequest) returns (ScheduledTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/scheduled-trips"
+      body: "*"
+    };
+  }
+  // ListScheduledTrips: the rider's upcoming ones, soonest first (with
+  // include_past, the latest 50 of any status, newest first).
+  rpc ListScheduledTrips(ListScheduledTripsRequest) returns (ListScheduledTripsResponse) {
+    option (google.api.http) = {
+      get: "/v1/riders/{rider_id}/scheduled-trips"
+    };
+  }
+  // CancelScheduledTrip cancels one not dispatched yet, free.
+  rpc CancelScheduledTrip(CancelScheduledTripRequest) returns (ScheduledTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/scheduled-trips/{scheduled_trip_id}:cancel"
+      body: "*"
+    };
+  }
 }
 
 enum TripStatus {
@@ -257,6 +284,12 @@ message Trip {
   // rider did not come.
   string cancelled_by = 24;
   bool rider_no_show = 25;
+  // A trip booked for someone else: who the driver picks up. The phone is
+  // shown only while the trip is under way.
+  string passenger_name = 26;
+  string passenger_phone = 27;
+  // The scheduled trip it came from (the same id), when it was booked ahead.
+  bool scheduled = 28;
 }
 
 message RequestTripRequest {
@@ -282,6 +315,11 @@ message RequestTripRequest {
   // class; pickup and dropoff (or the saved addresses) must be within 50
   // metres of the quoted points.
   string quote_id = 10;
+  // Booking for someone else: their name (1-80 characters) and phone (E.164,
+  // e.g. +9647701234567), both or neither. The rider pays; the driver sees
+  // them once the trip is accepted.
+  string passenger_name = 11;
+  string passenger_phone = 12;
 }
 
 message RequestTripResponse {
@@ -555,4 +593,70 @@ message RecentDestination {
 
 message ListRecentDestinationsResponse {
   repeated RecentDestination destinations = 1;
+}
+
+message ScheduleTripRequest {
+  // The caller's own rider profile.
+  string rider_id = 1;
+  Coordinates pickup = 2;
+  Coordinates dropoff = 3;
+  string pickup_address = 4;
+  string dropoff_address = 5;
+  // One of the rider's saved addresses, read again when the trip is
+  // dispatched (if it is gone by then, the point and address kept now are
+  // used).
+  string pickup_saved_address_id = 6;
+  string dropoff_saved_address_id = 7;
+  string vehicle_class = 8;
+  string payment_method = 9;
+  string passenger_name = 10;
+  string passenger_phone = 11;
+  // When to be picked up: 30 minutes to 7 days from now.
+  google.protobuf.Timestamp scheduled_at = 12;
+  // Required: a retry with the same key is the same booking.
+  string idempotency_key = 13;
+}
+
+message ScheduledTrip {
+  string id = 1;
+  string rider_id = 2;
+  // scheduled, dispatched (trip_id is the trip), cancelled or failed.
+  string status = 3;
+  google.protobuf.Timestamp scheduled_at = 4;
+  // The pickup city's time zone, and the time in it ("2026-09-26 08:30").
+  string time_zone = 5;
+  string scheduled_local = 6;
+  Coordinates pickup = 7;
+  Coordinates dropoff = 8;
+  string pickup_address = 9;
+  string dropoff_address = 10;
+  string vehicle_class = 11;
+  string payment_method = 12;
+  string passenger_name = 13;
+  string passenger_phone = 14;
+  string trip_id = 15;
+  // Why it failed (the last reason it could not be dispatched).
+  string failure_reason = 16;
+  google.protobuf.Timestamp created_at = 17;
+  google.protobuf.Timestamp cancelled_at = 18;
+  google.protobuf.Timestamp dispatched_at = 19;
+}
+
+message ScheduledTripResponse {
+  ScheduledTrip scheduled_trip = 1;
+}
+
+message ListScheduledTripsRequest {
+  string rider_id = 1;
+  bool include_past = 2;
+}
+
+message ListScheduledTripsResponse {
+  repeated ScheduledTrip scheduled_trips = 1;
+}
+
+message CancelScheduledTripRequest {
+  string scheduled_trip_id = 1;
+  // The caller's own rider profile.
+  string rider_id = 2;
 }

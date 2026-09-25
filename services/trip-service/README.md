@@ -35,8 +35,9 @@ manually" milestone this was built for.
 ## Outbox events emitted
 
 `trip.requested`, `trip.accepted`, `trip.driver_arrived`, `trip.started`,
-`trip.completed`, `trip.cancelled` (with `cancelled_by` and `rider_no_show`) —
-every one written in the same transaction as its change.
+`trip.completed`, `trip.cancelled` (with `cancelled_by` and `rider_no_show`),
+`trip.schedule_failed` (a booking that could not become a trip) — every one
+written in the same transaction as its change.
 
 ## Arrival, waiting and cancelling
 
@@ -86,6 +87,37 @@ A trip without a quote is priced when it completes.
 pricing-service calls this service (`GetTrip`) and this one calls pricing,
 so compose starts pricing after trip-service and trip-service connects to
 pricing lazily.
+
+## Scheduled trips and rides for someone else
+
+A rider books a trip ahead (`ScheduleTrip`): 30 minutes to 7 days away, at
+most 3 upcoming, only where a service zone serves the pickup. The booking
+keeps the zone's time zone so the app shows the local time. Saved addresses
+are copied into the booking when it is made.
+
+A scheduler in this service (every `TRIP_SCHEDULE_POLL_INTERVAL`, 15 s)
+claims due bookings with `FOR UPDATE SKIP LOCKED` and a one-minute lease, so
+several replicas never request the same one twice. At `scheduled_at` minus
+`TRIP_SCHEDULE_DISPATCH_LEAD` (10 minutes) it requests the trip through the
+normal `RequestTrip` path with the booking's id as the trip's id: a retry
+after a crash finds the trip instead of making a second one. A failed
+request is retried every 30 s until `TRIP_SCHEDULE_GRACE` (10 minutes) past
+the booked time, then the booking fails with a reason the rider can read
+and a `trip.schedule_failed` event. A booking cancelled while its trip was
+being requested gets that trip cancelled by the system.
+
+Any trip, booked or not, can be for someone else: `passenger_name` and
+`passenger_phone` (E.164), both or neither. The phone is shown only while
+the trip is live.
+
+| Variable | Default | |
+|---|---|---|
+| `TRIP_SCHEDULE_MIN_AHEAD` | `30m` | earliest booking |
+| `TRIP_SCHEDULE_MAX_AHEAD` | `168h` | latest booking |
+| `TRIP_SCHEDULE_MAX_UPCOMING` | `3` | per rider |
+| `TRIP_SCHEDULE_DISPATCH_LEAD` | `10m` | shorter than the minimum ahead |
+| `TRIP_SCHEDULE_GRACE` | `10m` | retries past the booked time |
+| `TRIP_SCHEDULE_POLL_INTERVAL` | `15s` | |
 
 ## Unpaid fees
 

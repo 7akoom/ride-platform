@@ -9,6 +9,7 @@ import (
 	"time"
 
 	outboxapp "github.com/7akoom/ride-platform/services/trip-service/internal/application/outbox"
+	"github.com/7akoom/ride-platform/services/trip-service/internal/application/schedule"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/config"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/infrastructure/clients"
@@ -236,7 +237,34 @@ func run() int {
 		),
 		tripRepository,
 	), locationClient, tripRepository)
-	tripHandler := grpcserver.NewTripHandler(tripService, logger, grpcserver.WithParticipants(profileResolver))
+	scheduleConfig, err := config.ParseSchedule(cfg)
+	if err != nil {
+		logger.Error("invalid scheduled trip configuration", "error", err)
+
+		return 1
+	}
+
+	scheduleLimits := schedule.Limits{
+		MinAhead:     scheduleConfig.MinAhead,
+		MaxAhead:     scheduleConfig.MaxAhead,
+		MaxUpcoming:  scheduleConfig.MaxUpcoming,
+		DispatchLead: scheduleConfig.DispatchLead,
+		Grace:        scheduleConfig.Grace,
+	}
+	scheduleStore := postgresrepo.NewScheduleStore(pool)
+
+	// Trips booked ahead become trips through the full trip service, like
+	// any rider's request.
+	scheduleDispatcher := schedule.NewDispatcher(scheduleStore, tripService, scheduleLimits, scheduleConfig.PollInterval, logger)
+
+	tripHandler := grpcserver.NewTripHandler(
+		tripService,
+		logger,
+		grpcserver.WithParticipants(profileResolver),
+		grpcserver.WithSchedules(schedule.NewService(
+			scheduleStore, locationClient, clients.NewAddressBook(riderConn), idGenerator, scheduleLimits,
+		)),
+	)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,
@@ -274,6 +302,12 @@ func run() int {
 
 		if err := outboxWorker.Run(ctx); err != nil {
 			logger.Error("outbox worker stopped with error", "error", err)
+		}
+	}()
+
+	go func() {
+		if err := scheduleDispatcher.Run(ctx); err != nil {
+			logger.Error("the scheduled trip dispatcher stopped with error", "error", err)
 		}
 	}()
 
