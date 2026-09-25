@@ -2,6 +2,8 @@ package grpc
 
 import (
 	"context"
+	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -9,6 +11,8 @@ import (
 	googlegrpc "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	healthv1 "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
@@ -154,5 +158,24 @@ func rateLimitKey(ctx context.Context) string {
 		return principal.IdentityID
 	}
 
-	return internalServicePrincipalID
+	// A call without a credential (a shared trip's link) is counted by the
+	// address it came from: the last x-forwarded-for entry is the one the
+	// gateway added, then the connection's own peer.
+	if forwarded := metadata.ValueFromIncomingContext(ctx, "x-forwarded-for"); len(forwarded) > 0 {
+		hops := strings.Split(forwarded[len(forwarded)-1], ",")
+		if last := strings.TrimSpace(hops[len(hops)-1]); last != "" {
+			return "anonymous:" + last
+		}
+	}
+
+	if p, ok := peer.FromContext(ctx); ok && p.Addr != nil {
+		host := p.Addr.String()
+		if h, _, err := net.SplitHostPort(host); err == nil {
+			host = h
+		}
+
+		return "anonymous:" + host
+	}
+
+	return "anonymous"
 }

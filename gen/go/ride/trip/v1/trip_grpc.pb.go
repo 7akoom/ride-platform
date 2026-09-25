@@ -44,6 +44,9 @@ const (
 	TripService_ScheduleTrip_FullMethodName           = "/ride.trip.v1.TripService/ScheduleTrip"
 	TripService_ListScheduledTrips_FullMethodName     = "/ride.trip.v1.TripService/ListScheduledTrips"
 	TripService_CancelScheduledTrip_FullMethodName    = "/ride.trip.v1.TripService/CancelScheduledTrip"
+	TripService_ShareTrip_FullMethodName              = "/ride.trip.v1.TripService/ShareTrip"
+	TripService_StopSharingTrip_FullMethodName        = "/ride.trip.v1.TripService/StopSharingTrip"
+	TripService_GetSharedTrip_FullMethodName          = "/ride.trip.v1.TripService/GetSharedTrip"
 )
 
 // TripServiceClient is the client API for TripService service.
@@ -160,6 +163,18 @@ type TripServiceClient interface {
 	ListScheduledTrips(ctx context.Context, in *ListScheduledTripsRequest, opts ...grpc.CallOption) (*ListScheduledTripsResponse, error)
 	// CancelScheduledTrip cancels one not dispatched yet, free.
 	CancelScheduledTrip(ctx context.Context, in *CancelScheduledTripRequest, opts ...grpc.CallOption) (*ScheduledTripResponse, error)
+	// Sharing a trip. ShareTrip makes a link the rider sends to people they
+	// trust: only the trip's rider, only while the trip is under way, at most
+	// 5 live links per trip. The token is returned once and only its hash is
+	// kept. StopSharingTrip ends every link to the trip.
+	ShareTrip(ctx context.Context, in *ShareTripRequest, opts ...grpc.CallOption) (*ShareTripResponse, error)
+	StopSharingTrip(ctx context.Context, in *StopSharingTripRequest, opts ...grpc.CallOption) (*StopSharingTripResponse, error)
+	// GetSharedTrip is what a link shows, to anyone who has it and without an
+	// account: the trip's status and route, the driver's name and car, and
+	// their position while the trip is under way. Never who the rider is, the
+	// price or a phone number. NOT_FOUND once the link was stopped, expired, or
+	// its trip ended more than TRIP_SHARE_AFTER_END ago.
+	GetSharedTrip(ctx context.Context, in *GetSharedTripRequest, opts ...grpc.CallOption) (*GetSharedTripResponse, error)
 }
 
 type tripServiceClient struct {
@@ -420,6 +435,36 @@ func (c *tripServiceClient) CancelScheduledTrip(ctx context.Context, in *CancelS
 	return out, nil
 }
 
+func (c *tripServiceClient) ShareTrip(ctx context.Context, in *ShareTripRequest, opts ...grpc.CallOption) (*ShareTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ShareTripResponse)
+	err := c.cc.Invoke(ctx, TripService_ShareTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) StopSharingTrip(ctx context.Context, in *StopSharingTripRequest, opts ...grpc.CallOption) (*StopSharingTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StopSharingTripResponse)
+	err := c.cc.Invoke(ctx, TripService_StopSharingTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) GetSharedTrip(ctx context.Context, in *GetSharedTripRequest, opts ...grpc.CallOption) (*GetSharedTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSharedTripResponse)
+	err := c.cc.Invoke(ctx, TripService_GetSharedTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TripServiceServer is the server API for TripService service.
 // All implementations must embed UnimplementedTripServiceServer
 // for forward compatibility.
@@ -534,6 +579,18 @@ type TripServiceServer interface {
 	ListScheduledTrips(context.Context, *ListScheduledTripsRequest) (*ListScheduledTripsResponse, error)
 	// CancelScheduledTrip cancels one not dispatched yet, free.
 	CancelScheduledTrip(context.Context, *CancelScheduledTripRequest) (*ScheduledTripResponse, error)
+	// Sharing a trip. ShareTrip makes a link the rider sends to people they
+	// trust: only the trip's rider, only while the trip is under way, at most
+	// 5 live links per trip. The token is returned once and only its hash is
+	// kept. StopSharingTrip ends every link to the trip.
+	ShareTrip(context.Context, *ShareTripRequest) (*ShareTripResponse, error)
+	StopSharingTrip(context.Context, *StopSharingTripRequest) (*StopSharingTripResponse, error)
+	// GetSharedTrip is what a link shows, to anyone who has it and without an
+	// account: the trip's status and route, the driver's name and car, and
+	// their position while the trip is under way. Never who the rider is, the
+	// price or a phone number. NOT_FOUND once the link was stopped, expired, or
+	// its trip ended more than TRIP_SHARE_AFTER_END ago.
+	GetSharedTrip(context.Context, *GetSharedTripRequest) (*GetSharedTripResponse, error)
 	mustEmbedUnimplementedTripServiceServer()
 }
 
@@ -618,6 +675,15 @@ func (UnimplementedTripServiceServer) ListScheduledTrips(context.Context, *ListS
 }
 func (UnimplementedTripServiceServer) CancelScheduledTrip(context.Context, *CancelScheduledTripRequest) (*ScheduledTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelScheduledTrip not implemented")
+}
+func (UnimplementedTripServiceServer) ShareTrip(context.Context, *ShareTripRequest) (*ShareTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ShareTrip not implemented")
+}
+func (UnimplementedTripServiceServer) StopSharingTrip(context.Context, *StopSharingTripRequest) (*StopSharingTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StopSharingTrip not implemented")
+}
+func (UnimplementedTripServiceServer) GetSharedTrip(context.Context, *GetSharedTripRequest) (*GetSharedTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSharedTrip not implemented")
 }
 func (UnimplementedTripServiceServer) mustEmbedUnimplementedTripServiceServer() {}
 func (UnimplementedTripServiceServer) testEmbeddedByValue()                     {}
@@ -1090,6 +1156,60 @@ func _TripService_CancelScheduledTrip_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_ShareTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ShareTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).ShareTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_ShareTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).ShareTrip(ctx, req.(*ShareTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_StopSharingTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StopSharingTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).StopSharingTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_StopSharingTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).StopSharingTrip(ctx, req.(*StopSharingTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_GetSharedTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSharedTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetSharedTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetSharedTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetSharedTrip(ctx, req.(*GetSharedTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TripService_ServiceDesc is the grpc.ServiceDesc for TripService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1196,6 +1316,18 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelScheduledTrip",
 			Handler:    _TripService_CancelScheduledTrip_Handler,
+		},
+		{
+			MethodName: "ShareTrip",
+			Handler:    _TripService_ShareTrip_Handler,
+		},
+		{
+			MethodName: "StopSharingTrip",
+			Handler:    _TripService_StopSharingTrip_Handler,
+		},
+		{
+			MethodName: "GetSharedTrip",
+			Handler:    _TripService_GetSharedTrip_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

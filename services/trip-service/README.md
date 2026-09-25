@@ -132,6 +132,22 @@ reported position; stops may be reached in any order or skipped, and a trip
 completes whether or not every stop was reached. Waiting at a stop is not
 charged separately: it is part of the ride.
 
+## Sharing a trip
+
+The rider of a trip under way makes a link (`ShareTrip`) and sends it to
+people they trust. The link's token is 256 random bits, returned once; only
+its SHA-256 is stored (`trip_shares`). At most 5 live links per trip;
+`StopSharingTrip` ends them all. `GetSharedTrip` is the one RPC that needs no
+credential: authentication and authorization let it through, the handler
+checks the token, and the rate limit counts such calls by the address they
+come from (the last `x-forwarded-for` hop, which the gateway adds). It shows
+the trip's route and progress, the driver's name and car, and their position
+while the trip is under way, never the rider, the passenger, the price or a
+phone number. A link stops at `TRIP_SHARE_MAX_AGE` (12h), or
+`TRIP_SHARE_AFTER_END` (30m) after the trip ends, whichever is first; every
+failure is the same 404. `TRIP_SHARE_URL_BASE`, when set, makes the full URL
+(base + token); the page that shows a link belongs to the web apps.
+
 ## Unpaid fees
 
 A cancellation or no-show fee the rider's wallet could not cover stays owed

@@ -10,6 +10,7 @@ import (
 
 	outboxapp "github.com/7akoom/ride-platform/services/trip-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/schedule"
+	"github.com/7akoom/ride-platform/services/trip-service/internal/application/share"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/config"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/infrastructure/clients"
@@ -257,6 +258,19 @@ func run() int {
 	// any rider's request.
 	scheduleDispatcher := schedule.NewDispatcher(scheduleStore, tripService, scheduleLimits, scheduleConfig.PollInterval, logger)
 
+	shareConfig, err := config.ParseShare(cfg)
+	if err != nil {
+		logger.Error("invalid trip sharing configuration", "error", err)
+
+		return 1
+	}
+
+	shares := share.NewService(postgresrepo.NewShareStore(pool), tripService, driverDirectory, locationClient, share.Settings{
+		URLBase:  shareConfig.URLBase,
+		MaxAge:   shareConfig.MaxAge,
+		AfterEnd: shareConfig.AfterEnd,
+	})
+
 	tripHandler := grpcserver.NewTripHandler(
 		tripService,
 		logger,
@@ -264,6 +278,7 @@ func run() int {
 		grpcserver.WithSchedules(schedule.NewService(
 			scheduleStore, locationClient, clients.NewAddressBook(riderConn), idGenerator, scheduleLimits,
 		)),
+		grpcserver.WithShares(shares),
 	)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(

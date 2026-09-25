@@ -240,6 +240,33 @@ service TripService {
       body: "*"
     };
   }
+
+  // Sharing a trip. ShareTrip makes a link the rider sends to people they
+  // trust: only the trip's rider, only while the trip is under way, at most
+  // 5 live links per trip. The token is returned once and only its hash is
+  // kept. StopSharingTrip ends every link to the trip.
+  rpc ShareTrip(ShareTripRequest) returns (ShareTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}/shares"
+      body: "*"
+    };
+  }
+  rpc StopSharingTrip(StopSharingTripRequest) returns (StopSharingTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}/shares:stop"
+      body: "*"
+    };
+  }
+  // GetSharedTrip is what a link shows, to anyone who has it and without an
+  // account: the trip's status and route, the driver's name and car, and
+  // their position while the trip is under way. Never who the rider is, the
+  // price or a phone number. NOT_FOUND once the link was stopped, expired, or
+  // its trip ended more than TRIP_SHARE_AFTER_END ago.
+  rpc GetSharedTrip(GetSharedTripRequest) returns (GetSharedTripResponse) {
+    option (google.api.http) = {
+      get: "/v1/shared-trips/{token}"
+    };
+  }
 }
 
 enum TripStatus {
@@ -698,4 +725,59 @@ message CancelScheduledTripRequest {
   string scheduled_trip_id = 1;
   // The caller's own rider profile.
   string rider_id = 2;
+}
+
+message ShareTripRequest {
+  string trip_id = 1;
+}
+
+message ShareTripResponse {
+  // The link's token: seen only here.
+  string token = 1;
+  // TRIP_SHARE_URL_BASE followed by the token; empty when the deployment
+  // leaves building the URL to the app.
+  string url = 2;
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp expires_at = 4;
+}
+
+message StopSharingTripRequest {
+  string trip_id = 1;
+}
+
+message StopSharingTripResponse {
+  // How many live links were stopped.
+  int32 stopped = 1;
+}
+
+message GetSharedTripRequest {
+  string token = 1;
+}
+
+message SharedTrip {
+  TripStatus status = 1;
+  Coordinates pickup = 2;
+  Coordinates dropoff = 3;
+  string pickup_address = 4;
+  string dropoff_address = 5;
+  repeated TripStop stops = 6;
+  // Set once a driver accepted the trip (and their profile could be read).
+  string driver_name = 7;
+  TripVehicle vehicle = 8;
+  // The driver's last position while the trip is accepted or in progress,
+  // when known.
+  Coordinates driver_location = 9;
+  google.protobuf.Timestamp driver_location_updated_at = 10;
+  google.protobuf.Timestamp requested_at = 11;
+  google.protobuf.Timestamp accepted_at = 12;
+  google.protobuf.Timestamp arrived_at = 13;
+  google.protobuf.Timestamp started_at = 14;
+  google.protobuf.Timestamp completed_at = 15;
+  google.protobuf.Timestamp cancelled_at = 16;
+  // When the link stops working.
+  google.protobuf.Timestamp link_expires_at = 17;
+}
+
+message GetSharedTripResponse {
+  SharedTrip trip = 1;
 }

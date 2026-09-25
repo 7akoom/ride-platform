@@ -21,6 +21,9 @@ type ownerCheck func(ctx context.Context, c caller, request any) (bool, error)
 
 var exemptMethods = map[string]struct{}{
 	healthv1.Health_Check_FullMethodName: {},
+	// A shared trip is seen by whoever has its link, without an account: the
+	// link's token is the only credential (see NewAuthenticationUnaryInterceptor).
+	sharedTripFullMethod: {},
 }
 
 // methodAccess classifies every RPC. Methods missing from it are denied to
@@ -52,6 +55,8 @@ var methodAccess = map[string]accessLevel{
 	"/ride.trip.v1.TripService/ScheduleTrip":           accessOwner,
 	"/ride.trip.v1.TripService/ListScheduledTrips":     accessOwner,
 	"/ride.trip.v1.TripService/CancelScheduledTrip":    accessOwner,
+	"/ride.trip.v1.TripService/ShareTrip":              accessOwner,
+	"/ride.trip.v1.TripService/StopSharingTrip":        accessOwner,
 }
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver, trips TripReader) googlegrpc.UnaryServerInterceptor {

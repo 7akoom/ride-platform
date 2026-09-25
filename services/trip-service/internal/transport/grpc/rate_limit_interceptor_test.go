@@ -7,6 +7,7 @@ import (
 	googlegrpc "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	healthv1 "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -54,9 +55,9 @@ func TestNewRateLimitUnaryInterceptor_PanicsOnInvalidArguments(t *testing.T) {
 		rps   float64
 		burst int
 	}{
-		"zero rps":    {0, 10},
-		"negative rps": {-1, 10},
-		"zero burst":  {10, 0},
+		"zero rps":       {0, 10},
+		"negative rps":   {-1, 10},
+		"zero burst":     {10, 0},
 		"negative burst": {10, -1},
 	}
 
@@ -148,14 +149,31 @@ func TestRateLimitInterceptor_ExemptsInternalServiceCalls(t *testing.T) {
 	}
 }
 
-func TestRateLimitInterceptor_ContextWithoutPrincipalIsTreatedAsInternal(t *testing.T) {
-	interceptor := NewRateLimitUnaryInterceptor(0.001, 1)
-	info := &googlegrpc.UnaryServerInfo{FullMethod: "/ride.rider.v1.RiderService/GetRider"}
+func TestRateLimitInterceptor_CallsWithoutAPrincipalAreCountedByAddress(t *testing.T) {
+	// Only a shared trip's link is called without a credential; each address
+	// gets its own bucket.
+	interceptor := NewRateLimitUnaryInterceptor(0.001, 2)
+	info := &googlegrpc.UnaryServerInfo{FullMethod: sharedTripFullMethod}
 
-	errs := callN(t, interceptor, context.Background(), info, 5)
-	for i, err := range errs {
-		if err != nil {
-			t.Fatalf("call %d without a principal: expected no error, got %v", i, err)
-		}
+	from := func(forwarded string) context.Context {
+		return metadata.NewIncomingContext(context.Background(), metadata.Pairs("x-forwarded-for", forwarded))
+	}
+
+	errs := callN(t, interceptor, from("203.0.113.9, 10.0.0.2"), info, 3)
+	if errs[0] != nil || errs[1] != nil || status.Code(errs[2]) != codes.ResourceExhausted {
+		t.Fatalf("one address: %v", errs)
+	}
+
+	// The last hop counts: what a client writes before it does not.
+	if errs := callN(t, interceptor, from("198.51.100.7, 10.0.0.2"), info, 1); status.Code(errs[0]) != codes.ResourceExhausted {
+		t.Fatalf("the same last hop: %v", errs)
+	}
+
+	if errs := callN(t, interceptor, from("10.0.0.3"), info, 2); errs[0] != nil || errs[1] != nil {
+		t.Fatalf("another address: %v", errs)
+	}
+
+	if key := rateLimitKey(context.Background()); key != "anonymous" {
+		t.Fatalf("no address at all: %q", key)
 	}
 }

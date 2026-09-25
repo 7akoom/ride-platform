@@ -4541,6 +4541,37 @@
         ]
       }
     },
+    "/v1/shared-trips/{token}": {
+      "get": {
+        "summary": "GetSharedTrip is what a link shows, to anyone who has it and without an\naccount: the trip's status and route, the driver's name and car, and\ntheir position while the trip is under way. Never who the rider is, the\nprice or a phone number. NOT_FOUND once the link was stopped, expired, or\nits trip ended more than TRIP_SHARE_AFTER_END ago.",
+        "operationId": "TripService_GetSharedTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSharedTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/staff/me": {
       "get": {
         "summary": "GetMyStaffProfile returns the caller's staff record, roles and effective\npermissions. NOT_FOUND when the caller is not staff.",
@@ -4828,6 +4859,83 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}/shares": {
+      "post": {
+        "summary": "Sharing a trip. ShareTrip makes a link the rider sends to people they\ntrust: only the trip's rider, only while the trip is under way, at most\n5 live links per trip. The token is returned once and only its hash is\nkept. StopSharingTrip ends every link to the trip.",
+        "operationId": "TripService_ShareTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ShareTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceShareTripBody"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}/shares:stop": {
+      "post": {
+        "operationId": "TripService_StopSharingTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StopSharingTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceStopSharingTripBody"
+            }
           }
         ],
         "tags": [
@@ -6630,6 +6738,12 @@
         }
       }
     },
+    "TripServiceShareTripBody": {
+      "type": "object"
+    },
+    "TripServiceStopSharingTripBody": {
+      "type": "object"
+    },
     "TripServiceTriggerSOSBody": {
       "type": "object",
       "properties": {
@@ -8249,6 +8363,14 @@
         "polyline": {
           "type": "string",
           "description": "The whole path as a Google encoded polyline with 5 digits of precision (about a\nmetre), ready to decode and draw."
+        }
+      }
+    },
+    "v1GetSharedTripResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/v1SharedTrip"
         }
       }
     },
@@ -10296,6 +10418,98 @@
         }
       }
     },
+    "v1ShareTripResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "description": "The link's token: seen only here."
+        },
+        "url": {
+          "type": "string",
+          "description": "TRIP_SHARE_URL_BASE followed by the token; empty when the deployment\nleaves building the URL to the app."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1SharedTrip": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v1TripStatus"
+        },
+        "pickup": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "dropoff": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "pickupAddress": {
+          "type": "string"
+        },
+        "dropoffAddress": {
+          "type": "string"
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TripStop"
+          }
+        },
+        "driverName": {
+          "type": "string",
+          "description": "Set once a driver accepted the trip (and their profile could be read)."
+        },
+        "vehicle": {
+          "$ref": "#/definitions/v1TripVehicle"
+        },
+        "driverLocation": {
+          "$ref": "#/definitions/rideTripV1Coordinates",
+          "description": "The driver's last position while the trip is accepted or in progress,\nwhen known."
+        },
+        "driverLocationUpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "requestedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "acceptedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "arrivedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cancelledAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "linkExpiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the link stops working."
+        }
+      }
+    },
     "v1SosTriggeredBy": {
       "type": "string",
       "enum": [
@@ -10377,6 +10591,16 @@
       "properties": {
         "trip": {
           "$ref": "#/definitions/v1Trip"
+        }
+      }
+    },
+    "v1StopSharingTripResponse": {
+      "type": "object",
+      "properties": {
+        "stopped": {
+          "type": "integer",
+          "format": "int32",
+          "description": "How many live links were stopped."
         }
       }
     },

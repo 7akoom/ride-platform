@@ -8,6 +8,7 @@ import (
 
 	tripv1 "github.com/7akoom/ride-platform/gen/go/ride/trip/v1"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/schedule"
+	"github.com/7akoom/ride-platform/services/trip-service/internal/application/share"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -25,6 +26,7 @@ type TripHandler struct {
 	participants CallerResolver
 
 	schedules *schedule.Service
+	shares    *share.Service
 }
 
 // HandlerOption customises a TripHandler.
@@ -33,6 +35,11 @@ type HandlerOption func(*TripHandler)
 // WithSchedules lets riders book trips ahead.
 func WithSchedules(schedules *schedule.Service) HandlerOption {
 	return func(h *TripHandler) { h.schedules = schedules }
+}
+
+// WithShares lets riders share their trips by link.
+func WithShares(shares *share.Service) HandlerOption {
+	return func(h *TripHandler) { h.shares = shares }
 }
 
 // WithParticipants lets CancelTrip record whether the rider or the driver

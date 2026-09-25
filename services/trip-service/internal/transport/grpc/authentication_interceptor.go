@@ -20,6 +20,11 @@ import (
 // token from) or another service acting on its own behalf.
 const internalServicePrincipalID = "internal-service"
 
+// sharedTripFullMethod is what a trip's sharing link shows. It needs no
+// credential: the link's token, in the request, is checked by the handler,
+// and the rate limit counts such calls by where they come from.
+const sharedTripFullMethod = "/ride.trip.v1.TripService/GetSharedTrip"
+
 // NewAuthenticationUnaryInterceptor rejects any request without a valid
 // credential, except the health check. It accepts two kinds of
 // credential in the same Authorization header: an end-user access token
@@ -56,7 +61,8 @@ func NewAuthenticationUnaryInterceptor(
 			)
 		}
 
-		if info.FullMethod == healthv1.Health_Check_FullMethodName {
+		if info.FullMethod == healthv1.Health_Check_FullMethodName ||
+			info.FullMethod == sharedTripFullMethod {
 			return handler(ctx, request)
 		}
 

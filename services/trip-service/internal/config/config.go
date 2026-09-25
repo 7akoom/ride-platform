@@ -63,6 +63,11 @@ type Config struct {
 	ScheduleGrace        string
 	SchedulePollInterval string
 
+	// Trip sharing links (see config/share.go).
+	ShareURLBase  string
+	ShareMaxAge   string
+	ShareAfterEnd string
+
 	// Per-caller token-bucket rate limit (see
 	// transport/grpc/rate_limit_interceptor.go). Defaults are generous
 	// for a single mobile-app client under normal use, tight enough to
@@ -195,6 +200,10 @@ func Load() Config {
 		ScheduleDispatchLead: getEnv("TRIP_SCHEDULE_DISPATCH_LEAD", "10m"),
 		ScheduleGrace:        getEnv("TRIP_SCHEDULE_GRACE", "10m"),
 		SchedulePollInterval: getEnv("TRIP_SCHEDULE_POLL_INTERVAL", "15s"),
+
+		ShareURLBase:  getEnv("TRIP_SHARE_URL_BASE", ""),
+		ShareMaxAge:   getEnv("TRIP_SHARE_MAX_AGE", "12h"),
+		ShareAfterEnd: getEnv("TRIP_SHARE_AFTER_END", "30m"),
 
 		RateLimitRequestsPerSecond: getEnv(
 			"RATE_LIMIT_REQUESTS_PER_SECOND",
