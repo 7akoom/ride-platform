@@ -146,3 +146,19 @@ func TestATrailingSlashInTheBaseURLDoesNotBreakThePath(t *testing.T) {
 		t.Errorf("double slash in %q", seen)
 	}
 }
+
+func TestViaPointsGoBetweenTheEndsInOrderEachWithASnapRadius(t *testing.T) {
+	var seen string
+
+	client := NewOSRMClient(osrmServer(t, http.StatusOK, okRoute, &seen).URL, time.Second)
+	stop := maps.Coordinates{Latitude: 36.2, Longitude: 44.0}
+
+	if _, err := client.Route(context.Background(), erbil, airport, stop); err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(seen, "/route/v1/driving/44.009200,36.191100;44.000000,36.200000;43.963100,36.236700?") ||
+		!strings.Contains(seen, "radiuses=1000;1000;1000") {
+		t.Errorf("asked %q", seen)
+	}
+}

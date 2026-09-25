@@ -545,7 +545,9 @@ type EstimateFareRequest struct {
 	Dropoff    *Coordinates           `protobuf:"bytes,3,opt,name=dropoff,proto3" json:"dropoff,omitempty"`
 	CouponCode string                 `protobuf:"bytes,4,opt,name=coupon_code,json=couponCode,proto3" json:"coupon_code,omitempty"`
 	// economy (default when empty) or comfort.
-	VehicleClass  string `protobuf:"bytes,5,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	VehicleClass string `protobuf:"bytes,5,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	// Up to 2 stops on the way, in order: the route passes through them.
+	Stops         []*Coordinates `protobuf:"bytes,6,rep,name=stops,proto3" json:"stops,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -615,6 +617,13 @@ func (x *EstimateFareRequest) GetVehicleClass() string {
 	return ""
 }
 
+func (x *EstimateFareRequest) GetStops() []*Coordinates {
+	if x != nil {
+		return x.Stops
+	}
+	return nil
+}
+
 type EstimateFareResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Fare          *FareBreakdown         `protobuf:"bytes,1,opt,name=fare,proto3" json:"fare,omitempty"`
@@ -669,7 +678,8 @@ type CalculateFareRequest struct {
 	VehicleClass string                 `protobuf:"bytes,6,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
 	// The quote the trip was requested with: the fare is the quoted one, and
 	// the other fields are not used.
-	QuoteId       string `protobuf:"bytes,7,opt,name=quote_id,json=quoteId,proto3" json:"quote_id,omitempty"`
+	QuoteId       string         `protobuf:"bytes,7,opt,name=quote_id,json=quoteId,proto3" json:"quote_id,omitempty"`
+	Stops         []*Coordinates `protobuf:"bytes,8,rep,name=stops,proto3" json:"stops,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -751,6 +761,13 @@ func (x *CalculateFareRequest) GetQuoteId() string {
 		return x.QuoteId
 	}
 	return ""
+}
+
+func (x *CalculateFareRequest) GetStops() []*Coordinates {
+	if x != nil {
+		return x.Stops
+	}
+	return nil
 }
 
 type CalculateFareResponse struct {
@@ -2001,11 +2018,14 @@ func (x *PromotionSettingsResponse) GetSettings() *PromotionSettings {
 }
 
 type QuoteTripRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
-	Pickup        *Coordinates           `protobuf:"bytes,2,opt,name=pickup,proto3" json:"pickup,omitempty"`
-	Dropoff       *Coordinates           `protobuf:"bytes,3,opt,name=dropoff,proto3" json:"dropoff,omitempty"`
-	CouponCode    string                 `protobuf:"bytes,4,opt,name=coupon_code,json=couponCode,proto3" json:"coupon_code,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	RiderId    string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	Pickup     *Coordinates           `protobuf:"bytes,2,opt,name=pickup,proto3" json:"pickup,omitempty"`
+	Dropoff    *Coordinates           `protobuf:"bytes,3,opt,name=dropoff,proto3" json:"dropoff,omitempty"`
+	CouponCode string                 `protobuf:"bytes,4,opt,name=coupon_code,json=couponCode,proto3" json:"coupon_code,omitempty"`
+	// Up to 2 stops on the way, in order: the route, and so the price, passes
+	// through them. A trip requested with the quote must have the same stops.
+	Stops         []*Coordinates `protobuf:"bytes,5,rep,name=stops,proto3" json:"stops,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2066,6 +2086,13 @@ func (x *QuoteTripRequest) GetCouponCode() string {
 		return x.CouponCode
 	}
 	return ""
+}
+
+func (x *QuoteTripRequest) GetStops() []*Coordinates {
+	if x != nil {
+		return x.Stops
+	}
+	return nil
 }
 
 type TripQuote struct {
@@ -2285,6 +2312,7 @@ type ClaimQuoteResponse struct {
 	Total         string                 `protobuf:"bytes,5,opt,name=total,proto3" json:"total,omitempty"`
 	CurrencyCode  string                 `protobuf:"bytes,6,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
 	ZoneId        string                 `protobuf:"bytes,7,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	Stops         []*Coordinates         `protobuf:"bytes,8,rep,name=stops,proto3" json:"stops,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2366,6 +2394,13 @@ func (x *ClaimQuoteResponse) GetZoneId() string {
 		return x.ZoneId
 	}
 	return ""
+}
+
+func (x *ClaimQuoteResponse) GetStops() []*Coordinates {
+	if x != nil {
+		return x.Stops
+	}
+	return nil
 }
 
 type ReleaseQuoteRequest struct {
@@ -3962,16 +3997,17 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\x0fwaiting_minutes\x18\x12 \x01(\x05R\x0ewaitingMinutes\x12!\n" +
 	"\fwaiting_fare\x18\x13 \x01(\tR\vwaitingFare\x12\x12\n" +
 	"\x04kind\x18\x14 \x01(\tR\x04kind\x12B\n" +
-	"\rcoupon_status\x18\x15 \x01(\x0e2\x1d.ride.pricing.v1.CouponStatusR\fcouponStatus\"\xe4\x01\n" +
+	"\rcoupon_status\x18\x15 \x01(\x0e2\x1d.ride.pricing.v1.CouponStatusR\fcouponStatus\"\x98\x02\n" +
 	"\x13EstimateFareRequest\x12\x19\n" +
 	"\brider_id\x18\x01 \x01(\tR\ariderId\x124\n" +
 	"\x06pickup\x18\x02 \x01(\v2\x1c.ride.pricing.v1.CoordinatesR\x06pickup\x126\n" +
 	"\adropoff\x18\x03 \x01(\v2\x1c.ride.pricing.v1.CoordinatesR\adropoff\x12\x1f\n" +
 	"\vcoupon_code\x18\x04 \x01(\tR\n" +
 	"couponCode\x12#\n" +
-	"\rvehicle_class\x18\x05 \x01(\tR\fvehicleClass\"J\n" +
+	"\rvehicle_class\x18\x05 \x01(\tR\fvehicleClass\x122\n" +
+	"\x05stops\x18\x06 \x03(\v2\x1c.ride.pricing.v1.CoordinatesR\x05stops\"J\n" +
 	"\x14EstimateFareResponse\x122\n" +
-	"\x04fare\x18\x01 \x01(\v2\x1e.ride.pricing.v1.FareBreakdownR\x04fare\"\x99\x02\n" +
+	"\x04fare\x18\x01 \x01(\v2\x1e.ride.pricing.v1.FareBreakdownR\x04fare\"\xcd\x02\n" +
 	"\x14CalculateFareRequest\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12\x19\n" +
 	"\brider_id\x18\x02 \x01(\tR\ariderId\x124\n" +
@@ -3980,7 +4016,8 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\vcoupon_code\x18\x05 \x01(\tR\n" +
 	"couponCode\x12#\n" +
 	"\rvehicle_class\x18\x06 \x01(\tR\fvehicleClass\x12\x19\n" +
-	"\bquote_id\x18\a \x01(\tR\aquoteId\"K\n" +
+	"\bquote_id\x18\a \x01(\tR\aquoteId\x122\n" +
+	"\x05stops\x18\b \x03(\v2\x1c.ride.pricing.v1.CoordinatesR\x05stops\"K\n" +
 	"\x15CalculateFareResponse\x122\n" +
 	"\x04fare\x18\x01 \x01(\v2\x1e.ride.pricing.v1.FareBreakdownR\x04fare\"\xe2\x04\n" +
 	"\x13CreateCouponRequest\x12\x12\n" +
@@ -4099,13 +4136,14 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\x0floyalty_percent\x18\x04 \x01(\tR\x0eloyaltyPercent\x12,\n" +
 	"\x12loyalty_max_amount\x18\x05 \x01(\tR\x10loyaltyMaxAmount\"[\n" +
 	"\x19PromotionSettingsResponse\x12>\n" +
-	"\bsettings\x18\x01 \x01(\v2\".ride.pricing.v1.PromotionSettingsR\bsettings\"\xbc\x01\n" +
+	"\bsettings\x18\x01 \x01(\v2\".ride.pricing.v1.PromotionSettingsR\bsettings\"\xf0\x01\n" +
 	"\x10QuoteTripRequest\x12\x19\n" +
 	"\brider_id\x18\x01 \x01(\tR\ariderId\x124\n" +
 	"\x06pickup\x18\x02 \x01(\v2\x1c.ride.pricing.v1.CoordinatesR\x06pickup\x126\n" +
 	"\adropoff\x18\x03 \x01(\v2\x1c.ride.pricing.v1.CoordinatesR\adropoff\x12\x1f\n" +
 	"\vcoupon_code\x18\x04 \x01(\tR\n" +
-	"couponCode\"\x95\x02\n" +
+	"couponCode\x122\n" +
+	"\x05stops\x18\x05 \x03(\v2\x1c.ride.pricing.v1.CoordinatesR\x05stops\"\x95\x02\n" +
 	"\tTripQuote\x12\x19\n" +
 	"\bquote_id\x18\x01 \x01(\tR\aquoteId\x12#\n" +
 	"\rvehicle_class\x18\x02 \x01(\tR\fvehicleClass\x122\n" +
@@ -4121,7 +4159,7 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\x11ClaimQuoteRequest\x12\x19\n" +
 	"\bquote_id\x18\x01 \x01(\tR\aquoteId\x12\x19\n" +
 	"\brider_id\x18\x02 \x01(\tR\ariderId\x12\x17\n" +
-	"\atrip_id\x18\x03 \x01(\tR\x06tripId\"\x96\x02\n" +
+	"\atrip_id\x18\x03 \x01(\tR\x06tripId\"\xca\x02\n" +
 	"\x12ClaimQuoteResponse\x12\x19\n" +
 	"\bquote_id\x18\x01 \x01(\tR\aquoteId\x12#\n" +
 	"\rvehicle_class\x18\x02 \x01(\tR\fvehicleClass\x124\n" +
@@ -4129,7 +4167,8 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\adropoff\x18\x04 \x01(\v2\x1c.ride.pricing.v1.CoordinatesR\adropoff\x12\x14\n" +
 	"\x05total\x18\x05 \x01(\tR\x05total\x12#\n" +
 	"\rcurrency_code\x18\x06 \x01(\tR\fcurrencyCode\x12\x17\n" +
-	"\azone_id\x18\a \x01(\tR\x06zoneId\"I\n" +
+	"\azone_id\x18\a \x01(\tR\x06zoneId\x122\n" +
+	"\x05stops\x18\b \x03(\v2\x1c.ride.pricing.v1.CoordinatesR\x05stops\"I\n" +
 	"\x13ReleaseQuoteRequest\x12\x19\n" +
 	"\bquote_id\x18\x01 \x01(\tR\aquoteId\x12\x17\n" +
 	"\atrip_id\x18\x02 \x01(\tR\x06tripId\"\x16\n" +
@@ -4380,97 +4419,101 @@ var file_ride_pricing_v1_pricing_proto_depIdxs = []int32{
 	1,  // 2: ride.pricing.v1.FareBreakdown.coupon_status:type_name -> ride.pricing.v1.CouponStatus
 	2,  // 3: ride.pricing.v1.EstimateFareRequest.pickup:type_name -> ride.pricing.v1.Coordinates
 	2,  // 4: ride.pricing.v1.EstimateFareRequest.dropoff:type_name -> ride.pricing.v1.Coordinates
-	4,  // 5: ride.pricing.v1.EstimateFareResponse.fare:type_name -> ride.pricing.v1.FareBreakdown
-	2,  // 6: ride.pricing.v1.CalculateFareRequest.pickup:type_name -> ride.pricing.v1.Coordinates
-	2,  // 7: ride.pricing.v1.CalculateFareRequest.dropoff:type_name -> ride.pricing.v1.Coordinates
-	4,  // 8: ride.pricing.v1.CalculateFareResponse.fare:type_name -> ride.pricing.v1.FareBreakdown
-	0,  // 9: ride.pricing.v1.CreateCouponRequest.discount_type:type_name -> ride.pricing.v1.DiscountType
-	51, // 10: ride.pricing.v1.CreateCouponRequest.valid_from:type_name -> google.protobuf.Timestamp
-	51, // 11: ride.pricing.v1.CreateCouponRequest.valid_until:type_name -> google.protobuf.Timestamp
-	0,  // 12: ride.pricing.v1.Coupon.discount_type:type_name -> ride.pricing.v1.DiscountType
-	51, // 13: ride.pricing.v1.Coupon.valid_from:type_name -> google.protobuf.Timestamp
-	51, // 14: ride.pricing.v1.Coupon.valid_until:type_name -> google.protobuf.Timestamp
-	51, // 15: ride.pricing.v1.Coupon.created_at:type_name -> google.protobuf.Timestamp
-	51, // 16: ride.pricing.v1.Coupon.updated_at:type_name -> google.protobuf.Timestamp
-	10, // 17: ride.pricing.v1.CreateCouponResponse.coupon:type_name -> ride.pricing.v1.Coupon
-	10, // 18: ride.pricing.v1.GetCouponResponse.coupon:type_name -> ride.pricing.v1.Coupon
-	10, // 19: ride.pricing.v1.ListCouponsResponse.coupons:type_name -> ride.pricing.v1.Coupon
-	51, // 20: ride.pricing.v1.UpdateCouponRequest.valid_until:type_name -> google.protobuf.Timestamp
-	51, // 21: ride.pricing.v1.CouponRedemption.created_at:type_name -> google.protobuf.Timestamp
-	51, // 22: ride.pricing.v1.CouponRedemption.released_at:type_name -> google.protobuf.Timestamp
-	18, // 23: ride.pricing.v1.ListCouponRedemptionsResponse.redemptions:type_name -> ride.pricing.v1.CouponRedemption
-	51, // 24: ride.pricing.v1.PromotionSettings.updated_at:type_name -> google.protobuf.Timestamp
-	21, // 25: ride.pricing.v1.PromotionSettingsResponse.settings:type_name -> ride.pricing.v1.PromotionSettings
-	2,  // 26: ride.pricing.v1.QuoteTripRequest.pickup:type_name -> ride.pricing.v1.Coordinates
-	2,  // 27: ride.pricing.v1.QuoteTripRequest.dropoff:type_name -> ride.pricing.v1.Coordinates
-	4,  // 28: ride.pricing.v1.TripQuote.fare:type_name -> ride.pricing.v1.FareBreakdown
-	51, // 29: ride.pricing.v1.TripQuote.expires_at:type_name -> google.protobuf.Timestamp
-	25, // 30: ride.pricing.v1.QuoteTripResponse.quotes:type_name -> ride.pricing.v1.TripQuote
-	2,  // 31: ride.pricing.v1.ClaimQuoteResponse.pickup:type_name -> ride.pricing.v1.Coordinates
-	2,  // 32: ride.pricing.v1.ClaimQuoteResponse.dropoff:type_name -> ride.pricing.v1.Coordinates
-	51, // 33: ride.pricing.v1.RateCard.created_at:type_name -> google.protobuf.Timestamp
-	31, // 34: ride.pricing.v1.ListRateCardsResponse.rate_cards:type_name -> ride.pricing.v1.RateCard
-	31, // 35: ride.pricing.v1.RateCardResponse.rate_card:type_name -> ride.pricing.v1.RateCard
-	51, // 36: ride.pricing.v1.SurgeRule.created_at:type_name -> google.protobuf.Timestamp
-	51, // 37: ride.pricing.v1.SurgeRule.updated_at:type_name -> google.protobuf.Timestamp
-	38, // 38: ride.pricing.v1.ListSurgeRulesResponse.rules:type_name -> ride.pricing.v1.SurgeRule
-	38, // 39: ride.pricing.v1.SurgeRuleResponse.rule:type_name -> ride.pricing.v1.SurgeRule
-	51, // 40: ride.pricing.v1.ZoneSurge.starts_at:type_name -> google.protobuf.Timestamp
-	51, // 41: ride.pricing.v1.ZoneSurge.ends_at:type_name -> google.protobuf.Timestamp
-	51, // 42: ride.pricing.v1.ZoneSurge.ended_at:type_name -> google.protobuf.Timestamp
-	51, // 43: ride.pricing.v1.ZoneSurge.created_at:type_name -> google.protobuf.Timestamp
-	45, // 44: ride.pricing.v1.ListZoneSurgesResponse.zone_surges:type_name -> ride.pricing.v1.ZoneSurge
-	51, // 45: ride.pricing.v1.CreateZoneSurgeRequest.starts_at:type_name -> google.protobuf.Timestamp
-	45, // 46: ride.pricing.v1.ZoneSurgeResponse.zone_surge:type_name -> ride.pricing.v1.ZoneSurge
-	5,  // 47: ride.pricing.v1.PricingService.EstimateFare:input_type -> ride.pricing.v1.EstimateFareRequest
-	7,  // 48: ride.pricing.v1.PricingService.CalculateFare:input_type -> ride.pricing.v1.CalculateFareRequest
-	24, // 49: ride.pricing.v1.PricingService.QuoteTrip:input_type -> ride.pricing.v1.QuoteTripRequest
-	27, // 50: ride.pricing.v1.PricingService.ClaimQuote:input_type -> ride.pricing.v1.ClaimQuoteRequest
-	29, // 51: ride.pricing.v1.PricingService.ReleaseQuote:input_type -> ride.pricing.v1.ReleaseQuoteRequest
-	32, // 52: ride.pricing.v1.PricingService.ListRateCards:input_type -> ride.pricing.v1.ListRateCardsRequest
-	34, // 53: ride.pricing.v1.PricingService.SetRateCard:input_type -> ride.pricing.v1.SetRateCardRequest
-	36, // 54: ride.pricing.v1.PricingService.RetireRateCard:input_type -> ride.pricing.v1.RetireRateCardRequest
-	39, // 55: ride.pricing.v1.PricingService.ListSurgeRules:input_type -> ride.pricing.v1.ListSurgeRulesRequest
-	41, // 56: ride.pricing.v1.PricingService.CreateSurgeRule:input_type -> ride.pricing.v1.CreateSurgeRuleRequest
-	42, // 57: ride.pricing.v1.PricingService.UpdateSurgeRule:input_type -> ride.pricing.v1.UpdateSurgeRuleRequest
-	43, // 58: ride.pricing.v1.PricingService.SetSurgeRuleActive:input_type -> ride.pricing.v1.SetSurgeRuleActiveRequest
-	46, // 59: ride.pricing.v1.PricingService.ListZoneSurges:input_type -> ride.pricing.v1.ListZoneSurgesRequest
-	48, // 60: ride.pricing.v1.PricingService.CreateZoneSurge:input_type -> ride.pricing.v1.CreateZoneSurgeRequest
-	49, // 61: ride.pricing.v1.PricingService.EndZoneSurge:input_type -> ride.pricing.v1.EndZoneSurgeRequest
-	14, // 62: ride.pricing.v1.PricingService.ListCoupons:input_type -> ride.pricing.v1.ListCouponsRequest
-	9,  // 63: ride.pricing.v1.PricingService.CreateCoupon:input_type -> ride.pricing.v1.CreateCouponRequest
-	12, // 64: ride.pricing.v1.PricingService.GetCoupon:input_type -> ride.pricing.v1.GetCouponRequest
-	16, // 65: ride.pricing.v1.PricingService.UpdateCoupon:input_type -> ride.pricing.v1.UpdateCouponRequest
-	17, // 66: ride.pricing.v1.PricingService.ListCouponRedemptions:input_type -> ride.pricing.v1.ListCouponRedemptionsRequest
-	20, // 67: ride.pricing.v1.PricingService.GetPromotionSettings:input_type -> ride.pricing.v1.GetPromotionSettingsRequest
-	22, // 68: ride.pricing.v1.PricingService.UpdatePromotionSettings:input_type -> ride.pricing.v1.UpdatePromotionSettingsRequest
-	6,  // 69: ride.pricing.v1.PricingService.EstimateFare:output_type -> ride.pricing.v1.EstimateFareResponse
-	8,  // 70: ride.pricing.v1.PricingService.CalculateFare:output_type -> ride.pricing.v1.CalculateFareResponse
-	26, // 71: ride.pricing.v1.PricingService.QuoteTrip:output_type -> ride.pricing.v1.QuoteTripResponse
-	28, // 72: ride.pricing.v1.PricingService.ClaimQuote:output_type -> ride.pricing.v1.ClaimQuoteResponse
-	30, // 73: ride.pricing.v1.PricingService.ReleaseQuote:output_type -> ride.pricing.v1.ReleaseQuoteResponse
-	33, // 74: ride.pricing.v1.PricingService.ListRateCards:output_type -> ride.pricing.v1.ListRateCardsResponse
-	35, // 75: ride.pricing.v1.PricingService.SetRateCard:output_type -> ride.pricing.v1.RateCardResponse
-	37, // 76: ride.pricing.v1.PricingService.RetireRateCard:output_type -> ride.pricing.v1.RetireRateCardResponse
-	40, // 77: ride.pricing.v1.PricingService.ListSurgeRules:output_type -> ride.pricing.v1.ListSurgeRulesResponse
-	44, // 78: ride.pricing.v1.PricingService.CreateSurgeRule:output_type -> ride.pricing.v1.SurgeRuleResponse
-	44, // 79: ride.pricing.v1.PricingService.UpdateSurgeRule:output_type -> ride.pricing.v1.SurgeRuleResponse
-	44, // 80: ride.pricing.v1.PricingService.SetSurgeRuleActive:output_type -> ride.pricing.v1.SurgeRuleResponse
-	47, // 81: ride.pricing.v1.PricingService.ListZoneSurges:output_type -> ride.pricing.v1.ListZoneSurgesResponse
-	50, // 82: ride.pricing.v1.PricingService.CreateZoneSurge:output_type -> ride.pricing.v1.ZoneSurgeResponse
-	50, // 83: ride.pricing.v1.PricingService.EndZoneSurge:output_type -> ride.pricing.v1.ZoneSurgeResponse
-	15, // 84: ride.pricing.v1.PricingService.ListCoupons:output_type -> ride.pricing.v1.ListCouponsResponse
-	11, // 85: ride.pricing.v1.PricingService.CreateCoupon:output_type -> ride.pricing.v1.CreateCouponResponse
-	13, // 86: ride.pricing.v1.PricingService.GetCoupon:output_type -> ride.pricing.v1.GetCouponResponse
-	11, // 87: ride.pricing.v1.PricingService.UpdateCoupon:output_type -> ride.pricing.v1.CreateCouponResponse
-	19, // 88: ride.pricing.v1.PricingService.ListCouponRedemptions:output_type -> ride.pricing.v1.ListCouponRedemptionsResponse
-	23, // 89: ride.pricing.v1.PricingService.GetPromotionSettings:output_type -> ride.pricing.v1.PromotionSettingsResponse
-	23, // 90: ride.pricing.v1.PricingService.UpdatePromotionSettings:output_type -> ride.pricing.v1.PromotionSettingsResponse
-	69, // [69:91] is the sub-list for method output_type
-	47, // [47:69] is the sub-list for method input_type
-	47, // [47:47] is the sub-list for extension type_name
-	47, // [47:47] is the sub-list for extension extendee
-	0,  // [0:47] is the sub-list for field type_name
+	2,  // 5: ride.pricing.v1.EstimateFareRequest.stops:type_name -> ride.pricing.v1.Coordinates
+	4,  // 6: ride.pricing.v1.EstimateFareResponse.fare:type_name -> ride.pricing.v1.FareBreakdown
+	2,  // 7: ride.pricing.v1.CalculateFareRequest.pickup:type_name -> ride.pricing.v1.Coordinates
+	2,  // 8: ride.pricing.v1.CalculateFareRequest.dropoff:type_name -> ride.pricing.v1.Coordinates
+	2,  // 9: ride.pricing.v1.CalculateFareRequest.stops:type_name -> ride.pricing.v1.Coordinates
+	4,  // 10: ride.pricing.v1.CalculateFareResponse.fare:type_name -> ride.pricing.v1.FareBreakdown
+	0,  // 11: ride.pricing.v1.CreateCouponRequest.discount_type:type_name -> ride.pricing.v1.DiscountType
+	51, // 12: ride.pricing.v1.CreateCouponRequest.valid_from:type_name -> google.protobuf.Timestamp
+	51, // 13: ride.pricing.v1.CreateCouponRequest.valid_until:type_name -> google.protobuf.Timestamp
+	0,  // 14: ride.pricing.v1.Coupon.discount_type:type_name -> ride.pricing.v1.DiscountType
+	51, // 15: ride.pricing.v1.Coupon.valid_from:type_name -> google.protobuf.Timestamp
+	51, // 16: ride.pricing.v1.Coupon.valid_until:type_name -> google.protobuf.Timestamp
+	51, // 17: ride.pricing.v1.Coupon.created_at:type_name -> google.protobuf.Timestamp
+	51, // 18: ride.pricing.v1.Coupon.updated_at:type_name -> google.protobuf.Timestamp
+	10, // 19: ride.pricing.v1.CreateCouponResponse.coupon:type_name -> ride.pricing.v1.Coupon
+	10, // 20: ride.pricing.v1.GetCouponResponse.coupon:type_name -> ride.pricing.v1.Coupon
+	10, // 21: ride.pricing.v1.ListCouponsResponse.coupons:type_name -> ride.pricing.v1.Coupon
+	51, // 22: ride.pricing.v1.UpdateCouponRequest.valid_until:type_name -> google.protobuf.Timestamp
+	51, // 23: ride.pricing.v1.CouponRedemption.created_at:type_name -> google.protobuf.Timestamp
+	51, // 24: ride.pricing.v1.CouponRedemption.released_at:type_name -> google.protobuf.Timestamp
+	18, // 25: ride.pricing.v1.ListCouponRedemptionsResponse.redemptions:type_name -> ride.pricing.v1.CouponRedemption
+	51, // 26: ride.pricing.v1.PromotionSettings.updated_at:type_name -> google.protobuf.Timestamp
+	21, // 27: ride.pricing.v1.PromotionSettingsResponse.settings:type_name -> ride.pricing.v1.PromotionSettings
+	2,  // 28: ride.pricing.v1.QuoteTripRequest.pickup:type_name -> ride.pricing.v1.Coordinates
+	2,  // 29: ride.pricing.v1.QuoteTripRequest.dropoff:type_name -> ride.pricing.v1.Coordinates
+	2,  // 30: ride.pricing.v1.QuoteTripRequest.stops:type_name -> ride.pricing.v1.Coordinates
+	4,  // 31: ride.pricing.v1.TripQuote.fare:type_name -> ride.pricing.v1.FareBreakdown
+	51, // 32: ride.pricing.v1.TripQuote.expires_at:type_name -> google.protobuf.Timestamp
+	25, // 33: ride.pricing.v1.QuoteTripResponse.quotes:type_name -> ride.pricing.v1.TripQuote
+	2,  // 34: ride.pricing.v1.ClaimQuoteResponse.pickup:type_name -> ride.pricing.v1.Coordinates
+	2,  // 35: ride.pricing.v1.ClaimQuoteResponse.dropoff:type_name -> ride.pricing.v1.Coordinates
+	2,  // 36: ride.pricing.v1.ClaimQuoteResponse.stops:type_name -> ride.pricing.v1.Coordinates
+	51, // 37: ride.pricing.v1.RateCard.created_at:type_name -> google.protobuf.Timestamp
+	31, // 38: ride.pricing.v1.ListRateCardsResponse.rate_cards:type_name -> ride.pricing.v1.RateCard
+	31, // 39: ride.pricing.v1.RateCardResponse.rate_card:type_name -> ride.pricing.v1.RateCard
+	51, // 40: ride.pricing.v1.SurgeRule.created_at:type_name -> google.protobuf.Timestamp
+	51, // 41: ride.pricing.v1.SurgeRule.updated_at:type_name -> google.protobuf.Timestamp
+	38, // 42: ride.pricing.v1.ListSurgeRulesResponse.rules:type_name -> ride.pricing.v1.SurgeRule
+	38, // 43: ride.pricing.v1.SurgeRuleResponse.rule:type_name -> ride.pricing.v1.SurgeRule
+	51, // 44: ride.pricing.v1.ZoneSurge.starts_at:type_name -> google.protobuf.Timestamp
+	51, // 45: ride.pricing.v1.ZoneSurge.ends_at:type_name -> google.protobuf.Timestamp
+	51, // 46: ride.pricing.v1.ZoneSurge.ended_at:type_name -> google.protobuf.Timestamp
+	51, // 47: ride.pricing.v1.ZoneSurge.created_at:type_name -> google.protobuf.Timestamp
+	45, // 48: ride.pricing.v1.ListZoneSurgesResponse.zone_surges:type_name -> ride.pricing.v1.ZoneSurge
+	51, // 49: ride.pricing.v1.CreateZoneSurgeRequest.starts_at:type_name -> google.protobuf.Timestamp
+	45, // 50: ride.pricing.v1.ZoneSurgeResponse.zone_surge:type_name -> ride.pricing.v1.ZoneSurge
+	5,  // 51: ride.pricing.v1.PricingService.EstimateFare:input_type -> ride.pricing.v1.EstimateFareRequest
+	7,  // 52: ride.pricing.v1.PricingService.CalculateFare:input_type -> ride.pricing.v1.CalculateFareRequest
+	24, // 53: ride.pricing.v1.PricingService.QuoteTrip:input_type -> ride.pricing.v1.QuoteTripRequest
+	27, // 54: ride.pricing.v1.PricingService.ClaimQuote:input_type -> ride.pricing.v1.ClaimQuoteRequest
+	29, // 55: ride.pricing.v1.PricingService.ReleaseQuote:input_type -> ride.pricing.v1.ReleaseQuoteRequest
+	32, // 56: ride.pricing.v1.PricingService.ListRateCards:input_type -> ride.pricing.v1.ListRateCardsRequest
+	34, // 57: ride.pricing.v1.PricingService.SetRateCard:input_type -> ride.pricing.v1.SetRateCardRequest
+	36, // 58: ride.pricing.v1.PricingService.RetireRateCard:input_type -> ride.pricing.v1.RetireRateCardRequest
+	39, // 59: ride.pricing.v1.PricingService.ListSurgeRules:input_type -> ride.pricing.v1.ListSurgeRulesRequest
+	41, // 60: ride.pricing.v1.PricingService.CreateSurgeRule:input_type -> ride.pricing.v1.CreateSurgeRuleRequest
+	42, // 61: ride.pricing.v1.PricingService.UpdateSurgeRule:input_type -> ride.pricing.v1.UpdateSurgeRuleRequest
+	43, // 62: ride.pricing.v1.PricingService.SetSurgeRuleActive:input_type -> ride.pricing.v1.SetSurgeRuleActiveRequest
+	46, // 63: ride.pricing.v1.PricingService.ListZoneSurges:input_type -> ride.pricing.v1.ListZoneSurgesRequest
+	48, // 64: ride.pricing.v1.PricingService.CreateZoneSurge:input_type -> ride.pricing.v1.CreateZoneSurgeRequest
+	49, // 65: ride.pricing.v1.PricingService.EndZoneSurge:input_type -> ride.pricing.v1.EndZoneSurgeRequest
+	14, // 66: ride.pricing.v1.PricingService.ListCoupons:input_type -> ride.pricing.v1.ListCouponsRequest
+	9,  // 67: ride.pricing.v1.PricingService.CreateCoupon:input_type -> ride.pricing.v1.CreateCouponRequest
+	12, // 68: ride.pricing.v1.PricingService.GetCoupon:input_type -> ride.pricing.v1.GetCouponRequest
+	16, // 69: ride.pricing.v1.PricingService.UpdateCoupon:input_type -> ride.pricing.v1.UpdateCouponRequest
+	17, // 70: ride.pricing.v1.PricingService.ListCouponRedemptions:input_type -> ride.pricing.v1.ListCouponRedemptionsRequest
+	20, // 71: ride.pricing.v1.PricingService.GetPromotionSettings:input_type -> ride.pricing.v1.GetPromotionSettingsRequest
+	22, // 72: ride.pricing.v1.PricingService.UpdatePromotionSettings:input_type -> ride.pricing.v1.UpdatePromotionSettingsRequest
+	6,  // 73: ride.pricing.v1.PricingService.EstimateFare:output_type -> ride.pricing.v1.EstimateFareResponse
+	8,  // 74: ride.pricing.v1.PricingService.CalculateFare:output_type -> ride.pricing.v1.CalculateFareResponse
+	26, // 75: ride.pricing.v1.PricingService.QuoteTrip:output_type -> ride.pricing.v1.QuoteTripResponse
+	28, // 76: ride.pricing.v1.PricingService.ClaimQuote:output_type -> ride.pricing.v1.ClaimQuoteResponse
+	30, // 77: ride.pricing.v1.PricingService.ReleaseQuote:output_type -> ride.pricing.v1.ReleaseQuoteResponse
+	33, // 78: ride.pricing.v1.PricingService.ListRateCards:output_type -> ride.pricing.v1.ListRateCardsResponse
+	35, // 79: ride.pricing.v1.PricingService.SetRateCard:output_type -> ride.pricing.v1.RateCardResponse
+	37, // 80: ride.pricing.v1.PricingService.RetireRateCard:output_type -> ride.pricing.v1.RetireRateCardResponse
+	40, // 81: ride.pricing.v1.PricingService.ListSurgeRules:output_type -> ride.pricing.v1.ListSurgeRulesResponse
+	44, // 82: ride.pricing.v1.PricingService.CreateSurgeRule:output_type -> ride.pricing.v1.SurgeRuleResponse
+	44, // 83: ride.pricing.v1.PricingService.UpdateSurgeRule:output_type -> ride.pricing.v1.SurgeRuleResponse
+	44, // 84: ride.pricing.v1.PricingService.SetSurgeRuleActive:output_type -> ride.pricing.v1.SurgeRuleResponse
+	47, // 85: ride.pricing.v1.PricingService.ListZoneSurges:output_type -> ride.pricing.v1.ListZoneSurgesResponse
+	50, // 86: ride.pricing.v1.PricingService.CreateZoneSurge:output_type -> ride.pricing.v1.ZoneSurgeResponse
+	50, // 87: ride.pricing.v1.PricingService.EndZoneSurge:output_type -> ride.pricing.v1.ZoneSurgeResponse
+	15, // 88: ride.pricing.v1.PricingService.ListCoupons:output_type -> ride.pricing.v1.ListCouponsResponse
+	11, // 89: ride.pricing.v1.PricingService.CreateCoupon:output_type -> ride.pricing.v1.CreateCouponResponse
+	13, // 90: ride.pricing.v1.PricingService.GetCoupon:output_type -> ride.pricing.v1.GetCouponResponse
+	11, // 91: ride.pricing.v1.PricingService.UpdateCoupon:output_type -> ride.pricing.v1.CreateCouponResponse
+	19, // 92: ride.pricing.v1.PricingService.ListCouponRedemptions:output_type -> ride.pricing.v1.ListCouponRedemptionsResponse
+	23, // 93: ride.pricing.v1.PricingService.GetPromotionSettings:output_type -> ride.pricing.v1.PromotionSettingsResponse
+	23, // 94: ride.pricing.v1.PricingService.UpdatePromotionSettings:output_type -> ride.pricing.v1.PromotionSettingsResponse
+	73, // [73:95] is the sub-list for method output_type
+	51, // [51:73] is the sub-list for method input_type
+	51, // [51:51] is the sub-list for extension type_name
+	51, // [51:51] is the sub-list for extension extendee
+	0,  // [0:51] is the sub-list for field type_name
 }
 
 func init() { file_ride_pricing_v1_pricing_proto_init() }

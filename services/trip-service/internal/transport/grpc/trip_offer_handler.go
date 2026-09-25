@@ -177,5 +177,7 @@ func toProtoOffer(offer trip.Offer) *tripv1.TripOffer {
 		// What the trip pays, when it was quoted.
 		QuotedFare:   offer.Trip.QuotedFare,
 		CurrencyCode: offer.Trip.CurrencyCode,
+		// Where it stops on the way: the driver should know before accepting.
+		Stops: toProtoStops(offer.Trip.Stops),
 	}
 }

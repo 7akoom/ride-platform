@@ -22,6 +22,7 @@ const (
 	TripService_RequestTrip_FullMethodName            = "/ride.trip.v1.TripService/RequestTrip"
 	TripService_AcceptTrip_FullMethodName             = "/ride.trip.v1.TripService/AcceptTrip"
 	TripService_MarkDriverArrived_FullMethodName      = "/ride.trip.v1.TripService/MarkDriverArrived"
+	TripService_ReachStop_FullMethodName              = "/ride.trip.v1.TripService/ReachStop"
 	TripService_StartTrip_FullMethodName              = "/ride.trip.v1.TripService/StartTrip"
 	TripService_CompleteTrip_FullMethodName           = "/ride.trip.v1.TripService/CompleteTrip"
 	TripService_CancelTrip_FullMethodName             = "/ride.trip.v1.TripService/CancelTrip"
@@ -56,6 +57,12 @@ type TripServiceClient interface {
 	// the pickup by the driver's last reported position. Waiting time (and
 	// the rider no-show) counts from here. Marking again changes nothing.
 	MarkDriverArrived(ctx context.Context, in *MarkDriverArrivedRequest, opts ...grpc.CallOption) (*MarkDriverArrivedResponse, error)
+	// ReachStop is the driver telling the rider they are at one of the trip's
+	// stops (position 1 is the first). Only while the trip is in progress, and
+	// within 200 metres of the stop by the driver's last reported position.
+	// Any stop not reached yet may be marked: the rider may skip one. Marking a
+	// reached stop again changes nothing.
+	ReachStop(ctx context.Context, in *ReachStopRequest, opts ...grpc.CallOption) (*ReachStopResponse, error)
 	StartTrip(ctx context.Context, in *StartTripRequest, opts ...grpc.CallOption) (*StartTripResponse, error)
 	CompleteTrip(ctx context.Context, in *CompleteTripRequest, opts ...grpc.CallOption) (*CompleteTripResponse, error)
 	CancelTrip(ctx context.Context, in *CancelTripRequest, opts ...grpc.CallOption) (*CancelTripResponse, error)
@@ -187,6 +194,16 @@ func (c *tripServiceClient) MarkDriverArrived(ctx context.Context, in *MarkDrive
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MarkDriverArrivedResponse)
 	err := c.cc.Invoke(ctx, TripService_MarkDriverArrived_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) ReachStop(ctx context.Context, in *ReachStopRequest, opts ...grpc.CallOption) (*ReachStopResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReachStopResponse)
+	err := c.cc.Invoke(ctx, TripService_ReachStop_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -414,6 +431,12 @@ type TripServiceServer interface {
 	// the pickup by the driver's last reported position. Waiting time (and
 	// the rider no-show) counts from here. Marking again changes nothing.
 	MarkDriverArrived(context.Context, *MarkDriverArrivedRequest) (*MarkDriverArrivedResponse, error)
+	// ReachStop is the driver telling the rider they are at one of the trip's
+	// stops (position 1 is the first). Only while the trip is in progress, and
+	// within 200 metres of the stop by the driver's last reported position.
+	// Any stop not reached yet may be marked: the rider may skip one. Marking a
+	// reached stop again changes nothing.
+	ReachStop(context.Context, *ReachStopRequest) (*ReachStopResponse, error)
 	StartTrip(context.Context, *StartTripRequest) (*StartTripResponse, error)
 	CompleteTrip(context.Context, *CompleteTripRequest) (*CompleteTripResponse, error)
 	CancelTrip(context.Context, *CancelTripRequest) (*CancelTripResponse, error)
@@ -529,6 +552,9 @@ func (UnimplementedTripServiceServer) AcceptTrip(context.Context, *AcceptTripReq
 }
 func (UnimplementedTripServiceServer) MarkDriverArrived(context.Context, *MarkDriverArrivedRequest) (*MarkDriverArrivedResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarkDriverArrived not implemented")
+}
+func (UnimplementedTripServiceServer) ReachStop(context.Context, *ReachStopRequest) (*ReachStopResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReachStop not implemented")
 }
 func (UnimplementedTripServiceServer) StartTrip(context.Context, *StartTripRequest) (*StartTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method StartTrip not implemented")
@@ -664,6 +690,24 @@ func _TripService_MarkDriverArrived_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TripServiceServer).MarkDriverArrived(ctx, req.(*MarkDriverArrivedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_ReachStop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReachStopRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).ReachStop(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_ReachStop_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).ReachStop(ctx, req.(*ReachStopRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1064,6 +1108,10 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MarkDriverArrived",
 			Handler:    _TripService_MarkDriverArrived_Handler,
+		},
+		{
+			MethodName: "ReachStop",
+			Handler:    _TripService_ReachStop_Handler,
 		},
 		{
 			MethodName: "StartTrip",

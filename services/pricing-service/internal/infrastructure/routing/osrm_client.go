@@ -40,12 +40,17 @@ type osrmRouteResponse struct {
 func (c *OSRMClient) Route(
 	ctx context.Context,
 	pickupLat, pickupLng, dropoffLat, dropoffLng float64,
+	via ...pricing.Point,
 ) (pricing.Route, error) {
 	// OSRM's coordinate order is lng,lat — the reverse of how they're
 	// written everywhere else in this codebase. Easy to get backwards.
-	coordinates := formatCoordinate(pickupLng) + "," + formatCoordinate(pickupLat) +
-		";" +
-		formatCoordinate(dropoffLng) + "," + formatCoordinate(dropoffLat)
+	// The route goes through the stops in order.
+	coordinates := formatCoordinate(pickupLng) + "," + formatCoordinate(pickupLat)
+	for _, stop := range via {
+		coordinates += ";" + formatCoordinate(stop.Longitude) + "," + formatCoordinate(stop.Latitude)
+	}
+
+	coordinates += ";" + formatCoordinate(dropoffLng) + "," + formatCoordinate(dropoffLat)
 
 	endpoint, err := url.Parse(c.baseURL + "/route/v1/driving/" + coordinates)
 	if err != nil {

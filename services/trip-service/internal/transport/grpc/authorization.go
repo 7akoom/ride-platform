@@ -29,6 +29,7 @@ var methodAccess = map[string]accessLevel{
 	"/ride.trip.v1.TripService/RequestTrip":       accessOwner,
 	"/ride.trip.v1.TripService/AcceptTrip":        accessInternal,
 	"/ride.trip.v1.TripService/MarkDriverArrived": accessOwner,
+	"/ride.trip.v1.TripService/ReachStop":         accessOwner,
 	"/ride.trip.v1.TripService/StartTrip":         accessOwner,
 	"/ride.trip.v1.TripService/CompleteTrip":      accessOwner,
 	"/ride.trip.v1.TripService/CancelTrip":        accessOwner,

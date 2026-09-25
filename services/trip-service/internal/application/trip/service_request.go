@@ -53,6 +53,11 @@ func (s *service) RequestTrip(
 		return Trip{}, err
 	}
 
+	stops, err := NormalizeStops(input.Stops)
+	if err != nil {
+		return Trip{}, err
+	}
+
 	tripID := s.idGenerator.NewID()
 	if scheduled := strings.TrimSpace(input.ScheduledTripID); scheduled != "" {
 		if !looksLikeUUID(scheduled) {
@@ -112,6 +117,7 @@ func (s *service) RequestTrip(
 		PassengerName:  passengerName,
 		PassengerPhone: passengerPhone,
 		Scheduled:      tripID != "" && tripID == strings.TrimSpace(input.ScheduledTripID),
+		Stops:          stops,
 	}
 
 	if quoteID != "" {
@@ -120,7 +126,7 @@ func (s *service) RequestTrip(
 			return Trip{}, fmt.Errorf("claim quote: %w", err)
 		}
 
-		if !matchesQuote(quote, pickup, dropoff, input.VehicleClass) {
+		if !matchesQuote(quote, pickup, dropoff, stops, input.VehicleClass) {
 			s.releaseQuote(ctx, quoteID, create.ID)
 
 			return Trip{}, ErrQuoteMismatch

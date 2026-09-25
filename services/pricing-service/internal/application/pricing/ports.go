@@ -155,9 +155,11 @@ type DriverFinder interface {
 // calculation — the service falls back to a Haversine estimate, see
 // routeOrFallback in service_fare.go.
 type RoutingClient interface {
+	// Route goes from pickup to dropoff through via, in order.
 	Route(
 		ctx context.Context,
 		pickupLat, pickupLng, dropoffLat, dropoffLng float64,
+		via ...Point,
 	) (Route, error)
 }
 

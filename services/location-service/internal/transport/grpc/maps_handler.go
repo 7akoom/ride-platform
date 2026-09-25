@@ -47,6 +47,7 @@ func (h *LocationHandler) GetRoute(
 	route, err := h.mapService.GetRoute(ctx, maps.RouteInput{
 		Origin:      toMapsPoint(request.GetOrigin()),
 		Destination: toMapsPoint(request.GetDestination()),
+		Via:         toMapsPoints(request.GetVia()),
 	})
 	if err != nil {
 		return nil, h.mapMapsError(err)
@@ -126,7 +127,8 @@ func (h *LocationHandler) mapMapsError(err error) error {
 		errors.Is(err, maps.ErrQueryTooShort),
 		errors.Is(err, maps.ErrQueryTooLong),
 		errors.Is(err, maps.ErrInvalidLimit),
-		errors.Is(err, maps.ErrInvalidLanguage):
+		errors.Is(err, maps.ErrInvalidLanguage),
+		errors.Is(err, maps.ErrTooManyVia):
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	case errors.Is(err, maps.ErrNoRoute), errors.Is(err, maps.ErrPlaceNotFound):
@@ -153,6 +155,15 @@ func toMapsPoint(c *locationv1.Coordinates) *maps.Coordinates {
 	}
 
 	return &maps.Coordinates{Latitude: c.GetLatitude(), Longitude: c.GetLongitude()}
+}
+
+func toMapsPoints(points []*locationv1.Coordinates) []*maps.Coordinates {
+	out := make([]*maps.Coordinates, 0, len(points))
+	for _, point := range points {
+		out = append(out, toMapsPoint(point))
+	}
+
+	return out
 }
 
 func toProtoMapPlace(place maps.Place) *locationv1.Place {

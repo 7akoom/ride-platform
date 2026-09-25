@@ -7,6 +7,7 @@ var (
 	ErrTripIDRequired   = errors.New("trip id is required")
 	ErrInvalidLatitude  = errors.New("latitude must be between -90 and 90")
 	ErrInvalidLongitude = errors.New("longitude must be between -180 and 180")
+	ErrTooManyStops     = errors.New("a trip has at most 2 stops")
 
 	ErrNoActiveConfig = errors.New("no active pricing configuration found")
 

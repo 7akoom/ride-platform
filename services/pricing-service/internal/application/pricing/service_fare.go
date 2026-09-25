@@ -41,7 +41,11 @@ type fareRequest struct {
 	DropoffLat float64
 	DropoffLng float64
 	CouponCode string
+	Stops      []Point
 }
+
+// MaxStops is how many stops a trip may make between pickup and dropoff.
+const MaxStops = 2
 
 func (r fareRequest) validate() (string, error) {
 	riderID := strings.TrimSpace(r.RiderID)
@@ -55,6 +59,16 @@ func (r fareRequest) validate() (string, error) {
 
 	if err := validateCoordinates(r.DropoffLat, r.DropoffLng); err != nil {
 		return "", err
+	}
+
+	if len(r.Stops) > MaxStops {
+		return "", ErrTooManyStops
+	}
+
+	for _, stop := range r.Stops {
+		if err := validateCoordinates(stop.Latitude, stop.Longitude); err != nil {
+			return "", err
+		}
 	}
 
 	return riderID, nil
@@ -130,7 +144,7 @@ func (s *service) gatherMarket(ctx context.Context, request fareRequest, riderID
 	go func() {
 		defer wg.Done()
 
-		route, err := s.routingClient.Route(ctx, request.PickupLat, request.PickupLng, request.DropoffLat, request.DropoffLng)
+		route, err := s.routingClient.Route(ctx, request.PickupLat, request.PickupLng, request.DropoffLat, request.DropoffLng, request.Stops...)
 		if err == nil {
 			m.route, m.routeOK = route, true
 		}
@@ -200,7 +214,7 @@ func (m market) routeFor(config Config) Route {
 		return m.route
 	}
 
-	return fallbackRoute(config, m.request.PickupLat, m.request.PickupLng, m.request.DropoffLat, m.request.DropoffLng)
+	return fallbackRoute(config, m.request.PickupLat, m.request.PickupLng, m.request.DropoffLat, m.request.DropoffLng, m.request.Stops...)
 }
 
 // pricedClass is one class's price and what it came from.

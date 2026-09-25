@@ -19,7 +19,36 @@ const quoteColumns = `id, rider_id, zone_id, COALESCE(city_id::text, ''), vehicl
         pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude,
         breakdown, COALESCE(config_id::text, ''), COALESCE(coupon_id::text, ''), discount_amount,
         drivers_available, pickup_eta_minutes, created_at, expires_at,
-        COALESCE(claimed_trip_id::text, '')`
+        COALESCE(claimed_trip_id::text, ''), stops`
+
+// storedPoint is one stop as the stops column keeps it.
+type storedPoint struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+}
+
+func encodeStops(stops []pricing.Point) ([]byte, error) {
+	stored := make([]storedPoint, 0, len(stops))
+	for _, stop := range stops {
+		stored = append(stored, storedPoint(stop))
+	}
+
+	return json.Marshal(stored)
+}
+
+func decodeStops(raw []byte) ([]pricing.Point, error) {
+	var stored []storedPoint
+	if err := json.Unmarshal(raw, &stored); err != nil {
+		return nil, err
+	}
+
+	var stops []pricing.Point
+	for _, stop := range stored {
+		stops = append(stops, pricing.Point(stop))
+	}
+
+	return stops, nil
+}
 
 // SaveQuotes stores one QuoteTrip call's quotes in one transaction.
 func (r *PricingRepository) SaveQuotes(ctx context.Context, quotes []pricing.Quote) ([]pricing.Quote, error) {
@@ -37,6 +66,11 @@ func (r *PricingRepository) SaveQuotes(ctx context.Context, quotes []pricing.Quo
 			return nil, fmt.Errorf("encode quote breakdown: %w", err)
 		}
 
+		stops, err := encodeStops(quote.Stops)
+		if err != nil {
+			return nil, fmt.Errorf("encode quote stops: %w", err)
+		}
+
 		couponID, discount := "", decimal.Zero
 		if quote.Coupon != nil {
 			couponID, discount = quote.Coupon.CouponID, quote.Coupon.DiscountAmount
@@ -48,8 +82,8 @@ func (r *PricingRepository) SaveQuotes(ctx context.Context, quotes []pricing.Quo
 			    (rider_id, zone_id, city_id, vehicle_class,
 			     pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude,
 			     currency_code, total, breakdown, config_id, coupon_id, discount_amount,
-			     drivers_available, pickup_eta_minutes, created_at, expires_at)
-			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+			     drivers_available, pickup_eta_minutes, created_at, expires_at, stops)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
 			 RETURNING `+quoteColumns,
 			quote.RiderID,
 			quote.ZoneID,
@@ -69,6 +103,7 @@ func (r *PricingRepository) SaveQuotes(ctx context.Context, quotes []pricing.Quo
 			quote.PickupETAMinutes,
 			quote.CreatedAt,
 			quote.ExpiresAt,
+			stops,
 		)
 
 		stored, err := scanQuote(row)
@@ -265,6 +300,7 @@ func scanQuote(row pgx.Row) (pricing.Quote, error) {
 	var (
 		quote     pricing.Quote
 		breakdown []byte
+		stops     []byte
 		couponID  string
 		discount  decimal.Decimal
 	)
@@ -288,6 +324,7 @@ func scanQuote(row pgx.Row) (pricing.Quote, error) {
 		&quote.CreatedAt,
 		&quote.ExpiresAt,
 		&quote.ClaimedTripID,
+		&stops,
 	); err != nil {
 		return pricing.Quote{}, err
 	}
@@ -295,6 +332,13 @@ func scanQuote(row pgx.Row) (pricing.Quote, error) {
 	if err := json.Unmarshal(breakdown, &quote.Breakdown); err != nil {
 		return pricing.Quote{}, fmt.Errorf("decode quote breakdown: %w", err)
 	}
+
+	decoded, err := decodeStops(stops)
+	if err != nil {
+		return pricing.Quote{}, fmt.Errorf("decode quote stops: %w", err)
+	}
+
+	quote.Stops = decoded
 
 	if couponID != "" {
 		quote.Coupon = &pricing.AppliedCoupon{CouponID: couponID, DiscountAmount: discount}

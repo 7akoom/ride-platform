@@ -29,6 +29,17 @@ service TripService {
       body: "*"
     };
   }
+  // ReachStop is the driver telling the rider they are at one of the trip's
+  // stops (position 1 is the first). Only while the trip is in progress, and
+  // within 200 metres of the stop by the driver's last reported position.
+  // Any stop not reached yet may be marked: the rider may skip one. Marking a
+  // reached stop again changes nothing.
+  rpc ReachStop(ReachStopRequest) returns (ReachStopResponse) {
+    option (google.api.http) = {
+      post: "/v1/trips/{trip_id}:reach-stop"
+      body: "*"
+    };
+  }
   rpc StartTrip(StartTripRequest) returns (StartTripResponse) {
     option (google.api.http) = {
       post: "/v1/trips/{trip_id}:start"
@@ -290,6 +301,16 @@ message Trip {
   string passenger_phone = 27;
   // The scheduled trip it came from (the same id), when it was booked ahead.
   bool scheduled = 28;
+  // Where the trip stops on the way from pickup to dropoff, in order.
+  repeated TripStop stops = 29;
+}
+
+// A stop on the way. reached_at is set once the driver marks it.
+message TripStop {
+  Coordinates coordinates = 1;
+  // As the rider picked it; at most 300 characters.
+  string address = 2;
+  google.protobuf.Timestamp reached_at = 3;
 }
 
 message RequestTripRequest {
@@ -320,6 +341,9 @@ message RequestTripRequest {
   // them once the trip is accepted.
   string passenger_name = 11;
   string passenger_phone = 12;
+  // Up to 2 stops on the way, in order (reached_at is ignored). With a
+  // quote, the quote's stops, each within 50 metres.
+  repeated TripStop stops = 13;
 }
 
 message RequestTripResponse {
@@ -365,6 +389,16 @@ message MarkDriverArrivedRequest {
 }
 
 message MarkDriverArrivedResponse {
+  Trip trip = 1;
+}
+
+message ReachStopRequest {
+  string trip_id = 1;
+  // The stop's place in the trip's stops, from 1.
+  int32 position = 2;
+}
+
+message ReachStopResponse {
   Trip trip = 1;
 }
 
@@ -483,6 +517,8 @@ message TripOffer {
   // The quoted price, when the trip has one (a decimal string).
   string quoted_fare = 10;
   string currency_code = 11;
+  // The stops on the way, in order.
+  repeated TripStop stops = 12;
 }
 
 message OfferTripRequest {
@@ -615,6 +651,8 @@ message ScheduleTripRequest {
   google.protobuf.Timestamp scheduled_at = 12;
   // Required: a retry with the same key is the same booking.
   string idempotency_key = 13;
+  // Up to 2 stops on the way, as for RequestTrip.
+  repeated TripStop stops = 14;
 }
 
 message ScheduledTrip {
@@ -640,6 +678,7 @@ message ScheduledTrip {
   google.protobuf.Timestamp created_at = 17;
   google.protobuf.Timestamp cancelled_at = 18;
   google.protobuf.Timestamp dispatched_at = 19;
+  repeated TripStop stops = 20;
 }
 
 message ScheduledTripResponse {

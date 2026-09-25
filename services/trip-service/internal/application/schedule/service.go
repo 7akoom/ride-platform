@@ -71,6 +71,7 @@ type BookInput struct {
 	PassengerPhone        string
 	ScheduledAt           time.Time
 	IdempotencyKey        string
+	Stops                 []trip.Stop
 }
 
 // Book checks and stores a booking. A retry with the same key returns the
@@ -112,6 +113,11 @@ func (s *Service) Book(ctx context.Context, input BookInput) (Ride, error) {
 		return Ride{}, err
 	}
 
+	stops, err := trip.NormalizeStops(input.Stops)
+	if err != nil {
+		return Ride{}, err
+	}
+
 	ride := Ride{
 		ID:             s.ids.NewID(),
 		RiderID:        rider,
@@ -124,6 +130,7 @@ func (s *Service) Book(ctx context.Context, input BookInput) (Ride, error) {
 		PaymentMethod:  paymentMethod,
 		PassengerName:  passengerName,
 		PassengerPhone: passengerPhone,
+		Stops:          stops,
 		NextAttemptAt:  input.ScheduledAt.UTC().Add(-s.limits.DispatchLead),
 	}
 
@@ -209,6 +216,10 @@ func (s *Service) replay(done Ride, input BookInput) (Ride, error) {
 	}
 
 	if input.PickupSavedAddressID == "" && (math.Abs(done.Pickup.Latitude-input.PickupLat) > 1e-9 || math.Abs(done.Pickup.Longitude-input.PickupLng) > 1e-9) {
+		return Ride{}, ErrKeyReused
+	}
+
+	if len(done.Stops) != len(input.Stops) {
 		return Ride{}, ErrKeyReused
 	}
 

@@ -7,6 +7,7 @@ import (
 
 	tripv1 "github.com/7akoom/ride-platform/gen/go/ride/trip/v1"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/events"
+	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -45,6 +46,7 @@ func (c *TripClient) GetTrip(
 		DropoffLng:   trip.GetDropoff().GetLongitude(),
 		VehicleClass: trip.GetVehicleClass(),
 		QuoteID:      trip.GetQuoteId(),
+		Stops:        tripStops(trip.GetStops()),
 		DriverID:     trip.GetDriverId(),
 		Status:       tripStatus(trip.GetStatus()),
 		CancelledBy:  trip.GetCancelledBy(),
@@ -54,6 +56,15 @@ func (c *TripClient) GetTrip(
 		StartedAt:    optionalTime(trip.GetStartedAt()),
 		CancelledAt:  optionalTime(trip.GetCancelledAt()),
 	}, nil
+}
+
+func tripStops(stops []*tripv1.TripStop) []pricing.Point {
+	var out []pricing.Point
+	for _, stop := range stops {
+		out = append(out, pricing.Point{Latitude: stop.GetCoordinates().GetLatitude(), Longitude: stop.GetCoordinates().GetLongitude()})
+	}
+
+	return out
 }
 
 func optionalTime(ts *timestamppb.Timestamp) *time.Time {

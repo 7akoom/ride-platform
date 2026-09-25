@@ -42,6 +42,7 @@ func (h *TripHandler) ScheduleTrip(
 		PassengerPhone:        request.GetPassengerPhone(),
 		ScheduledAt:           request.GetScheduledAt().AsTime(),
 		IdempotencyKey:        request.GetIdempotencyKey(),
+		Stops:                 toDomainStops(request.GetStops()),
 	})
 	if err != nil {
 		return nil, h.mapScheduleError(err)
@@ -130,6 +131,7 @@ func toProtoScheduledTrip(r schedule.Ride) *tripv1.ScheduledTrip {
 		CreatedAt:      timestamppb.New(r.CreatedAt),
 		CancelledAt:    optionalTimestamp(r.CancelledAt),
 		DispatchedAt:   optionalTimestamp(r.DispatchedAt),
+		Stops:          toProtoStops(r.Stops),
 	}
 
 	if r.Status == schedule.Failed {

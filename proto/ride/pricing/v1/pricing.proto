@@ -264,6 +264,8 @@ message EstimateFareRequest {
   string coupon_code = 4;
   // economy (default when empty) or comfort.
   string vehicle_class = 5;
+  // Up to 2 stops on the way, in order: the route passes through them.
+  repeated Coordinates stops = 6;
 }
 
 message EstimateFareResponse {
@@ -280,6 +282,7 @@ message CalculateFareRequest {
   // The quote the trip was requested with: the fare is the quoted one, and
   // the other fields are not used.
   string quote_id = 7;
+  repeated Coordinates stops = 8;
 }
 
 message CalculateFareResponse {
@@ -440,6 +443,9 @@ message QuoteTripRequest {
   Coordinates pickup = 2;
   Coordinates dropoff = 3;
   string coupon_code = 4;
+  // Up to 2 stops on the way, in order: the route, and so the price, passes
+  // through them. A trip requested with the quote must have the same stops.
+  repeated Coordinates stops = 5;
 }
 
 message TripQuote {
@@ -475,6 +481,7 @@ message ClaimQuoteResponse {
   string total = 5;
   string currency_code = 6;
   string zone_id = 7;
+  repeated Coordinates stops = 8;
 }
 
 message ReleaseQuoteRequest {

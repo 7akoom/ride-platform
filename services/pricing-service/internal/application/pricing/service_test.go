@@ -300,9 +300,13 @@ func someDrivers(n int) []NearbyDriver {
 type fakeRoutingClient struct {
 	route Route
 	err   error
+	via   []Point
 }
 
-func (c *fakeRoutingClient) Route(_ context.Context, _, _, _, _ float64) (Route, error) {
+func (c *fakeRoutingClient) Route(_ context.Context, _, _, _, _ float64, via ...Point) (Route, error) {
+	if len(via) > 0 {
+		c.via = via
+	}
 	if c.err != nil {
 		return Route{}, c.err
 	}

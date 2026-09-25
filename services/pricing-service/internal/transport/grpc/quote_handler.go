@@ -26,6 +26,7 @@ func (h *PricingHandler) QuoteTrip(
 		DropoffLat: request.GetDropoff().GetLatitude(),
 		DropoffLng: request.GetDropoff().GetLongitude(),
 		CouponCode: request.GetCouponCode(),
+		Stops:      toDomainPoints(request.GetStops()),
 	})
 	if err != nil {
 		return nil, h.mapPricingError(err)
@@ -68,6 +69,7 @@ func (h *PricingHandler) ClaimQuote(
 		Total:        quote.Breakdown.Total.String(),
 		CurrencyCode: quote.Breakdown.CurrencyCode,
 		ZoneId:       quote.ZoneID,
+		Stops:        toProtoPoints(quote.Stops),
 	}, nil
 }
 

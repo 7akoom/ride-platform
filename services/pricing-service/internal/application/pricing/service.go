@@ -15,6 +15,8 @@ type EstimateFareInput struct {
 	DropoffLng   float64
 	CouponCode   string
 	VehicleClass string
+	// Stops on the way, in order (at most MaxStops).
+	Stops []Point
 }
 
 type CalculateFareInput struct {
@@ -29,6 +31,7 @@ type CalculateFareInput struct {
 	// QuoteID, when set, is the quote the trip was requested with: the fare
 	// is the quoted one and the fields above only identify the trip.
 	QuoteID string
+	Stops   []Point
 	// When the driver said they were at the pickup and when the trip
 	// started: the wait beyond the rate card's free minutes is charged.
 	ArrivedAt *time.Time
@@ -60,6 +63,7 @@ type QuoteTripInput struct {
 	DropoffLat float64
 	DropoffLng float64
 	CouponCode string
+	Stops      []Point
 }
 
 // TripQuotes is the answer to QuoteTrip: one quote per vehicle class,

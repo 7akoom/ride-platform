@@ -32,6 +32,8 @@ type TripInfo struct {
 	// QuoteID is the quote the trip was requested with, if any: its fare
 	// is the quoted one.
 	QuoteID string
+	// Stops on the way, in order: an unquoted trip is priced through them.
+	Stops []pricing.Point
 
 	DriverID    string
 	Status      string
@@ -197,6 +199,7 @@ func (h *Handler) Handle(ctx context.Context, subject string, data []byte) error
 		DropoffLng:   trip.DropoffLng,
 		VehicleClass: trip.VehicleClass,
 		QuoteID:      trip.QuoteID,
+		Stops:        trip.Stops,
 		ArrivedAt:    trip.ArrivedAt,
 		StartedAt:    trip.StartedAt,
 	})

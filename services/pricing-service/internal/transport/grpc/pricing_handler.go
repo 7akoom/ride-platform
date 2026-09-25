@@ -66,6 +66,7 @@ func (h *PricingHandler) EstimateFare(
 		DropoffLng:   dropoff.GetLongitude(),
 		CouponCode:   request.GetCouponCode(),
 		VehicleClass: request.GetVehicleClass(),
+		Stops:        toDomainPoints(request.GetStops()),
 	})
 	if err != nil {
 		return nil, h.mapPricingError(err)
@@ -97,6 +98,7 @@ func (h *PricingHandler) CalculateFare(
 		CouponCode:   request.GetCouponCode(),
 		VehicleClass: request.GetVehicleClass(),
 		QuoteID:      request.GetQuoteId(),
+		Stops:        toDomainPoints(request.GetStops()),
 	})
 	if err != nil {
 		return nil, h.mapPricingError(err)
@@ -134,6 +136,7 @@ func (h *PricingHandler) mapPricingError(err error) error {
 	case errors.Is(err, pricing.ErrRiderIDRequired),
 		errors.Is(err, pricing.ErrTripIDRequired),
 		errors.Is(err, pricing.ErrInvalidLatitude),
+		errors.Is(err, pricing.ErrTooManyStops),
 		errors.Is(err, pricing.ErrInvalidLongitude),
 		errors.Is(err, pricing.ErrInvalidVehicleClass),
 		errors.Is(err, pricing.ErrQuoteIDRequired):
@@ -160,6 +163,24 @@ func upstreamUnavailable(err error) bool {
 	default:
 		return false
 	}
+}
+
+func toDomainPoints(points []*pricingv1.Coordinates) []pricing.Point {
+	var out []pricing.Point
+	for _, point := range points {
+		out = append(out, pricing.Point{Latitude: point.GetLatitude(), Longitude: point.GetLongitude()})
+	}
+
+	return out
+}
+
+func toProtoPoints(points []pricing.Point) []*pricingv1.Coordinates {
+	var out []*pricingv1.Coordinates
+	for _, point := range points {
+		out = append(out, &pricingv1.Coordinates{Latitude: point.Latitude, Longitude: point.Longitude})
+	}
+
+	return out
 }
 
 func toDomainDiscountType(t pricingv1.DiscountType) pricing.DiscountType {

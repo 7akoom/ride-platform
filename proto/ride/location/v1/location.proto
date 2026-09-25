@@ -446,6 +446,8 @@ message SetPlaceActiveRequest {
 message GetRouteRequest {
   Coordinates origin = 1;
   Coordinates destination = 2;
+  // Points to pass through on the way, in order; at most 5.
+  repeated Coordinates via = 3;
 }
 
 message GetRouteResponse {

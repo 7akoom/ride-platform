@@ -68,4 +68,13 @@ var (
 
 	// ErrTooFarFromPickup: the driver's last position is not at the pickup.
 	ErrTooFarFromPickup = errors.New("you are not at the pickup yet")
+
+	// ErrTooManyStops: a trip stops at most MaxStops times on the way.
+	ErrTooManyStops = errors.New("a trip has at most 2 stops")
+
+	// ErrStopNotFound: the trip has no stop at that position.
+	ErrStopNotFound = errors.New("the trip has no such stop")
+
+	// ErrTooFarFromStop: the driver's last position is not at the stop.
+	ErrTooFarFromStop = errors.New("you are not at the stop yet")
 )

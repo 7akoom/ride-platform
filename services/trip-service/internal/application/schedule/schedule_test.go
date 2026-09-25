@@ -297,3 +297,44 @@ func TestABookingThatCannotBeDispatchedIsTriedUntilItsGraceEnds(t *testing.T) {
 		t.Fatalf("failed %+v", store.failed)
 	}
 }
+
+func TestABookingKeepsItsStopsAndItsTripGetsThem(t *testing.T) {
+	store := newFakeStore()
+	s := newTestService(store)
+
+	input := validBooking()
+	input.Stops = []trip.Stop{{Coordinates: trip.Coordinates{Latitude: 36.15, Longitude: 44.15}, Address: " Bakery "}}
+
+	booked, err := s.Book(context.Background(), input)
+	if err != nil || len(booked.Stops) != 1 || booked.Stops[0].Address != "Bakery" {
+		t.Fatalf("booked %+v %v", booked.Stops, err)
+	}
+
+	// The same key without the stop is another booking.
+	again := input
+	again.Stops = nil
+
+	if _, err := s.Book(context.Background(), again); !errors.Is(err, ErrKeyReused) {
+		t.Fatalf("the key without the stop: %v", err)
+	}
+
+	tooMany := validBooking()
+	tooMany.IdempotencyKey = "k2"
+	tooMany.Stops = make([]trip.Stop, 3)
+
+	if _, err := s.Book(context.Background(), tooMany); !errors.Is(err, trip.ErrTooManyStops) {
+		t.Fatalf("three stops: %v", err)
+	}
+
+	trips := &fakeTrips{}
+	ride := dueRide()
+	ride.Stops = booked.Stops
+
+	if err := newTestDispatcher(newFakeStore(), trips).dispatch(context.Background(), ride, testNow); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(trips.requests[0].Stops) != 1 || trips.requests[0].Stops[0].Address != "Bakery" {
+		t.Fatalf("requested with %+v", trips.requests[0].Stops)
+	}
+}

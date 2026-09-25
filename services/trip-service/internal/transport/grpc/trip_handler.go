@@ -95,6 +95,7 @@ func (h *TripHandler) RequestTrip(
 			DropoffSavedAddressID: request.GetDropoffSavedAddressId(),
 			PassengerName:         request.GetPassengerName(),
 			PassengerPhone:        request.GetPassengerPhone(),
+			Stops:                 toDomainStops(request.GetStops()),
 		},
 	)
 	if err != nil {
@@ -377,18 +378,21 @@ func (h *TripHandler) mapTripError(err error) error {
 
 	case errors.Is(err, trip.ErrAddressTooLong),
 		errors.Is(err, trip.ErrInvalidPassenger),
+		errors.Is(err, trip.ErrTooManyStops),
 		errors.Is(err, trip.ErrInvalidLimit):
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	case errors.Is(err, trip.ErrSavedAddressNotFound),
 		errors.Is(err, trip.ErrNoPickupPhoto),
-		errors.Is(err, trip.ErrQuoteNotFound):
+		errors.Is(err, trip.ErrQuoteNotFound),
+		errors.Is(err, trip.ErrStopNotFound):
 		return status.Error(codes.NotFound, err.Error())
 
 	case errors.Is(err, trip.ErrQuoteNotUsable),
 		errors.Is(err, trip.ErrNoShowTooEarly),
 		errors.Is(err, trip.ErrArrivalPositionUnknown),
-		errors.Is(err, trip.ErrTooFarFromPickup):
+		errors.Is(err, trip.ErrTooFarFromPickup),
+		errors.Is(err, trip.ErrTooFarFromStop):
 		return status.Error(codes.FailedPrecondition, err.Error())
 
 	case errors.Is(err, trip.ErrNoShowOnlyByDriver):
@@ -477,7 +481,33 @@ func toProtoTrip(t trip.Trip) *tripv1.Trip {
 		PassengerName:      t.PassengerName,
 		PassengerPhone:     livePassengerPhone(t),
 		Scheduled:          t.Scheduled,
+		Stops:              toProtoStops(t.Stops),
 	}
+}
+
+func toDomainStops(stops []*tripv1.TripStop) []trip.Stop {
+	var out []trip.Stop
+	for _, stop := range stops {
+		out = append(out, trip.Stop{
+			Coordinates: trip.Coordinates{Latitude: stop.GetCoordinates().GetLatitude(), Longitude: stop.GetCoordinates().GetLongitude()},
+			Address:     stop.GetAddress(),
+		})
+	}
+
+	return out
+}
+
+func toProtoStops(stops []trip.Stop) []*tripv1.TripStop {
+	var out []*tripv1.TripStop
+	for _, stop := range stops {
+		out = append(out, &tripv1.TripStop{
+			Coordinates: &tripv1.Coordinates{Latitude: stop.Coordinates.Latitude, Longitude: stop.Coordinates.Longitude},
+			Address:     stop.Address,
+			ReachedAt:   optionalTimestamp(stop.ReachedAt),
+		})
+	}
+
+	return out
 }
 
 // livePassengerPhone is the passenger's phone while the trip is under way;

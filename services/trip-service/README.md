@@ -36,8 +36,9 @@ manually" milestone this was built for.
 
 `trip.requested`, `trip.accepted`, `trip.driver_arrived`, `trip.started`,
 `trip.completed`, `trip.cancelled` (with `cancelled_by` and `rider_no_show`),
-`trip.schedule_failed` (a booking that could not become a trip) — every one
-written in the same transaction as its change.
+`trip.schedule_failed` (a booking that could not become a trip),
+`trip.stop_reached` (with the stop's `position`) — every one written in the
+same transaction as its change.
 
 ## Arrival, waiting and cancelling
 
@@ -118,6 +119,18 @@ the trip is live.
 | `TRIP_SCHEDULE_DISPATCH_LEAD` | `10m` | shorter than the minimum ahead |
 | `TRIP_SCHEDULE_GRACE` | `10m` | retries past the booked time |
 | `TRIP_SCHEDULE_POLL_INTERVAL` | `15s` | |
+
+## Stops on the way
+
+A trip (or a booking) may stop up to 2 times between pickup and dropoff
+(`stops`, in order, kept as JSON on the row). pricing-service routes and
+prices through them: a quote keeps its stops and a trip requested with it
+must have the same ones (each within 50 m); a trip without a quote is priced
+through its stops when it completes. The driver marks a stop with
+`ReachStop` while the trip is in progress, within 200 m of it by their last
+reported position; stops may be reached in any order or skipped, and a trip
+completes whether or not every stop was reached. Waiting at a stop is not
+charged separately: it is part of the ride.
 
 ## Unpaid fees
 

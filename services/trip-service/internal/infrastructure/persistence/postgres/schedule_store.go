@@ -37,12 +37,13 @@ const rideColumns = `id, rider_id, idempotency_key, status, scheduled_at, time_z
         COALESCE(pickup_saved_address_id::text, ''), COALESCE(dropoff_saved_address_id::text, ''),
         vehicle_class, payment_method, passenger_name, passenger_phone,
         next_attempt_at, attempts, last_error,
-        COALESCE(trip_id::text, ''), created_at, dispatched_at, cancelled_at, failed_at`
+        COALESCE(trip_id::text, ''), created_at, dispatched_at, cancelled_at, failed_at, stops`
 
 func scanRide(row pgx.Row) (schedule.Ride, error) {
 	var (
 		r      schedule.Ride
 		status string
+		stops  []byte
 	)
 
 	err := row.Scan(
@@ -52,9 +53,14 @@ func scanRide(row pgx.Row) (schedule.Ride, error) {
 		&r.PickupSavedAddressID, &r.DropoffSavedAddressID,
 		&r.VehicleClass, &r.PaymentMethod, &r.PassengerName, &r.PassengerPhone,
 		&r.NextAttemptAt, &r.Attempts, &r.LastError,
-		&r.TripID, &r.CreatedAt, &r.DispatchedAt, &r.CancelledAt, &r.FailedAt,
+		&r.TripID, &r.CreatedAt, &r.DispatchedAt, &r.CancelledAt, &r.FailedAt, &stops,
 	)
+	if err != nil {
+		return schedule.Ride{}, err
+	}
+
 	r.Status = schedule.Status(status)
+	r.Stops, err = decodeStops(stops)
 
 	return r, err
 }
@@ -65,6 +71,11 @@ func (s *ScheduleStore) Create(ctx context.Context, ride schedule.Ride, maxUpcom
 		return schedule.Ride{}, false, fmt.Errorf("begin transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
+
+	stops, err := encodeStops(ride.Stops)
+	if err != nil {
+		return schedule.Ride{}, false, err
+	}
 
 	// The rider's bookings are counted and added one at a time.
 	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext('scheduled_trips:' || $1))`, ride.RiderID); err != nil {
@@ -103,14 +114,15 @@ func (s *ScheduleStore) Create(ctx context.Context, ride schedule.Ride, maxUpcom
 		    (id, rider_id, idempotency_key, scheduled_at, time_zone,
 		     pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude,
 		     pickup_address, dropoff_address, pickup_saved_address_id, dropoff_saved_address_id,
-		     vehicle_class, payment_method, passenger_name, passenger_phone, next_attempt_at)
+		     vehicle_class, payment_method, passenger_name, passenger_phone, next_attempt_at, stops)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-		         NULLIF($12::text, '')::uuid, NULLIF($13::text, '')::uuid, $14, $15, $16, $17, $18)
+		         NULLIF($12::text, '')::uuid, NULLIF($13::text, '')::uuid, $14, $15, $16, $17, $18, $19)
 		 RETURNING `+rideColumns,
 		ride.ID, ride.RiderID, ride.IdempotencyKey, ride.ScheduledAt, ride.TimeZone,
 		ride.Pickup.Latitude, ride.Pickup.Longitude, ride.Dropoff.Latitude, ride.Dropoff.Longitude,
 		ride.PickupAddress, ride.DropoffAddress, ride.PickupSavedAddressID, ride.DropoffSavedAddressID,
 		ride.VehicleClass, ride.PaymentMethod, ride.PassengerName, ride.PassengerPhone, ride.NextAttemptAt,
+		stops,
 	))
 	if err != nil {
 		return schedule.Ride{}, false, fmt.Errorf("insert booking: %w", err)

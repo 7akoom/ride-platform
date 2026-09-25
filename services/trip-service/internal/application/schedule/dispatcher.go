@@ -131,6 +131,7 @@ func (d *Dispatcher) request(ctx context.Context, ride Ride) (trip.Trip, error) 
 		PassengerName:         ride.PassengerName,
 		PassengerPhone:        ride.PassengerPhone,
 		ScheduledTripID:       ride.ID,
+		Stops:                 ride.Stops,
 	}
 
 	made, err := d.trips.RequestTrip(ctx, input)

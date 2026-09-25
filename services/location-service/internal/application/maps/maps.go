@@ -17,6 +17,7 @@ var (
 	ErrQueryTooLong     = errors.New("query must have at most 200 characters")
 	ErrInvalidLimit     = errors.New("limit must not be negative")
 	ErrInvalidLanguage  = errors.New("language must be ar, ku or en")
+	ErrTooManyVia       = errors.New("a route passes through at most 5 points")
 
 	// ErrNoRoute means the road network has no way between the two points.
 	ErrNoRoute = errors.New("no route between these points")
@@ -85,7 +86,12 @@ type Place struct {
 type RouteInput struct {
 	Origin      *Coordinates
 	Destination *Coordinates
+	// Via are points to pass through on the way, in order (at most MaxVia).
+	Via []*Coordinates
 }
+
+// MaxVia is how many points a route may pass through between its ends.
+const MaxVia = 5
 
 type SearchInput struct {
 	Query string
@@ -114,7 +120,8 @@ type CuratedSearcher interface {
 
 // Router is the port to the routing engine (OSRM).
 type Router interface {
-	Route(ctx context.Context, from Coordinates, to Coordinates) (Route, error)
+	// Route goes from one point to another through via, in order.
+	Route(ctx context.Context, from Coordinates, to Coordinates, via ...Coordinates) (Route, error)
 }
 
 // Geocoder is the port to the place search (Nominatim). languages is an ordered,

@@ -12,12 +12,13 @@ type fakeRouter struct {
 	err   error
 
 	from, to Coordinates
+	via      []Coordinates
 	calls    int
 }
 
-func (f *fakeRouter) Route(_ context.Context, from Coordinates, to Coordinates) (Route, error) {
+func (f *fakeRouter) Route(_ context.Context, from Coordinates, to Coordinates, via ...Coordinates) (Route, error) {
 	f.calls++
-	f.from, f.to = from, to
+	f.from, f.to, f.via = from, to, via
 
 	return f.route, f.err
 }
@@ -93,6 +94,33 @@ func TestARouteNeedsTwoRealPointsAndNeverReachesTheRouterWithout(t *testing.T) {
 
 		if router.calls != 0 {
 			t.Errorf("%s: the router was asked", name)
+		}
+	}
+}
+
+func TestARoutePassesThroughItsViaPointsInOrder(t *testing.T) {
+	service, router, _ := newRig()
+
+	if _, err := service.GetRoute(context.Background(), RouteInput{
+		Origin: point(36.19, 44.01), Destination: point(36.23, 43.96),
+		Via: []*Coordinates{point(36.2, 44.0), point(36.21, 43.98)},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(router.via) != 2 || router.via[0] != *point(36.2, 44.0) || router.via[1] != *point(36.21, 43.98) {
+		t.Fatalf("via %v", router.via)
+	}
+
+	for name, via := range map[string][]*Coordinates{
+		"six":       {point(36, 44), point(36, 44), point(36, 44), point(36, 44), point(36, 44), point(36, 44)},
+		"a bad one": {point(95, 44)},
+		"a nil one": {nil},
+	} {
+		service, router, _ := newRig()
+
+		if _, err := service.GetRoute(context.Background(), RouteInput{Origin: point(36, 44), Destination: point(36.1, 44.1), Via: via}); err == nil || router.calls != 0 {
+			t.Errorf("%s: %v, %d calls", name, err, router.calls)
 		}
 	}
 }

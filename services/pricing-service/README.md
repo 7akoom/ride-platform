@@ -134,6 +134,13 @@ routing engine. OSRM needs a one-time dataset build for your region: see
 average speed) and flags the `Route` as estimated. A quote's driver ETA
 falls back the same way (at 25 km/h).
 
+A trip with **stops** (up to 2, `stops` on `QuoteTrip`, `EstimateFare` and
+`CalculateFare`) is routed pickup → each stop in order → dropoff, and the
+fallback adds the straight-line legs the same way. A quote keeps its stops
+(`fare_quotes.stops`) and `ClaimQuote` returns them, so trip-service can check
+the trip has the quoted stops; a trip without a quote is priced through the
+stops trip-service reports when it completes.
+
 ## Discounts: best one wins, never stacked
 
 Three sources are evaluated — the rider's coupon code, the first-ride

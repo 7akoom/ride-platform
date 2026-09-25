@@ -72,7 +72,25 @@ func (s *service) GetRoute(ctx context.Context, input RouteInput) (Route, error)
 		return Route{}, err
 	}
 
-	return s.router.Route(ctx, *input.Origin, *input.Destination)
+	if len(input.Via) > MaxVia {
+		return Route{}, ErrTooManyVia
+	}
+
+	via := make([]Coordinates, 0, len(input.Via))
+
+	for _, point := range input.Via {
+		if point == nil {
+			return Route{}, ErrPointRequired
+		}
+
+		if err := point.Validate(); err != nil {
+			return Route{}, err
+		}
+
+		via = append(via, *point)
+	}
+
+	return s.router.Route(ctx, *input.Origin, *input.Destination, via...)
 }
 
 func (s *service) SearchPlaces(ctx context.Context, input SearchInput) ([]Place, error) {

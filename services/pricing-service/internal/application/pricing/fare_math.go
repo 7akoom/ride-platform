@@ -40,8 +40,17 @@ func haversineDistanceKm(lat1, lng1, lat2, lng2 float64) float64 {
 // straight-line distance inflated by a correction factor, with duration
 // derived from an assumed average speed. Deliberately conservative —
 // it's better to be roughly right than to refuse to quote a price.
-func fallbackRoute(config Config, pickupLat, pickupLng, dropoffLat, dropoffLng float64) Route {
-	straightLineKm := haversineDistanceKm(pickupLat, pickupLng, dropoffLat, dropoffLng)
+func fallbackRoute(config Config, pickupLat, pickupLng, dropoffLat, dropoffLng float64, stops ...Point) Route {
+	// Leg by leg: pickup, each stop in order, dropoff.
+	straightLineKm := 0.0
+	fromLat, fromLng := pickupLat, pickupLng
+
+	for _, stop := range stops {
+		straightLineKm += haversineDistanceKm(fromLat, fromLng, stop.Latitude, stop.Longitude)
+		fromLat, fromLng = stop.Latitude, stop.Longitude
+	}
+
+	straightLineKm += haversineDistanceKm(fromLat, fromLng, dropoffLat, dropoffLng)
 	distanceKm := straightLineKm * config.DistanceCorrectionFactor
 
 	return Route{

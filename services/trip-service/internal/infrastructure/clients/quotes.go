@@ -44,7 +44,13 @@ func (b *QuoteBook) Claim(ctx context.Context, quoteID, riderID, tripID string) 
 		return trip.ClaimedQuote{}, fmt.Errorf("%w: pricing-service ClaimQuote: %v", trip.ErrUpstreamUnavailable, err)
 	}
 
+	var stops []trip.Coordinates
+	for _, stop := range response.GetStops() {
+		stops = append(stops, trip.Coordinates{Latitude: stop.GetLatitude(), Longitude: stop.GetLongitude()})
+	}
+
 	return trip.ClaimedQuote{
+		Stops:        stops,
 		ID:           response.GetQuoteId(),
 		VehicleClass: response.GetVehicleClass(),
 		Pickup:       trip.Coordinates{Latitude: response.GetPickup().GetLatitude(), Longitude: response.GetPickup().GetLongitude()},

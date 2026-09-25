@@ -47,13 +47,25 @@ type osrmResponse struct {
 	} `json:"routes"`
 }
 
-// Route returns the best route by road from one point to another, with its full
-// geometry.
-func (c *OSRMClient) Route(ctx context.Context, from maps.Coordinates, to maps.Coordinates) (maps.Route, error) {
+// Route returns the best route by road from one point to another, through the
+// via points in order, with its full geometry.
+func (c *OSRMClient) Route(ctx context.Context, from maps.Coordinates, to maps.Coordinates, via ...maps.Coordinates) (maps.Route, error) {
+	points := make([]maps.Coordinates, 0, len(via)+2)
+	points = append(points, from)
+	points = append(points, via...)
+	points = append(points, to)
+
 	// OSRM writes coordinates as longitude,latitude: the reverse of everywhere else
 	// in this codebase.
-	coordinates := formatCoordinate(from.Longitude) + "," + formatCoordinate(from.Latitude) +
-		";" + formatCoordinate(to.Longitude) + "," + formatCoordinate(to.Latitude)
+	pairs := make([]string, 0, len(points))
+	radiuses := make([]string, 0, len(points))
+
+	for _, point := range points {
+		pairs = append(pairs, formatCoordinate(point.Longitude)+","+formatCoordinate(point.Latitude))
+		radiuses = append(radiuses, strconv.Itoa(snapRadiusMeters))
+	}
+
+	coordinates := strings.Join(pairs, ";")
 
 	endpoint, err := url.Parse(c.baseURL + "/route/v1/driving/" + coordinates)
 	if err != nil {
@@ -63,7 +75,7 @@ func (c *OSRMClient) Route(ctx context.Context, from maps.Coordinates, to maps.C
 	// The query is written out rather than encoded: OSRM wants the ';' in radiuses
 	// as it is, not as %3B.
 	endpoint.RawQuery = "overview=full&geometries=polyline&steps=false&alternatives=false" +
-		"&radiuses=" + strconv.Itoa(snapRadiusMeters) + ";" + strconv.Itoa(snapRadiusMeters)
+		"&radiuses=" + strings.Join(radiuses, ";")
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
 	if err != nil {

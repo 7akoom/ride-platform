@@ -16,6 +16,7 @@ type ClaimedQuote struct {
 	VehicleClass string
 	Pickup       Coordinates
 	Dropoff      Coordinates
+	Stops        []Coordinates
 	// Total is a decimal string in CurrencyCode.
 	Total        string
 	CurrencyCode string
@@ -44,13 +45,23 @@ func WithQuotes(book QuoteBook) Option {
 	}
 }
 
-// matchesQuote reports whether the trip is the quoted one: the same pickup
-// and dropoff (within quoteMatchMeters) and, when the rider named a class,
-// the quoted class.
-func matchesQuote(quote ClaimedQuote, pickup, dropoff Coordinates, requestedClass string) bool {
+// matchesQuote reports whether the trip is the quoted one: the same pickup,
+// stops and dropoff (each within quoteMatchMeters) and, when the rider named
+// a class, the quoted class.
+func matchesQuote(quote ClaimedQuote, pickup, dropoff Coordinates, stops []Stop, requestedClass string) bool {
 	if class := strings.TrimSpace(requestedClass); class != "" {
 		normalized, err := NormalizeVehicleClass(class)
 		if err != nil || normalized != quote.VehicleClass {
+			return false
+		}
+	}
+
+	if len(stops) != len(quote.Stops) {
+		return false
+	}
+
+	for i, stop := range stops {
+		if distanceMeters(stop.Coordinates, quote.Stops[i]) > quoteMatchMeters {
 			return false
 		}
 	}

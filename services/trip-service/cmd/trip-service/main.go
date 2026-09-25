@@ -221,7 +221,7 @@ func run() int {
 		clients.NewAddressBook(riderConn),
 	)
 
-	tripService := trip.WithDriverArrival(trip.WithRecentDestinations(
+	tripService := trip.WithStopArrivals(trip.WithDriverArrival(trip.WithRecentDestinations(
 		trip.WithPickupPhotos(
 			trip.WithTripOffers(
 				trip.WithTripHistory(
@@ -236,7 +236,7 @@ func run() int {
 			clients.NewPhotoLinks(mediaConn),
 		),
 		tripRepository,
-	), locationClient, tripRepository)
+	), locationClient, tripRepository), locationClient, tripRepository)
 	scheduleConfig, err := config.ParseSchedule(cfg)
 	if err != nil {
 		logger.Error("invalid scheduled trip configuration", "error", err)

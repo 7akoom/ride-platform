@@ -20,6 +20,7 @@ func (s *service) EstimateFare(
 		DropoffLat: input.DropoffLat,
 		DropoffLng: input.DropoffLng,
 		CouponCode: input.CouponCode,
+		Stops:      input.Stops,
 	}, input.VehicleClass)
 	if err != nil {
 		return FareBreakdown{}, err
@@ -156,6 +157,7 @@ func (s *service) meteredFare(ctx context.Context, tripID string, input Calculat
 		DropoffLat: input.DropoffLat,
 		DropoffLng: input.DropoffLng,
 		CouponCode: input.CouponCode,
+		Stops:      input.Stops,
 	}, input.VehicleClass)
 	if err != nil {
 		return PersistFareInput{}, Config{}, err

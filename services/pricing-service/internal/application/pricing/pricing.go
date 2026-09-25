@@ -320,8 +320,10 @@ type Quote struct {
 	VehicleClass string
 	Pickup       Point
 	Dropoff      Point
-	Breakdown    FareBreakdown
-	ConfigID     string
+	// Stops on the way, in order: a trip with the quote has the same ones.
+	Stops     []Point
+	Breakdown FareBreakdown
+	ConfigID  string
 	// Coupon is the coupon the price used, if one did.
 	Coupon *AppliedCoupon
 

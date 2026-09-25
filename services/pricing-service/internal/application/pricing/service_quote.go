@@ -26,6 +26,7 @@ func (s *service) QuoteTrip(ctx context.Context, input QuoteTripInput) (TripQuot
 		DropoffLat: input.DropoffLat,
 		DropoffLng: input.DropoffLng,
 		CouponCode: input.CouponCode,
+		Stops:      input.Stops,
 	}
 
 	riderID, err := request.validate()
@@ -55,6 +56,7 @@ func (s *service) QuoteTrip(ctx context.Context, input QuoteTripInput) (TripQuot
 			VehicleClass:     class,
 			Pickup:           Point{Latitude: request.PickupLat, Longitude: request.PickupLng},
 			Dropoff:          Point{Latitude: request.DropoffLat, Longitude: request.DropoffLng},
+			Stops:            request.Stops,
 			Breakdown:        priced.breakdown,
 			ConfigID:         priced.config.ID,
 			Coupon:           priced.coupon,

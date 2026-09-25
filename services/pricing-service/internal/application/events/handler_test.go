@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"reflect"
 	"testing"
 	"time"
 
@@ -87,6 +88,7 @@ func sampleTrip() TripInfo {
 		DropoffLat:   36.2,
 		DropoffLng:   44.02,
 		VehicleClass: "comfort",
+		Stops:        []pricing.Point{{Latitude: 36.195, Longitude: 44.015}},
 	}
 }
 
@@ -165,9 +167,10 @@ func TestHandleCalculatesFareFromTheTrip(t *testing.T) {
 		DropoffLat:   36.2,
 		DropoffLng:   44.02,
 		VehicleClass: "comfort",
+		Stops:        []pricing.Point{{Latitude: 36.195, Longitude: 44.015}},
 	}
 
-	if got != want {
+	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("CalculateFare input mismatch:\n got  %+v\n want %+v", got, want)
 	}
 }

@@ -39,6 +39,9 @@ type RequestTripInput struct {
 	// ScheduledTripID is set only by the scheduler: the trip takes this id
 	// (the booking's), so dispatching it twice cannot make two trips.
 	ScheduledTripID string
+
+	// Stops on the way, in order (at most MaxStops).
+	Stops []Stop
 }
 
 type Service interface {

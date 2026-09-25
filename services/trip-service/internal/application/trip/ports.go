@@ -27,6 +27,7 @@ type CreateInput struct {
 	PassengerName  string
 	PassengerPhone string
 	Scheduled      bool
+	Stops          []Stop
 }
 
 // Repository is the persistence port for the trip aggregate. Every

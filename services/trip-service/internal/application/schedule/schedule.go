@@ -56,6 +56,8 @@ type Ride struct {
 	PaymentMethod         string
 	PassengerName         string
 	PassengerPhone        string
+	// Stops on the way, in order.
+	Stops []trip.Stop
 
 	NextAttemptAt time.Time
 	Attempts      int

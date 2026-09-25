@@ -5058,6 +5058,45 @@
         ]
       }
     },
+    "/v1/trips/{tripId}:reach-stop": {
+      "post": {
+        "summary": "ReachStop is the driver telling the rider they are at one of the trip's\nstops (position 1 is the first). Only while the trip is in progress, and\nwithin 200 metres of the stop by the driver's last reported position.\nAny stop not reached yet may be marked: the rider may skip one. Marking a\nreached stop again changes nothing.",
+        "operationId": "TripService_ReachStop",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ReachStopResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TripServiceReachStopBody"
+            }
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/trips/{tripId}:reject-offer": {
       "post": {
         "summary": "RejectOffer declines the offer; the trip goes on to the next driver, and this\ndriver is not offered it again. driver_id must be the caller's own profile.",
@@ -6565,6 +6604,16 @@
         }
       }
     },
+    "TripServiceReachStopBody": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The stop's place in the trip's stops, from 1."
+        }
+      }
+    },
     "TripServiceRecordWaypointBody": {
       "type": "object",
       "properties": {
@@ -7807,6 +7856,14 @@
         "vehicleClass": {
           "type": "string",
           "description": "economy (default when empty) or comfort."
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ridePricingV1Coordinates"
+          },
+          "description": "Up to 2 stops on the way, in order: the route passes through them."
         }
       }
     },
@@ -8167,6 +8224,14 @@
         },
         "destination": {
           "$ref": "#/definitions/rideLocationV1Coordinates"
+        },
+        "via": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/rideLocationV1Coordinates"
+          },
+          "description": "Points to pass through on the way, in order; at most 5."
         }
       }
     },
@@ -9292,6 +9357,14 @@
         },
         "couponCode": {
           "type": "string"
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ridePricingV1Coordinates"
+          },
+          "description": "Up to 2 stops on the way, in order: the route, and so the price, passes\nthrough them. A trip requested with the quote must have the same stops."
         }
       }
     },
@@ -9407,6 +9480,14 @@
         "RATED_BY_DRIVER"
       ],
       "default": "RATED_BY_UNSPECIFIED"
+    },
+    "v1ReachStopResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/v1Trip"
+        }
+      }
     },
     "v1RecentDestination": {
       "type": "object",
@@ -9678,6 +9759,14 @@
         },
         "passengerPhone": {
           "type": "string"
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TripStop"
+          },
+          "description": "Up to 2 stops on the way, in order (reached_at is ignored). With a\nquote, the quote's stops, each within 50 metres."
         }
       }
     },
@@ -9981,6 +10070,14 @@
         "idempotencyKey": {
           "type": "string",
           "description": "Required: a retry with the same key is the same booking."
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TripStop"
+          },
+          "description": "Up to 2 stops on the way, as for RequestTrip."
         }
       }
     },
@@ -10050,6 +10147,13 @@
         "dispatchedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TripStop"
+          }
         }
       }
     },
@@ -10588,6 +10692,14 @@
         "scheduled": {
           "type": "boolean",
           "description": "The scheduled trip it came from (the same id), when it was booked ahead."
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TripStop"
+          },
+          "description": "Where the trip stops on the way from pickup to dropoff, in order."
         }
       }
     },
@@ -10649,6 +10761,14 @@
         },
         "currencyCode": {
           "type": "string"
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TripStop"
+          },
+          "description": "The stops on the way, in order."
         }
       },
       "description": "TripOffer is what a driver sees to decide. The rider is not identified."
@@ -10691,6 +10811,23 @@
         "TRIP_STATUS_CANCELLED"
       ],
       "default": "TRIP_STATUS_UNSPECIFIED"
+    },
+    "v1TripStop": {
+      "type": "object",
+      "properties": {
+        "coordinates": {
+          "$ref": "#/definitions/rideTripV1Coordinates"
+        },
+        "address": {
+          "type": "string",
+          "description": "As the rider picked it; at most 300 characters."
+        },
+        "reachedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "A stop on the way. reached_at is set once the driver marks it."
     },
     "v1TripVehicle": {
       "type": "object",

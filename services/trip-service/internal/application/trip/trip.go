@@ -106,7 +106,9 @@ type Trip struct {
 	PassengerName  string
 	PassengerPhone string
 	// Scheduled: it was booked ahead (its id is the scheduled trip's).
-	Scheduled   bool
+	Scheduled bool
+	// Stops on the way from pickup to dropoff, in order.
+	Stops       []Stop
 	RequestedAt time.Time
 	AcceptedAt  *time.Time
 	// ArrivedAt is when the driver said they were at the pickup.

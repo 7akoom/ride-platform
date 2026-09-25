@@ -2313,9 +2313,11 @@ func (x *SetPlaceActiveRequest) GetActive() bool {
 }
 
 type GetRouteRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Origin        *Coordinates           `protobuf:"bytes,1,opt,name=origin,proto3" json:"origin,omitempty"`
-	Destination   *Coordinates           `protobuf:"bytes,2,opt,name=destination,proto3" json:"destination,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Origin      *Coordinates           `protobuf:"bytes,1,opt,name=origin,proto3" json:"origin,omitempty"`
+	Destination *Coordinates           `protobuf:"bytes,2,opt,name=destination,proto3" json:"destination,omitempty"`
+	// Points to pass through on the way, in order; at most 5.
+	Via           []*Coordinates `protobuf:"bytes,3,rep,name=via,proto3" json:"via,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2360,6 +2362,13 @@ func (x *GetRouteRequest) GetOrigin() *Coordinates {
 func (x *GetRouteRequest) GetDestination() *Coordinates {
 	if x != nil {
 		return x.Destination
+	}
+	return nil
+}
+
+func (x *GetRouteRequest) GetVia() []*Coordinates {
+	if x != nil {
+		return x.Via
 	}
 	return nil
 }
@@ -2931,10 +2940,11 @@ const file_ride_location_v1_location_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"J\n" +
 	"\x15SetPlaceActiveRequest\x12\x19\n" +
 	"\bplace_id\x18\x01 \x01(\tR\aplaceId\x12\x16\n" +
-	"\x06active\x18\x02 \x01(\bR\x06active\"\x89\x01\n" +
+	"\x06active\x18\x02 \x01(\bR\x06active\"\xba\x01\n" +
 	"\x0fGetRouteRequest\x125\n" +
 	"\x06origin\x18\x01 \x01(\v2\x1d.ride.location.v1.CoordinatesR\x06origin\x12?\n" +
-	"\vdestination\x18\x02 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vdestination\"\x82\x01\n" +
+	"\vdestination\x18\x02 \x01(\v2\x1d.ride.location.v1.CoordinatesR\vdestination\x12/\n" +
+	"\x03via\x18\x03 \x03(\v2\x1d.ride.location.v1.CoordinatesR\x03via\"\x82\x01\n" +
 	"\x10GetRouteResponse\x12'\n" +
 	"\x0fdistance_meters\x18\x01 \x01(\x01R\x0edistanceMeters\x12)\n" +
 	"\x10duration_seconds\x18\x02 \x01(\x01R\x0fdurationSeconds\x12\x1a\n" +
@@ -3132,65 +3142,66 @@ var file_ride_location_v1_location_proto_depIdxs = []int32{
 	2,  // 43: ride.location.v1.UpdatePlaceRequest.coordinates:type_name -> ride.location.v1.Coordinates
 	2,  // 44: ride.location.v1.GetRouteRequest.origin:type_name -> ride.location.v1.Coordinates
 	2,  // 45: ride.location.v1.GetRouteRequest.destination:type_name -> ride.location.v1.Coordinates
-	2,  // 46: ride.location.v1.SearchPlacesRequest.near:type_name -> ride.location.v1.Coordinates
-	44, // 47: ride.location.v1.SearchPlacesResponse.places:type_name -> ride.location.v1.Place
-	2,  // 48: ride.location.v1.ReverseGeocodeRequest.coordinates:type_name -> ride.location.v1.Coordinates
-	44, // 49: ride.location.v1.ReverseGeocodeResponse.place:type_name -> ride.location.v1.Place
-	2,  // 50: ride.location.v1.Place.coordinates:type_name -> ride.location.v1.Coordinates
-	51, // 51: ride.location.v1.Place.address:type_name -> ride.location.v1.Place.AddressEntry
-	3,  // 52: ride.location.v1.LocationService.UpdateLocation:input_type -> ride.location.v1.UpdateLocationRequest
-	5,  // 53: ride.location.v1.LocationService.GetLocation:input_type -> ride.location.v1.GetLocationRequest
-	8,  // 54: ride.location.v1.LocationService.FindNearby:input_type -> ride.location.v1.FindNearbyRequest
-	11, // 55: ride.location.v1.LocationService.CreateZone:input_type -> ride.location.v1.CreateZoneRequest
-	12, // 56: ride.location.v1.LocationService.UpdateZone:input_type -> ride.location.v1.UpdateZoneRequest
-	13, // 57: ride.location.v1.LocationService.SetZoneActive:input_type -> ride.location.v1.SetZoneActiveRequest
-	15, // 58: ride.location.v1.LocationService.GetZone:input_type -> ride.location.v1.GetZoneRequest
-	16, // 59: ride.location.v1.LocationService.ListZones:input_type -> ride.location.v1.ListZonesRequest
-	18, // 60: ride.location.v1.LocationService.CheckServiceZone:input_type -> ride.location.v1.CheckServiceZoneRequest
-	21, // 61: ride.location.v1.LocationService.ListCities:input_type -> ride.location.v1.ListCitiesRequest
-	24, // 62: ride.location.v1.LocationService.GetCity:input_type -> ride.location.v1.GetCityRequest
-	22, // 63: ride.location.v1.LocationService.AdminListCities:input_type -> ride.location.v1.AdminListCitiesRequest
-	26, // 64: ride.location.v1.LocationService.CreateCity:input_type -> ride.location.v1.CreateCityRequest
-	27, // 65: ride.location.v1.LocationService.UpdateCity:input_type -> ride.location.v1.UpdateCityRequest
-	28, // 66: ride.location.v1.LocationService.SetCityActive:input_type -> ride.location.v1.SetCityActiveRequest
-	30, // 67: ride.location.v1.LocationService.ListPlaces:input_type -> ride.location.v1.ListPlacesRequest
-	33, // 68: ride.location.v1.LocationService.GetPlace:input_type -> ride.location.v1.GetPlaceRequest
-	31, // 69: ride.location.v1.LocationService.AdminListPlaces:input_type -> ride.location.v1.AdminListPlacesRequest
-	35, // 70: ride.location.v1.LocationService.CreatePlace:input_type -> ride.location.v1.CreatePlaceRequest
-	36, // 71: ride.location.v1.LocationService.UpdatePlace:input_type -> ride.location.v1.UpdatePlaceRequest
-	37, // 72: ride.location.v1.LocationService.SetPlaceActive:input_type -> ride.location.v1.SetPlaceActiveRequest
-	38, // 73: ride.location.v1.LocationService.GetRoute:input_type -> ride.location.v1.GetRouteRequest
-	40, // 74: ride.location.v1.LocationService.SearchPlaces:input_type -> ride.location.v1.SearchPlacesRequest
-	42, // 75: ride.location.v1.LocationService.ReverseGeocode:input_type -> ride.location.v1.ReverseGeocodeRequest
-	4,  // 76: ride.location.v1.LocationService.UpdateLocation:output_type -> ride.location.v1.UpdateLocationResponse
-	6,  // 77: ride.location.v1.LocationService.GetLocation:output_type -> ride.location.v1.GetLocationResponse
-	9,  // 78: ride.location.v1.LocationService.FindNearby:output_type -> ride.location.v1.FindNearbyResponse
-	14, // 79: ride.location.v1.LocationService.CreateZone:output_type -> ride.location.v1.ZoneResponse
-	14, // 80: ride.location.v1.LocationService.UpdateZone:output_type -> ride.location.v1.ZoneResponse
-	14, // 81: ride.location.v1.LocationService.SetZoneActive:output_type -> ride.location.v1.ZoneResponse
-	14, // 82: ride.location.v1.LocationService.GetZone:output_type -> ride.location.v1.ZoneResponse
-	17, // 83: ride.location.v1.LocationService.ListZones:output_type -> ride.location.v1.ListZonesResponse
-	19, // 84: ride.location.v1.LocationService.CheckServiceZone:output_type -> ride.location.v1.CheckServiceZoneResponse
-	23, // 85: ride.location.v1.LocationService.ListCities:output_type -> ride.location.v1.ListCitiesResponse
-	25, // 86: ride.location.v1.LocationService.GetCity:output_type -> ride.location.v1.CityResponse
-	23, // 87: ride.location.v1.LocationService.AdminListCities:output_type -> ride.location.v1.ListCitiesResponse
-	25, // 88: ride.location.v1.LocationService.CreateCity:output_type -> ride.location.v1.CityResponse
-	25, // 89: ride.location.v1.LocationService.UpdateCity:output_type -> ride.location.v1.CityResponse
-	25, // 90: ride.location.v1.LocationService.SetCityActive:output_type -> ride.location.v1.CityResponse
-	32, // 91: ride.location.v1.LocationService.ListPlaces:output_type -> ride.location.v1.ListPlacesResponse
-	34, // 92: ride.location.v1.LocationService.GetPlace:output_type -> ride.location.v1.CuratedPlaceResponse
-	32, // 93: ride.location.v1.LocationService.AdminListPlaces:output_type -> ride.location.v1.ListPlacesResponse
-	34, // 94: ride.location.v1.LocationService.CreatePlace:output_type -> ride.location.v1.CuratedPlaceResponse
-	34, // 95: ride.location.v1.LocationService.UpdatePlace:output_type -> ride.location.v1.CuratedPlaceResponse
-	34, // 96: ride.location.v1.LocationService.SetPlaceActive:output_type -> ride.location.v1.CuratedPlaceResponse
-	39, // 97: ride.location.v1.LocationService.GetRoute:output_type -> ride.location.v1.GetRouteResponse
-	41, // 98: ride.location.v1.LocationService.SearchPlaces:output_type -> ride.location.v1.SearchPlacesResponse
-	43, // 99: ride.location.v1.LocationService.ReverseGeocode:output_type -> ride.location.v1.ReverseGeocodeResponse
-	76, // [76:100] is the sub-list for method output_type
-	52, // [52:76] is the sub-list for method input_type
-	52, // [52:52] is the sub-list for extension type_name
-	52, // [52:52] is the sub-list for extension extendee
-	0,  // [0:52] is the sub-list for field type_name
+	2,  // 46: ride.location.v1.GetRouteRequest.via:type_name -> ride.location.v1.Coordinates
+	2,  // 47: ride.location.v1.SearchPlacesRequest.near:type_name -> ride.location.v1.Coordinates
+	44, // 48: ride.location.v1.SearchPlacesResponse.places:type_name -> ride.location.v1.Place
+	2,  // 49: ride.location.v1.ReverseGeocodeRequest.coordinates:type_name -> ride.location.v1.Coordinates
+	44, // 50: ride.location.v1.ReverseGeocodeResponse.place:type_name -> ride.location.v1.Place
+	2,  // 51: ride.location.v1.Place.coordinates:type_name -> ride.location.v1.Coordinates
+	51, // 52: ride.location.v1.Place.address:type_name -> ride.location.v1.Place.AddressEntry
+	3,  // 53: ride.location.v1.LocationService.UpdateLocation:input_type -> ride.location.v1.UpdateLocationRequest
+	5,  // 54: ride.location.v1.LocationService.GetLocation:input_type -> ride.location.v1.GetLocationRequest
+	8,  // 55: ride.location.v1.LocationService.FindNearby:input_type -> ride.location.v1.FindNearbyRequest
+	11, // 56: ride.location.v1.LocationService.CreateZone:input_type -> ride.location.v1.CreateZoneRequest
+	12, // 57: ride.location.v1.LocationService.UpdateZone:input_type -> ride.location.v1.UpdateZoneRequest
+	13, // 58: ride.location.v1.LocationService.SetZoneActive:input_type -> ride.location.v1.SetZoneActiveRequest
+	15, // 59: ride.location.v1.LocationService.GetZone:input_type -> ride.location.v1.GetZoneRequest
+	16, // 60: ride.location.v1.LocationService.ListZones:input_type -> ride.location.v1.ListZonesRequest
+	18, // 61: ride.location.v1.LocationService.CheckServiceZone:input_type -> ride.location.v1.CheckServiceZoneRequest
+	21, // 62: ride.location.v1.LocationService.ListCities:input_type -> ride.location.v1.ListCitiesRequest
+	24, // 63: ride.location.v1.LocationService.GetCity:input_type -> ride.location.v1.GetCityRequest
+	22, // 64: ride.location.v1.LocationService.AdminListCities:input_type -> ride.location.v1.AdminListCitiesRequest
+	26, // 65: ride.location.v1.LocationService.CreateCity:input_type -> ride.location.v1.CreateCityRequest
+	27, // 66: ride.location.v1.LocationService.UpdateCity:input_type -> ride.location.v1.UpdateCityRequest
+	28, // 67: ride.location.v1.LocationService.SetCityActive:input_type -> ride.location.v1.SetCityActiveRequest
+	30, // 68: ride.location.v1.LocationService.ListPlaces:input_type -> ride.location.v1.ListPlacesRequest
+	33, // 69: ride.location.v1.LocationService.GetPlace:input_type -> ride.location.v1.GetPlaceRequest
+	31, // 70: ride.location.v1.LocationService.AdminListPlaces:input_type -> ride.location.v1.AdminListPlacesRequest
+	35, // 71: ride.location.v1.LocationService.CreatePlace:input_type -> ride.location.v1.CreatePlaceRequest
+	36, // 72: ride.location.v1.LocationService.UpdatePlace:input_type -> ride.location.v1.UpdatePlaceRequest
+	37, // 73: ride.location.v1.LocationService.SetPlaceActive:input_type -> ride.location.v1.SetPlaceActiveRequest
+	38, // 74: ride.location.v1.LocationService.GetRoute:input_type -> ride.location.v1.GetRouteRequest
+	40, // 75: ride.location.v1.LocationService.SearchPlaces:input_type -> ride.location.v1.SearchPlacesRequest
+	42, // 76: ride.location.v1.LocationService.ReverseGeocode:input_type -> ride.location.v1.ReverseGeocodeRequest
+	4,  // 77: ride.location.v1.LocationService.UpdateLocation:output_type -> ride.location.v1.UpdateLocationResponse
+	6,  // 78: ride.location.v1.LocationService.GetLocation:output_type -> ride.location.v1.GetLocationResponse
+	9,  // 79: ride.location.v1.LocationService.FindNearby:output_type -> ride.location.v1.FindNearbyResponse
+	14, // 80: ride.location.v1.LocationService.CreateZone:output_type -> ride.location.v1.ZoneResponse
+	14, // 81: ride.location.v1.LocationService.UpdateZone:output_type -> ride.location.v1.ZoneResponse
+	14, // 82: ride.location.v1.LocationService.SetZoneActive:output_type -> ride.location.v1.ZoneResponse
+	14, // 83: ride.location.v1.LocationService.GetZone:output_type -> ride.location.v1.ZoneResponse
+	17, // 84: ride.location.v1.LocationService.ListZones:output_type -> ride.location.v1.ListZonesResponse
+	19, // 85: ride.location.v1.LocationService.CheckServiceZone:output_type -> ride.location.v1.CheckServiceZoneResponse
+	23, // 86: ride.location.v1.LocationService.ListCities:output_type -> ride.location.v1.ListCitiesResponse
+	25, // 87: ride.location.v1.LocationService.GetCity:output_type -> ride.location.v1.CityResponse
+	23, // 88: ride.location.v1.LocationService.AdminListCities:output_type -> ride.location.v1.ListCitiesResponse
+	25, // 89: ride.location.v1.LocationService.CreateCity:output_type -> ride.location.v1.CityResponse
+	25, // 90: ride.location.v1.LocationService.UpdateCity:output_type -> ride.location.v1.CityResponse
+	25, // 91: ride.location.v1.LocationService.SetCityActive:output_type -> ride.location.v1.CityResponse
+	32, // 92: ride.location.v1.LocationService.ListPlaces:output_type -> ride.location.v1.ListPlacesResponse
+	34, // 93: ride.location.v1.LocationService.GetPlace:output_type -> ride.location.v1.CuratedPlaceResponse
+	32, // 94: ride.location.v1.LocationService.AdminListPlaces:output_type -> ride.location.v1.ListPlacesResponse
+	34, // 95: ride.location.v1.LocationService.CreatePlace:output_type -> ride.location.v1.CuratedPlaceResponse
+	34, // 96: ride.location.v1.LocationService.UpdatePlace:output_type -> ride.location.v1.CuratedPlaceResponse
+	34, // 97: ride.location.v1.LocationService.SetPlaceActive:output_type -> ride.location.v1.CuratedPlaceResponse
+	39, // 98: ride.location.v1.LocationService.GetRoute:output_type -> ride.location.v1.GetRouteResponse
+	41, // 99: ride.location.v1.LocationService.SearchPlaces:output_type -> ride.location.v1.SearchPlacesResponse
+	43, // 100: ride.location.v1.LocationService.ReverseGeocode:output_type -> ride.location.v1.ReverseGeocodeResponse
+	77, // [77:101] is the sub-list for method output_type
+	53, // [53:77] is the sub-list for method input_type
+	53, // [53:53] is the sub-list for extension type_name
+	53, // [53:53] is the sub-list for extension extendee
+	0,  // [0:53] is the sub-list for field type_name
 }
 
 func init() { file_ride_location_v1_location_proto_init() }

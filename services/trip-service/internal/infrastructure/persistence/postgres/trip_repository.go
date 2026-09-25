@@ -45,18 +45,23 @@ func (r *TripRepository) Create(
 
 	var created trip.Trip
 
+	stops, err := encodeStops(input.Stops)
+	if err != nil {
+		return trip.Trip{}, err
+	}
+
 	row := tx.QueryRow(
 		ctx,
 		`INSERT INTO trips
 		    (id, rider_id, pickup_latitude, pickup_longitude,
 		     dropoff_latitude, dropoff_longitude, vehicle_class, payment_method,
 		     pickup_address, dropoff_address, pickup_details, pickup_note, pickup_photo_media_id,
-		     quote_id, quoted_fare, currency_code, passenger_name, passenger_phone, scheduled)
+		     quote_id, quoted_fare, currency_code, passenger_name, passenger_phone, scheduled, stops)
 		 VALUES ($1, $2, $3, $4, $5, $6, COALESCE(NULLIF($7::text, ''), 'economy'),
 		         COALESCE(NULLIF($8::text, ''), 'cash'),
 		         $9, $10, $11, $12, NULLIF($13::text, '')::uuid,
 		         NULLIF($14::text, '')::uuid, NULLIF($15::text, '')::numeric, NULLIF($16::text, ''),
-		         $17, $18, $19)
+		         $17, $18, $19, $20)
 		 RETURNING `+tripColumns,
 		input.ID,
 		input.RiderID,
@@ -77,6 +82,7 @@ func (r *TripRepository) Create(
 		input.PassengerName,
 		input.PassengerPhone,
 		input.Scheduled,
+		stops,
 	)
 
 	if err := scanTrip(row, &created); err != nil {
@@ -428,12 +434,13 @@ const tripColumns = `id, rider_id, driver_id, status,
 	COALESCE(pickup_photo_media_id::text, ''),
 	COALESCE(quote_id::text, ''), COALESCE(quoted_fare::text, ''), COALESCE(currency_code, ''),
 	arrived_at, COALESCE(cancelled_by, ''), rider_no_show,
-	passenger_name, passenger_phone, scheduled`
+	passenger_name, passenger_phone, scheduled, stops`
 
 func scanTrip(row pgx.Row, dest *trip.Trip) error {
 	var status string
 	var driverID, cancellationReason *string
 	var quotedFare, cancelledBy string
+	var stops []byte
 
 	err := row.Scan(
 		&dest.ID,
@@ -468,10 +475,18 @@ func scanTrip(row pgx.Row, dest *trip.Trip) error {
 		&dest.PassengerName,
 		&dest.PassengerPhone,
 		&dest.Scheduled,
+		&stops,
 	)
 	if err != nil {
 		return err
 	}
+
+	decoded, err := decodeStops(stops)
+	if err != nil {
+		return err
+	}
+
+	dest.Stops = decoded
 
 	dest.Status = trip.Status(status)
 	dest.QuotedFare = trimDecimal(quotedFare)
