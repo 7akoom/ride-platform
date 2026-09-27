@@ -10,8 +10,15 @@ import (
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
 )
 
+// statusEvents names the event a status change tells the driver about.
+var statusEvents = map[driver.Status]string{
+	driver.StatusActive:   "driver.approved",
+	driver.StatusRejected: "driver.rejected",
+}
+
 // UpdateStatus changes the driver's status in one statement that also checks
 // the current status, so two operators acting at once cannot both succeed.
+// The change and its event are written together.
 func (r *DriverRepository) UpdateStatus(
 	ctx context.Context,
 	input driver.UpdateStatusInput,
@@ -21,7 +28,13 @@ func (r *DriverRepository) UpdateStatus(
 		allowedFrom = append(allowedFrom, string(status))
 	}
 
-	row := r.pool.QueryRow(
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return driver.Driver{}, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	row := tx.QueryRow(
 		ctx,
 		`UPDATE drivers
          SET status = $2,
@@ -42,14 +55,28 @@ func (r *DriverRepository) UpdateStatus(
 
 	var updated driver.Driver
 
-	err := scanDriver(row, &updated)
+	err = scanDriver(row, &updated)
 	if err == nil {
+		if eventType, tells := statusEvents[input.To]; tells {
+			payload := map[string]string{"driver_id": updated.ID, "reason": updated.RejectionReason}
+
+			if err := writeOutboxEvent(ctx, tx, updated.ID, eventType, payload); err != nil {
+				return driver.Driver{}, err
+			}
+		}
+
+		if err := tx.Commit(ctx); err != nil {
+			return driver.Driver{}, fmt.Errorf("commit transaction: %w", err)
+		}
+
 		return updated, nil
 	}
 
 	if !errors.Is(err, pgx.ErrNoRows) {
 		return driver.Driver{}, fmt.Errorf("update driver status: %w", err)
 	}
+
+	_ = tx.Rollback(ctx)
 
 	// No row changed: either the driver does not exist, or it is in a status
 	// this change cannot start from. Tell the two apart.

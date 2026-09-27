@@ -52,6 +52,10 @@ func staffTargetOf(request any) string {
 	switch r := request.(type) {
 	case interface{ GetDriverId() string }:
 		return r.GetDriverId()
+	case interface{ GetDocumentId() string }:
+		return r.GetDocumentId()
+	case interface{ GetCode() string }:
+		return r.GetCode()
 	default:
 		return ""
 	}

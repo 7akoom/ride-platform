@@ -132,6 +132,128 @@ func (AvailabilityStatus) EnumDescriptor() ([]byte, []int) {
 	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{1}
 }
 
+type DriverDocumentStatus int32
+
+const (
+	DriverDocumentStatus_DRIVER_DOCUMENT_STATUS_UNSPECIFIED DriverDocumentStatus = 0
+	DriverDocumentStatus_DRIVER_DOCUMENT_STATUS_PENDING     DriverDocumentStatus = 1
+	DriverDocumentStatus_DRIVER_DOCUMENT_STATUS_APPROVED    DriverDocumentStatus = 2
+	DriverDocumentStatus_DRIVER_DOCUMENT_STATUS_REJECTED    DriverDocumentStatus = 3
+	// Replaced by a newer document of the same type; its file is deleted.
+	DriverDocumentStatus_DRIVER_DOCUMENT_STATUS_SUPERSEDED DriverDocumentStatus = 4
+)
+
+// Enum value maps for DriverDocumentStatus.
+var (
+	DriverDocumentStatus_name = map[int32]string{
+		0: "DRIVER_DOCUMENT_STATUS_UNSPECIFIED",
+		1: "DRIVER_DOCUMENT_STATUS_PENDING",
+		2: "DRIVER_DOCUMENT_STATUS_APPROVED",
+		3: "DRIVER_DOCUMENT_STATUS_REJECTED",
+		4: "DRIVER_DOCUMENT_STATUS_SUPERSEDED",
+	}
+	DriverDocumentStatus_value = map[string]int32{
+		"DRIVER_DOCUMENT_STATUS_UNSPECIFIED": 0,
+		"DRIVER_DOCUMENT_STATUS_PENDING":     1,
+		"DRIVER_DOCUMENT_STATUS_APPROVED":    2,
+		"DRIVER_DOCUMENT_STATUS_REJECTED":    3,
+		"DRIVER_DOCUMENT_STATUS_SUPERSEDED":  4,
+	}
+)
+
+func (x DriverDocumentStatus) Enum() *DriverDocumentStatus {
+	p := new(DriverDocumentStatus)
+	*p = x
+	return p
+}
+
+func (x DriverDocumentStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DriverDocumentStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_ride_driver_v1_driver_proto_enumTypes[2].Descriptor()
+}
+
+func (DriverDocumentStatus) Type() protoreflect.EnumType {
+	return &file_ride_driver_v1_driver_proto_enumTypes[2]
+}
+
+func (x DriverDocumentStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DriverDocumentStatus.Descriptor instead.
+func (DriverDocumentStatus) EnumDescriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{2}
+}
+
+type DocumentRequirementState int32
+
+const (
+	DocumentRequirementState_DOCUMENT_REQUIREMENT_STATE_UNSPECIFIED DocumentRequirementState = 0
+	// Nothing submitted yet.
+	DocumentRequirementState_DOCUMENT_REQUIREMENT_STATE_MISSING DocumentRequirementState = 1
+	// Submitted, waiting for review; nothing approved yet.
+	DocumentRequirementState_DOCUMENT_REQUIREMENT_STATE_PENDING_REVIEW DocumentRequirementState = 2
+	// The last one was turned down; a new one is needed.
+	DocumentRequirementState_DOCUMENT_REQUIREMENT_STATE_REJECTED DocumentRequirementState = 3
+	DocumentRequirementState_DOCUMENT_REQUIREMENT_STATE_APPROVED DocumentRequirementState = 4
+	// Approved, but its last valid day is within the reminder window.
+	DocumentRequirementState_DOCUMENT_REQUIREMENT_STATE_EXPIRING_SOON DocumentRequirementState = 5
+	// Approved, but no longer in date.
+	DocumentRequirementState_DOCUMENT_REQUIREMENT_STATE_EXPIRED DocumentRequirementState = 6
+)
+
+// Enum value maps for DocumentRequirementState.
+var (
+	DocumentRequirementState_name = map[int32]string{
+		0: "DOCUMENT_REQUIREMENT_STATE_UNSPECIFIED",
+		1: "DOCUMENT_REQUIREMENT_STATE_MISSING",
+		2: "DOCUMENT_REQUIREMENT_STATE_PENDING_REVIEW",
+		3: "DOCUMENT_REQUIREMENT_STATE_REJECTED",
+		4: "DOCUMENT_REQUIREMENT_STATE_APPROVED",
+		5: "DOCUMENT_REQUIREMENT_STATE_EXPIRING_SOON",
+		6: "DOCUMENT_REQUIREMENT_STATE_EXPIRED",
+	}
+	DocumentRequirementState_value = map[string]int32{
+		"DOCUMENT_REQUIREMENT_STATE_UNSPECIFIED":    0,
+		"DOCUMENT_REQUIREMENT_STATE_MISSING":        1,
+		"DOCUMENT_REQUIREMENT_STATE_PENDING_REVIEW": 2,
+		"DOCUMENT_REQUIREMENT_STATE_REJECTED":       3,
+		"DOCUMENT_REQUIREMENT_STATE_APPROVED":       4,
+		"DOCUMENT_REQUIREMENT_STATE_EXPIRING_SOON":  5,
+		"DOCUMENT_REQUIREMENT_STATE_EXPIRED":        6,
+	}
+)
+
+func (x DocumentRequirementState) Enum() *DocumentRequirementState {
+	p := new(DocumentRequirementState)
+	*p = x
+	return p
+}
+
+func (x DocumentRequirementState) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DocumentRequirementState) Descriptor() protoreflect.EnumDescriptor {
+	return file_ride_driver_v1_driver_proto_enumTypes[3].Descriptor()
+}
+
+func (DocumentRequirementState) Type() protoreflect.EnumType {
+	return &file_ride_driver_v1_driver_proto_enumTypes[3]
+}
+
+func (x DocumentRequirementState) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DocumentRequirementState.Descriptor instead.
+func (DocumentRequirementState) EnumDescriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{3}
+}
+
 type Vehicle struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Make          string                 `protobuf:"bytes,1,opt,name=make,proto3" json:"make,omitempty"`
@@ -1068,6 +1190,1026 @@ func (x *ListDriversResponse) GetNextPageToken() string {
 	return ""
 }
 
+type DriverDocumentType struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Stable key, e.g. driving_licence_front.
+	Code string `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	// The media-service purpose the file is uploaded with: "driver_document"
+	// or "profile_photo".
+	MediaPurpose string `protobuf:"bytes,2,opt,name=media_purpose,json=mediaPurpose,proto3" json:"media_purpose,omitempty"`
+	NameEn       string `protobuf:"bytes,3,opt,name=name_en,json=nameEn,proto3" json:"name_en,omitempty"`
+	NameAr       string `protobuf:"bytes,4,opt,name=name_ar,json=nameAr,proto3" json:"name_ar,omitempty"`
+	NameKu       string `protobuf:"bytes,5,opt,name=name_ku,json=nameKu,proto3" json:"name_ku,omitempty"`
+	// A driver cannot be approved, or go online, without it approved and in date.
+	Required bool `protobuf:"varint,6,opt,name=required,proto3" json:"required,omitempty"`
+	// The driver types the document's number (ID number, licence number).
+	RequiresNumber bool `protobuf:"varint,7,opt,name=requires_number,json=requiresNumber,proto3" json:"requires_number,omitempty"`
+	// The driver gives the last day it is valid; it is then checked every day.
+	RequiresExpiry bool `protobuf:"varint,8,opt,name=requires_expiry,json=requiresExpiry,proto3" json:"requires_expiry,omitempty"`
+	// Inactive types are not asked for.
+	Active        bool  `protobuf:"varint,9,opt,name=active,proto3" json:"active,omitempty"`
+	SortOrder     int32 `protobuf:"varint,10,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DriverDocumentType) Reset() {
+	*x = DriverDocumentType{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DriverDocumentType) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DriverDocumentType) ProtoMessage() {}
+
+func (x *DriverDocumentType) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DriverDocumentType.ProtoReflect.Descriptor instead.
+func (*DriverDocumentType) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *DriverDocumentType) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *DriverDocumentType) GetMediaPurpose() string {
+	if x != nil {
+		return x.MediaPurpose
+	}
+	return ""
+}
+
+func (x *DriverDocumentType) GetNameEn() string {
+	if x != nil {
+		return x.NameEn
+	}
+	return ""
+}
+
+func (x *DriverDocumentType) GetNameAr() string {
+	if x != nil {
+		return x.NameAr
+	}
+	return ""
+}
+
+func (x *DriverDocumentType) GetNameKu() string {
+	if x != nil {
+		return x.NameKu
+	}
+	return ""
+}
+
+func (x *DriverDocumentType) GetRequired() bool {
+	if x != nil {
+		return x.Required
+	}
+	return false
+}
+
+func (x *DriverDocumentType) GetRequiresNumber() bool {
+	if x != nil {
+		return x.RequiresNumber
+	}
+	return false
+}
+
+func (x *DriverDocumentType) GetRequiresExpiry() bool {
+	if x != nil {
+		return x.RequiresExpiry
+	}
+	return false
+}
+
+func (x *DriverDocumentType) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
+func (x *DriverDocumentType) GetSortOrder() int32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+type DriverDocument struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Id       string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	DriverId string                 `protobuf:"bytes,2,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	TypeCode string                 `protobuf:"bytes,3,opt,name=type_code,json=typeCode,proto3" json:"type_code,omitempty"`
+	// The file in media-service (GetDownloadURL: the driver, or staff with media.read).
+	MediaId        string `protobuf:"bytes,4,opt,name=media_id,json=mediaId,proto3" json:"media_id,omitempty"`
+	DocumentNumber string `protobuf:"bytes,5,opt,name=document_number,json=documentNumber,proto3" json:"document_number,omitempty"`
+	// Last valid day, YYYY-MM-DD; empty when the type has no expiry.
+	ExpiresOn       string                 `protobuf:"bytes,6,opt,name=expires_on,json=expiresOn,proto3" json:"expires_on,omitempty"`
+	Status          DriverDocumentStatus   `protobuf:"varint,7,opt,name=status,proto3,enum=ride.driver.v1.DriverDocumentStatus" json:"status,omitempty"`
+	RejectionReason string                 `protobuf:"bytes,8,opt,name=rejection_reason,json=rejectionReason,proto3" json:"rejection_reason,omitempty"`
+	SubmittedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=submitted_at,json=submittedAt,proto3" json:"submitted_at,omitempty"`
+	ReviewedAt      *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=reviewed_at,json=reviewedAt,proto3" json:"reviewed_at,omitempty"`
+	// An approved document whose last valid day has passed.
+	Expired       bool `protobuf:"varint,11,opt,name=expired,proto3" json:"expired,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DriverDocument) Reset() {
+	*x = DriverDocument{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DriverDocument) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DriverDocument) ProtoMessage() {}
+
+func (x *DriverDocument) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DriverDocument.ProtoReflect.Descriptor instead.
+func (*DriverDocument) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *DriverDocument) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *DriverDocument) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+func (x *DriverDocument) GetTypeCode() string {
+	if x != nil {
+		return x.TypeCode
+	}
+	return ""
+}
+
+func (x *DriverDocument) GetMediaId() string {
+	if x != nil {
+		return x.MediaId
+	}
+	return ""
+}
+
+func (x *DriverDocument) GetDocumentNumber() string {
+	if x != nil {
+		return x.DocumentNumber
+	}
+	return ""
+}
+
+func (x *DriverDocument) GetExpiresOn() string {
+	if x != nil {
+		return x.ExpiresOn
+	}
+	return ""
+}
+
+func (x *DriverDocument) GetStatus() DriverDocumentStatus {
+	if x != nil {
+		return x.Status
+	}
+	return DriverDocumentStatus_DRIVER_DOCUMENT_STATUS_UNSPECIFIED
+}
+
+func (x *DriverDocument) GetRejectionReason() string {
+	if x != nil {
+		return x.RejectionReason
+	}
+	return ""
+}
+
+func (x *DriverDocument) GetSubmittedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.SubmittedAt
+	}
+	return nil
+}
+
+func (x *DriverDocument) GetReviewedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ReviewedAt
+	}
+	return nil
+}
+
+func (x *DriverDocument) GetExpired() bool {
+	if x != nil {
+		return x.Expired
+	}
+	return false
+}
+
+type DocumentRequirement struct {
+	state protoimpl.MessageState   `protogen:"open.v1"`
+	Type  *DriverDocumentType      `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	State DocumentRequirementState `protobuf:"varint,2,opt,name=state,proto3,enum=ride.driver.v1.DocumentRequirementState" json:"state,omitempty"`
+	// The document in force, if any.
+	Approved *DriverDocument `protobuf:"bytes,3,opt,name=approved,proto3" json:"approved,omitempty"`
+	// A newer one waiting for review, if any (a renewal when approved is set).
+	Pending *DriverDocument `protobuf:"bytes,4,opt,name=pending,proto3" json:"pending,omitempty"`
+	// The last one turned down, if no newer one was submitted since.
+	Rejected      *DriverDocument `protobuf:"bytes,5,opt,name=rejected,proto3" json:"rejected,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DocumentRequirement) Reset() {
+	*x = DocumentRequirement{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DocumentRequirement) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DocumentRequirement) ProtoMessage() {}
+
+func (x *DocumentRequirement) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DocumentRequirement.ProtoReflect.Descriptor instead.
+func (*DocumentRequirement) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *DocumentRequirement) GetType() *DriverDocumentType {
+	if x != nil {
+		return x.Type
+	}
+	return nil
+}
+
+func (x *DocumentRequirement) GetState() DocumentRequirementState {
+	if x != nil {
+		return x.State
+	}
+	return DocumentRequirementState_DOCUMENT_REQUIREMENT_STATE_UNSPECIFIED
+}
+
+func (x *DocumentRequirement) GetApproved() *DriverDocument {
+	if x != nil {
+		return x.Approved
+	}
+	return nil
+}
+
+func (x *DocumentRequirement) GetPending() *DriverDocument {
+	if x != nil {
+		return x.Pending
+	}
+	return nil
+}
+
+func (x *DocumentRequirement) GetRejected() *DriverDocument {
+	if x != nil {
+		return x.Rejected
+	}
+	return nil
+}
+
+type ListDriverDocumentTypesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDriverDocumentTypesRequest) Reset() {
+	*x = ListDriverDocumentTypesRequest{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDriverDocumentTypesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDriverDocumentTypesRequest) ProtoMessage() {}
+
+func (x *ListDriverDocumentTypesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDriverDocumentTypesRequest.ProtoReflect.Descriptor instead.
+func (*ListDriverDocumentTypesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{20}
+}
+
+type ListDriverDocumentTypesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Types         []*DriverDocumentType  `protobuf:"bytes,1,rep,name=types,proto3" json:"types,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDriverDocumentTypesResponse) Reset() {
+	*x = ListDriverDocumentTypesResponse{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDriverDocumentTypesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDriverDocumentTypesResponse) ProtoMessage() {}
+
+func (x *ListDriverDocumentTypesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDriverDocumentTypesResponse.ProtoReflect.Descriptor instead.
+func (*ListDriverDocumentTypesResponse) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *ListDriverDocumentTypesResponse) GetTypes() []*DriverDocumentType {
+	if x != nil {
+		return x.Types
+	}
+	return nil
+}
+
+type UpsertDriverDocumentTypeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Type          *DriverDocumentType    `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertDriverDocumentTypeRequest) Reset() {
+	*x = UpsertDriverDocumentTypeRequest{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertDriverDocumentTypeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertDriverDocumentTypeRequest) ProtoMessage() {}
+
+func (x *UpsertDriverDocumentTypeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertDriverDocumentTypeRequest.ProtoReflect.Descriptor instead.
+func (*UpsertDriverDocumentTypeRequest) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *UpsertDriverDocumentTypeRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *UpsertDriverDocumentTypeRequest) GetType() *DriverDocumentType {
+	if x != nil {
+		return x.Type
+	}
+	return nil
+}
+
+type DriverDocumentTypeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          *DriverDocumentType    `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DriverDocumentTypeResponse) Reset() {
+	*x = DriverDocumentTypeResponse{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DriverDocumentTypeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DriverDocumentTypeResponse) ProtoMessage() {}
+
+func (x *DriverDocumentTypeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DriverDocumentTypeResponse.ProtoReflect.Descriptor instead.
+func (*DriverDocumentTypeResponse) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *DriverDocumentTypeResponse) GetType() *DriverDocumentType {
+	if x != nil {
+		return x.Type
+	}
+	return nil
+}
+
+type SubmitDriverDocumentRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	DriverId string                 `protobuf:"bytes,1,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	TypeCode string                 `protobuf:"bytes,2,opt,name=type_code,json=typeCode,proto3" json:"type_code,omitempty"`
+	MediaId  string                 `protobuf:"bytes,3,opt,name=media_id,json=mediaId,proto3" json:"media_id,omitempty"`
+	// Required when the type requires a number; ignored otherwise.
+	DocumentNumber string `protobuf:"bytes,4,opt,name=document_number,json=documentNumber,proto3" json:"document_number,omitempty"`
+	// YYYY-MM-DD, after today. Required when the type has an expiry; ignored otherwise.
+	ExpiresOn     string `protobuf:"bytes,5,opt,name=expires_on,json=expiresOn,proto3" json:"expires_on,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubmitDriverDocumentRequest) Reset() {
+	*x = SubmitDriverDocumentRequest{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitDriverDocumentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitDriverDocumentRequest) ProtoMessage() {}
+
+func (x *SubmitDriverDocumentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitDriverDocumentRequest.ProtoReflect.Descriptor instead.
+func (*SubmitDriverDocumentRequest) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *SubmitDriverDocumentRequest) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+func (x *SubmitDriverDocumentRequest) GetTypeCode() string {
+	if x != nil {
+		return x.TypeCode
+	}
+	return ""
+}
+
+func (x *SubmitDriverDocumentRequest) GetMediaId() string {
+	if x != nil {
+		return x.MediaId
+	}
+	return ""
+}
+
+func (x *SubmitDriverDocumentRequest) GetDocumentNumber() string {
+	if x != nil {
+		return x.DocumentNumber
+	}
+	return ""
+}
+
+func (x *SubmitDriverDocumentRequest) GetExpiresOn() string {
+	if x != nil {
+		return x.ExpiresOn
+	}
+	return ""
+}
+
+type DriverDocumentResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Document      *DriverDocument        `protobuf:"bytes,1,opt,name=document,proto3" json:"document,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DriverDocumentResponse) Reset() {
+	*x = DriverDocumentResponse{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DriverDocumentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DriverDocumentResponse) ProtoMessage() {}
+
+func (x *DriverDocumentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DriverDocumentResponse.ProtoReflect.Descriptor instead.
+func (*DriverDocumentResponse) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *DriverDocumentResponse) GetDocument() *DriverDocument {
+	if x != nil {
+		return x.Document
+	}
+	return nil
+}
+
+type ListDriverDocumentsRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	DriverId string                 `protobuf:"bytes,1,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	// Also return every document ever submitted, newest first.
+	IncludeHistory bool `protobuf:"varint,2,opt,name=include_history,json=includeHistory,proto3" json:"include_history,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ListDriverDocumentsRequest) Reset() {
+	*x = ListDriverDocumentsRequest{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDriverDocumentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDriverDocumentsRequest) ProtoMessage() {}
+
+func (x *ListDriverDocumentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDriverDocumentsRequest.ProtoReflect.Descriptor instead.
+func (*ListDriverDocumentsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *ListDriverDocumentsRequest) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+func (x *ListDriverDocumentsRequest) GetIncludeHistory() bool {
+	if x != nil {
+		return x.IncludeHistory
+	}
+	return false
+}
+
+type ListDriverDocumentsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// One per active document type, in the app's order.
+	Requirements []*DocumentRequirement `protobuf:"bytes,1,rep,name=requirements,proto3" json:"requirements,omitempty"`
+	// Every required document is approved and in date.
+	Compliant     bool              `protobuf:"varint,2,opt,name=compliant,proto3" json:"compliant,omitempty"`
+	History       []*DriverDocument `protobuf:"bytes,3,rep,name=history,proto3" json:"history,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDriverDocumentsResponse) Reset() {
+	*x = ListDriverDocumentsResponse{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDriverDocumentsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDriverDocumentsResponse) ProtoMessage() {}
+
+func (x *ListDriverDocumentsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDriverDocumentsResponse.ProtoReflect.Descriptor instead.
+func (*ListDriverDocumentsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *ListDriverDocumentsResponse) GetRequirements() []*DocumentRequirement {
+	if x != nil {
+		return x.Requirements
+	}
+	return nil
+}
+
+func (x *ListDriverDocumentsResponse) GetCompliant() bool {
+	if x != nil {
+		return x.Compliant
+	}
+	return false
+}
+
+func (x *ListDriverDocumentsResponse) GetHistory() []*DriverDocument {
+	if x != nil {
+		return x.History
+	}
+	return nil
+}
+
+type ListPendingDriverDocumentsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PageSize      int32                  `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPendingDriverDocumentsRequest) Reset() {
+	*x = ListPendingDriverDocumentsRequest{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPendingDriverDocumentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPendingDriverDocumentsRequest) ProtoMessage() {}
+
+func (x *ListPendingDriverDocumentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPendingDriverDocumentsRequest.ProtoReflect.Descriptor instead.
+func (*ListPendingDriverDocumentsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ListPendingDriverDocumentsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListPendingDriverDocumentsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type PendingDriverDocument struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Document          *DriverDocument        `protobuf:"bytes,1,opt,name=document,proto3" json:"document,omitempty"`
+	DriverDisplayName string                 `protobuf:"bytes,2,opt,name=driver_display_name,json=driverDisplayName,proto3" json:"driver_display_name,omitempty"`
+	DriverStatus      DriverStatus           `protobuf:"varint,3,opt,name=driver_status,json=driverStatus,proto3,enum=ride.driver.v1.DriverStatus" json:"driver_status,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PendingDriverDocument) Reset() {
+	*x = PendingDriverDocument{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PendingDriverDocument) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PendingDriverDocument) ProtoMessage() {}
+
+func (x *PendingDriverDocument) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PendingDriverDocument.ProtoReflect.Descriptor instead.
+func (*PendingDriverDocument) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *PendingDriverDocument) GetDocument() *DriverDocument {
+	if x != nil {
+		return x.Document
+	}
+	return nil
+}
+
+func (x *PendingDriverDocument) GetDriverDisplayName() string {
+	if x != nil {
+		return x.DriverDisplayName
+	}
+	return ""
+}
+
+func (x *PendingDriverDocument) GetDriverStatus() DriverStatus {
+	if x != nil {
+		return x.DriverStatus
+	}
+	return DriverStatus_DRIVER_STATUS_UNSPECIFIED
+}
+
+type ListPendingDriverDocumentsResponse struct {
+	state         protoimpl.MessageState   `protogen:"open.v1"`
+	Documents     []*PendingDriverDocument `protobuf:"bytes,1,rep,name=documents,proto3" json:"documents,omitempty"`
+	NextPageToken string                   `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPendingDriverDocumentsResponse) Reset() {
+	*x = ListPendingDriverDocumentsResponse{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPendingDriverDocumentsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPendingDriverDocumentsResponse) ProtoMessage() {}
+
+func (x *ListPendingDriverDocumentsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPendingDriverDocumentsResponse.ProtoReflect.Descriptor instead.
+func (*ListPendingDriverDocumentsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ListPendingDriverDocumentsResponse) GetDocuments() []*PendingDriverDocument {
+	if x != nil {
+		return x.Documents
+	}
+	return nil
+}
+
+func (x *ListPendingDriverDocumentsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type ApproveDriverDocumentRequest struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	DocumentId string                 `protobuf:"bytes,1,opt,name=document_id,json=documentId,proto3" json:"document_id,omitempty"`
+	// Optional corrections; empty keeps what the driver gave.
+	DocumentNumber string `protobuf:"bytes,2,opt,name=document_number,json=documentNumber,proto3" json:"document_number,omitempty"`
+	ExpiresOn      string `protobuf:"bytes,3,opt,name=expires_on,json=expiresOn,proto3" json:"expires_on,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ApproveDriverDocumentRequest) Reset() {
+	*x = ApproveDriverDocumentRequest{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApproveDriverDocumentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApproveDriverDocumentRequest) ProtoMessage() {}
+
+func (x *ApproveDriverDocumentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApproveDriverDocumentRequest.ProtoReflect.Descriptor instead.
+func (*ApproveDriverDocumentRequest) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ApproveDriverDocumentRequest) GetDocumentId() string {
+	if x != nil {
+		return x.DocumentId
+	}
+	return ""
+}
+
+func (x *ApproveDriverDocumentRequest) GetDocumentNumber() string {
+	if x != nil {
+		return x.DocumentNumber
+	}
+	return ""
+}
+
+func (x *ApproveDriverDocumentRequest) GetExpiresOn() string {
+	if x != nil {
+		return x.ExpiresOn
+	}
+	return ""
+}
+
+type RejectDriverDocumentRequest struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	DocumentId string                 `protobuf:"bytes,1,opt,name=document_id,json=documentId,proto3" json:"document_id,omitempty"`
+	// Shown to the driver. Required.
+	Reason        string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RejectDriverDocumentRequest) Reset() {
+	*x = RejectDriverDocumentRequest{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RejectDriverDocumentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RejectDriverDocumentRequest) ProtoMessage() {}
+
+func (x *RejectDriverDocumentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RejectDriverDocumentRequest.ProtoReflect.Descriptor instead.
+func (*RejectDriverDocumentRequest) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *RejectDriverDocumentRequest) GetDocumentId() string {
+	if x != nil {
+		return x.DocumentId
+	}
+	return ""
+}
+
+func (x *RejectDriverDocumentRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
 var File_ride_driver_v1_driver_proto protoreflect.FileDescriptor
 
 const file_ride_driver_v1_driver_proto_rawDesc = "" +
@@ -1136,7 +2278,86 @@ const file_ride_driver_v1_driver_proto_rawDesc = "" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"o\n" +
 	"\x13ListDriversResponse\x120\n" +
 	"\adrivers\x18\x01 \x03(\v2\x16.ride.driver.v1.DriverR\adrivers\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\x9b\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xbd\x02\n" +
+	"\x12DriverDocumentType\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12#\n" +
+	"\rmedia_purpose\x18\x02 \x01(\tR\fmediaPurpose\x12\x17\n" +
+	"\aname_en\x18\x03 \x01(\tR\x06nameEn\x12\x17\n" +
+	"\aname_ar\x18\x04 \x01(\tR\x06nameAr\x12\x17\n" +
+	"\aname_ku\x18\x05 \x01(\tR\x06nameKu\x12\x1a\n" +
+	"\brequired\x18\x06 \x01(\bR\brequired\x12'\n" +
+	"\x0frequires_number\x18\a \x01(\bR\x0erequiresNumber\x12'\n" +
+	"\x0frequires_expiry\x18\b \x01(\bR\x0erequiresExpiry\x12\x16\n" +
+	"\x06active\x18\t \x01(\bR\x06active\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\n" +
+	" \x01(\x05R\tsortOrder\"\xbc\x03\n" +
+	"\x0eDriverDocument\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
+	"\tdriver_id\x18\x02 \x01(\tR\bdriverId\x12\x1b\n" +
+	"\ttype_code\x18\x03 \x01(\tR\btypeCode\x12\x19\n" +
+	"\bmedia_id\x18\x04 \x01(\tR\amediaId\x12'\n" +
+	"\x0fdocument_number\x18\x05 \x01(\tR\x0edocumentNumber\x12\x1d\n" +
+	"\n" +
+	"expires_on\x18\x06 \x01(\tR\texpiresOn\x12<\n" +
+	"\x06status\x18\a \x01(\x0e2$.ride.driver.v1.DriverDocumentStatusR\x06status\x12)\n" +
+	"\x10rejection_reason\x18\b \x01(\tR\x0frejectionReason\x12=\n" +
+	"\fsubmitted_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\vsubmittedAt\x12;\n" +
+	"\vreviewed_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"reviewedAt\x12\x18\n" +
+	"\aexpired\x18\v \x01(\bR\aexpired\"\xbf\x02\n" +
+	"\x13DocumentRequirement\x126\n" +
+	"\x04type\x18\x01 \x01(\v2\".ride.driver.v1.DriverDocumentTypeR\x04type\x12>\n" +
+	"\x05state\x18\x02 \x01(\x0e2(.ride.driver.v1.DocumentRequirementStateR\x05state\x12:\n" +
+	"\bapproved\x18\x03 \x01(\v2\x1e.ride.driver.v1.DriverDocumentR\bapproved\x128\n" +
+	"\apending\x18\x04 \x01(\v2\x1e.ride.driver.v1.DriverDocumentR\apending\x12:\n" +
+	"\brejected\x18\x05 \x01(\v2\x1e.ride.driver.v1.DriverDocumentR\brejected\" \n" +
+	"\x1eListDriverDocumentTypesRequest\"[\n" +
+	"\x1fListDriverDocumentTypesResponse\x128\n" +
+	"\x05types\x18\x01 \x03(\v2\".ride.driver.v1.DriverDocumentTypeR\x05types\"m\n" +
+	"\x1fUpsertDriverDocumentTypeRequest\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x126\n" +
+	"\x04type\x18\x02 \x01(\v2\".ride.driver.v1.DriverDocumentTypeR\x04type\"T\n" +
+	"\x1aDriverDocumentTypeResponse\x126\n" +
+	"\x04type\x18\x01 \x01(\v2\".ride.driver.v1.DriverDocumentTypeR\x04type\"\xba\x01\n" +
+	"\x1bSubmitDriverDocumentRequest\x12\x1b\n" +
+	"\tdriver_id\x18\x01 \x01(\tR\bdriverId\x12\x1b\n" +
+	"\ttype_code\x18\x02 \x01(\tR\btypeCode\x12\x19\n" +
+	"\bmedia_id\x18\x03 \x01(\tR\amediaId\x12'\n" +
+	"\x0fdocument_number\x18\x04 \x01(\tR\x0edocumentNumber\x12\x1d\n" +
+	"\n" +
+	"expires_on\x18\x05 \x01(\tR\texpiresOn\"T\n" +
+	"\x16DriverDocumentResponse\x12:\n" +
+	"\bdocument\x18\x01 \x01(\v2\x1e.ride.driver.v1.DriverDocumentR\bdocument\"b\n" +
+	"\x1aListDriverDocumentsRequest\x12\x1b\n" +
+	"\tdriver_id\x18\x01 \x01(\tR\bdriverId\x12'\n" +
+	"\x0finclude_history\x18\x02 \x01(\bR\x0eincludeHistory\"\xbe\x01\n" +
+	"\x1bListDriverDocumentsResponse\x12G\n" +
+	"\frequirements\x18\x01 \x03(\v2#.ride.driver.v1.DocumentRequirementR\frequirements\x12\x1c\n" +
+	"\tcompliant\x18\x02 \x01(\bR\tcompliant\x128\n" +
+	"\ahistory\x18\x03 \x03(\v2\x1e.ride.driver.v1.DriverDocumentR\ahistory\"_\n" +
+	"!ListPendingDriverDocumentsRequest\x12\x1b\n" +
+	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\"\xc6\x01\n" +
+	"\x15PendingDriverDocument\x12:\n" +
+	"\bdocument\x18\x01 \x01(\v2\x1e.ride.driver.v1.DriverDocumentR\bdocument\x12.\n" +
+	"\x13driver_display_name\x18\x02 \x01(\tR\x11driverDisplayName\x12A\n" +
+	"\rdriver_status\x18\x03 \x01(\x0e2\x1c.ride.driver.v1.DriverStatusR\fdriverStatus\"\x91\x01\n" +
+	"\"ListPendingDriverDocumentsResponse\x12C\n" +
+	"\tdocuments\x18\x01 \x03(\v2%.ride.driver.v1.PendingDriverDocumentR\tdocuments\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x87\x01\n" +
+	"\x1cApproveDriverDocumentRequest\x12\x1f\n" +
+	"\vdocument_id\x18\x01 \x01(\tR\n" +
+	"documentId\x12'\n" +
+	"\x0fdocument_number\x18\x02 \x01(\tR\x0edocumentNumber\x12\x1d\n" +
+	"\n" +
+	"expires_on\x18\x03 \x01(\tR\texpiresOn\"V\n" +
+	"\x1bRejectDriverDocumentRequest\x12\x1f\n" +
+	"\vdocument_id\x18\x01 \x01(\tR\n" +
+	"documentId\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason*\x9b\x01\n" +
 	"\fDriverStatus\x12\x1d\n" +
 	"\x19DRIVER_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14DRIVER_STATUS_ACTIVE\x10\x01\x12\x1b\n" +
@@ -1147,7 +2368,21 @@ const file_ride_driver_v1_driver_proto_rawDesc = "" +
 	"\x1fAVAILABILITY_STATUS_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bAVAILABILITY_STATUS_OFFLINE\x10\x01\x12!\n" +
 	"\x1dAVAILABILITY_STATUS_AVAILABLE\x10\x02\x12\x1c\n" +
-	"\x18AVAILABILITY_STATUS_BUSY\x10\x032\xce\b\n" +
+	"\x18AVAILABILITY_STATUS_BUSY\x10\x03*\xd3\x01\n" +
+	"\x14DriverDocumentStatus\x12&\n" +
+	"\"DRIVER_DOCUMENT_STATUS_UNSPECIFIED\x10\x00\x12\"\n" +
+	"\x1eDRIVER_DOCUMENT_STATUS_PENDING\x10\x01\x12#\n" +
+	"\x1fDRIVER_DOCUMENT_STATUS_APPROVED\x10\x02\x12#\n" +
+	"\x1fDRIVER_DOCUMENT_STATUS_REJECTED\x10\x03\x12%\n" +
+	"!DRIVER_DOCUMENT_STATUS_SUPERSEDED\x10\x04*\xc5\x02\n" +
+	"\x18DocumentRequirementState\x12*\n" +
+	"&DOCUMENT_REQUIREMENT_STATE_UNSPECIFIED\x10\x00\x12&\n" +
+	"\"DOCUMENT_REQUIREMENT_STATE_MISSING\x10\x01\x12-\n" +
+	")DOCUMENT_REQUIREMENT_STATE_PENDING_REVIEW\x10\x02\x12'\n" +
+	"#DOCUMENT_REQUIREMENT_STATE_REJECTED\x10\x03\x12'\n" +
+	"#DOCUMENT_REQUIREMENT_STATE_APPROVED\x10\x04\x12,\n" +
+	"(DOCUMENT_REQUIREMENT_STATE_EXPIRING_SOON\x10\x05\x12&\n" +
+	"\"DOCUMENT_REQUIREMENT_STATE_EXPIRED\x10\x062\xff\x12\n" +
 	"\rDriverService\x12q\n" +
 	"\fCreateDriver\x12#.ride.driver.v1.CreateDriverRequest\x1a$.ride.driver.v1.CreateDriverResponse\"\x16\x82\xd3\xe4\x93\x02\x10:\x01*\"\v/v1/drivers\x12q\n" +
 	"\tGetDriver\x12 .ride.driver.v1.GetDriverRequest\x1a!.ride.driver.v1.GetDriverResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/drivers/{driver_id}\x12\x91\x01\n" +
@@ -1156,7 +2391,15 @@ const file_ride_driver_v1_driver_proto_rawDesc = "" +
 	"\x12UpdateAvailability\x12).ride.driver.v1.UpdateAvailabilityRequest\x1a*.ride.driver.v1.UpdateAvailabilityResponse\"/\x82\xd3\xe4\x93\x02):\x01*\x1a$/v1/drivers/{driver_id}/availability\x12\x8e\x01\n" +
 	"\rApproveDriver\x12$.ride.driver.v1.ApproveDriverRequest\x1a%.ride.driver.v1.ApproveDriverResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/v1/admin/drivers/{driver_id}:approve\x12\x8a\x01\n" +
 	"\fRejectDriver\x12#.ride.driver.v1.RejectDriverRequest\x1a$.ride.driver.v1.RejectDriverResponse\"/\x82\xd3\xe4\x93\x02):\x01*\"$/v1/admin/drivers/{driver_id}:reject\x12q\n" +
-	"\vListDrivers\x12\".ride.driver.v1.ListDriversRequest\x1a#.ride.driver.v1.ListDriversResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/admin/driversB@Z>github.com/7akoom/ride-platform/gen/go/ride/driver/v1;driverv1b\x06proto3"
+	"\vListDrivers\x12\".ride.driver.v1.ListDriversRequest\x1a#.ride.driver.v1.ListDriversResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/admin/drivers\x12\x9d\x01\n" +
+	"\x17ListDriverDocumentTypes\x12..ride.driver.v1.ListDriverDocumentTypesRequest\x1a/.ride.driver.v1.ListDriverDocumentTypesResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/driver-document-types\x12\xa8\x01\n" +
+	"\x1cAdminListDriverDocumentTypes\x12..ride.driver.v1.ListDriverDocumentTypesRequest\x1a/.ride.driver.v1.ListDriverDocumentTypesResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/admin/driver-document-types\x12\xaa\x01\n" +
+	"\x18UpsertDriverDocumentType\x12/.ride.driver.v1.UpsertDriverDocumentTypeRequest\x1a*.ride.driver.v1.DriverDocumentTypeResponse\"1\x82\xd3\xe4\x93\x02+:\x01*\x1a&/v1/admin/driver-document-types/{code}\x12\x99\x01\n" +
+	"\x14SubmitDriverDocument\x12+.ride.driver.v1.SubmitDriverDocumentRequest\x1a&.ride.driver.v1.DriverDocumentResponse\",\x82\xd3\xe4\x93\x02&:\x01*\"!/v1/drivers/{driver_id}/documents\x12\x99\x01\n" +
+	"\x13ListDriverDocuments\x12*.ride.driver.v1.ListDriverDocumentsRequest\x1a+.ride.driver.v1.ListDriverDocumentsResponse\")\x82\xd3\xe4\x93\x02#\x12!/v1/drivers/{driver_id}/documents\x12\xa7\x01\n" +
+	"\x1aListPendingDriverDocuments\x121.ride.driver.v1.ListPendingDriverDocumentsRequest\x1a2.ride.driver.v1.ListPendingDriverDocumentsResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/v1/admin/driver-documents\x12\xaa\x01\n" +
+	"\x15ApproveDriverDocument\x12,.ride.driver.v1.ApproveDriverDocumentRequest\x1a&.ride.driver.v1.DriverDocumentResponse\";\x82\xd3\xe4\x93\x025:\x01*\"0/v1/admin/driver-documents/{document_id}:approve\x12\xa7\x01\n" +
+	"\x14RejectDriverDocument\x12+.ride.driver.v1.RejectDriverDocumentRequest\x1a&.ride.driver.v1.DriverDocumentResponse\":\x82\xd3\xe4\x93\x024:\x01*\"//v1/admin/driver-documents/{document_id}:rejectB@Z>github.com/7akoom/ride-platform/gen/go/ride/driver/v1;driverv1b\x06proto3"
 
 var (
 	file_ride_driver_v1_driver_proto_rawDescOnce sync.Once
@@ -1170,68 +2413,119 @@ func file_ride_driver_v1_driver_proto_rawDescGZIP() []byte {
 	return file_ride_driver_v1_driver_proto_rawDescData
 }
 
-var file_ride_driver_v1_driver_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_ride_driver_v1_driver_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_ride_driver_v1_driver_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_ride_driver_v1_driver_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_ride_driver_v1_driver_proto_goTypes = []any{
-	(DriverStatus)(0),                   // 0: ride.driver.v1.DriverStatus
-	(AvailabilityStatus)(0),             // 1: ride.driver.v1.AvailabilityStatus
-	(*Vehicle)(nil),                     // 2: ride.driver.v1.Vehicle
-	(*Driver)(nil),                      // 3: ride.driver.v1.Driver
-	(*CreateDriverRequest)(nil),         // 4: ride.driver.v1.CreateDriverRequest
-	(*CreateDriverResponse)(nil),        // 5: ride.driver.v1.CreateDriverResponse
-	(*GetDriverRequest)(nil),            // 6: ride.driver.v1.GetDriverRequest
-	(*GetDriverByIdentityRequest)(nil),  // 7: ride.driver.v1.GetDriverByIdentityRequest
-	(*GetDriverResponse)(nil),           // 8: ride.driver.v1.GetDriverResponse
-	(*UpdateDriverProfileRequest)(nil),  // 9: ride.driver.v1.UpdateDriverProfileRequest
-	(*UpdateDriverProfileResponse)(nil), // 10: ride.driver.v1.UpdateDriverProfileResponse
-	(*UpdateAvailabilityRequest)(nil),   // 11: ride.driver.v1.UpdateAvailabilityRequest
-	(*UpdateAvailabilityResponse)(nil),  // 12: ride.driver.v1.UpdateAvailabilityResponse
-	(*ApproveDriverRequest)(nil),        // 13: ride.driver.v1.ApproveDriverRequest
-	(*ApproveDriverResponse)(nil),       // 14: ride.driver.v1.ApproveDriverResponse
-	(*RejectDriverRequest)(nil),         // 15: ride.driver.v1.RejectDriverRequest
-	(*RejectDriverResponse)(nil),        // 16: ride.driver.v1.RejectDriverResponse
-	(*ListDriversRequest)(nil),          // 17: ride.driver.v1.ListDriversRequest
-	(*ListDriversResponse)(nil),         // 18: ride.driver.v1.ListDriversResponse
-	(*timestamppb.Timestamp)(nil),       // 19: google.protobuf.Timestamp
+	(DriverStatus)(0),                          // 0: ride.driver.v1.DriverStatus
+	(AvailabilityStatus)(0),                    // 1: ride.driver.v1.AvailabilityStatus
+	(DriverDocumentStatus)(0),                  // 2: ride.driver.v1.DriverDocumentStatus
+	(DocumentRequirementState)(0),              // 3: ride.driver.v1.DocumentRequirementState
+	(*Vehicle)(nil),                            // 4: ride.driver.v1.Vehicle
+	(*Driver)(nil),                             // 5: ride.driver.v1.Driver
+	(*CreateDriverRequest)(nil),                // 6: ride.driver.v1.CreateDriverRequest
+	(*CreateDriverResponse)(nil),               // 7: ride.driver.v1.CreateDriverResponse
+	(*GetDriverRequest)(nil),                   // 8: ride.driver.v1.GetDriverRequest
+	(*GetDriverByIdentityRequest)(nil),         // 9: ride.driver.v1.GetDriverByIdentityRequest
+	(*GetDriverResponse)(nil),                  // 10: ride.driver.v1.GetDriverResponse
+	(*UpdateDriverProfileRequest)(nil),         // 11: ride.driver.v1.UpdateDriverProfileRequest
+	(*UpdateDriverProfileResponse)(nil),        // 12: ride.driver.v1.UpdateDriverProfileResponse
+	(*UpdateAvailabilityRequest)(nil),          // 13: ride.driver.v1.UpdateAvailabilityRequest
+	(*UpdateAvailabilityResponse)(nil),         // 14: ride.driver.v1.UpdateAvailabilityResponse
+	(*ApproveDriverRequest)(nil),               // 15: ride.driver.v1.ApproveDriverRequest
+	(*ApproveDriverResponse)(nil),              // 16: ride.driver.v1.ApproveDriverResponse
+	(*RejectDriverRequest)(nil),                // 17: ride.driver.v1.RejectDriverRequest
+	(*RejectDriverResponse)(nil),               // 18: ride.driver.v1.RejectDriverResponse
+	(*ListDriversRequest)(nil),                 // 19: ride.driver.v1.ListDriversRequest
+	(*ListDriversResponse)(nil),                // 20: ride.driver.v1.ListDriversResponse
+	(*DriverDocumentType)(nil),                 // 21: ride.driver.v1.DriverDocumentType
+	(*DriverDocument)(nil),                     // 22: ride.driver.v1.DriverDocument
+	(*DocumentRequirement)(nil),                // 23: ride.driver.v1.DocumentRequirement
+	(*ListDriverDocumentTypesRequest)(nil),     // 24: ride.driver.v1.ListDriverDocumentTypesRequest
+	(*ListDriverDocumentTypesResponse)(nil),    // 25: ride.driver.v1.ListDriverDocumentTypesResponse
+	(*UpsertDriverDocumentTypeRequest)(nil),    // 26: ride.driver.v1.UpsertDriverDocumentTypeRequest
+	(*DriverDocumentTypeResponse)(nil),         // 27: ride.driver.v1.DriverDocumentTypeResponse
+	(*SubmitDriverDocumentRequest)(nil),        // 28: ride.driver.v1.SubmitDriverDocumentRequest
+	(*DriverDocumentResponse)(nil),             // 29: ride.driver.v1.DriverDocumentResponse
+	(*ListDriverDocumentsRequest)(nil),         // 30: ride.driver.v1.ListDriverDocumentsRequest
+	(*ListDriverDocumentsResponse)(nil),        // 31: ride.driver.v1.ListDriverDocumentsResponse
+	(*ListPendingDriverDocumentsRequest)(nil),  // 32: ride.driver.v1.ListPendingDriverDocumentsRequest
+	(*PendingDriverDocument)(nil),              // 33: ride.driver.v1.PendingDriverDocument
+	(*ListPendingDriverDocumentsResponse)(nil), // 34: ride.driver.v1.ListPendingDriverDocumentsResponse
+	(*ApproveDriverDocumentRequest)(nil),       // 35: ride.driver.v1.ApproveDriverDocumentRequest
+	(*RejectDriverDocumentRequest)(nil),        // 36: ride.driver.v1.RejectDriverDocumentRequest
+	(*timestamppb.Timestamp)(nil),              // 37: google.protobuf.Timestamp
 }
 var file_ride_driver_v1_driver_proto_depIdxs = []int32{
 	0,  // 0: ride.driver.v1.Driver.status:type_name -> ride.driver.v1.DriverStatus
 	1,  // 1: ride.driver.v1.Driver.availability_status:type_name -> ride.driver.v1.AvailabilityStatus
-	2,  // 2: ride.driver.v1.Driver.vehicle:type_name -> ride.driver.v1.Vehicle
-	19, // 3: ride.driver.v1.Driver.created_at:type_name -> google.protobuf.Timestamp
-	19, // 4: ride.driver.v1.Driver.updated_at:type_name -> google.protobuf.Timestamp
-	2,  // 5: ride.driver.v1.CreateDriverRequest.vehicle:type_name -> ride.driver.v1.Vehicle
-	3,  // 6: ride.driver.v1.CreateDriverResponse.driver:type_name -> ride.driver.v1.Driver
-	3,  // 7: ride.driver.v1.GetDriverResponse.driver:type_name -> ride.driver.v1.Driver
-	2,  // 8: ride.driver.v1.UpdateDriverProfileRequest.vehicle:type_name -> ride.driver.v1.Vehicle
-	3,  // 9: ride.driver.v1.UpdateDriverProfileResponse.driver:type_name -> ride.driver.v1.Driver
+	4,  // 2: ride.driver.v1.Driver.vehicle:type_name -> ride.driver.v1.Vehicle
+	37, // 3: ride.driver.v1.Driver.created_at:type_name -> google.protobuf.Timestamp
+	37, // 4: ride.driver.v1.Driver.updated_at:type_name -> google.protobuf.Timestamp
+	4,  // 5: ride.driver.v1.CreateDriverRequest.vehicle:type_name -> ride.driver.v1.Vehicle
+	5,  // 6: ride.driver.v1.CreateDriverResponse.driver:type_name -> ride.driver.v1.Driver
+	5,  // 7: ride.driver.v1.GetDriverResponse.driver:type_name -> ride.driver.v1.Driver
+	4,  // 8: ride.driver.v1.UpdateDriverProfileRequest.vehicle:type_name -> ride.driver.v1.Vehicle
+	5,  // 9: ride.driver.v1.UpdateDriverProfileResponse.driver:type_name -> ride.driver.v1.Driver
 	1,  // 10: ride.driver.v1.UpdateAvailabilityRequest.availability_status:type_name -> ride.driver.v1.AvailabilityStatus
-	3,  // 11: ride.driver.v1.UpdateAvailabilityResponse.driver:type_name -> ride.driver.v1.Driver
-	3,  // 12: ride.driver.v1.ApproveDriverResponse.driver:type_name -> ride.driver.v1.Driver
-	3,  // 13: ride.driver.v1.RejectDriverResponse.driver:type_name -> ride.driver.v1.Driver
+	5,  // 11: ride.driver.v1.UpdateAvailabilityResponse.driver:type_name -> ride.driver.v1.Driver
+	5,  // 12: ride.driver.v1.ApproveDriverResponse.driver:type_name -> ride.driver.v1.Driver
+	5,  // 13: ride.driver.v1.RejectDriverResponse.driver:type_name -> ride.driver.v1.Driver
 	0,  // 14: ride.driver.v1.ListDriversRequest.status:type_name -> ride.driver.v1.DriverStatus
-	3,  // 15: ride.driver.v1.ListDriversResponse.drivers:type_name -> ride.driver.v1.Driver
-	4,  // 16: ride.driver.v1.DriverService.CreateDriver:input_type -> ride.driver.v1.CreateDriverRequest
-	6,  // 17: ride.driver.v1.DriverService.GetDriver:input_type -> ride.driver.v1.GetDriverRequest
-	7,  // 18: ride.driver.v1.DriverService.GetDriverByIdentity:input_type -> ride.driver.v1.GetDriverByIdentityRequest
-	9,  // 19: ride.driver.v1.DriverService.UpdateDriverProfile:input_type -> ride.driver.v1.UpdateDriverProfileRequest
-	11, // 20: ride.driver.v1.DriverService.UpdateAvailability:input_type -> ride.driver.v1.UpdateAvailabilityRequest
-	13, // 21: ride.driver.v1.DriverService.ApproveDriver:input_type -> ride.driver.v1.ApproveDriverRequest
-	15, // 22: ride.driver.v1.DriverService.RejectDriver:input_type -> ride.driver.v1.RejectDriverRequest
-	17, // 23: ride.driver.v1.DriverService.ListDrivers:input_type -> ride.driver.v1.ListDriversRequest
-	5,  // 24: ride.driver.v1.DriverService.CreateDriver:output_type -> ride.driver.v1.CreateDriverResponse
-	8,  // 25: ride.driver.v1.DriverService.GetDriver:output_type -> ride.driver.v1.GetDriverResponse
-	8,  // 26: ride.driver.v1.DriverService.GetDriverByIdentity:output_type -> ride.driver.v1.GetDriverResponse
-	10, // 27: ride.driver.v1.DriverService.UpdateDriverProfile:output_type -> ride.driver.v1.UpdateDriverProfileResponse
-	12, // 28: ride.driver.v1.DriverService.UpdateAvailability:output_type -> ride.driver.v1.UpdateAvailabilityResponse
-	14, // 29: ride.driver.v1.DriverService.ApproveDriver:output_type -> ride.driver.v1.ApproveDriverResponse
-	16, // 30: ride.driver.v1.DriverService.RejectDriver:output_type -> ride.driver.v1.RejectDriverResponse
-	18, // 31: ride.driver.v1.DriverService.ListDrivers:output_type -> ride.driver.v1.ListDriversResponse
-	24, // [24:32] is the sub-list for method output_type
-	16, // [16:24] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	5,  // 15: ride.driver.v1.ListDriversResponse.drivers:type_name -> ride.driver.v1.Driver
+	2,  // 16: ride.driver.v1.DriverDocument.status:type_name -> ride.driver.v1.DriverDocumentStatus
+	37, // 17: ride.driver.v1.DriverDocument.submitted_at:type_name -> google.protobuf.Timestamp
+	37, // 18: ride.driver.v1.DriverDocument.reviewed_at:type_name -> google.protobuf.Timestamp
+	21, // 19: ride.driver.v1.DocumentRequirement.type:type_name -> ride.driver.v1.DriverDocumentType
+	3,  // 20: ride.driver.v1.DocumentRequirement.state:type_name -> ride.driver.v1.DocumentRequirementState
+	22, // 21: ride.driver.v1.DocumentRequirement.approved:type_name -> ride.driver.v1.DriverDocument
+	22, // 22: ride.driver.v1.DocumentRequirement.pending:type_name -> ride.driver.v1.DriverDocument
+	22, // 23: ride.driver.v1.DocumentRequirement.rejected:type_name -> ride.driver.v1.DriverDocument
+	21, // 24: ride.driver.v1.ListDriverDocumentTypesResponse.types:type_name -> ride.driver.v1.DriverDocumentType
+	21, // 25: ride.driver.v1.UpsertDriverDocumentTypeRequest.type:type_name -> ride.driver.v1.DriverDocumentType
+	21, // 26: ride.driver.v1.DriverDocumentTypeResponse.type:type_name -> ride.driver.v1.DriverDocumentType
+	22, // 27: ride.driver.v1.DriverDocumentResponse.document:type_name -> ride.driver.v1.DriverDocument
+	23, // 28: ride.driver.v1.ListDriverDocumentsResponse.requirements:type_name -> ride.driver.v1.DocumentRequirement
+	22, // 29: ride.driver.v1.ListDriverDocumentsResponse.history:type_name -> ride.driver.v1.DriverDocument
+	22, // 30: ride.driver.v1.PendingDriverDocument.document:type_name -> ride.driver.v1.DriverDocument
+	0,  // 31: ride.driver.v1.PendingDriverDocument.driver_status:type_name -> ride.driver.v1.DriverStatus
+	33, // 32: ride.driver.v1.ListPendingDriverDocumentsResponse.documents:type_name -> ride.driver.v1.PendingDriverDocument
+	6,  // 33: ride.driver.v1.DriverService.CreateDriver:input_type -> ride.driver.v1.CreateDriverRequest
+	8,  // 34: ride.driver.v1.DriverService.GetDriver:input_type -> ride.driver.v1.GetDriverRequest
+	9,  // 35: ride.driver.v1.DriverService.GetDriverByIdentity:input_type -> ride.driver.v1.GetDriverByIdentityRequest
+	11, // 36: ride.driver.v1.DriverService.UpdateDriverProfile:input_type -> ride.driver.v1.UpdateDriverProfileRequest
+	13, // 37: ride.driver.v1.DriverService.UpdateAvailability:input_type -> ride.driver.v1.UpdateAvailabilityRequest
+	15, // 38: ride.driver.v1.DriverService.ApproveDriver:input_type -> ride.driver.v1.ApproveDriverRequest
+	17, // 39: ride.driver.v1.DriverService.RejectDriver:input_type -> ride.driver.v1.RejectDriverRequest
+	19, // 40: ride.driver.v1.DriverService.ListDrivers:input_type -> ride.driver.v1.ListDriversRequest
+	24, // 41: ride.driver.v1.DriverService.ListDriverDocumentTypes:input_type -> ride.driver.v1.ListDriverDocumentTypesRequest
+	24, // 42: ride.driver.v1.DriverService.AdminListDriverDocumentTypes:input_type -> ride.driver.v1.ListDriverDocumentTypesRequest
+	26, // 43: ride.driver.v1.DriverService.UpsertDriverDocumentType:input_type -> ride.driver.v1.UpsertDriverDocumentTypeRequest
+	28, // 44: ride.driver.v1.DriverService.SubmitDriverDocument:input_type -> ride.driver.v1.SubmitDriverDocumentRequest
+	30, // 45: ride.driver.v1.DriverService.ListDriverDocuments:input_type -> ride.driver.v1.ListDriverDocumentsRequest
+	32, // 46: ride.driver.v1.DriverService.ListPendingDriverDocuments:input_type -> ride.driver.v1.ListPendingDriverDocumentsRequest
+	35, // 47: ride.driver.v1.DriverService.ApproveDriverDocument:input_type -> ride.driver.v1.ApproveDriverDocumentRequest
+	36, // 48: ride.driver.v1.DriverService.RejectDriverDocument:input_type -> ride.driver.v1.RejectDriverDocumentRequest
+	7,  // 49: ride.driver.v1.DriverService.CreateDriver:output_type -> ride.driver.v1.CreateDriverResponse
+	10, // 50: ride.driver.v1.DriverService.GetDriver:output_type -> ride.driver.v1.GetDriverResponse
+	10, // 51: ride.driver.v1.DriverService.GetDriverByIdentity:output_type -> ride.driver.v1.GetDriverResponse
+	12, // 52: ride.driver.v1.DriverService.UpdateDriverProfile:output_type -> ride.driver.v1.UpdateDriverProfileResponse
+	14, // 53: ride.driver.v1.DriverService.UpdateAvailability:output_type -> ride.driver.v1.UpdateAvailabilityResponse
+	16, // 54: ride.driver.v1.DriverService.ApproveDriver:output_type -> ride.driver.v1.ApproveDriverResponse
+	18, // 55: ride.driver.v1.DriverService.RejectDriver:output_type -> ride.driver.v1.RejectDriverResponse
+	20, // 56: ride.driver.v1.DriverService.ListDrivers:output_type -> ride.driver.v1.ListDriversResponse
+	25, // 57: ride.driver.v1.DriverService.ListDriverDocumentTypes:output_type -> ride.driver.v1.ListDriverDocumentTypesResponse
+	25, // 58: ride.driver.v1.DriverService.AdminListDriverDocumentTypes:output_type -> ride.driver.v1.ListDriverDocumentTypesResponse
+	27, // 59: ride.driver.v1.DriverService.UpsertDriverDocumentType:output_type -> ride.driver.v1.DriverDocumentTypeResponse
+	29, // 60: ride.driver.v1.DriverService.SubmitDriverDocument:output_type -> ride.driver.v1.DriverDocumentResponse
+	31, // 61: ride.driver.v1.DriverService.ListDriverDocuments:output_type -> ride.driver.v1.ListDriverDocumentsResponse
+	34, // 62: ride.driver.v1.DriverService.ListPendingDriverDocuments:output_type -> ride.driver.v1.ListPendingDriverDocumentsResponse
+	29, // 63: ride.driver.v1.DriverService.ApproveDriverDocument:output_type -> ride.driver.v1.DriverDocumentResponse
+	29, // 64: ride.driver.v1.DriverService.RejectDriverDocument:output_type -> ride.driver.v1.DriverDocumentResponse
+	49, // [49:65] is the sub-list for method output_type
+	33, // [33:49] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_ride_driver_v1_driver_proto_init() }
@@ -1244,8 +2538,8 @@ func file_ride_driver_v1_driver_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_driver_v1_driver_proto_rawDesc), len(file_ride_driver_v1_driver_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   17,
+			NumEnums:      4,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

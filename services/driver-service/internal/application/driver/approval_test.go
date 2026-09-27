@@ -83,7 +83,10 @@ func TestUpdateAvailability_UnknownDriverGoingOnlineIsNotFound(t *testing.T) {
 // --- approve and reject ------------------------------------------------------
 
 func TestApproveDriver(t *testing.T) {
-	repo := &fakeRepository{updateStatusResult: driver.Driver{ID: "d1", Status: driver.StatusActive}}
+	repo := &fakeRepository{
+		findByIDResult:     driver.Driver{ID: "d1", Status: driver.StatusPending},
+		updateStatusResult: driver.Driver{ID: "d1", Status: driver.StatusActive},
+	}
 	svc := newService(repo, "id")
 
 	got, err := svc.ApproveDriver(context.Background(), "  d1  ")
@@ -159,7 +162,10 @@ func TestApproveAndReject_RequireDriverID(t *testing.T) {
 
 func TestApproveAndReject_PassRepositoryErrorsThrough(t *testing.T) {
 	for _, repoErr := range []error{driver.ErrDriverNotFound, driver.ErrInvalidStatusTransition} {
-		repo := &fakeRepository{updateStatusErr: repoErr}
+		repo := &fakeRepository{
+			findByIDResult:  driver.Driver{ID: "d1", Status: driver.StatusPending},
+			updateStatusErr: repoErr,
+		}
 		svc := newService(repo, "id")
 
 		if _, err := svc.ApproveDriver(context.Background(), "d1"); !errors.Is(err, repoErr) {
@@ -173,7 +179,10 @@ func TestApproveAndReject_PassRepositoryErrorsThrough(t *testing.T) {
 }
 
 func TestRejectDriver_KeepsTheReasonAndApprovalClearsIt(t *testing.T) {
-	repo := &fakeRepository{updateStatusResult: driver.Driver{ID: "d1"}}
+	repo := &fakeRepository{
+		findByIDResult:     driver.Driver{ID: "d1", Status: driver.StatusRejected},
+		updateStatusResult: driver.Driver{ID: "d1"},
+	}
 	svc := newService(repo, "id")
 
 	if _, err := svc.RejectDriver(context.Background(), "d1", "  licence photo is blurry  "); err != nil {

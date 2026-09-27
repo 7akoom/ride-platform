@@ -712,6 +712,9 @@ services:
       DATABASE_URL: postgres://${DRIVER_DB_USER}:${DRIVER_DB_PASSWORD}@driver-postgres:5432/${DRIVER_DB_NAME}?sslmode=disable
       NATS_URL: nats://nats:4222
       STAFF_SERVICE_ADDRESS: staff-service:50061
+      MEDIA_SERVICE_ADDRESS: media-service:50062
+      # The day a driver document runs out is judged in this time zone.
+      DRIVER_DOCUMENTS_TIME_ZONE: ${DRIVER_DOCUMENTS_TIME_ZONE:-Asia/Baghdad}
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -722,6 +725,8 @@ services:
       nats:
         condition: service_healthy
       staff-service:
+        condition: service_started
+      media-service:
         condition: service_started
 
     ports:

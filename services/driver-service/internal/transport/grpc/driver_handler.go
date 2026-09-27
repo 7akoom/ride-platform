@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	driverv1 "github.com/7akoom/ride-platform/gen/go/ride/driver/v1"
+	"github.com/7akoom/ride-platform/services/driver-service/internal/application/documents"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,15 +18,21 @@ type DriverHandler struct {
 	driverv1.UnimplementedDriverServiceServer
 
 	driverService driver.Service
+	documents     *documents.Service
 	logger        *slog.Logger
 }
 
 func NewDriverHandler(
 	driverService driver.Service,
+	documentService *documents.Service,
 	logger *slog.Logger,
 ) *DriverHandler {
 	if driverService == nil {
 		panic("driver service is required")
+	}
+
+	if documentService == nil {
+		panic("document service is required")
 	}
 
 	if logger == nil {
@@ -34,6 +41,7 @@ func NewDriverHandler(
 
 	return &DriverHandler{
 		driverService: driverService,
+		documents:     documentService,
 		logger:        logger,
 	}
 }
@@ -265,6 +273,12 @@ func (h *DriverHandler) mapDriverError(err error) error {
 
 	case errors.Is(err, driver.ErrInvalidStatusTransition):
 		return status.Error(codes.FailedPrecondition, "driver status cannot be changed this way")
+
+	case errors.Is(err, driver.ErrDocumentsIncomplete):
+		return status.Error(codes.FailedPrecondition, documentsMessage(err))
+
+	case errors.Is(err, driver.ErrProfileLocked):
+		return status.Error(codes.FailedPrecondition, "the name and vehicle of an approved driver can only be changed by support")
 
 	case errors.Is(err, driver.ErrIdentityIDRequired),
 		errors.Is(err, driver.ErrDriverIDRequired),

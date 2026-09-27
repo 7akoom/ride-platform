@@ -28,6 +28,8 @@ service DriverService {
     };
   }
   // UpdateDriverProfile changes the caller's own driver profile and vehicle.
+  // Once approved, the name and the vehicle can no longer be changed this way
+  // (FAILED_PRECONDITION).
   rpc UpdateDriverProfile(UpdateDriverProfileRequest) returns (UpdateDriverProfileResponse) {
     option (google.api.http) = {
       patch: "/v1/drivers/{driver_id}"
@@ -36,6 +38,8 @@ service DriverService {
   }
   // UpdateAvailability goes online or offline; only the driver themselves may.
   // A PENDING or REJECTED driver may only be offline (FAILED_PRECONDITION otherwise).
+  // Going AVAILABLE also needs every required document approved and in date
+  // (FAILED_PRECONDITION); a BUSY driver who is not is put OFFLINE instead.
   rpc UpdateAvailability(UpdateAvailabilityRequest) returns (UpdateAvailabilityResponse) {
     option (google.api.http) = {
       put: "/v1/drivers/{driver_id}/availability"
@@ -44,6 +48,7 @@ service DriverService {
   }
   // ApproveDriver moves a PENDING (or REJECTED) driver to ACTIVE. Staff with
   // drivers.approve, or the internal token. A driver can never approve themselves.
+  // Every required document must be approved and in date (FAILED_PRECONDITION).
   rpc ApproveDriver(ApproveDriverRequest) returns (ApproveDriverResponse) {
     option (google.api.http) = {
       post: "/v1/admin/drivers/{driver_id}:approve"
@@ -63,6 +68,72 @@ service DriverService {
   rpc ListDrivers(ListDriversRequest) returns (ListDriversResponse) {
     option (google.api.http) = {
       get: "/v1/admin/drivers"
+    };
+  }
+
+  // ListDriverDocumentTypes lists the documents a driver is asked for (the
+  // active types), in the order the app shows them. Any signed-in user.
+  rpc ListDriverDocumentTypes(ListDriverDocumentTypesRequest) returns (ListDriverDocumentTypesResponse) {
+    option (google.api.http) = {
+      get: "/v1/driver-document-types"
+    };
+  }
+  // AdminListDriverDocumentTypes lists every type, inactive ones too. Staff
+  // with drivers.read, or the internal token.
+  rpc AdminListDriverDocumentTypes(ListDriverDocumentTypesRequest) returns (ListDriverDocumentTypesResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/driver-document-types"
+    };
+  }
+  // UpsertDriverDocumentType creates or changes a document type: whether it is
+  // required, needs a number or an expiry date, and whether it is asked for at
+  // all. Staff with drivers.configure, or the internal token.
+  rpc UpsertDriverDocumentType(UpsertDriverDocumentTypeRequest) returns (DriverDocumentTypeResponse) {
+    option (google.api.http) = {
+      put: "/v1/admin/driver-document-types/{code}"
+      body: "*"
+    };
+  }
+  // SubmitDriverDocument hands an uploaded file (media-service, READY, the
+  // driver's own, of the type's purpose) in as a document, waiting for review.
+  // It replaces an earlier pending or rejected one of the same type; an
+  // approved one stays valid until the new one is approved.
+  rpc SubmitDriverDocument(SubmitDriverDocumentRequest) returns (DriverDocumentResponse) {
+    option (google.api.http) = {
+      post: "/v1/drivers/{driver_id}/documents"
+      body: "*"
+    };
+  }
+  // ListDriverDocuments shows, per document type, where the driver stands, and
+  // whether they may work. The driver, or staff with drivers.read.
+  rpc ListDriverDocuments(ListDriverDocumentsRequest) returns (ListDriverDocumentsResponse) {
+    option (google.api.http) = {
+      get: "/v1/drivers/{driver_id}/documents"
+    };
+  }
+  // ListPendingDriverDocuments is the review queue, oldest first. Staff with
+  // drivers.read, or the internal token.
+  rpc ListPendingDriverDocuments(ListPendingDriverDocumentsRequest) returns (ListPendingDriverDocumentsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/driver-documents"
+    };
+  }
+  // ApproveDriverDocument approves a pending document; the reviewer may correct
+  // the number and expiry date read from it. It replaces the driver's earlier
+  // approved one of that type. Staff with drivers.approve, or the internal token.
+  rpc ApproveDriverDocument(ApproveDriverDocumentRequest) returns (DriverDocumentResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/driver-documents/{document_id}:approve"
+      body: "*"
+    };
+  }
+  // RejectDriverDocument turns down a pending document, or withdraws an
+  // approved one (a driver who is online then goes offline), with the reason
+  // the driver is shown. Staff with drivers.approve, or the internal token.
+  rpc RejectDriverDocument(RejectDriverDocumentRequest) returns (DriverDocumentResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/driver-documents/{document_id}:reject"
+      body: "*"
     };
   }
 }
@@ -177,4 +248,148 @@ message ListDriversRequest {
 message ListDriversResponse {
   repeated Driver drivers = 1;
   string next_page_token = 2;
+}
+
+message DriverDocumentType {
+  // Stable key, e.g. driving_licence_front.
+  string code = 1;
+  // The media-service purpose the file is uploaded with: "driver_document"
+  // or "profile_photo".
+  string media_purpose = 2;
+  string name_en = 3;
+  string name_ar = 4;
+  string name_ku = 5;
+  // A driver cannot be approved, or go online, without it approved and in date.
+  bool required = 6;
+  // The driver types the document's number (ID number, licence number).
+  bool requires_number = 7;
+  // The driver gives the last day it is valid; it is then checked every day.
+  bool requires_expiry = 8;
+  // Inactive types are not asked for.
+  bool active = 9;
+  int32 sort_order = 10;
+}
+
+enum DriverDocumentStatus {
+  DRIVER_DOCUMENT_STATUS_UNSPECIFIED = 0;
+  DRIVER_DOCUMENT_STATUS_PENDING = 1;
+  DRIVER_DOCUMENT_STATUS_APPROVED = 2;
+  DRIVER_DOCUMENT_STATUS_REJECTED = 3;
+  // Replaced by a newer document of the same type; its file is deleted.
+  DRIVER_DOCUMENT_STATUS_SUPERSEDED = 4;
+}
+
+message DriverDocument {
+  string id = 1;
+  string driver_id = 2;
+  string type_code = 3;
+  // The file in media-service (GetDownloadURL: the driver, or staff with media.read).
+  string media_id = 4;
+  string document_number = 5;
+  // Last valid day, YYYY-MM-DD; empty when the type has no expiry.
+  string expires_on = 6;
+  DriverDocumentStatus status = 7;
+  string rejection_reason = 8;
+  google.protobuf.Timestamp submitted_at = 9;
+  google.protobuf.Timestamp reviewed_at = 10;
+  // An approved document whose last valid day has passed.
+  bool expired = 11;
+}
+
+enum DocumentRequirementState {
+  DOCUMENT_REQUIREMENT_STATE_UNSPECIFIED = 0;
+  // Nothing submitted yet.
+  DOCUMENT_REQUIREMENT_STATE_MISSING = 1;
+  // Submitted, waiting for review; nothing approved yet.
+  DOCUMENT_REQUIREMENT_STATE_PENDING_REVIEW = 2;
+  // The last one was turned down; a new one is needed.
+  DOCUMENT_REQUIREMENT_STATE_REJECTED = 3;
+  DOCUMENT_REQUIREMENT_STATE_APPROVED = 4;
+  // Approved, but its last valid day is within the reminder window.
+  DOCUMENT_REQUIREMENT_STATE_EXPIRING_SOON = 5;
+  // Approved, but no longer in date.
+  DOCUMENT_REQUIREMENT_STATE_EXPIRED = 6;
+}
+
+message DocumentRequirement {
+  DriverDocumentType type = 1;
+  DocumentRequirementState state = 2;
+  // The document in force, if any.
+  DriverDocument approved = 3;
+  // A newer one waiting for review, if any (a renewal when approved is set).
+  DriverDocument pending = 4;
+  // The last one turned down, if no newer one was submitted since.
+  DriverDocument rejected = 5;
+}
+
+message ListDriverDocumentTypesRequest {}
+
+message ListDriverDocumentTypesResponse {
+  repeated DriverDocumentType types = 1;
+}
+
+message UpsertDriverDocumentTypeRequest {
+  string code = 1;
+  DriverDocumentType type = 2;
+}
+
+message DriverDocumentTypeResponse {
+  DriverDocumentType type = 1;
+}
+
+message SubmitDriverDocumentRequest {
+  string driver_id = 1;
+  string type_code = 2;
+  string media_id = 3;
+  // Required when the type requires a number; ignored otherwise.
+  string document_number = 4;
+  // YYYY-MM-DD, after today. Required when the type has an expiry; ignored otherwise.
+  string expires_on = 5;
+}
+
+message DriverDocumentResponse {
+  DriverDocument document = 1;
+}
+
+message ListDriverDocumentsRequest {
+  string driver_id = 1;
+  // Also return every document ever submitted, newest first.
+  bool include_history = 2;
+}
+
+message ListDriverDocumentsResponse {
+  // One per active document type, in the app's order.
+  repeated DocumentRequirement requirements = 1;
+  // Every required document is approved and in date.
+  bool compliant = 2;
+  repeated DriverDocument history = 3;
+}
+
+message ListPendingDriverDocumentsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message PendingDriverDocument {
+  DriverDocument document = 1;
+  string driver_display_name = 2;
+  DriverStatus driver_status = 3;
+}
+
+message ListPendingDriverDocumentsResponse {
+  repeated PendingDriverDocument documents = 1;
+  string next_page_token = 2;
+}
+
+message ApproveDriverDocumentRequest {
+  string document_id = 1;
+  // Optional corrections; empty keeps what the driver gave.
+  string document_number = 2;
+  string expires_on = 3;
+}
+
+message RejectDriverDocumentRequest {
+  string document_id = 1;
+  // Shown to the driver. Required.
+  string reason = 2;
 }

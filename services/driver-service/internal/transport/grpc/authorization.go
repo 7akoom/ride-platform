@@ -42,6 +42,16 @@ var methodAccess = map[string]accessLevel{
 	"/ride.driver.v1.DriverService/ApproveDriver": accessStaff,
 	"/ride.driver.v1.DriverService/RejectDriver":  accessStaff,
 	"/ride.driver.v1.DriverService/ListDrivers":   accessStaff,
+
+	// Documents: the driver hands theirs in and follows them; staff review.
+	"/ride.driver.v1.DriverService/ListDriverDocumentTypes":      accessAuthenticated,
+	"/ride.driver.v1.DriverService/AdminListDriverDocumentTypes": accessStaff,
+	"/ride.driver.v1.DriverService/UpsertDriverDocumentType":     accessStaff,
+	"/ride.driver.v1.DriverService/SubmitDriverDocument":         accessOwner,
+	"/ride.driver.v1.DriverService/ListDriverDocuments":          accessOwner,
+	"/ride.driver.v1.DriverService/ListPendingDriverDocuments":   accessStaff,
+	"/ride.driver.v1.DriverService/ApproveDriverDocument":        accessStaff,
+	"/ride.driver.v1.DriverService/RejectDriverDocument":         accessStaff,
 }
 
 // staffPermissions names the staff permission for every accessStaff method,
@@ -51,6 +61,13 @@ var staffPermissions = map[string]string{
 	"/ride.driver.v1.DriverService/RejectDriver":  "drivers.approve",
 	"/ride.driver.v1.DriverService/ListDrivers":   "drivers.read",
 	"/ride.driver.v1.DriverService/GetDriver":     "drivers.read",
+
+	"/ride.driver.v1.DriverService/AdminListDriverDocumentTypes": "drivers.read",
+	"/ride.driver.v1.DriverService/UpsertDriverDocumentType":     "drivers.configure",
+	"/ride.driver.v1.DriverService/ListDriverDocuments":          "drivers.read",
+	"/ride.driver.v1.DriverService/ListPendingDriverDocuments":   "drivers.read",
+	"/ride.driver.v1.DriverService/ApproveDriverDocument":        "drivers.approve",
+	"/ride.driver.v1.DriverService/RejectDriverDocument":         "drivers.approve",
 }
 
 func NewAuthorizationUnaryInterceptor(drivers DriverReader, staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {

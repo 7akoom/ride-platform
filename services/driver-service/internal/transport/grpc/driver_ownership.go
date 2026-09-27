@@ -85,6 +85,22 @@ var ownerChecks = map[string]ownerCheck{
 
 		return c.ownsDriver(ctx, r.GetDriverId())
 	},
+	driverRPCPrefix + "SubmitDriverDocument": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*driverv1.SubmitDriverDocumentRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsDriver(ctx, r.GetDriverId())
+	},
+	driverRPCPrefix + "ListDriverDocuments": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*driverv1.ListDriverDocumentsRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsDriver(ctx, r.GetDriverId())
+	},
 	driverRPCPrefix + "UpdateAvailability": func(ctx context.Context, c caller, request any) (bool, error) {
 		r, ok := request.(*driverv1.UpdateAvailabilityRequest)
 		if !ok {

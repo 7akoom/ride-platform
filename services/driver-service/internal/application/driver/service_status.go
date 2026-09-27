@@ -19,11 +19,40 @@ const (
 
 var uuidShape = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
+// ApproveDriver needs every required document approved and in date first.
 func (s *service) ApproveDriver(
 	ctx context.Context,
 	driverID string,
 ) (Driver, error) {
-	return s.changeStatus(ctx, driverID, "", StatusActive, StatusPending, StatusRejected)
+	trimmedID := strings.TrimSpace(driverID)
+	if trimmedID == "" {
+		return Driver{}, ErrDriverIDRequired
+	}
+
+	current, err := s.repository.FindByID(ctx, trimmedID)
+	if err != nil {
+		return Driver{}, fmt.Errorf("find driver: %w", err)
+	}
+
+	// Already approved: a retried approval is harmless and checks nothing.
+	if current.Status == StatusActive {
+		return current, nil
+	}
+
+	if current.Status != StatusPending && current.Status != StatusRejected {
+		return Driver{}, fmt.Errorf("change driver status to %s: %w", StatusActive, ErrInvalidStatusTransition)
+	}
+
+	compliance, err := s.compliance.CheckCompliance(ctx, trimmedID)
+	if err != nil {
+		return Driver{}, fmt.Errorf("check driver documents: %w", err)
+	}
+
+	if !compliance.Compliant {
+		return Driver{}, fmt.Errorf("%w: %s", ErrDocumentsIncomplete, strings.Join(compliance.Missing, ", "))
+	}
+
+	return s.changeStatus(ctx, trimmedID, "", StatusActive, StatusPending, StatusRejected)
 }
 
 func (s *service) RejectDriver(

@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/7akoom/ride-platform/services/driver-service/internal/application/documents"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
 	outboxapp "github.com/7akoom/ride-platform/services/driver-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/ratings"
@@ -144,11 +145,44 @@ func run() int {
 		},
 	)
 
+	documentsConfig, err := config.ParseDocuments(cfg)
+	if err != nil {
+		logger.Error("invalid driver documents configuration", "error", err)
+
+		return 1
+	}
+
+	// Document files live in media-service; this service holds and
+	// releases them as a service (internal token).
+	mediaConn, err := grpc.NewClient(
+		cfg.MediaServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
+		),
+	)
+	if err != nil {
+		logger.Error("failed to connect to media-service", "error", err)
+
+		return 1
+	}
+	defer mediaConn.Close()
+
 	driverRepository := postgresrepo.NewDriverRepository(pool)
 	idGenerator := identifier.NewUUIDGenerator()
 
-	driverService := driver.NewService(driverRepository, idGenerator)
-	driverHandler := grpcserver.NewDriverHandler(driverService, logger)
+	documentService := documents.NewService(
+		postgresrepo.NewDocumentRepository(pool),
+		postgresrepo.NewDocumentDrivers(driverRepository),
+		clients.NewMediaDocuments(mediaConn),
+		idGenerator,
+		clockinfra.NewSystemClock(),
+		documents.Config{Location: documentsConfig.Location, ReminderDays: documentsConfig.ReminderDays},
+		logger,
+	)
+
+	driverService := driver.NewService(driverRepository, idGenerator, documentService)
+	driverHandler := grpcserver.NewDriverHandler(driverService, documentService, logger)
 
 	ratingSubscription, err := subscribeTripRatings(
 		ctx,
@@ -216,6 +250,14 @@ func run() int {
 		}
 	}()
 
+	expiryWorker := documents.NewExpiryWorker(documentService, documentsConfig.CheckInterval, logger)
+	expiryDone := make(chan struct{})
+
+	go func() {
+		defer close(expiryDone)
+		expiryWorker.Run(ctx)
+	}()
+
 	serverErrors := make(chan error, 1)
 
 	go func() {
@@ -237,7 +279,9 @@ func run() int {
 		if err != nil {
 			logger.Error("gRPC server exited with error", "error", err)
 
+			stop()
 			<-outboxDone
+			<-expiryDone
 
 			return 1
 		}
@@ -270,6 +314,7 @@ func run() int {
 	}
 
 	<-outboxDone
+	<-expiryDone
 
 	return 0
 }

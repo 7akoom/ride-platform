@@ -34,6 +34,19 @@ func (s *service) UpdateDriverProfile(
 		return Driver{}, err
 	}
 
+	current, err := s.repository.FindByID(ctx, driverID)
+	if err != nil {
+		return Driver{}, fmt.Errorf("find driver: %w", err)
+	}
+
+	// Riders are shown the approved name and car; once approved they change
+	// only through staff. Sending them unchanged is fine.
+	if current.Status == StatusActive || current.Status == StatusSuspended {
+		if displayName.String() != current.DisplayName || !sameVehicle(vehicle, current.Vehicle) {
+			return Driver{}, ErrProfileLocked
+		}
+	}
+
 	updated, err := s.repository.UpdateProfile(
 		ctx,
 		UpdateProfileInput{
@@ -47,4 +60,14 @@ func (s *service) UpdateDriverProfile(
 	}
 
 	return updated, nil
+}
+
+// sameVehicle compares a requested vehicle with the stored one; an empty
+// requested class means "unchanged".
+func sameVehicle(requested, stored Vehicle) bool {
+	return requested.Make == stored.Make &&
+		requested.Model == stored.Model &&
+		requested.Color == stored.Color &&
+		requested.PlateNumber == stored.PlateNumber &&
+		(requested.Class == "" || requested.Class == stored.Class)
 }

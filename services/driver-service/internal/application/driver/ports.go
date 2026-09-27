@@ -85,6 +85,19 @@ type Repository interface {
 	) ([]Driver, error)
 }
 
+// Compliance is where a driver stands on the documents they must have.
+type Compliance struct {
+	Compliant bool
+	// Missing names the required document types not approved and in date.
+	Missing []string
+}
+
+// ComplianceChecker tells whether a driver's required documents are all
+// approved and in date.
+type ComplianceChecker interface {
+	CheckCompliance(ctx context.Context, driverID string) (Compliance, error)
+}
+
 type IDGenerator interface {
 	NewID() string
 }

@@ -51,6 +51,21 @@ sql() { # <container> <query>
   docker exec "$1" sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "$1"' _ "$2"
 }
 
+# approve_documents <driver id>: every required document approved, as a
+# reviewer would leave them (a fixture: the files themselves are not needed
+# here; scripts/e2e/test-driver-documents.sh covers the real review).
+approve_documents() {
+  sql ride-driver-postgres "insert into driver_documents
+      (id, driver_id, type_code, media_id, document_number, expires_on, status, reviewed_at)
+    select gen_random_uuid(), '$1', code, gen_random_uuid(),
+           case when requires_number then 'E2E-' || left(md5('$1' || code), 12) else '' end,
+           case when requires_expiry then current_date + 365 end,
+           'approved', now()
+    from driver_document_types
+    where active and required
+    on conflict do nothing;" > /dev/null
+}
+
 cleanup() {
   rm -f "$BODY_FILE"
   sql ride-staff-postgres "delete from staff_members where email like 'e2e-%@ride.test';" > /dev/null 2>&1 || true
@@ -196,6 +211,8 @@ check "rejected" DRIVER_STATUS_REJECTED "$(body_field 'd["driver"]["status"]')"
 expect "the driver reads their profile" 200 GET "/v1/drivers/$DRIVER_ID" "$DRIVER"
 check "the driver sees the reason" "The licence photo is not readable" "$(body_field 'd["driver"].get("rejectionReason", "")')"
 expect "the driver approves themselves" 403 POST "/v1/admin/drivers/$DRIVER_ID:approve" "$DRIVER" '{}'
+expect "approval waits for the documents" 400 POST "/v1/admin/drivers/$DRIVER_ID:approve" "$OPS" '{}'
+approve_documents "$DRIVER_ID"
 expect "the operator approves" 200 POST "/v1/admin/drivers/$DRIVER_ID:approve" "$OPS" '{}'
 check "active" DRIVER_STATUS_ACTIVE "$(body_field 'd["driver"]["status"]')"
 check "the reason is cleared" "" "$(body_field 'd["driver"].get("rejectionReason", "")')"

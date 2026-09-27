@@ -104,8 +104,29 @@ type fakeIDGenerator struct{ id string }
 
 func (g *fakeIDGenerator) NewID() string { return g.id }
 
+// fakeCompliance answers compliant unless told otherwise.
+type fakeCompliance struct {
+	missing []string
+	err     error
+	calls   int
+}
+
+func (c *fakeCompliance) CheckCompliance(_ context.Context, _ string) (driver.Compliance, error) {
+	c.calls++
+
+	if c.err != nil {
+		return driver.Compliance{}, c.err
+	}
+
+	return driver.Compliance{Compliant: len(c.missing) == 0, Missing: c.missing}, nil
+}
+
 func newService(repo *fakeRepository, id string) driver.Service {
-	return driver.NewService(repo, &fakeIDGenerator{id: id})
+	return driver.NewService(repo, &fakeIDGenerator{id: id}, &fakeCompliance{})
+}
+
+func newServiceWithCompliance(repo *fakeRepository, compliance *fakeCompliance) driver.Service {
+	return driver.NewService(repo, &fakeIDGenerator{id: "id"}, compliance)
 }
 
 func validCreateInput() driver.CreateDriverInput {
@@ -124,12 +145,17 @@ func validCreateInput() driver.CreateDriverInput {
 func TestNewService_PanicsOnMissingDependencies(t *testing.T) {
 	t.Run("nil repository", func(t *testing.T) {
 		defer expectPanic(t)
-		driver.NewService(nil, &fakeIDGenerator{id: "x"})
+		driver.NewService(nil, &fakeIDGenerator{id: "x"}, &fakeCompliance{})
 	})
 
 	t.Run("nil id generator", func(t *testing.T) {
 		defer expectPanic(t)
-		driver.NewService(&fakeRepository{}, nil)
+		driver.NewService(&fakeRepository{}, nil, &fakeCompliance{})
+	})
+
+	t.Run("nil compliance checker", func(t *testing.T) {
+		defer expectPanic(t)
+		driver.NewService(&fakeRepository{}, &fakeIDGenerator{id: "x"}, nil)
 	})
 }
 

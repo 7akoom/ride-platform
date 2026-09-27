@@ -19,14 +19,22 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	DriverService_CreateDriver_FullMethodName        = "/ride.driver.v1.DriverService/CreateDriver"
-	DriverService_GetDriver_FullMethodName           = "/ride.driver.v1.DriverService/GetDriver"
-	DriverService_GetDriverByIdentity_FullMethodName = "/ride.driver.v1.DriverService/GetDriverByIdentity"
-	DriverService_UpdateDriverProfile_FullMethodName = "/ride.driver.v1.DriverService/UpdateDriverProfile"
-	DriverService_UpdateAvailability_FullMethodName  = "/ride.driver.v1.DriverService/UpdateAvailability"
-	DriverService_ApproveDriver_FullMethodName       = "/ride.driver.v1.DriverService/ApproveDriver"
-	DriverService_RejectDriver_FullMethodName        = "/ride.driver.v1.DriverService/RejectDriver"
-	DriverService_ListDrivers_FullMethodName         = "/ride.driver.v1.DriverService/ListDrivers"
+	DriverService_CreateDriver_FullMethodName                 = "/ride.driver.v1.DriverService/CreateDriver"
+	DriverService_GetDriver_FullMethodName                    = "/ride.driver.v1.DriverService/GetDriver"
+	DriverService_GetDriverByIdentity_FullMethodName          = "/ride.driver.v1.DriverService/GetDriverByIdentity"
+	DriverService_UpdateDriverProfile_FullMethodName          = "/ride.driver.v1.DriverService/UpdateDriverProfile"
+	DriverService_UpdateAvailability_FullMethodName           = "/ride.driver.v1.DriverService/UpdateAvailability"
+	DriverService_ApproveDriver_FullMethodName                = "/ride.driver.v1.DriverService/ApproveDriver"
+	DriverService_RejectDriver_FullMethodName                 = "/ride.driver.v1.DriverService/RejectDriver"
+	DriverService_ListDrivers_FullMethodName                  = "/ride.driver.v1.DriverService/ListDrivers"
+	DriverService_ListDriverDocumentTypes_FullMethodName      = "/ride.driver.v1.DriverService/ListDriverDocumentTypes"
+	DriverService_AdminListDriverDocumentTypes_FullMethodName = "/ride.driver.v1.DriverService/AdminListDriverDocumentTypes"
+	DriverService_UpsertDriverDocumentType_FullMethodName     = "/ride.driver.v1.DriverService/UpsertDriverDocumentType"
+	DriverService_SubmitDriverDocument_FullMethodName         = "/ride.driver.v1.DriverService/SubmitDriverDocument"
+	DriverService_ListDriverDocuments_FullMethodName          = "/ride.driver.v1.DriverService/ListDriverDocuments"
+	DriverService_ListPendingDriverDocuments_FullMethodName   = "/ride.driver.v1.DriverService/ListPendingDriverDocuments"
+	DriverService_ApproveDriverDocument_FullMethodName        = "/ride.driver.v1.DriverService/ApproveDriverDocument"
+	DriverService_RejectDriverDocument_FullMethodName         = "/ride.driver.v1.DriverService/RejectDriverDocument"
 )
 
 // DriverServiceClient is the client API for DriverService service.
@@ -41,12 +49,17 @@ type DriverServiceClient interface {
 	// GetDriverByIdentity finds the caller's driver profile from their identity id.
 	GetDriverByIdentity(ctx context.Context, in *GetDriverByIdentityRequest, opts ...grpc.CallOption) (*GetDriverResponse, error)
 	// UpdateDriverProfile changes the caller's own driver profile and vehicle.
+	// Once approved, the name and the vehicle can no longer be changed this way
+	// (FAILED_PRECONDITION).
 	UpdateDriverProfile(ctx context.Context, in *UpdateDriverProfileRequest, opts ...grpc.CallOption) (*UpdateDriverProfileResponse, error)
 	// UpdateAvailability goes online or offline; only the driver themselves may.
 	// A PENDING or REJECTED driver may only be offline (FAILED_PRECONDITION otherwise).
+	// Going AVAILABLE also needs every required document approved and in date
+	// (FAILED_PRECONDITION); a BUSY driver who is not is put OFFLINE instead.
 	UpdateAvailability(ctx context.Context, in *UpdateAvailabilityRequest, opts ...grpc.CallOption) (*UpdateAvailabilityResponse, error)
 	// ApproveDriver moves a PENDING (or REJECTED) driver to ACTIVE. Staff with
 	// drivers.approve, or the internal token. A driver can never approve themselves.
+	// Every required document must be approved and in date (FAILED_PRECONDITION).
 	ApproveDriver(ctx context.Context, in *ApproveDriverRequest, opts ...grpc.CallOption) (*ApproveDriverResponse, error)
 	// RejectDriver moves a PENDING driver to REJECTED, with the reason the driver
 	// is shown. Staff with drivers.approve, or the internal token.
@@ -54,6 +67,35 @@ type DriverServiceClient interface {
 	// ListDrivers lists drivers for the review queue and the admin, newest first,
 	// optionally by status. Staff with drivers.read, or the internal token.
 	ListDrivers(ctx context.Context, in *ListDriversRequest, opts ...grpc.CallOption) (*ListDriversResponse, error)
+	// ListDriverDocumentTypes lists the documents a driver is asked for (the
+	// active types), in the order the app shows them. Any signed-in user.
+	ListDriverDocumentTypes(ctx context.Context, in *ListDriverDocumentTypesRequest, opts ...grpc.CallOption) (*ListDriverDocumentTypesResponse, error)
+	// AdminListDriverDocumentTypes lists every type, inactive ones too. Staff
+	// with drivers.read, or the internal token.
+	AdminListDriverDocumentTypes(ctx context.Context, in *ListDriverDocumentTypesRequest, opts ...grpc.CallOption) (*ListDriverDocumentTypesResponse, error)
+	// UpsertDriverDocumentType creates or changes a document type: whether it is
+	// required, needs a number or an expiry date, and whether it is asked for at
+	// all. Staff with drivers.configure, or the internal token.
+	UpsertDriverDocumentType(ctx context.Context, in *UpsertDriverDocumentTypeRequest, opts ...grpc.CallOption) (*DriverDocumentTypeResponse, error)
+	// SubmitDriverDocument hands an uploaded file (media-service, READY, the
+	// driver's own, of the type's purpose) in as a document, waiting for review.
+	// It replaces an earlier pending or rejected one of the same type; an
+	// approved one stays valid until the new one is approved.
+	SubmitDriverDocument(ctx context.Context, in *SubmitDriverDocumentRequest, opts ...grpc.CallOption) (*DriverDocumentResponse, error)
+	// ListDriverDocuments shows, per document type, where the driver stands, and
+	// whether they may work. The driver, or staff with drivers.read.
+	ListDriverDocuments(ctx context.Context, in *ListDriverDocumentsRequest, opts ...grpc.CallOption) (*ListDriverDocumentsResponse, error)
+	// ListPendingDriverDocuments is the review queue, oldest first. Staff with
+	// drivers.read, or the internal token.
+	ListPendingDriverDocuments(ctx context.Context, in *ListPendingDriverDocumentsRequest, opts ...grpc.CallOption) (*ListPendingDriverDocumentsResponse, error)
+	// ApproveDriverDocument approves a pending document; the reviewer may correct
+	// the number and expiry date read from it. It replaces the driver's earlier
+	// approved one of that type. Staff with drivers.approve, or the internal token.
+	ApproveDriverDocument(ctx context.Context, in *ApproveDriverDocumentRequest, opts ...grpc.CallOption) (*DriverDocumentResponse, error)
+	// RejectDriverDocument turns down a pending document, or withdraws an
+	// approved one (a driver who is online then goes offline), with the reason
+	// the driver is shown. Staff with drivers.approve, or the internal token.
+	RejectDriverDocument(ctx context.Context, in *RejectDriverDocumentRequest, opts ...grpc.CallOption) (*DriverDocumentResponse, error)
 }
 
 type driverServiceClient struct {
@@ -144,6 +186,86 @@ func (c *driverServiceClient) ListDrivers(ctx context.Context, in *ListDriversRe
 	return out, nil
 }
 
+func (c *driverServiceClient) ListDriverDocumentTypes(ctx context.Context, in *ListDriverDocumentTypesRequest, opts ...grpc.CallOption) (*ListDriverDocumentTypesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDriverDocumentTypesResponse)
+	err := c.cc.Invoke(ctx, DriverService_ListDriverDocumentTypes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) AdminListDriverDocumentTypes(ctx context.Context, in *ListDriverDocumentTypesRequest, opts ...grpc.CallOption) (*ListDriverDocumentTypesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDriverDocumentTypesResponse)
+	err := c.cc.Invoke(ctx, DriverService_AdminListDriverDocumentTypes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) UpsertDriverDocumentType(ctx context.Context, in *UpsertDriverDocumentTypeRequest, opts ...grpc.CallOption) (*DriverDocumentTypeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DriverDocumentTypeResponse)
+	err := c.cc.Invoke(ctx, DriverService_UpsertDriverDocumentType_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) SubmitDriverDocument(ctx context.Context, in *SubmitDriverDocumentRequest, opts ...grpc.CallOption) (*DriverDocumentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DriverDocumentResponse)
+	err := c.cc.Invoke(ctx, DriverService_SubmitDriverDocument_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) ListDriverDocuments(ctx context.Context, in *ListDriverDocumentsRequest, opts ...grpc.CallOption) (*ListDriverDocumentsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDriverDocumentsResponse)
+	err := c.cc.Invoke(ctx, DriverService_ListDriverDocuments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) ListPendingDriverDocuments(ctx context.Context, in *ListPendingDriverDocumentsRequest, opts ...grpc.CallOption) (*ListPendingDriverDocumentsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPendingDriverDocumentsResponse)
+	err := c.cc.Invoke(ctx, DriverService_ListPendingDriverDocuments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) ApproveDriverDocument(ctx context.Context, in *ApproveDriverDocumentRequest, opts ...grpc.CallOption) (*DriverDocumentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DriverDocumentResponse)
+	err := c.cc.Invoke(ctx, DriverService_ApproveDriverDocument_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) RejectDriverDocument(ctx context.Context, in *RejectDriverDocumentRequest, opts ...grpc.CallOption) (*DriverDocumentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DriverDocumentResponse)
+	err := c.cc.Invoke(ctx, DriverService_RejectDriverDocument_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DriverServiceServer is the server API for DriverService service.
 // All implementations must embed UnimplementedDriverServiceServer
 // for forward compatibility.
@@ -156,12 +278,17 @@ type DriverServiceServer interface {
 	// GetDriverByIdentity finds the caller's driver profile from their identity id.
 	GetDriverByIdentity(context.Context, *GetDriverByIdentityRequest) (*GetDriverResponse, error)
 	// UpdateDriverProfile changes the caller's own driver profile and vehicle.
+	// Once approved, the name and the vehicle can no longer be changed this way
+	// (FAILED_PRECONDITION).
 	UpdateDriverProfile(context.Context, *UpdateDriverProfileRequest) (*UpdateDriverProfileResponse, error)
 	// UpdateAvailability goes online or offline; only the driver themselves may.
 	// A PENDING or REJECTED driver may only be offline (FAILED_PRECONDITION otherwise).
+	// Going AVAILABLE also needs every required document approved and in date
+	// (FAILED_PRECONDITION); a BUSY driver who is not is put OFFLINE instead.
 	UpdateAvailability(context.Context, *UpdateAvailabilityRequest) (*UpdateAvailabilityResponse, error)
 	// ApproveDriver moves a PENDING (or REJECTED) driver to ACTIVE. Staff with
 	// drivers.approve, or the internal token. A driver can never approve themselves.
+	// Every required document must be approved and in date (FAILED_PRECONDITION).
 	ApproveDriver(context.Context, *ApproveDriverRequest) (*ApproveDriverResponse, error)
 	// RejectDriver moves a PENDING driver to REJECTED, with the reason the driver
 	// is shown. Staff with drivers.approve, or the internal token.
@@ -169,6 +296,35 @@ type DriverServiceServer interface {
 	// ListDrivers lists drivers for the review queue and the admin, newest first,
 	// optionally by status. Staff with drivers.read, or the internal token.
 	ListDrivers(context.Context, *ListDriversRequest) (*ListDriversResponse, error)
+	// ListDriverDocumentTypes lists the documents a driver is asked for (the
+	// active types), in the order the app shows them. Any signed-in user.
+	ListDriverDocumentTypes(context.Context, *ListDriverDocumentTypesRequest) (*ListDriverDocumentTypesResponse, error)
+	// AdminListDriverDocumentTypes lists every type, inactive ones too. Staff
+	// with drivers.read, or the internal token.
+	AdminListDriverDocumentTypes(context.Context, *ListDriverDocumentTypesRequest) (*ListDriverDocumentTypesResponse, error)
+	// UpsertDriverDocumentType creates or changes a document type: whether it is
+	// required, needs a number or an expiry date, and whether it is asked for at
+	// all. Staff with drivers.configure, or the internal token.
+	UpsertDriverDocumentType(context.Context, *UpsertDriverDocumentTypeRequest) (*DriverDocumentTypeResponse, error)
+	// SubmitDriverDocument hands an uploaded file (media-service, READY, the
+	// driver's own, of the type's purpose) in as a document, waiting for review.
+	// It replaces an earlier pending or rejected one of the same type; an
+	// approved one stays valid until the new one is approved.
+	SubmitDriverDocument(context.Context, *SubmitDriverDocumentRequest) (*DriverDocumentResponse, error)
+	// ListDriverDocuments shows, per document type, where the driver stands, and
+	// whether they may work. The driver, or staff with drivers.read.
+	ListDriverDocuments(context.Context, *ListDriverDocumentsRequest) (*ListDriverDocumentsResponse, error)
+	// ListPendingDriverDocuments is the review queue, oldest first. Staff with
+	// drivers.read, or the internal token.
+	ListPendingDriverDocuments(context.Context, *ListPendingDriverDocumentsRequest) (*ListPendingDriverDocumentsResponse, error)
+	// ApproveDriverDocument approves a pending document; the reviewer may correct
+	// the number and expiry date read from it. It replaces the driver's earlier
+	// approved one of that type. Staff with drivers.approve, or the internal token.
+	ApproveDriverDocument(context.Context, *ApproveDriverDocumentRequest) (*DriverDocumentResponse, error)
+	// RejectDriverDocument turns down a pending document, or withdraws an
+	// approved one (a driver who is online then goes offline), with the reason
+	// the driver is shown. Staff with drivers.approve, or the internal token.
+	RejectDriverDocument(context.Context, *RejectDriverDocumentRequest) (*DriverDocumentResponse, error)
 	mustEmbedUnimplementedDriverServiceServer()
 }
 
@@ -202,6 +358,30 @@ func (UnimplementedDriverServiceServer) RejectDriver(context.Context, *RejectDri
 }
 func (UnimplementedDriverServiceServer) ListDrivers(context.Context, *ListDriversRequest) (*ListDriversResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListDrivers not implemented")
+}
+func (UnimplementedDriverServiceServer) ListDriverDocumentTypes(context.Context, *ListDriverDocumentTypesRequest) (*ListDriverDocumentTypesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDriverDocumentTypes not implemented")
+}
+func (UnimplementedDriverServiceServer) AdminListDriverDocumentTypes(context.Context, *ListDriverDocumentTypesRequest) (*ListDriverDocumentTypesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminListDriverDocumentTypes not implemented")
+}
+func (UnimplementedDriverServiceServer) UpsertDriverDocumentType(context.Context, *UpsertDriverDocumentTypeRequest) (*DriverDocumentTypeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertDriverDocumentType not implemented")
+}
+func (UnimplementedDriverServiceServer) SubmitDriverDocument(context.Context, *SubmitDriverDocumentRequest) (*DriverDocumentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitDriverDocument not implemented")
+}
+func (UnimplementedDriverServiceServer) ListDriverDocuments(context.Context, *ListDriverDocumentsRequest) (*ListDriverDocumentsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDriverDocuments not implemented")
+}
+func (UnimplementedDriverServiceServer) ListPendingDriverDocuments(context.Context, *ListPendingDriverDocumentsRequest) (*ListPendingDriverDocumentsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPendingDriverDocuments not implemented")
+}
+func (UnimplementedDriverServiceServer) ApproveDriverDocument(context.Context, *ApproveDriverDocumentRequest) (*DriverDocumentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ApproveDriverDocument not implemented")
+}
+func (UnimplementedDriverServiceServer) RejectDriverDocument(context.Context, *RejectDriverDocumentRequest) (*DriverDocumentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RejectDriverDocument not implemented")
 }
 func (UnimplementedDriverServiceServer) mustEmbedUnimplementedDriverServiceServer() {}
 func (UnimplementedDriverServiceServer) testEmbeddedByValue()                       {}
@@ -368,6 +548,150 @@ func _DriverService_ListDrivers_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DriverService_ListDriverDocumentTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDriverDocumentTypesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ListDriverDocumentTypes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ListDriverDocumentTypes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ListDriverDocumentTypes(ctx, req.(*ListDriverDocumentTypesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_AdminListDriverDocumentTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDriverDocumentTypesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).AdminListDriverDocumentTypes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_AdminListDriverDocumentTypes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).AdminListDriverDocumentTypes(ctx, req.(*ListDriverDocumentTypesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_UpsertDriverDocumentType_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertDriverDocumentTypeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).UpsertDriverDocumentType(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_UpsertDriverDocumentType_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).UpsertDriverDocumentType(ctx, req.(*UpsertDriverDocumentTypeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_SubmitDriverDocument_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitDriverDocumentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).SubmitDriverDocument(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_SubmitDriverDocument_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).SubmitDriverDocument(ctx, req.(*SubmitDriverDocumentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_ListDriverDocuments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDriverDocumentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ListDriverDocuments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ListDriverDocuments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ListDriverDocuments(ctx, req.(*ListDriverDocumentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_ListPendingDriverDocuments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPendingDriverDocumentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ListPendingDriverDocuments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ListPendingDriverDocuments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ListPendingDriverDocuments(ctx, req.(*ListPendingDriverDocumentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_ApproveDriverDocument_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveDriverDocumentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ApproveDriverDocument(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ApproveDriverDocument_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ApproveDriverDocument(ctx, req.(*ApproveDriverDocumentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_RejectDriverDocument_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RejectDriverDocumentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).RejectDriverDocument(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_RejectDriverDocument_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).RejectDriverDocument(ctx, req.(*RejectDriverDocumentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DriverService_ServiceDesc is the grpc.ServiceDesc for DriverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -406,6 +730,38 @@ var DriverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListDrivers",
 			Handler:    _DriverService_ListDrivers_Handler,
+		},
+		{
+			MethodName: "ListDriverDocumentTypes",
+			Handler:    _DriverService_ListDriverDocumentTypes_Handler,
+		},
+		{
+			MethodName: "AdminListDriverDocumentTypes",
+			Handler:    _DriverService_AdminListDriverDocumentTypes_Handler,
+		},
+		{
+			MethodName: "UpsertDriverDocumentType",
+			Handler:    _DriverService_UpsertDriverDocumentType_Handler,
+		},
+		{
+			MethodName: "SubmitDriverDocument",
+			Handler:    _DriverService_SubmitDriverDocument_Handler,
+		},
+		{
+			MethodName: "ListDriverDocuments",
+			Handler:    _DriverService_ListDriverDocuments_Handler,
+		},
+		{
+			MethodName: "ListPendingDriverDocuments",
+			Handler:    _DriverService_ListPendingDriverDocuments_Handler,
+		},
+		{
+			MethodName: "ApproveDriverDocument",
+			Handler:    _DriverService_ApproveDriverDocument_Handler,
+		},
+		{
+			MethodName: "RejectDriverDocument",
+			Handler:    _DriverService_RejectDriverDocument_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

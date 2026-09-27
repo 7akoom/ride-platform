@@ -38,6 +38,16 @@ type Config struct {
 	// list) runs on behalf of a staff member.
 	StaffServiceAddress string
 
+	// media-service, which keeps the files of driver documents.
+	MediaServiceAddress string
+
+	// Driver documents: the deployment's time zone (a document is valid
+	// through the whole of its last day there), the days before expiry a
+	// reminder goes out, and how often expiries are checked.
+	DocumentsTimeZone      string
+	DocumentsReminderDays  string
+	DocumentsCheckInterval string
+
 	InternalServiceToken string
 
 	// Per-caller token-bucket rate limit (see
@@ -127,6 +137,11 @@ func Load() Config {
 		),
 
 		StaffServiceAddress: getEnv("STAFF_SERVICE_ADDRESS", "localhost:50061"),
+		MediaServiceAddress: getEnv("MEDIA_SERVICE_ADDRESS", "localhost:50062"),
+
+		DocumentsTimeZone:      getEnv("DRIVER_DOCUMENTS_TIME_ZONE", "UTC"),
+		DocumentsReminderDays:  getEnv("DRIVER_DOCUMENTS_REMINDER_DAYS", "30,7,1"),
+		DocumentsCheckInterval: getEnv("DRIVER_DOCUMENTS_CHECK_INTERVAL", "1m"),
 
 		InternalServiceToken: getEnv(
 			"INTERNAL_SERVICE_TOKEN",

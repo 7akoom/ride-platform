@@ -39,6 +39,10 @@ const (
 	// walletRequestsDurable is a consumer of its own, so the wallet events
 	// one's filter never changes under it.
 	walletRequestsDurable = "notification-wallet-requests"
+
+	// driverEventsDurable tells drivers about their account review and
+	// their documents (reviewed, expiring, expired).
+	driverEventsDurable = "notification-driver-events"
 )
 
 func main() {
@@ -281,6 +285,22 @@ func run() int {
 		return 1
 	}
 	defer walletRequestSubscription.Stop()
+
+	driverSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		"DRIVER_EVENTS",
+		driverEventsDurable,
+		events.DriverSubjects,
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to driver events", "error", err)
+
+		return 1
+	}
+	defer driverSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

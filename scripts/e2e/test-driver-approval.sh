@@ -8,8 +8,9 @@
 #   2. a pending driver can be offline but cannot go available or busy (HTTP 400)
 #   3. a driver cannot approve or reject themselves: there is no HTTP route, and the
 #      gRPC methods answer PermissionDenied to a user token
-#   4. an operator (the internal token) approves: the driver becomes ACTIVE and can go
-#      online; approving twice is harmless; an ACTIVE driver cannot be "rejected"
+#   4. an operator (the internal token) approves once every required document is
+#      approved (refused before): the driver becomes ACTIVE and can go online;
+#      approving twice is harmless; an ACTIVE driver cannot be "rejected"
 #   5. a rejected driver stays offline, and can be approved after a second review
 #   6. approving an unknown driver answers NotFound
 #
@@ -44,6 +45,21 @@ BODY_FILE="$(mktemp)"
 
 sql() { # <container> <query>: runs with the container's own credentials
   docker exec "$1" sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "$1"' _ "$2"
+}
+
+# approve_documents <driver id>: every required document approved, as a
+# reviewer would leave them (a fixture: the files themselves are not needed
+# here; scripts/e2e/test-driver-documents.sh covers the real review).
+approve_documents() {
+  sql ride-driver-postgres "insert into driver_documents
+      (id, driver_id, type_code, media_id, document_number, expires_on, status, reviewed_at)
+    select gen_random_uuid(), '$1', code, gen_random_uuid(),
+           case when requires_number then 'E2E-' || left(md5('$1' || code), 12) else '' end,
+           case when requires_expiry then current_date + 365 end,
+           'approved', now()
+    from driver_document_types
+    where active and required
+    on conflict do nothing;" > /dev/null
 }
 
 remove_test_drivers() {
@@ -173,7 +189,10 @@ check "another driver approving driver 1" PermissionDenied "$(grpc_code "$TOKEN_
 check "nobody approves without a token" Unauthenticated "$(grpc_code "" ApproveDriver "{\"driver_id\":\"$DRIVER_1\"}")"
 check "still pending after every attempt" DRIVER_STATUS_PENDING "$(driver_status "$DRIVER_1")"
 
-echo "==> [4/6] an operator approves"
+echo "==> [4/6] an operator approves, once the documents are approved"
+check "approval waits for the documents" FailedPrecondition "$(operator ApproveDriver "$DRIVER_1")"
+check "still pending" DRIVER_STATUS_PENDING "$(driver_status "$DRIVER_1")"
+approve_documents "$DRIVER_1"
 check "operator approves" OK "$(operator ApproveDriver "$DRIVER_1")"
 check "the driver is active" DRIVER_STATUS_ACTIVE "$(driver_status "$DRIVER_1")"
 check "approving again is harmless" OK "$(operator ApproveDriver "$DRIVER_1")"
@@ -192,6 +211,7 @@ check "the driver is rejected" DRIVER_STATUS_REJECTED "$(driver_status "$DRIVER_
 check "rejecting again is harmless" OK "$(operator RejectDriver "$DRIVER_2")"
 expect "rejected driver goes available" 400 PUT "/v1/drivers/$DRIVER_2/availability" "$TOKEN_2" "$(go_online)"
 expect "rejected driver stays offline" 200 PUT "/v1/drivers/$DRIVER_2/availability" "$TOKEN_2" "$(go_offline)"
+approve_documents "$DRIVER_2"
 check "operator approves after a second review" OK "$(operator ApproveDriver "$DRIVER_2")"
 check "the driver is active" DRIVER_STATUS_ACTIVE "$(driver_status "$DRIVER_2")"
 expect "second-review driver goes available" 200 PUT "/v1/drivers/$DRIVER_2/availability" "$TOKEN_2" "$(go_online)"

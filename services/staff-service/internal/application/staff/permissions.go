@@ -12,10 +12,12 @@ const (
 	PermissionAuditRead     = "audit.read"
 	PermissionDriversRead   = "drivers.read"
 	PermissionDriversReview = "drivers.approve"
-	PermissionZonesManage   = "zones.manage"
-	PermissionMediaRead     = "media.read"
-	PermissionPlacesManage  = "places.manage"
-	PermissionPricingManage = "pricing.manage"
+	// PermissionDriversConfigure: which documents drivers are asked for.
+	PermissionDriversConfigure = "drivers.configure"
+	PermissionZonesManage      = "zones.manage"
+	PermissionMediaRead        = "media.read"
+	PermissionPlacesManage     = "places.manage"
+	PermissionPricingManage    = "pricing.manage"
 	// PermissionPromotionsManage: coupons and the automatic discounts.
 	PermissionPromotionsManage = "promotions.manage"
 	// PermissionVouchersManage: prepaid wallet vouchers (issue, export,
@@ -37,7 +39,8 @@ var permissionCatalog = map[string]string{
 	PermissionRolesManage:      "Create, change and delete custom roles",
 	PermissionAuditRead:        "Read the audit log of staff actions",
 	PermissionDriversRead:      "See drivers and the review queue",
-	PermissionDriversReview:    "Approve or reject drivers",
+	PermissionDriversReview:    "Approve or reject drivers and their documents",
+	PermissionDriversConfigure: "Choose which documents drivers must hand in (required, number, expiry)",
 	PermissionZonesManage:      "Create and change cities and service zones",
 	PermissionMediaRead:        "View files users uploaded (driver documents, photos, attachments)",
 	PermissionPlacesManage:     "Create and change curated places (airports, malls, hotels...)",

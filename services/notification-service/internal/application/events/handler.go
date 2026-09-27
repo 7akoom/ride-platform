@@ -18,7 +18,7 @@ import (
 // Only a subset of the events each publisher emits has a matching
 // seeded template today (see migrations/00005_seed_notification_templates.sql):
 // trip.accepted, trip.started, trip.cancelled and fare.calculated. Other
-// events (trip.requested, trip.settled, driver.* ...) are deliberately
+// events (trip.requested, trip.settled, driver.created ...) are deliberately
 // left unhandled for now — Dispatch acks them without action so they
 // don't get stuck redelivering.
 type Handler struct {
@@ -122,6 +122,10 @@ func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) err
 		return h.handleTransferCompleted(ctx, envelope)
 	case SubjectMoneyRequested:
 		return h.handleMoneyRequested(ctx, envelope)
+	case SubjectDriverApproved, SubjectDriverRejected:
+		return h.handleDriverStatus(ctx, subject, envelope)
+	case SubjectDriverDocumentReviewed, SubjectDriverDocumentExpiring, SubjectDriverDocumentExpired:
+		return h.handleDriverDocument(ctx, subject, envelope)
 	default:
 		h.logger.WarnContext(ctx, "no notification mapping for subject; skipping", "subject", subject)
 

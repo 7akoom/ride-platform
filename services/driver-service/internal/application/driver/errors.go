@@ -20,6 +20,10 @@ var (
 
 	// ErrDriverNotApproved: the driver is pending or rejected and tried to go online.
 	ErrDriverNotApproved = errors.New("driver is not approved")
+	// ErrDocumentsIncomplete: a required document is missing, not yet approved, or out of date.
+	ErrDocumentsIncomplete = errors.New("required driver documents are missing, not approved or out of date")
+	// ErrProfileLocked: an approved driver's name and vehicle are only changed by staff.
+	ErrProfileLocked = errors.New("the name and vehicle of an approved driver cannot be changed")
 	// ErrInvalidStatusTransition: the driver is in a status the requested change cannot start from.
 	ErrInvalidStatusTransition = errors.New("driver status cannot be changed this way")
 )
