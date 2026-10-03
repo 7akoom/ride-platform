@@ -267,6 +267,14 @@ service TripService {
       get: "/v1/shared-trips/{token}"
     };
   }
+
+  // GetDriverActivity counts what one driver did in a period, within a scope:
+  // trips completed, offers accepted and declined, trips they cancelled.
+  // Internal only (wallet-service, for incentives).
+  rpc GetDriverActivity(GetDriverActivityRequest) returns (DriverActivity);
+  // ListDriverActivity is GetDriverActivity for every driver who completed at
+  // least min_completed_trips in the period, by driver id. Internal only.
+  rpc ListDriverActivity(ListDriverActivityRequest) returns (ListDriverActivityResponse);
 }
 
 enum TripStatus {
@@ -780,4 +788,49 @@ message SharedTrip {
 
 message GetSharedTripResponse {
   SharedTrip trip = 1;
+}
+
+// ActivityScope is the period and the trips that count.
+message ActivityScope {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  // Optional: only trips picked up in this city, or in one of these zones.
+  string city_id = 3;
+  repeated string zone_ids = 4;
+  // Optional: economy or comfort.
+  string vehicle_class = 5;
+  // Optional daily hours, minutes after local midnight in time_zone; the
+  // window may cross midnight. Equal values (or both 0) mean all day.
+  int32 daily_start_minute = 6;
+  int32 daily_end_minute = 7;
+  // IANA time zone of the daily hours; UTC when empty.
+  string time_zone = 8;
+}
+
+message DriverActivity {
+  string driver_id = 1;
+  int32 completed_trips = 2;
+  int32 offers_accepted = 3;
+  // Rejected, or left to expire.
+  int32 offers_declined = 4;
+  // Trips the driver cancelled after accepting them.
+  int32 driver_cancellations = 5;
+}
+
+message GetDriverActivityRequest {
+  string driver_id = 1;
+  ActivityScope scope = 2;
+}
+
+message ListDriverActivityRequest {
+  ActivityScope scope = 1;
+  int32 min_completed_trips = 2;
+  int32 page_size = 3;
+  // The last driver id of the previous page.
+  string page_token = 4;
+}
+
+message ListDriverActivityResponse {
+  repeated DriverActivity drivers = 1;
+  string next_page_token = 2;
 }

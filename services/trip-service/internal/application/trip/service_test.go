@@ -169,12 +169,12 @@ type fakeZoneChecker struct {
 	calls  []struct{ lat, lng float64 }
 }
 
-func (c *fakeZoneChecker) CheckServiceZone(_ context.Context, lat, lng float64) (bool, error) {
+func (c *fakeZoneChecker) CheckServiceZone(_ context.Context, lat, lng float64) (trip.ServiceZone, error) {
 	c.calls = append(c.calls, struct{ lat, lng float64 }{lat, lng})
 	if c.err != nil {
-		return false, c.err
+		return trip.ServiceZone{}, c.err
 	}
-	return c.served, nil
+	return trip.ServiceZone{Served: c.served}, nil
 }
 
 func newService(repo *fakeRepository) trip.Service {

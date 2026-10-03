@@ -44,11 +44,15 @@ var methodAccess = map[string]accessLevel{
 	"/ride.trip.v1.TripService/GetActiveTrip":     accessOwner,
 	"/ride.trip.v1.TripService/ListTrips":         accessOwner,
 	"/ride.trip.v1.TripService/OfferTrip":         accessInternal,
-	"/ride.trip.v1.TripService/GetPendingOffer":   accessOwner,
-	"/ride.trip.v1.TripService/AcceptOffer":       accessOwner,
-	"/ride.trip.v1.TripService/RejectOffer":       accessOwner,
-	"/ride.trip.v1.TripService/RateTrip":          accessOwner,
-	"/ride.trip.v1.TripService/GetTripDriver":     accessOwner,
+
+	// Drivers' activity, for wallet-service's incentives.
+	"/ride.trip.v1.TripService/GetDriverActivity":  accessInternal,
+	"/ride.trip.v1.TripService/ListDriverActivity": accessInternal,
+	"/ride.trip.v1.TripService/GetPendingOffer":    accessOwner,
+	"/ride.trip.v1.TripService/AcceptOffer":        accessOwner,
+	"/ride.trip.v1.TripService/RejectOffer":        accessOwner,
+	"/ride.trip.v1.TripService/RateTrip":           accessOwner,
+	"/ride.trip.v1.TripService/GetTripDriver":      accessOwner,
 
 	"/ride.trip.v1.TripService/GetPickupPhoto":         accessOwner,
 	"/ride.trip.v1.TripService/ListRecentDestinations": accessOwner,

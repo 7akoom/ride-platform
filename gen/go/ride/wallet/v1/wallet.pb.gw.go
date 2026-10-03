@@ -1888,6 +1888,297 @@ func local_request_WalletService_ProcessZainCashWebhook_0(ctx context.Context, m
 	return msg, metadata, err
 }
 
+var filter_WalletService_GetDriverEarnings_0 = &utilities.DoubleArray{Encoding: map[string]int{"driver_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+
+func request_WalletService_GetDriverEarnings_0(ctx context.Context, marshaler runtime.Marshaler, client WalletServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetDriverEarningsRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["driver_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "driver_id")
+	}
+	protoReq.DriverId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "driver_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_WalletService_GetDriverEarnings_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.GetDriverEarnings(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_WalletService_GetDriverEarnings_0(ctx context.Context, marshaler runtime.Marshaler, server WalletServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetDriverEarningsRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["driver_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "driver_id")
+	}
+	protoReq.DriverId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "driver_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_WalletService_GetDriverEarnings_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.GetDriverEarnings(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_WalletService_ListDriverIncentives_0(ctx context.Context, marshaler runtime.Marshaler, client WalletServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListDriverIncentivesRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["driver_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "driver_id")
+	}
+	protoReq.DriverId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "driver_id", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.ListDriverIncentives(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_WalletService_ListDriverIncentives_0(ctx context.Context, marshaler runtime.Marshaler, server WalletServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListDriverIncentivesRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["driver_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "driver_id")
+	}
+	protoReq.DriverId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "driver_id", err)
+	}
+	msg, err := server.ListDriverIncentives(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_WalletService_CreateIncentiveCampaign_0(ctx context.Context, marshaler runtime.Marshaler, client WalletServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq CreateIncentiveCampaignRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.CreateIncentiveCampaign(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_WalletService_CreateIncentiveCampaign_0(ctx context.Context, marshaler runtime.Marshaler, server WalletServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq CreateIncentiveCampaignRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.CreateIncentiveCampaign(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+var filter_WalletService_ListIncentiveCampaigns_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+
+func request_WalletService_ListIncentiveCampaigns_0(ctx context.Context, marshaler runtime.Marshaler, client WalletServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListIncentiveCampaignsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_WalletService_ListIncentiveCampaigns_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.ListIncentiveCampaigns(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_WalletService_ListIncentiveCampaigns_0(ctx context.Context, marshaler runtime.Marshaler, server WalletServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListIncentiveCampaignsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_WalletService_ListIncentiveCampaigns_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.ListIncentiveCampaigns(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_WalletService_GetIncentiveCampaign_0(ctx context.Context, marshaler runtime.Marshaler, client WalletServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetIncentiveCampaignRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["campaign_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "campaign_id")
+	}
+	protoReq.CampaignId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "campaign_id", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.GetIncentiveCampaign(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_WalletService_GetIncentiveCampaign_0(ctx context.Context, marshaler runtime.Marshaler, server WalletServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetIncentiveCampaignRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["campaign_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "campaign_id")
+	}
+	protoReq.CampaignId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "campaign_id", err)
+	}
+	msg, err := server.GetIncentiveCampaign(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_WalletService_CancelIncentiveCampaign_0(ctx context.Context, marshaler runtime.Marshaler, client WalletServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq CancelIncentiveCampaignRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["campaign_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "campaign_id")
+	}
+	protoReq.CampaignId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "campaign_id", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.CancelIncentiveCampaign(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_WalletService_CancelIncentiveCampaign_0(ctx context.Context, marshaler runtime.Marshaler, server WalletServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq CancelIncentiveCampaignRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["campaign_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "campaign_id")
+	}
+	protoReq.CampaignId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "campaign_id", err)
+	}
+	msg, err := server.CancelIncentiveCampaign(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+var filter_WalletService_ListIncentivePayouts_0 = &utilities.DoubleArray{Encoding: map[string]int{"campaign_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+
+func request_WalletService_ListIncentivePayouts_0(ctx context.Context, marshaler runtime.Marshaler, client WalletServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListIncentivePayoutsRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["campaign_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "campaign_id")
+	}
+	protoReq.CampaignId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "campaign_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_WalletService_ListIncentivePayouts_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.ListIncentivePayouts(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_WalletService_ListIncentivePayouts_0(ctx context.Context, marshaler runtime.Marshaler, server WalletServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListIncentivePayoutsRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["campaign_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "campaign_id")
+	}
+	protoReq.CampaignId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "campaign_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_WalletService_ListIncentivePayouts_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.ListIncentivePayouts(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 // RegisterWalletServiceHandlerServer registers the http handlers for service WalletService to "mux".
 // UnaryRPC     :call WalletServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -2674,6 +2965,146 @@ func RegisterWalletServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_WalletService_ProcessZainCashWebhook_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_WalletService_GetDriverEarnings_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ride.wallet.v1.WalletService/GetDriverEarnings", runtime.WithHTTPPathPattern("/v1/drivers/{driver_id}/earnings"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_WalletService_GetDriverEarnings_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_GetDriverEarnings_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_WalletService_ListDriverIncentives_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ride.wallet.v1.WalletService/ListDriverIncentives", runtime.WithHTTPPathPattern("/v1/drivers/{driver_id}/incentives"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_WalletService_ListDriverIncentives_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_ListDriverIncentives_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPost, pattern_WalletService_CreateIncentiveCampaign_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ride.wallet.v1.WalletService/CreateIncentiveCampaign", runtime.WithHTTPPathPattern("/v1/admin/incentives"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_WalletService_CreateIncentiveCampaign_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_CreateIncentiveCampaign_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_WalletService_ListIncentiveCampaigns_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ride.wallet.v1.WalletService/ListIncentiveCampaigns", runtime.WithHTTPPathPattern("/v1/admin/incentives"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_WalletService_ListIncentiveCampaigns_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_ListIncentiveCampaigns_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_WalletService_GetIncentiveCampaign_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ride.wallet.v1.WalletService/GetIncentiveCampaign", runtime.WithHTTPPathPattern("/v1/admin/incentives/{campaign_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_WalletService_GetIncentiveCampaign_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_GetIncentiveCampaign_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPost, pattern_WalletService_CancelIncentiveCampaign_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ride.wallet.v1.WalletService/CancelIncentiveCampaign", runtime.WithHTTPPathPattern("/v1/admin/incentives/{campaign_id}:cancel"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_WalletService_CancelIncentiveCampaign_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_CancelIncentiveCampaign_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_WalletService_ListIncentivePayouts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ride.wallet.v1.WalletService/ListIncentivePayouts", runtime.WithHTTPPathPattern("/v1/admin/incentives/{campaign_id}/payouts"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_WalletService_ListIncentivePayouts_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_ListIncentivePayouts_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 
 	return nil
 }
@@ -3377,89 +3808,222 @@ func RegisterWalletServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_WalletService_ProcessZainCashWebhook_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_WalletService_GetDriverEarnings_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ride.wallet.v1.WalletService/GetDriverEarnings", runtime.WithHTTPPathPattern("/v1/drivers/{driver_id}/earnings"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_WalletService_GetDriverEarnings_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_GetDriverEarnings_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_WalletService_ListDriverIncentives_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ride.wallet.v1.WalletService/ListDriverIncentives", runtime.WithHTTPPathPattern("/v1/drivers/{driver_id}/incentives"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_WalletService_ListDriverIncentives_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_ListDriverIncentives_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPost, pattern_WalletService_CreateIncentiveCampaign_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ride.wallet.v1.WalletService/CreateIncentiveCampaign", runtime.WithHTTPPathPattern("/v1/admin/incentives"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_WalletService_CreateIncentiveCampaign_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_CreateIncentiveCampaign_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_WalletService_ListIncentiveCampaigns_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ride.wallet.v1.WalletService/ListIncentiveCampaigns", runtime.WithHTTPPathPattern("/v1/admin/incentives"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_WalletService_ListIncentiveCampaigns_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_ListIncentiveCampaigns_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_WalletService_GetIncentiveCampaign_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ride.wallet.v1.WalletService/GetIncentiveCampaign", runtime.WithHTTPPathPattern("/v1/admin/incentives/{campaign_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_WalletService_GetIncentiveCampaign_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_GetIncentiveCampaign_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPost, pattern_WalletService_CancelIncentiveCampaign_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ride.wallet.v1.WalletService/CancelIncentiveCampaign", runtime.WithHTTPPathPattern("/v1/admin/incentives/{campaign_id}:cancel"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_WalletService_CancelIncentiveCampaign_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_CancelIncentiveCampaign_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_WalletService_ListIncentivePayouts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/ride.wallet.v1.WalletService/ListIncentivePayouts", runtime.WithHTTPPathPattern("/v1/admin/incentives/{campaign_id}/payouts"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_WalletService_ListIncentivePayouts_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_WalletService_ListIncentivePayouts_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	return nil
 }
 
 var (
-	pattern_WalletService_GetWallet_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "wallets", "owner_id"}, ""))
-	pattern_WalletService_ListTransactions_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "owner_id", "transactions"}, ""))
-	pattern_WalletService_CheckDriverStanding_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "drivers", "driver_id", "standing"}, ""))
-	pattern_WalletService_RequestPayout_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "drivers", "driver_id", "payouts"}, ""))
-	pattern_WalletService_ListPayouts_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "drivers", "driver_id", "payouts"}, ""))
-	pattern_WalletService_GetTripSettlement_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v1", "wallets", "owner_id", "trips", "trip_id", "settlement"}, ""))
-	pattern_WalletService_RecordTripChange_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v1", "drivers", "driver_id", "trips", "trip_id", "change"}, ""))
-	pattern_WalletService_InitiateTopUp_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "wallet", "topups", "zaincash"}, ""))
-	pattern_WalletService_InitiateTopUp_1          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "owner_id", "topups"}, ""))
-	pattern_WalletService_GetTopUp_0               = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "wallets", "owner_id", "topups", "top_up_id"}, ""))
-	pattern_WalletService_TipDriver_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v1", "wallets", "rider_id", "trips", "trip_id", "tip"}, ""))
-	pattern_WalletService_SendTransfer_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "transfers"}, ""))
-	pattern_WalletService_ListTransfers_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "transfers"}, ""))
-	pattern_WalletService_CreateMoneyRequest_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "money-requests"}, ""))
-	pattern_WalletService_ListMoneyRequests_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "money-requests"}, ""))
-	pattern_WalletService_GetMoneyRequest_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "wallets", "rider_id", "money-requests", "code"}, ""))
-	pattern_WalletService_PayMoneyRequest_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "wallets", "rider_id", "money-requests", "code"}, "pay"))
-	pattern_WalletService_DeclineMoneyRequest_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "wallets", "rider_id", "money-requests", "code"}, "decline"))
-	pattern_WalletService_CancelMoneyRequest_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "wallets", "rider_id", "money-requests", "code"}, "cancel"))
-	pattern_WalletService_GetStatement_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "owner_id", "statement"}, ""))
-	pattern_WalletService_GetRiderDues_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "dues"}, ""))
-	pattern_WalletService_CreateVoucherBatch_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "admin", "voucher-batches"}, ""))
-	pattern_WalletService_ListVoucherBatches_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "admin", "voucher-batches"}, ""))
-	pattern_WalletService_GetVoucherBatch_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "voucher-batches", "batch_id"}, ""))
-	pattern_WalletService_ExportVoucherBatch_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "voucher-batches", "batch_id"}, "export"))
-	pattern_WalletService_CancelVoucherBatch_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "voucher-batches", "batch_id"}, "cancel"))
-	pattern_WalletService_GetVoucher_0             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "vouchers", "serial"}, ""))
-	pattern_WalletService_VoidVoucher_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "vouchers", "serial"}, "void"))
-	pattern_WalletService_RedeemVoucher_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "vouchers"}, "redeem"))
-	pattern_WalletService_InspectWallet_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "wallets", "owner_id"}, ""))
-	pattern_WalletService_GetStatementForStaff_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "admin", "wallets", "owner_id", "statement"}, ""))
-	pattern_WalletService_AdjustWallet_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "admin", "wallets", "owner_id", "adjustments"}, ""))
-	pattern_WalletService_RefundTrip_0             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "admin", "trips", "trip_id", "refunds"}, ""))
-	pattern_WalletService_ListTripRefunds_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "admin", "trips", "trip_id", "refunds"}, ""))
-	pattern_WalletService_ListPayoutRequests_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "admin", "payouts"}, ""))
-	pattern_WalletService_ApprovePayout_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "payouts", "payout_id"}, "approve"))
-	pattern_WalletService_MarkPayoutPaid_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "payouts", "payout_id"}, "markPaid"))
-	pattern_WalletService_RejectPayout_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "payouts", "payout_id"}, "reject"))
-	pattern_WalletService_ProcessZainCashWebhook_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "wallet", "zaincash", "webhook"}, ""))
+	pattern_WalletService_GetWallet_0               = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "wallets", "owner_id"}, ""))
+	pattern_WalletService_ListTransactions_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "owner_id", "transactions"}, ""))
+	pattern_WalletService_CheckDriverStanding_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "drivers", "driver_id", "standing"}, ""))
+	pattern_WalletService_RequestPayout_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "drivers", "driver_id", "payouts"}, ""))
+	pattern_WalletService_ListPayouts_0             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "drivers", "driver_id", "payouts"}, ""))
+	pattern_WalletService_GetTripSettlement_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v1", "wallets", "owner_id", "trips", "trip_id", "settlement"}, ""))
+	pattern_WalletService_RecordTripChange_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v1", "drivers", "driver_id", "trips", "trip_id", "change"}, ""))
+	pattern_WalletService_InitiateTopUp_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "wallet", "topups", "zaincash"}, ""))
+	pattern_WalletService_InitiateTopUp_1           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "owner_id", "topups"}, ""))
+	pattern_WalletService_GetTopUp_0                = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "wallets", "owner_id", "topups", "top_up_id"}, ""))
+	pattern_WalletService_TipDriver_0               = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v1", "wallets", "rider_id", "trips", "trip_id", "tip"}, ""))
+	pattern_WalletService_SendTransfer_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "transfers"}, ""))
+	pattern_WalletService_ListTransfers_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "transfers"}, ""))
+	pattern_WalletService_CreateMoneyRequest_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "money-requests"}, ""))
+	pattern_WalletService_ListMoneyRequests_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "money-requests"}, ""))
+	pattern_WalletService_GetMoneyRequest_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "wallets", "rider_id", "money-requests", "code"}, ""))
+	pattern_WalletService_PayMoneyRequest_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "wallets", "rider_id", "money-requests", "code"}, "pay"))
+	pattern_WalletService_DeclineMoneyRequest_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "wallets", "rider_id", "money-requests", "code"}, "decline"))
+	pattern_WalletService_CancelMoneyRequest_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "wallets", "rider_id", "money-requests", "code"}, "cancel"))
+	pattern_WalletService_GetStatement_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "owner_id", "statement"}, ""))
+	pattern_WalletService_GetRiderDues_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "dues"}, ""))
+	pattern_WalletService_CreateVoucherBatch_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "admin", "voucher-batches"}, ""))
+	pattern_WalletService_ListVoucherBatches_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "admin", "voucher-batches"}, ""))
+	pattern_WalletService_GetVoucherBatch_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "voucher-batches", "batch_id"}, ""))
+	pattern_WalletService_ExportVoucherBatch_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "voucher-batches", "batch_id"}, "export"))
+	pattern_WalletService_CancelVoucherBatch_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "voucher-batches", "batch_id"}, "cancel"))
+	pattern_WalletService_GetVoucher_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "vouchers", "serial"}, ""))
+	pattern_WalletService_VoidVoucher_0             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "vouchers", "serial"}, "void"))
+	pattern_WalletService_RedeemVoucher_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "wallets", "rider_id", "vouchers"}, "redeem"))
+	pattern_WalletService_InspectWallet_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "wallets", "owner_id"}, ""))
+	pattern_WalletService_GetStatementForStaff_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "admin", "wallets", "owner_id", "statement"}, ""))
+	pattern_WalletService_AdjustWallet_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "admin", "wallets", "owner_id", "adjustments"}, ""))
+	pattern_WalletService_RefundTrip_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "admin", "trips", "trip_id", "refunds"}, ""))
+	pattern_WalletService_ListTripRefunds_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "admin", "trips", "trip_id", "refunds"}, ""))
+	pattern_WalletService_ListPayoutRequests_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "admin", "payouts"}, ""))
+	pattern_WalletService_ApprovePayout_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "payouts", "payout_id"}, "approve"))
+	pattern_WalletService_MarkPayoutPaid_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "payouts", "payout_id"}, "markPaid"))
+	pattern_WalletService_RejectPayout_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "payouts", "payout_id"}, "reject"))
+	pattern_WalletService_ProcessZainCashWebhook_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "wallet", "zaincash", "webhook"}, ""))
+	pattern_WalletService_GetDriverEarnings_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "drivers", "driver_id", "earnings"}, ""))
+	pattern_WalletService_ListDriverIncentives_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "drivers", "driver_id", "incentives"}, ""))
+	pattern_WalletService_CreateIncentiveCampaign_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "admin", "incentives"}, ""))
+	pattern_WalletService_ListIncentiveCampaigns_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "admin", "incentives"}, ""))
+	pattern_WalletService_GetIncentiveCampaign_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "incentives", "campaign_id"}, ""))
+	pattern_WalletService_CancelIncentiveCampaign_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "admin", "incentives", "campaign_id"}, "cancel"))
+	pattern_WalletService_ListIncentivePayouts_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "admin", "incentives", "campaign_id", "payouts"}, ""))
 )
 
 var (
-	forward_WalletService_GetWallet_0              = runtime.ForwardResponseMessage
-	forward_WalletService_ListTransactions_0       = runtime.ForwardResponseMessage
-	forward_WalletService_CheckDriverStanding_0    = runtime.ForwardResponseMessage
-	forward_WalletService_RequestPayout_0          = runtime.ForwardResponseMessage
-	forward_WalletService_ListPayouts_0            = runtime.ForwardResponseMessage
-	forward_WalletService_GetTripSettlement_0      = runtime.ForwardResponseMessage
-	forward_WalletService_RecordTripChange_0       = runtime.ForwardResponseMessage
-	forward_WalletService_InitiateTopUp_0          = runtime.ForwardResponseMessage
-	forward_WalletService_InitiateTopUp_1          = runtime.ForwardResponseMessage
-	forward_WalletService_GetTopUp_0               = runtime.ForwardResponseMessage
-	forward_WalletService_TipDriver_0              = runtime.ForwardResponseMessage
-	forward_WalletService_SendTransfer_0           = runtime.ForwardResponseMessage
-	forward_WalletService_ListTransfers_0          = runtime.ForwardResponseMessage
-	forward_WalletService_CreateMoneyRequest_0     = runtime.ForwardResponseMessage
-	forward_WalletService_ListMoneyRequests_0      = runtime.ForwardResponseMessage
-	forward_WalletService_GetMoneyRequest_0        = runtime.ForwardResponseMessage
-	forward_WalletService_PayMoneyRequest_0        = runtime.ForwardResponseMessage
-	forward_WalletService_DeclineMoneyRequest_0    = runtime.ForwardResponseMessage
-	forward_WalletService_CancelMoneyRequest_0     = runtime.ForwardResponseMessage
-	forward_WalletService_GetStatement_0           = runtime.ForwardResponseMessage
-	forward_WalletService_GetRiderDues_0           = runtime.ForwardResponseMessage
-	forward_WalletService_CreateVoucherBatch_0     = runtime.ForwardResponseMessage
-	forward_WalletService_ListVoucherBatches_0     = runtime.ForwardResponseMessage
-	forward_WalletService_GetVoucherBatch_0        = runtime.ForwardResponseMessage
-	forward_WalletService_ExportVoucherBatch_0     = runtime.ForwardResponseMessage
-	forward_WalletService_CancelVoucherBatch_0     = runtime.ForwardResponseMessage
-	forward_WalletService_GetVoucher_0             = runtime.ForwardResponseMessage
-	forward_WalletService_VoidVoucher_0            = runtime.ForwardResponseMessage
-	forward_WalletService_RedeemVoucher_0          = runtime.ForwardResponseMessage
-	forward_WalletService_InspectWallet_0          = runtime.ForwardResponseMessage
-	forward_WalletService_GetStatementForStaff_0   = runtime.ForwardResponseMessage
-	forward_WalletService_AdjustWallet_0           = runtime.ForwardResponseMessage
-	forward_WalletService_RefundTrip_0             = runtime.ForwardResponseMessage
-	forward_WalletService_ListTripRefunds_0        = runtime.ForwardResponseMessage
-	forward_WalletService_ListPayoutRequests_0     = runtime.ForwardResponseMessage
-	forward_WalletService_ApprovePayout_0          = runtime.ForwardResponseMessage
-	forward_WalletService_MarkPayoutPaid_0         = runtime.ForwardResponseMessage
-	forward_WalletService_RejectPayout_0           = runtime.ForwardResponseMessage
-	forward_WalletService_ProcessZainCashWebhook_0 = runtime.ForwardResponseMessage
+	forward_WalletService_GetWallet_0               = runtime.ForwardResponseMessage
+	forward_WalletService_ListTransactions_0        = runtime.ForwardResponseMessage
+	forward_WalletService_CheckDriverStanding_0     = runtime.ForwardResponseMessage
+	forward_WalletService_RequestPayout_0           = runtime.ForwardResponseMessage
+	forward_WalletService_ListPayouts_0             = runtime.ForwardResponseMessage
+	forward_WalletService_GetTripSettlement_0       = runtime.ForwardResponseMessage
+	forward_WalletService_RecordTripChange_0        = runtime.ForwardResponseMessage
+	forward_WalletService_InitiateTopUp_0           = runtime.ForwardResponseMessage
+	forward_WalletService_InitiateTopUp_1           = runtime.ForwardResponseMessage
+	forward_WalletService_GetTopUp_0                = runtime.ForwardResponseMessage
+	forward_WalletService_TipDriver_0               = runtime.ForwardResponseMessage
+	forward_WalletService_SendTransfer_0            = runtime.ForwardResponseMessage
+	forward_WalletService_ListTransfers_0           = runtime.ForwardResponseMessage
+	forward_WalletService_CreateMoneyRequest_0      = runtime.ForwardResponseMessage
+	forward_WalletService_ListMoneyRequests_0       = runtime.ForwardResponseMessage
+	forward_WalletService_GetMoneyRequest_0         = runtime.ForwardResponseMessage
+	forward_WalletService_PayMoneyRequest_0         = runtime.ForwardResponseMessage
+	forward_WalletService_DeclineMoneyRequest_0     = runtime.ForwardResponseMessage
+	forward_WalletService_CancelMoneyRequest_0      = runtime.ForwardResponseMessage
+	forward_WalletService_GetStatement_0            = runtime.ForwardResponseMessage
+	forward_WalletService_GetRiderDues_0            = runtime.ForwardResponseMessage
+	forward_WalletService_CreateVoucherBatch_0      = runtime.ForwardResponseMessage
+	forward_WalletService_ListVoucherBatches_0      = runtime.ForwardResponseMessage
+	forward_WalletService_GetVoucherBatch_0         = runtime.ForwardResponseMessage
+	forward_WalletService_ExportVoucherBatch_0      = runtime.ForwardResponseMessage
+	forward_WalletService_CancelVoucherBatch_0      = runtime.ForwardResponseMessage
+	forward_WalletService_GetVoucher_0              = runtime.ForwardResponseMessage
+	forward_WalletService_VoidVoucher_0             = runtime.ForwardResponseMessage
+	forward_WalletService_RedeemVoucher_0           = runtime.ForwardResponseMessage
+	forward_WalletService_InspectWallet_0           = runtime.ForwardResponseMessage
+	forward_WalletService_GetStatementForStaff_0    = runtime.ForwardResponseMessage
+	forward_WalletService_AdjustWallet_0            = runtime.ForwardResponseMessage
+	forward_WalletService_RefundTrip_0              = runtime.ForwardResponseMessage
+	forward_WalletService_ListTripRefunds_0         = runtime.ForwardResponseMessage
+	forward_WalletService_ListPayoutRequests_0      = runtime.ForwardResponseMessage
+	forward_WalletService_ApprovePayout_0           = runtime.ForwardResponseMessage
+	forward_WalletService_MarkPayoutPaid_0          = runtime.ForwardResponseMessage
+	forward_WalletService_RejectPayout_0            = runtime.ForwardResponseMessage
+	forward_WalletService_ProcessZainCashWebhook_0  = runtime.ForwardResponseMessage
+	forward_WalletService_GetDriverEarnings_0       = runtime.ForwardResponseMessage
+	forward_WalletService_ListDriverIncentives_0    = runtime.ForwardResponseMessage
+	forward_WalletService_CreateIncentiveCampaign_0 = runtime.ForwardResponseMessage
+	forward_WalletService_ListIncentiveCampaigns_0  = runtime.ForwardResponseMessage
+	forward_WalletService_GetIncentiveCampaign_0    = runtime.ForwardResponseMessage
+	forward_WalletService_CancelIncentiveCampaign_0 = runtime.ForwardResponseMessage
+	forward_WalletService_ListIncentivePayouts_0    = runtime.ForwardResponseMessage
 )

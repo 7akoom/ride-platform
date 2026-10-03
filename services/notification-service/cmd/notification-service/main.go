@@ -40,6 +40,9 @@ const (
 	// one's filter never changes under it.
 	walletRequestsDurable = "notification-wallet-requests"
 
+	// walletIncentivesDurable tells drivers about incentive bonuses paid.
+	walletIncentivesDurable = "notification-wallet-incentives"
+
 	// driverEventsDurable tells drivers about their account review and
 	// their documents (reviewed, expiring, expired).
 	driverEventsDurable = "notification-driver-events"
@@ -285,6 +288,22 @@ func run() int {
 		return 1
 	}
 	defer walletRequestSubscription.Stop()
+
+	walletIncentiveSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		"WALLET_EVENTS",
+		walletIncentivesDurable,
+		[]string{events.SubjectIncentivePaid},
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to incentive payouts", "error", err)
+
+		return 1
+	}
+	defer walletIncentiveSubscription.Stop()
 
 	driverSubscription, err := natsinfra.SubscribeDurable(
 		ctx,

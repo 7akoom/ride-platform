@@ -122,6 +122,8 @@ func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) err
 		return h.handleTransferCompleted(ctx, envelope)
 	case SubjectMoneyRequested:
 		return h.handleMoneyRequested(ctx, envelope)
+	case SubjectIncentivePaid:
+		return h.handleIncentivePaid(ctx, envelope)
 	case SubjectDriverApproved, SubjectDriverRejected:
 		return h.handleDriverStatus(ctx, subject, envelope)
 	case SubjectDriverDocumentReviewed, SubjectDriverDocumentExpiring, SubjectDriverDocumentExpired:

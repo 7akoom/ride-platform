@@ -28,6 +28,10 @@ type CreateInput struct {
 	PassengerPhone string
 	Scheduled      bool
 	Stops          []Stop
+
+	// Where the pickup is served; empty when location-service did not say.
+	PickupZoneID string
+	PickupCityID string
 }
 
 // Repository is the persistence port for the trip aggregate. Every
@@ -140,5 +144,13 @@ type ZoneChecker interface {
 	CheckServiceZone(
 		ctx context.Context,
 		latitude, longitude float64,
-	) (served bool, err error)
+	) (ServiceZone, error)
+}
+
+// ServiceZone is where a pickup point is served; the ids are kept on the trip
+// (driver incentives count trips by zone and city).
+type ServiceZone struct {
+	Served bool
+	ZoneID string
+	CityID string
 }

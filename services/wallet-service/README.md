@@ -280,6 +280,34 @@ hours of its settlement, between `tip_min_amount` and `tip_max_amount` (250 and
 on each wallet, a `trip_tips` row, and `wallet.tip_received` for the driver's
 notification. The trip's settlement shows it (`tipAmount`).
 
+## Earnings
+
+`GET /v1/drivers/{driverId}/earnings?period=EARNINGS_PERIOD_DAY|WEEK|MONTH&date=YYYY-MM-DD`
+sums a driver's day, week (Monday to Sunday) or month in `WALLET_TIME_ZONE`:
+trips and fares, commission, trip earnings, fees (cancellation, no-show),
+tips, incentives, refunds charged to them, adjustments, cash collected and
+paid from riders' wallets. A week or month lists every day.
+
+## Incentive campaigns
+
+Staff with `incentives.manage` (the owner by default) create a campaign
+(`POST /v1/admin/incentives`): a period of up to 31 days, a scope (city,
+zones, vehicle class, daily hours that may cross midnight), optional
+conditions (minimum acceptance rate, maximum cancellation rate, minimum
+rating) and 1-5 tiers of trips and a bonus. Trips are counted by
+trip-service (`GetDriverActivity` / `ListDriverActivity`, internal) by the
+pickup's zone and the completion time. A driver sees their progress at
+`GET /v1/drivers/{driverId}/incentives`.
+
+`INCENTIVE_SETTLE_DELAY` after it ends, the worker pays each driver the
+bonus of the highest tier reached, if the conditions are met, as an
+`incentive` row on their wallet (`wallet.incentive_paid`, the driver is
+notified); otherwise the payout is kept as `not_eligible` with the
+conditions missed. One payout per driver and campaign, however often the
+worker is interrupted. A campaign that has not ended can be cancelled with a
+reason; nobody is paid. Boosts (a multiplier per zone and hour) and earnings
+guarantees are not done.
+
 ## Configuration
 
 `wallet_configs` is versioned like `pricing_configs`: change the

@@ -8,7 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	earningsapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/earnings"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/events"
+	incentivesapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/incentives"
 	operationsapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/operations"
 	outboxapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/outbox"
 	tipsapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/tips"
@@ -91,6 +93,13 @@ func run() int {
 	autoSettleConfig, err := config.ParseAutoSettle(cfg)
 	if err != nil {
 		logger.Error("invalid auto-settlement configuration", "error", err)
+
+		return 1
+	}
+
+	incentiveConfig, err := config.ParseIncentives(cfg)
+	if err != nil {
+		logger.Error("invalid incentive configuration", "error", err)
 
 		return 1
 	}
@@ -283,6 +292,17 @@ func run() int {
 
 	transferStore := postgresrepo.NewTransferStore(walletRepository)
 
+	incentiveService := incentivesapp.NewService(
+		postgresrepo.NewIncentiveStore(walletRepository),
+		clients.NewTripActivity(tripConn),
+		clients.NewDriverProfiles(driverConn),
+		incentivesapp.Settings{
+			TimeZone:    incentiveConfig.Location.String(),
+			SettleDelay: incentiveConfig.SettleDelay,
+		},
+		logger,
+	)
+
 	walletHandler := grpcserver.NewWalletHandler(walletService, topupService, logger).
 		WithTransfers(
 			transferapp.NewService(
@@ -298,7 +318,9 @@ func run() int {
 			voucherapp.Limits{MaxFailures: voucherConfig.MaxFailures, Window: voucherConfig.Window},
 		)).
 		WithOperations(operationsapp.NewService(postgresrepo.NewOperationsStore(walletRepository), walletService)).
-		WithTips(tipsapp.NewService(postgresrepo.NewTipStore(walletRepository)))
+		WithTips(tipsapp.NewService(postgresrepo.NewTipStore(walletRepository))).
+		WithEarnings(earningsapp.NewService(postgresrepo.NewEarningsStore(walletRepository), incentiveConfig.Location)).
+		WithIncentives(incentiveService)
 
 	eventHandler := events.NewHandler(
 		walletService,
@@ -364,6 +386,15 @@ func run() int {
 		}
 	}()
 
+	// Pays ended incentive campaigns into drivers' wallets.
+	incentivesDone := make(chan struct{})
+
+	go func() {
+		defer close(incentivesDone)
+
+		incentivesapp.NewWorker(incentiveService, incentiveConfig.CheckInterval, logger).Run(ctx)
+	}()
+
 	serverErrors := make(chan error, 1)
 
 	go func() {
@@ -385,7 +416,9 @@ func run() int {
 		if err != nil {
 			logger.Error("gRPC server exited with error", "error", err)
 
+			stop()
 			<-outboxDone
+			<-incentivesDone
 
 			return 1
 		}
@@ -418,6 +451,7 @@ func run() int {
 	}
 
 	<-outboxDone
+	<-incentivesDone
 
 	return 0
 }

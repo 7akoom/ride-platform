@@ -19,46 +19,53 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WalletService_GetWallet_FullMethodName              = "/ride.wallet.v1.WalletService/GetWallet"
-	WalletService_TopUp_FullMethodName                  = "/ride.wallet.v1.WalletService/TopUp"
-	WalletService_SettleTrip_FullMethodName             = "/ride.wallet.v1.WalletService/SettleTrip"
-	WalletService_ListTransactions_FullMethodName       = "/ride.wallet.v1.WalletService/ListTransactions"
-	WalletService_CheckDriverStanding_FullMethodName    = "/ride.wallet.v1.WalletService/CheckDriverStanding"
-	WalletService_RequestPayout_FullMethodName          = "/ride.wallet.v1.WalletService/RequestPayout"
-	WalletService_ListPayouts_FullMethodName            = "/ride.wallet.v1.WalletService/ListPayouts"
-	WalletService_GetTripSettlement_FullMethodName      = "/ride.wallet.v1.WalletService/GetTripSettlement"
-	WalletService_RecordTripChange_FullMethodName       = "/ride.wallet.v1.WalletService/RecordTripChange"
-	WalletService_InitiateTopUp_FullMethodName          = "/ride.wallet.v1.WalletService/InitiateTopUp"
-	WalletService_GetTopUp_FullMethodName               = "/ride.wallet.v1.WalletService/GetTopUp"
-	WalletService_TipDriver_FullMethodName              = "/ride.wallet.v1.WalletService/TipDriver"
-	WalletService_SendTransfer_FullMethodName           = "/ride.wallet.v1.WalletService/SendTransfer"
-	WalletService_ListTransfers_FullMethodName          = "/ride.wallet.v1.WalletService/ListTransfers"
-	WalletService_CreateMoneyRequest_FullMethodName     = "/ride.wallet.v1.WalletService/CreateMoneyRequest"
-	WalletService_ListMoneyRequests_FullMethodName      = "/ride.wallet.v1.WalletService/ListMoneyRequests"
-	WalletService_GetMoneyRequest_FullMethodName        = "/ride.wallet.v1.WalletService/GetMoneyRequest"
-	WalletService_PayMoneyRequest_FullMethodName        = "/ride.wallet.v1.WalletService/PayMoneyRequest"
-	WalletService_DeclineMoneyRequest_FullMethodName    = "/ride.wallet.v1.WalletService/DeclineMoneyRequest"
-	WalletService_CancelMoneyRequest_FullMethodName     = "/ride.wallet.v1.WalletService/CancelMoneyRequest"
-	WalletService_GetStatement_FullMethodName           = "/ride.wallet.v1.WalletService/GetStatement"
-	WalletService_GetRiderDues_FullMethodName           = "/ride.wallet.v1.WalletService/GetRiderDues"
-	WalletService_CreateVoucherBatch_FullMethodName     = "/ride.wallet.v1.WalletService/CreateVoucherBatch"
-	WalletService_ListVoucherBatches_FullMethodName     = "/ride.wallet.v1.WalletService/ListVoucherBatches"
-	WalletService_GetVoucherBatch_FullMethodName        = "/ride.wallet.v1.WalletService/GetVoucherBatch"
-	WalletService_ExportVoucherBatch_FullMethodName     = "/ride.wallet.v1.WalletService/ExportVoucherBatch"
-	WalletService_CancelVoucherBatch_FullMethodName     = "/ride.wallet.v1.WalletService/CancelVoucherBatch"
-	WalletService_GetVoucher_FullMethodName             = "/ride.wallet.v1.WalletService/GetVoucher"
-	WalletService_VoidVoucher_FullMethodName            = "/ride.wallet.v1.WalletService/VoidVoucher"
-	WalletService_RedeemVoucher_FullMethodName          = "/ride.wallet.v1.WalletService/RedeemVoucher"
-	WalletService_InspectWallet_FullMethodName          = "/ride.wallet.v1.WalletService/InspectWallet"
-	WalletService_GetStatementForStaff_FullMethodName   = "/ride.wallet.v1.WalletService/GetStatementForStaff"
-	WalletService_AdjustWallet_FullMethodName           = "/ride.wallet.v1.WalletService/AdjustWallet"
-	WalletService_RefundTrip_FullMethodName             = "/ride.wallet.v1.WalletService/RefundTrip"
-	WalletService_ListTripRefunds_FullMethodName        = "/ride.wallet.v1.WalletService/ListTripRefunds"
-	WalletService_ListPayoutRequests_FullMethodName     = "/ride.wallet.v1.WalletService/ListPayoutRequests"
-	WalletService_ApprovePayout_FullMethodName          = "/ride.wallet.v1.WalletService/ApprovePayout"
-	WalletService_MarkPayoutPaid_FullMethodName         = "/ride.wallet.v1.WalletService/MarkPayoutPaid"
-	WalletService_RejectPayout_FullMethodName           = "/ride.wallet.v1.WalletService/RejectPayout"
-	WalletService_ProcessZainCashWebhook_FullMethodName = "/ride.wallet.v1.WalletService/ProcessZainCashWebhook"
+	WalletService_GetWallet_FullMethodName               = "/ride.wallet.v1.WalletService/GetWallet"
+	WalletService_TopUp_FullMethodName                   = "/ride.wallet.v1.WalletService/TopUp"
+	WalletService_SettleTrip_FullMethodName              = "/ride.wallet.v1.WalletService/SettleTrip"
+	WalletService_ListTransactions_FullMethodName        = "/ride.wallet.v1.WalletService/ListTransactions"
+	WalletService_CheckDriverStanding_FullMethodName     = "/ride.wallet.v1.WalletService/CheckDriverStanding"
+	WalletService_RequestPayout_FullMethodName           = "/ride.wallet.v1.WalletService/RequestPayout"
+	WalletService_ListPayouts_FullMethodName             = "/ride.wallet.v1.WalletService/ListPayouts"
+	WalletService_GetTripSettlement_FullMethodName       = "/ride.wallet.v1.WalletService/GetTripSettlement"
+	WalletService_RecordTripChange_FullMethodName        = "/ride.wallet.v1.WalletService/RecordTripChange"
+	WalletService_InitiateTopUp_FullMethodName           = "/ride.wallet.v1.WalletService/InitiateTopUp"
+	WalletService_GetTopUp_FullMethodName                = "/ride.wallet.v1.WalletService/GetTopUp"
+	WalletService_TipDriver_FullMethodName               = "/ride.wallet.v1.WalletService/TipDriver"
+	WalletService_SendTransfer_FullMethodName            = "/ride.wallet.v1.WalletService/SendTransfer"
+	WalletService_ListTransfers_FullMethodName           = "/ride.wallet.v1.WalletService/ListTransfers"
+	WalletService_CreateMoneyRequest_FullMethodName      = "/ride.wallet.v1.WalletService/CreateMoneyRequest"
+	WalletService_ListMoneyRequests_FullMethodName       = "/ride.wallet.v1.WalletService/ListMoneyRequests"
+	WalletService_GetMoneyRequest_FullMethodName         = "/ride.wallet.v1.WalletService/GetMoneyRequest"
+	WalletService_PayMoneyRequest_FullMethodName         = "/ride.wallet.v1.WalletService/PayMoneyRequest"
+	WalletService_DeclineMoneyRequest_FullMethodName     = "/ride.wallet.v1.WalletService/DeclineMoneyRequest"
+	WalletService_CancelMoneyRequest_FullMethodName      = "/ride.wallet.v1.WalletService/CancelMoneyRequest"
+	WalletService_GetStatement_FullMethodName            = "/ride.wallet.v1.WalletService/GetStatement"
+	WalletService_GetRiderDues_FullMethodName            = "/ride.wallet.v1.WalletService/GetRiderDues"
+	WalletService_CreateVoucherBatch_FullMethodName      = "/ride.wallet.v1.WalletService/CreateVoucherBatch"
+	WalletService_ListVoucherBatches_FullMethodName      = "/ride.wallet.v1.WalletService/ListVoucherBatches"
+	WalletService_GetVoucherBatch_FullMethodName         = "/ride.wallet.v1.WalletService/GetVoucherBatch"
+	WalletService_ExportVoucherBatch_FullMethodName      = "/ride.wallet.v1.WalletService/ExportVoucherBatch"
+	WalletService_CancelVoucherBatch_FullMethodName      = "/ride.wallet.v1.WalletService/CancelVoucherBatch"
+	WalletService_GetVoucher_FullMethodName              = "/ride.wallet.v1.WalletService/GetVoucher"
+	WalletService_VoidVoucher_FullMethodName             = "/ride.wallet.v1.WalletService/VoidVoucher"
+	WalletService_RedeemVoucher_FullMethodName           = "/ride.wallet.v1.WalletService/RedeemVoucher"
+	WalletService_InspectWallet_FullMethodName           = "/ride.wallet.v1.WalletService/InspectWallet"
+	WalletService_GetStatementForStaff_FullMethodName    = "/ride.wallet.v1.WalletService/GetStatementForStaff"
+	WalletService_AdjustWallet_FullMethodName            = "/ride.wallet.v1.WalletService/AdjustWallet"
+	WalletService_RefundTrip_FullMethodName              = "/ride.wallet.v1.WalletService/RefundTrip"
+	WalletService_ListTripRefunds_FullMethodName         = "/ride.wallet.v1.WalletService/ListTripRefunds"
+	WalletService_ListPayoutRequests_FullMethodName      = "/ride.wallet.v1.WalletService/ListPayoutRequests"
+	WalletService_ApprovePayout_FullMethodName           = "/ride.wallet.v1.WalletService/ApprovePayout"
+	WalletService_MarkPayoutPaid_FullMethodName          = "/ride.wallet.v1.WalletService/MarkPayoutPaid"
+	WalletService_RejectPayout_FullMethodName            = "/ride.wallet.v1.WalletService/RejectPayout"
+	WalletService_ProcessZainCashWebhook_FullMethodName  = "/ride.wallet.v1.WalletService/ProcessZainCashWebhook"
+	WalletService_GetDriverEarnings_FullMethodName       = "/ride.wallet.v1.WalletService/GetDriverEarnings"
+	WalletService_ListDriverIncentives_FullMethodName    = "/ride.wallet.v1.WalletService/ListDriverIncentives"
+	WalletService_CreateIncentiveCampaign_FullMethodName = "/ride.wallet.v1.WalletService/CreateIncentiveCampaign"
+	WalletService_ListIncentiveCampaigns_FullMethodName  = "/ride.wallet.v1.WalletService/ListIncentiveCampaigns"
+	WalletService_GetIncentiveCampaign_FullMethodName    = "/ride.wallet.v1.WalletService/GetIncentiveCampaign"
+	WalletService_CancelIncentiveCampaign_FullMethodName = "/ride.wallet.v1.WalletService/CancelIncentiveCampaign"
+	WalletService_ListIncentivePayouts_FullMethodName    = "/ride.wallet.v1.WalletService/ListIncentivePayouts"
 )
 
 // WalletServiceClient is the client API for WalletService service.
@@ -201,6 +208,23 @@ type WalletServiceClient interface {
 	// platform client — exempted from the auth interceptor same as the
 	// health check (see authentication_interceptor.go).
 	ProcessZainCashWebhook(ctx context.Context, in *ProcessZainCashWebhookRequest, opts ...grpc.CallOption) (*ProcessZainCashWebhookResponse, error)
+	// GetDriverEarnings sums what a driver earned in a day, week (Monday to
+	// Sunday) or month, in the deployment's time zone, with a line per day for
+	// a week or month. The driver themselves.
+	GetDriverEarnings(ctx context.Context, in *GetDriverEarningsRequest, opts ...grpc.CallOption) (*DriverEarnings, error)
+	// ListDriverIncentives shows the incentive campaigns running, coming up and
+	// recently ended for the driver's class, with how far they are and whether
+	// they still qualify. The driver themselves.
+	ListDriverIncentives(ctx context.Context, in *ListDriverIncentivesRequest, opts ...grpc.CallOption) (*ListDriverIncentivesResponse, error)
+	// Incentive campaigns: complete N trips in a period, get paid a bonus. Staff
+	// with incentives.manage (or the internal token).
+	CreateIncentiveCampaign(ctx context.Context, in *CreateIncentiveCampaignRequest, opts ...grpc.CallOption) (*IncentiveCampaignResponse, error)
+	ListIncentiveCampaigns(ctx context.Context, in *ListIncentiveCampaignsRequest, opts ...grpc.CallOption) (*ListIncentiveCampaignsResponse, error)
+	GetIncentiveCampaign(ctx context.Context, in *GetIncentiveCampaignRequest, opts ...grpc.CallOption) (*IncentiveCampaignResponse, error)
+	// CancelIncentiveCampaign stops a campaign before it ends; nobody is paid.
+	CancelIncentiveCampaign(ctx context.Context, in *CancelIncentiveCampaignRequest, opts ...grpc.CallOption) (*IncentiveCampaignResponse, error)
+	// ListIncentivePayouts lists who was paid, or found not to qualify and why.
+	ListIncentivePayouts(ctx context.Context, in *ListIncentivePayoutsRequest, opts ...grpc.CallOption) (*ListIncentivePayoutsResponse, error)
 }
 
 type walletServiceClient struct {
@@ -611,6 +635,76 @@ func (c *walletServiceClient) ProcessZainCashWebhook(ctx context.Context, in *Pr
 	return out, nil
 }
 
+func (c *walletServiceClient) GetDriverEarnings(ctx context.Context, in *GetDriverEarningsRequest, opts ...grpc.CallOption) (*DriverEarnings, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DriverEarnings)
+	err := c.cc.Invoke(ctx, WalletService_GetDriverEarnings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListDriverIncentives(ctx context.Context, in *ListDriverIncentivesRequest, opts ...grpc.CallOption) (*ListDriverIncentivesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDriverIncentivesResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListDriverIncentives_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) CreateIncentiveCampaign(ctx context.Context, in *CreateIncentiveCampaignRequest, opts ...grpc.CallOption) (*IncentiveCampaignResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IncentiveCampaignResponse)
+	err := c.cc.Invoke(ctx, WalletService_CreateIncentiveCampaign_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListIncentiveCampaigns(ctx context.Context, in *ListIncentiveCampaignsRequest, opts ...grpc.CallOption) (*ListIncentiveCampaignsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListIncentiveCampaignsResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListIncentiveCampaigns_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) GetIncentiveCampaign(ctx context.Context, in *GetIncentiveCampaignRequest, opts ...grpc.CallOption) (*IncentiveCampaignResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IncentiveCampaignResponse)
+	err := c.cc.Invoke(ctx, WalletService_GetIncentiveCampaign_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) CancelIncentiveCampaign(ctx context.Context, in *CancelIncentiveCampaignRequest, opts ...grpc.CallOption) (*IncentiveCampaignResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IncentiveCampaignResponse)
+	err := c.cc.Invoke(ctx, WalletService_CancelIncentiveCampaign_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListIncentivePayouts(ctx context.Context, in *ListIncentivePayoutsRequest, opts ...grpc.CallOption) (*ListIncentivePayoutsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListIncentivePayoutsResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListIncentivePayouts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WalletServiceServer is the server API for WalletService service.
 // All implementations must embed UnimplementedWalletServiceServer
 // for forward compatibility.
@@ -751,6 +845,23 @@ type WalletServiceServer interface {
 	// platform client — exempted from the auth interceptor same as the
 	// health check (see authentication_interceptor.go).
 	ProcessZainCashWebhook(context.Context, *ProcessZainCashWebhookRequest) (*ProcessZainCashWebhookResponse, error)
+	// GetDriverEarnings sums what a driver earned in a day, week (Monday to
+	// Sunday) or month, in the deployment's time zone, with a line per day for
+	// a week or month. The driver themselves.
+	GetDriverEarnings(context.Context, *GetDriverEarningsRequest) (*DriverEarnings, error)
+	// ListDriverIncentives shows the incentive campaigns running, coming up and
+	// recently ended for the driver's class, with how far they are and whether
+	// they still qualify. The driver themselves.
+	ListDriverIncentives(context.Context, *ListDriverIncentivesRequest) (*ListDriverIncentivesResponse, error)
+	// Incentive campaigns: complete N trips in a period, get paid a bonus. Staff
+	// with incentives.manage (or the internal token).
+	CreateIncentiveCampaign(context.Context, *CreateIncentiveCampaignRequest) (*IncentiveCampaignResponse, error)
+	ListIncentiveCampaigns(context.Context, *ListIncentiveCampaignsRequest) (*ListIncentiveCampaignsResponse, error)
+	GetIncentiveCampaign(context.Context, *GetIncentiveCampaignRequest) (*IncentiveCampaignResponse, error)
+	// CancelIncentiveCampaign stops a campaign before it ends; nobody is paid.
+	CancelIncentiveCampaign(context.Context, *CancelIncentiveCampaignRequest) (*IncentiveCampaignResponse, error)
+	// ListIncentivePayouts lists who was paid, or found not to qualify and why.
+	ListIncentivePayouts(context.Context, *ListIncentivePayoutsRequest) (*ListIncentivePayoutsResponse, error)
 	mustEmbedUnimplementedWalletServiceServer()
 }
 
@@ -880,6 +991,27 @@ func (UnimplementedWalletServiceServer) RejectPayout(context.Context, *RejectPay
 }
 func (UnimplementedWalletServiceServer) ProcessZainCashWebhook(context.Context, *ProcessZainCashWebhookRequest) (*ProcessZainCashWebhookResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ProcessZainCashWebhook not implemented")
+}
+func (UnimplementedWalletServiceServer) GetDriverEarnings(context.Context, *GetDriverEarningsRequest) (*DriverEarnings, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDriverEarnings not implemented")
+}
+func (UnimplementedWalletServiceServer) ListDriverIncentives(context.Context, *ListDriverIncentivesRequest) (*ListDriverIncentivesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDriverIncentives not implemented")
+}
+func (UnimplementedWalletServiceServer) CreateIncentiveCampaign(context.Context, *CreateIncentiveCampaignRequest) (*IncentiveCampaignResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateIncentiveCampaign not implemented")
+}
+func (UnimplementedWalletServiceServer) ListIncentiveCampaigns(context.Context, *ListIncentiveCampaignsRequest) (*ListIncentiveCampaignsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListIncentiveCampaigns not implemented")
+}
+func (UnimplementedWalletServiceServer) GetIncentiveCampaign(context.Context, *GetIncentiveCampaignRequest) (*IncentiveCampaignResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetIncentiveCampaign not implemented")
+}
+func (UnimplementedWalletServiceServer) CancelIncentiveCampaign(context.Context, *CancelIncentiveCampaignRequest) (*IncentiveCampaignResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelIncentiveCampaign not implemented")
+}
+func (UnimplementedWalletServiceServer) ListIncentivePayouts(context.Context, *ListIncentivePayoutsRequest) (*ListIncentivePayoutsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListIncentivePayouts not implemented")
 }
 func (UnimplementedWalletServiceServer) mustEmbedUnimplementedWalletServiceServer() {}
 func (UnimplementedWalletServiceServer) testEmbeddedByValue()                       {}
@@ -1622,6 +1754,132 @@ func _WalletService_ProcessZainCashWebhook_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WalletService_GetDriverEarnings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDriverEarningsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetDriverEarnings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetDriverEarnings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetDriverEarnings(ctx, req.(*GetDriverEarningsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListDriverIncentives_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDriverIncentivesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListDriverIncentives(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListDriverIncentives_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListDriverIncentives(ctx, req.(*ListDriverIncentivesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_CreateIncentiveCampaign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateIncentiveCampaignRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).CreateIncentiveCampaign(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_CreateIncentiveCampaign_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).CreateIncentiveCampaign(ctx, req.(*CreateIncentiveCampaignRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListIncentiveCampaigns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIncentiveCampaignsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListIncentiveCampaigns(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListIncentiveCampaigns_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListIncentiveCampaigns(ctx, req.(*ListIncentiveCampaignsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_GetIncentiveCampaign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIncentiveCampaignRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetIncentiveCampaign(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetIncentiveCampaign_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetIncentiveCampaign(ctx, req.(*GetIncentiveCampaignRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_CancelIncentiveCampaign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelIncentiveCampaignRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).CancelIncentiveCampaign(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_CancelIncentiveCampaign_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).CancelIncentiveCampaign(ctx, req.(*CancelIncentiveCampaignRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListIncentivePayouts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIncentivePayoutsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListIncentivePayouts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListIncentivePayouts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListIncentivePayouts(ctx, req.(*ListIncentivePayoutsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WalletService_ServiceDesc is the grpc.ServiceDesc for WalletService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1788,6 +2046,34 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ProcessZainCashWebhook",
 			Handler:    _WalletService_ProcessZainCashWebhook_Handler,
+		},
+		{
+			MethodName: "GetDriverEarnings",
+			Handler:    _WalletService_GetDriverEarnings_Handler,
+		},
+		{
+			MethodName: "ListDriverIncentives",
+			Handler:    _WalletService_ListDriverIncentives_Handler,
+		},
+		{
+			MethodName: "CreateIncentiveCampaign",
+			Handler:    _WalletService_CreateIncentiveCampaign_Handler,
+		},
+		{
+			MethodName: "ListIncentiveCampaigns",
+			Handler:    _WalletService_ListIncentiveCampaigns_Handler,
+		},
+		{
+			MethodName: "GetIncentiveCampaign",
+			Handler:    _WalletService_GetIncentiveCampaign_Handler,
+		},
+		{
+			MethodName: "CancelIncentiveCampaign",
+			Handler:    _WalletService_CancelIncentiveCampaign_Handler,
+		},
+		{
+			MethodName: "ListIncentivePayouts",
+			Handler:    _WalletService_ListIncentivePayouts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

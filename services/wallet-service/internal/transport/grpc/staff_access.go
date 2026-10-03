@@ -67,6 +67,10 @@ func staffTargetOf(request any) string {
 		return r.GetTripId()
 	}
 
+	if r, ok := request.(interface{ GetCampaignId() string }); ok && r.GetCampaignId() != "" {
+		return r.GetCampaignId()
+	}
+
 	if r, ok := request.(interface{ GetOwnerId() string }); ok && r.GetOwnerId() != "" {
 		return r.GetOwnerId()
 	}

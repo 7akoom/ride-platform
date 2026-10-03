@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	locationv1 "github.com/7akoom/ride-platform/gen/go/ride/location/v1"
+	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
 	"google.golang.org/grpc"
 )
 
@@ -23,7 +24,7 @@ func NewLocationClient(conn *grpc.ClientConn) *LocationClient {
 func (c *LocationClient) CheckServiceZone(
 	ctx context.Context,
 	latitude, longitude float64,
-) (bool, error) {
+) (trip.ServiceZone, error) {
 	response, err := c.client.CheckServiceZone(ctx, &locationv1.CheckServiceZoneRequest{
 		Coordinates: &locationv1.Coordinates{
 			Latitude:  latitude,
@@ -31,10 +32,14 @@ func (c *LocationClient) CheckServiceZone(
 		},
 	})
 	if err != nil {
-		return false, fmt.Errorf("call location-service CheckServiceZone: %w", err)
+		return trip.ServiceZone{}, fmt.Errorf("call location-service CheckServiceZone: %w", err)
 	}
 
-	return response.GetServed(), nil
+	return trip.ServiceZone{
+		Served: response.GetServed(),
+		ZoneID: response.GetZoneId(),
+		CityID: response.GetCityId(),
+	}, nil
 }
 
 // Locate is CheckServiceZone with the pickup city's time zone (for trips

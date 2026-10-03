@@ -27,6 +27,9 @@ const (
 	PermissionWalletsRead   = "wallets.read"
 	PermissionWalletsAdjust = "wallets.adjust"
 	PermissionPayoutsManage = "payouts.manage"
+	// PermissionIncentivesManage: drivers' incentive campaigns (bonuses
+	// paid from the platform's money). Only the owner holds it by default.
+	PermissionIncentivesManage = "incentives.manage"
 )
 
 // RoleKeyOwner is the system role that always holds every permission,
@@ -50,6 +53,7 @@ var permissionCatalog = map[string]string{
 	PermissionWalletsRead:      "Look at any rider's or driver's wallet, its statement and a trip's refunds",
 	PermissionWalletsAdjust:    "Credit or debit a wallet with a reason, and refund trips (optionally charging the driver)",
 	PermissionPayoutsManage:    "Work the drivers' payout queue: approve, mark paid, reject",
+	PermissionIncentivesManage: "Create and cancel drivers' incentive campaigns and see who was paid",
 }
 
 // PermissionInfo describes one grantable permission.

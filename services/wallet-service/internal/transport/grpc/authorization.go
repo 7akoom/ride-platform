@@ -54,6 +54,9 @@ var methodAccess = map[string]accessLevel{
 	"/ride.wallet.v1.WalletService/GetTopUp":            accessOwner,
 	"/ride.wallet.v1.WalletService/TipDriver":           accessOwner,
 
+	"/ride.wallet.v1.WalletService/GetDriverEarnings":    accessOwner,
+	"/ride.wallet.v1.WalletService/ListDriverIncentives": accessOwner,
+
 	"/ride.wallet.v1.WalletService/CreateVoucherBatch": accessStaff,
 	"/ride.wallet.v1.WalletService/ListVoucherBatches": accessStaff,
 	"/ride.wallet.v1.WalletService/GetVoucherBatch":    accessStaff,
@@ -71,6 +74,12 @@ var methodAccess = map[string]accessLevel{
 	"/ride.wallet.v1.WalletService/ApprovePayout":        accessStaff,
 	"/ride.wallet.v1.WalletService/MarkPayoutPaid":       accessStaff,
 	"/ride.wallet.v1.WalletService/RejectPayout":         accessStaff,
+
+	"/ride.wallet.v1.WalletService/CreateIncentiveCampaign": accessStaff,
+	"/ride.wallet.v1.WalletService/ListIncentiveCampaigns":  accessStaff,
+	"/ride.wallet.v1.WalletService/GetIncentiveCampaign":    accessStaff,
+	"/ride.wallet.v1.WalletService/CancelIncentiveCampaign": accessStaff,
+	"/ride.wallet.v1.WalletService/ListIncentivePayouts":    accessStaff,
 }
 
 // staffPermissions names the staff permission for every accessStaff method.
@@ -95,6 +104,12 @@ var staffPermissions = map[string]string{
 	"/ride.wallet.v1.WalletService/ApprovePayout":        permissionPayoutsManage,
 	"/ride.wallet.v1.WalletService/MarkPayoutPaid":       permissionPayoutsManage,
 	"/ride.wallet.v1.WalletService/RejectPayout":         permissionPayoutsManage,
+
+	"/ride.wallet.v1.WalletService/CreateIncentiveCampaign": permissionIncentivesManage,
+	"/ride.wallet.v1.WalletService/ListIncentiveCampaigns":  permissionIncentivesManage,
+	"/ride.wallet.v1.WalletService/GetIncentiveCampaign":    permissionIncentivesManage,
+	"/ride.wallet.v1.WalletService/CancelIncentiveCampaign": permissionIncentivesManage,
+	"/ride.wallet.v1.WalletService/ListIncentivePayouts":    permissionIncentivesManage,
 }
 
 const (
@@ -102,6 +117,8 @@ const (
 	permissionWalletsRead    = "wallets.read"
 	permissionWalletsAdjust  = "wallets.adjust"
 	permissionPayoutsManage  = "payouts.manage"
+	// permissionIncentivesManage: driver incentive campaigns.
+	permissionIncentivesManage = "incentives.manage"
 )
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver, staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {

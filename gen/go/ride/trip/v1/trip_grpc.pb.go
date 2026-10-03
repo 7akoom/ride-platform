@@ -47,6 +47,8 @@ const (
 	TripService_ShareTrip_FullMethodName              = "/ride.trip.v1.TripService/ShareTrip"
 	TripService_StopSharingTrip_FullMethodName        = "/ride.trip.v1.TripService/StopSharingTrip"
 	TripService_GetSharedTrip_FullMethodName          = "/ride.trip.v1.TripService/GetSharedTrip"
+	TripService_GetDriverActivity_FullMethodName      = "/ride.trip.v1.TripService/GetDriverActivity"
+	TripService_ListDriverActivity_FullMethodName     = "/ride.trip.v1.TripService/ListDriverActivity"
 )
 
 // TripServiceClient is the client API for TripService service.
@@ -175,6 +177,13 @@ type TripServiceClient interface {
 	// price or a phone number. NOT_FOUND once the link was stopped, expired, or
 	// its trip ended more than TRIP_SHARE_AFTER_END ago.
 	GetSharedTrip(ctx context.Context, in *GetSharedTripRequest, opts ...grpc.CallOption) (*GetSharedTripResponse, error)
+	// GetDriverActivity counts what one driver did in a period, within a scope:
+	// trips completed, offers accepted and declined, trips they cancelled.
+	// Internal only (wallet-service, for incentives).
+	GetDriverActivity(ctx context.Context, in *GetDriverActivityRequest, opts ...grpc.CallOption) (*DriverActivity, error)
+	// ListDriverActivity is GetDriverActivity for every driver who completed at
+	// least min_completed_trips in the period, by driver id. Internal only.
+	ListDriverActivity(ctx context.Context, in *ListDriverActivityRequest, opts ...grpc.CallOption) (*ListDriverActivityResponse, error)
 }
 
 type tripServiceClient struct {
@@ -465,6 +474,26 @@ func (c *tripServiceClient) GetSharedTrip(ctx context.Context, in *GetSharedTrip
 	return out, nil
 }
 
+func (c *tripServiceClient) GetDriverActivity(ctx context.Context, in *GetDriverActivityRequest, opts ...grpc.CallOption) (*DriverActivity, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DriverActivity)
+	err := c.cc.Invoke(ctx, TripService_GetDriverActivity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) ListDriverActivity(ctx context.Context, in *ListDriverActivityRequest, opts ...grpc.CallOption) (*ListDriverActivityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDriverActivityResponse)
+	err := c.cc.Invoke(ctx, TripService_ListDriverActivity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TripServiceServer is the server API for TripService service.
 // All implementations must embed UnimplementedTripServiceServer
 // for forward compatibility.
@@ -591,6 +620,13 @@ type TripServiceServer interface {
 	// price or a phone number. NOT_FOUND once the link was stopped, expired, or
 	// its trip ended more than TRIP_SHARE_AFTER_END ago.
 	GetSharedTrip(context.Context, *GetSharedTripRequest) (*GetSharedTripResponse, error)
+	// GetDriverActivity counts what one driver did in a period, within a scope:
+	// trips completed, offers accepted and declined, trips they cancelled.
+	// Internal only (wallet-service, for incentives).
+	GetDriverActivity(context.Context, *GetDriverActivityRequest) (*DriverActivity, error)
+	// ListDriverActivity is GetDriverActivity for every driver who completed at
+	// least min_completed_trips in the period, by driver id. Internal only.
+	ListDriverActivity(context.Context, *ListDriverActivityRequest) (*ListDriverActivityResponse, error)
 	mustEmbedUnimplementedTripServiceServer()
 }
 
@@ -684,6 +720,12 @@ func (UnimplementedTripServiceServer) StopSharingTrip(context.Context, *StopShar
 }
 func (UnimplementedTripServiceServer) GetSharedTrip(context.Context, *GetSharedTripRequest) (*GetSharedTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSharedTrip not implemented")
+}
+func (UnimplementedTripServiceServer) GetDriverActivity(context.Context, *GetDriverActivityRequest) (*DriverActivity, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDriverActivity not implemented")
+}
+func (UnimplementedTripServiceServer) ListDriverActivity(context.Context, *ListDriverActivityRequest) (*ListDriverActivityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDriverActivity not implemented")
 }
 func (UnimplementedTripServiceServer) mustEmbedUnimplementedTripServiceServer() {}
 func (UnimplementedTripServiceServer) testEmbeddedByValue()                     {}
@@ -1210,6 +1252,42 @@ func _TripService_GetSharedTrip_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_GetDriverActivity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDriverActivityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetDriverActivity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetDriverActivity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetDriverActivity(ctx, req.(*GetDriverActivityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_ListDriverActivity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDriverActivityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).ListDriverActivity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_ListDriverActivity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).ListDriverActivity(ctx, req.(*ListDriverActivityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TripService_ServiceDesc is the grpc.ServiceDesc for TripService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1328,6 +1406,14 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSharedTrip",
 			Handler:    _TripService_GetSharedTrip_Handler,
+		},
+		{
+			MethodName: "GetDriverActivity",
+			Handler:    _TripService_GetDriverActivity_Handler,
+		},
+		{
+			MethodName: "ListDriverActivity",
+			Handler:    _TripService_ListDriverActivity_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

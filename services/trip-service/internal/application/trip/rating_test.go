@@ -99,8 +99,8 @@ func (ratingIDs) NewID() string { return "rating-1" }
 
 type ratingZones struct{}
 
-func (ratingZones) CheckServiceZone(context.Context, float64, float64) (bool, error) {
-	return true, nil
+func (ratingZones) CheckServiceZone(context.Context, float64, float64) (trip.ServiceZone, error) {
+	return trip.ServiceZone{Served: true}, nil
 }
 
 const (

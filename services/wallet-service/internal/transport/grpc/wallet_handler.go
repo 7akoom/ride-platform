@@ -3,6 +3,8 @@ package grpc
 import (
 	"context"
 	"errors"
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/earnings"
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/incentives"
 	"log/slog"
 
 	walletv1 "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1"
@@ -28,6 +30,8 @@ type WalletHandler struct {
 	vouchers      *voucher.Service
 	operations    *operations.Service
 	tips          *tips.Service
+	earnings      *earnings.Service
+	incentives    *incentives.Service
 	logger        *slog.Logger
 }
 
@@ -411,6 +415,8 @@ func toProtoTransactionType(t wallet.TransactionType) walletv1.TransactionType {
 		return walletv1.TransactionType_TRANSACTION_TYPE_PAYOUT_RETURN
 	case wallet.TxTip:
 		return walletv1.TransactionType_TRANSACTION_TYPE_TIP
+	case wallet.TxIncentive:
+		return walletv1.TransactionType_TRANSACTION_TYPE_INCENTIVE
 	default:
 		return walletv1.TransactionType_TRANSACTION_TYPE_UNSPECIFIED
 	}

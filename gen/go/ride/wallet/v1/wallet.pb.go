@@ -151,6 +151,8 @@ const (
 	TransactionType_TRANSACTION_TYPE_PAYOUT_RETURN TransactionType = 13
 	// A tip: out of the rider's wallet, into the driver's.
 	TransactionType_TRANSACTION_TYPE_TIP TransactionType = 14
+	// An incentive campaign's bonus, paid by the platform to the driver.
+	TransactionType_TRANSACTION_TYPE_INCENTIVE TransactionType = 15
 )
 
 // Enum value maps for TransactionType.
@@ -171,6 +173,7 @@ var (
 		12: "TRANSACTION_TYPE_REFUND",
 		13: "TRANSACTION_TYPE_PAYOUT_RETURN",
 		14: "TRANSACTION_TYPE_TIP",
+		15: "TRANSACTION_TYPE_INCENTIVE",
 	}
 	TransactionType_value = map[string]int32{
 		"TRANSACTION_TYPE_UNSPECIFIED":   0,
@@ -188,6 +191,7 @@ var (
 		"TRANSACTION_TYPE_REFUND":        12,
 		"TRANSACTION_TYPE_PAYOUT_RETURN": 13,
 		"TRANSACTION_TYPE_TIP":           14,
+		"TRANSACTION_TYPE_INCENTIVE":     15,
 	}
 )
 
@@ -216,6 +220,168 @@ func (x TransactionType) Number() protoreflect.EnumNumber {
 // Deprecated: Use TransactionType.Descriptor instead.
 func (TransactionType) EnumDescriptor() ([]byte, []int) {
 	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{2}
+}
+
+type EarningsPeriod int32
+
+const (
+	EarningsPeriod_EARNINGS_PERIOD_UNSPECIFIED EarningsPeriod = 0
+	EarningsPeriod_EARNINGS_PERIOD_DAY         EarningsPeriod = 1
+	EarningsPeriod_EARNINGS_PERIOD_WEEK        EarningsPeriod = 2
+	EarningsPeriod_EARNINGS_PERIOD_MONTH       EarningsPeriod = 3
+)
+
+// Enum value maps for EarningsPeriod.
+var (
+	EarningsPeriod_name = map[int32]string{
+		0: "EARNINGS_PERIOD_UNSPECIFIED",
+		1: "EARNINGS_PERIOD_DAY",
+		2: "EARNINGS_PERIOD_WEEK",
+		3: "EARNINGS_PERIOD_MONTH",
+	}
+	EarningsPeriod_value = map[string]int32{
+		"EARNINGS_PERIOD_UNSPECIFIED": 0,
+		"EARNINGS_PERIOD_DAY":         1,
+		"EARNINGS_PERIOD_WEEK":        2,
+		"EARNINGS_PERIOD_MONTH":       3,
+	}
+)
+
+func (x EarningsPeriod) Enum() *EarningsPeriod {
+	p := new(EarningsPeriod)
+	*p = x
+	return p
+}
+
+func (x EarningsPeriod) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EarningsPeriod) Descriptor() protoreflect.EnumDescriptor {
+	return file_ride_wallet_v1_wallet_proto_enumTypes[3].Descriptor()
+}
+
+func (EarningsPeriod) Type() protoreflect.EnumType {
+	return &file_ride_wallet_v1_wallet_proto_enumTypes[3]
+}
+
+func (x EarningsPeriod) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use EarningsPeriod.Descriptor instead.
+func (EarningsPeriod) EnumDescriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{3}
+}
+
+type IncentiveCampaignStatus int32
+
+const (
+	IncentiveCampaignStatus_INCENTIVE_CAMPAIGN_STATUS_UNSPECIFIED IncentiveCampaignStatus = 0
+	// Not started yet.
+	IncentiveCampaignStatus_INCENTIVE_CAMPAIGN_STATUS_SCHEDULED IncentiveCampaignStatus = 1
+	IncentiveCampaignStatus_INCENTIVE_CAMPAIGN_STATUS_RUNNING   IncentiveCampaignStatus = 2
+	// Ended; bonuses are being worked out and paid.
+	IncentiveCampaignStatus_INCENTIVE_CAMPAIGN_STATUS_SETTLING  IncentiveCampaignStatus = 3
+	IncentiveCampaignStatus_INCENTIVE_CAMPAIGN_STATUS_SETTLED   IncentiveCampaignStatus = 4
+	IncentiveCampaignStatus_INCENTIVE_CAMPAIGN_STATUS_CANCELLED IncentiveCampaignStatus = 5
+)
+
+// Enum value maps for IncentiveCampaignStatus.
+var (
+	IncentiveCampaignStatus_name = map[int32]string{
+		0: "INCENTIVE_CAMPAIGN_STATUS_UNSPECIFIED",
+		1: "INCENTIVE_CAMPAIGN_STATUS_SCHEDULED",
+		2: "INCENTIVE_CAMPAIGN_STATUS_RUNNING",
+		3: "INCENTIVE_CAMPAIGN_STATUS_SETTLING",
+		4: "INCENTIVE_CAMPAIGN_STATUS_SETTLED",
+		5: "INCENTIVE_CAMPAIGN_STATUS_CANCELLED",
+	}
+	IncentiveCampaignStatus_value = map[string]int32{
+		"INCENTIVE_CAMPAIGN_STATUS_UNSPECIFIED": 0,
+		"INCENTIVE_CAMPAIGN_STATUS_SCHEDULED":   1,
+		"INCENTIVE_CAMPAIGN_STATUS_RUNNING":     2,
+		"INCENTIVE_CAMPAIGN_STATUS_SETTLING":    3,
+		"INCENTIVE_CAMPAIGN_STATUS_SETTLED":     4,
+		"INCENTIVE_CAMPAIGN_STATUS_CANCELLED":   5,
+	}
+)
+
+func (x IncentiveCampaignStatus) Enum() *IncentiveCampaignStatus {
+	p := new(IncentiveCampaignStatus)
+	*p = x
+	return p
+}
+
+func (x IncentiveCampaignStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (IncentiveCampaignStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_ride_wallet_v1_wallet_proto_enumTypes[4].Descriptor()
+}
+
+func (IncentiveCampaignStatus) Type() protoreflect.EnumType {
+	return &file_ride_wallet_v1_wallet_proto_enumTypes[4]
+}
+
+func (x IncentiveCampaignStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use IncentiveCampaignStatus.Descriptor instead.
+func (IncentiveCampaignStatus) EnumDescriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{4}
+}
+
+type IncentivePayoutStatus int32
+
+const (
+	IncentivePayoutStatus_INCENTIVE_PAYOUT_STATUS_UNSPECIFIED IncentivePayoutStatus = 0
+	IncentivePayoutStatus_INCENTIVE_PAYOUT_STATUS_PAID        IncentivePayoutStatus = 1
+	// Reached a tier but missed a condition.
+	IncentivePayoutStatus_INCENTIVE_PAYOUT_STATUS_NOT_ELIGIBLE IncentivePayoutStatus = 2
+)
+
+// Enum value maps for IncentivePayoutStatus.
+var (
+	IncentivePayoutStatus_name = map[int32]string{
+		0: "INCENTIVE_PAYOUT_STATUS_UNSPECIFIED",
+		1: "INCENTIVE_PAYOUT_STATUS_PAID",
+		2: "INCENTIVE_PAYOUT_STATUS_NOT_ELIGIBLE",
+	}
+	IncentivePayoutStatus_value = map[string]int32{
+		"INCENTIVE_PAYOUT_STATUS_UNSPECIFIED":  0,
+		"INCENTIVE_PAYOUT_STATUS_PAID":         1,
+		"INCENTIVE_PAYOUT_STATUS_NOT_ELIGIBLE": 2,
+	}
+)
+
+func (x IncentivePayoutStatus) Enum() *IncentivePayoutStatus {
+	p := new(IncentivePayoutStatus)
+	*p = x
+	return p
+}
+
+func (x IncentivePayoutStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (IncentivePayoutStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_ride_wallet_v1_wallet_proto_enumTypes[5].Descriptor()
+}
+
+func (IncentivePayoutStatus) Type() protoreflect.EnumType {
+	return &file_ride_wallet_v1_wallet_proto_enumTypes[5]
+}
+
+func (x IncentivePayoutStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use IncentivePayoutStatus.Descriptor instead.
+func (IncentivePayoutStatus) EnumDescriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{5}
 }
 
 type Wallet struct {
@@ -5664,6 +5830,1490 @@ func (x *TipDriverResponse) GetWallet() *Wallet {
 	return nil
 }
 
+type GetDriverEarningsRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	DriverId string                 `protobuf:"bytes,1,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	// Day when unspecified.
+	Period EarningsPeriod `protobuf:"varint,2,opt,name=period,proto3,enum=ride.wallet.v1.EarningsPeriod" json:"period,omitempty"`
+	// Any day in the period, YYYY-MM-DD; today when empty.
+	Date          string `protobuf:"bytes,3,opt,name=date,proto3" json:"date,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDriverEarningsRequest) Reset() {
+	*x = GetDriverEarningsRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[78]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDriverEarningsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDriverEarningsRequest) ProtoMessage() {}
+
+func (x *GetDriverEarningsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[78]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDriverEarningsRequest.ProtoReflect.Descriptor instead.
+func (*GetDriverEarningsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{78}
+}
+
+func (x *GetDriverEarningsRequest) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+func (x *GetDriverEarningsRequest) GetPeriod() EarningsPeriod {
+	if x != nil {
+		return x.Period
+	}
+	return EarningsPeriod_EARNINGS_PERIOD_UNSPECIFIED
+}
+
+func (x *GetDriverEarningsRequest) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+// Amounts are decimal strings in the wallet currency.
+type EarningsTotals struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Completed trips.
+	Trips int32 `protobuf:"varint,1,opt,name=trips,proto3" json:"trips,omitempty"`
+	// What riders paid for them.
+	Fares string `protobuf:"bytes,2,opt,name=fares,proto3" json:"fares,omitempty"`
+	// The platform's commission on trips and fees.
+	Commission string `protobuf:"bytes,3,opt,name=commission,proto3" json:"commission,omitempty"`
+	// Fares less commission.
+	TripEarnings string `protobuf:"bytes,4,opt,name=trip_earnings,json=tripEarnings,proto3" json:"trip_earnings,omitempty"`
+	// Cancellation and no-show fees, less commission.
+	Fees       string `protobuf:"bytes,5,opt,name=fees,proto3" json:"fees,omitempty"`
+	Tips       string `protobuf:"bytes,6,opt,name=tips,proto3" json:"tips,omitempty"`
+	Incentives string `protobuf:"bytes,7,opt,name=incentives,proto3" json:"incentives,omitempty"`
+	// Refunds charged to the driver (negative).
+	Refunds string `protobuf:"bytes,8,opt,name=refunds,proto3" json:"refunds,omitempty"`
+	// Staff adjustments to the driver's wallet.
+	Adjustments string `protobuf:"bytes,9,opt,name=adjustments,proto3" json:"adjustments,omitempty"`
+	// trip_earnings + fees + tips + incentives + refunds + adjustments.
+	NetEarnings string `protobuf:"bytes,10,opt,name=net_earnings,json=netEarnings,proto3" json:"net_earnings,omitempty"`
+	// Of the fares: what riders paid in cash to the driver, and from their wallets.
+	CashCollected string `protobuf:"bytes,11,opt,name=cash_collected,json=cashCollected,proto3" json:"cash_collected,omitempty"`
+	WalletPaid    string `protobuf:"bytes,12,opt,name=wallet_paid,json=walletPaid,proto3" json:"wallet_paid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EarningsTotals) Reset() {
+	*x = EarningsTotals{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[79]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EarningsTotals) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EarningsTotals) ProtoMessage() {}
+
+func (x *EarningsTotals) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[79]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EarningsTotals.ProtoReflect.Descriptor instead.
+func (*EarningsTotals) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{79}
+}
+
+func (x *EarningsTotals) GetTrips() int32 {
+	if x != nil {
+		return x.Trips
+	}
+	return 0
+}
+
+func (x *EarningsTotals) GetFares() string {
+	if x != nil {
+		return x.Fares
+	}
+	return ""
+}
+
+func (x *EarningsTotals) GetCommission() string {
+	if x != nil {
+		return x.Commission
+	}
+	return ""
+}
+
+func (x *EarningsTotals) GetTripEarnings() string {
+	if x != nil {
+		return x.TripEarnings
+	}
+	return ""
+}
+
+func (x *EarningsTotals) GetFees() string {
+	if x != nil {
+		return x.Fees
+	}
+	return ""
+}
+
+func (x *EarningsTotals) GetTips() string {
+	if x != nil {
+		return x.Tips
+	}
+	return ""
+}
+
+func (x *EarningsTotals) GetIncentives() string {
+	if x != nil {
+		return x.Incentives
+	}
+	return ""
+}
+
+func (x *EarningsTotals) GetRefunds() string {
+	if x != nil {
+		return x.Refunds
+	}
+	return ""
+}
+
+func (x *EarningsTotals) GetAdjustments() string {
+	if x != nil {
+		return x.Adjustments
+	}
+	return ""
+}
+
+func (x *EarningsTotals) GetNetEarnings() string {
+	if x != nil {
+		return x.NetEarnings
+	}
+	return ""
+}
+
+func (x *EarningsTotals) GetCashCollected() string {
+	if x != nil {
+		return x.CashCollected
+	}
+	return ""
+}
+
+func (x *EarningsTotals) GetWalletPaid() string {
+	if x != nil {
+		return x.WalletPaid
+	}
+	return ""
+}
+
+type EarningsDay struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	Totals        *EarningsTotals        `protobuf:"bytes,2,opt,name=totals,proto3" json:"totals,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EarningsDay) Reset() {
+	*x = EarningsDay{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[80]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EarningsDay) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EarningsDay) ProtoMessage() {}
+
+func (x *EarningsDay) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[80]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EarningsDay.ProtoReflect.Descriptor instead.
+func (*EarningsDay) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{80}
+}
+
+func (x *EarningsDay) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *EarningsDay) GetTotals() *EarningsTotals {
+	if x != nil {
+		return x.Totals
+	}
+	return nil
+}
+
+type DriverEarnings struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	DriverId     string                 `protobuf:"bytes,1,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	CurrencyCode string                 `protobuf:"bytes,2,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	Period       EarningsPeriod         `protobuf:"varint,3,opt,name=period,proto3,enum=ride.wallet.v1.EarningsPeriod" json:"period,omitempty"`
+	// First and last day of the period, YYYY-MM-DD.
+	FromDate string          `protobuf:"bytes,4,opt,name=from_date,json=fromDate,proto3" json:"from_date,omitempty"`
+	ToDate   string          `protobuf:"bytes,5,opt,name=to_date,json=toDate,proto3" json:"to_date,omitempty"`
+	TimeZone string          `protobuf:"bytes,6,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	Totals   *EarningsTotals `protobuf:"bytes,7,opt,name=totals,proto3" json:"totals,omitempty"`
+	// A week or month, day by day.
+	Days          []*EarningsDay `protobuf:"bytes,8,rep,name=days,proto3" json:"days,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DriverEarnings) Reset() {
+	*x = DriverEarnings{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[81]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DriverEarnings) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DriverEarnings) ProtoMessage() {}
+
+func (x *DriverEarnings) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[81]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DriverEarnings.ProtoReflect.Descriptor instead.
+func (*DriverEarnings) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{81}
+}
+
+func (x *DriverEarnings) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+func (x *DriverEarnings) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
+	}
+	return ""
+}
+
+func (x *DriverEarnings) GetPeriod() EarningsPeriod {
+	if x != nil {
+		return x.Period
+	}
+	return EarningsPeriod_EARNINGS_PERIOD_UNSPECIFIED
+}
+
+func (x *DriverEarnings) GetFromDate() string {
+	if x != nil {
+		return x.FromDate
+	}
+	return ""
+}
+
+func (x *DriverEarnings) GetToDate() string {
+	if x != nil {
+		return x.ToDate
+	}
+	return ""
+}
+
+func (x *DriverEarnings) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *DriverEarnings) GetTotals() *EarningsTotals {
+	if x != nil {
+		return x.Totals
+	}
+	return nil
+}
+
+func (x *DriverEarnings) GetDays() []*EarningsDay {
+	if x != nil {
+		return x.Days
+	}
+	return nil
+}
+
+type IncentiveTier struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Completed trips needed.
+	Trips int32 `protobuf:"varint,1,opt,name=trips,proto3" json:"trips,omitempty"`
+	// The bonus for reaching it (the highest tier reached is paid).
+	Amount        string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IncentiveTier) Reset() {
+	*x = IncentiveTier{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[82]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IncentiveTier) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IncentiveTier) ProtoMessage() {}
+
+func (x *IncentiveTier) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[82]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IncentiveTier.ProtoReflect.Descriptor instead.
+func (*IncentiveTier) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{82}
+}
+
+func (x *IncentiveTier) GetTrips() int32 {
+	if x != nil {
+		return x.Trips
+	}
+	return 0
+}
+
+func (x *IncentiveTier) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
+type IncentiveCampaign struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Id           string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name         string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description  string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	CurrencyCode string                 `protobuf:"bytes,4,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	StartsAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=starts_at,json=startsAt,proto3" json:"starts_at,omitempty"`
+	EndsAt       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=ends_at,json=endsAt,proto3" json:"ends_at,omitempty"`
+	// Which trips count; empty means any.
+	CityId       string   `protobuf:"bytes,7,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	ZoneIds      []string `protobuf:"bytes,8,rep,name=zone_ids,json=zoneIds,proto3" json:"zone_ids,omitempty"`
+	VehicleClass string   `protobuf:"bytes,9,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	// Daily hours "HH:MM" in time_zone; empty means all day. May cross midnight.
+	DailyStart string `protobuf:"bytes,10,opt,name=daily_start,json=dailyStart,proto3" json:"daily_start,omitempty"`
+	DailyEnd   string `protobuf:"bytes,11,opt,name=daily_end,json=dailyEnd,proto3" json:"daily_end,omitempty"`
+	TimeZone   string `protobuf:"bytes,12,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	// Conditions to be paid, percentages and a rating; empty means none.
+	MinAcceptanceRate   string                  `protobuf:"bytes,13,opt,name=min_acceptance_rate,json=minAcceptanceRate,proto3" json:"min_acceptance_rate,omitempty"`
+	MaxCancellationRate string                  `protobuf:"bytes,14,opt,name=max_cancellation_rate,json=maxCancellationRate,proto3" json:"max_cancellation_rate,omitempty"`
+	MinRating           string                  `protobuf:"bytes,15,opt,name=min_rating,json=minRating,proto3" json:"min_rating,omitempty"`
+	Tiers               []*IncentiveTier        `protobuf:"bytes,16,rep,name=tiers,proto3" json:"tiers,omitempty"`
+	Status              IncentiveCampaignStatus `protobuf:"varint,17,opt,name=status,proto3,enum=ride.wallet.v1.IncentiveCampaignStatus" json:"status,omitempty"`
+	CancelReason        string                  `protobuf:"bytes,18,opt,name=cancel_reason,json=cancelReason,proto3" json:"cancel_reason,omitempty"`
+	CreatedAt           *timestamppb.Timestamp  `protobuf:"bytes,19,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	SettledAt           *timestamppb.Timestamp  `protobuf:"bytes,20,opt,name=settled_at,json=settledAt,proto3" json:"settled_at,omitempty"`
+	// Once settling: drivers paid and the total paid.
+	PaidDrivers   int32  `protobuf:"varint,21,opt,name=paid_drivers,json=paidDrivers,proto3" json:"paid_drivers,omitempty"`
+	PaidTotal     string `protobuf:"bytes,22,opt,name=paid_total,json=paidTotal,proto3" json:"paid_total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IncentiveCampaign) Reset() {
+	*x = IncentiveCampaign{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[83]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IncentiveCampaign) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IncentiveCampaign) ProtoMessage() {}
+
+func (x *IncentiveCampaign) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[83]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IncentiveCampaign.ProtoReflect.Descriptor instead.
+func (*IncentiveCampaign) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{83}
+}
+
+func (x *IncentiveCampaign) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetStartsAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartsAt
+	}
+	return nil
+}
+
+func (x *IncentiveCampaign) GetEndsAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.EndsAt
+	}
+	return nil
+}
+
+func (x *IncentiveCampaign) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetZoneIds() []string {
+	if x != nil {
+		return x.ZoneIds
+	}
+	return nil
+}
+
+func (x *IncentiveCampaign) GetVehicleClass() string {
+	if x != nil {
+		return x.VehicleClass
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetDailyStart() string {
+	if x != nil {
+		return x.DailyStart
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetDailyEnd() string {
+	if x != nil {
+		return x.DailyEnd
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetMinAcceptanceRate() string {
+	if x != nil {
+		return x.MinAcceptanceRate
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetMaxCancellationRate() string {
+	if x != nil {
+		return x.MaxCancellationRate
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetMinRating() string {
+	if x != nil {
+		return x.MinRating
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetTiers() []*IncentiveTier {
+	if x != nil {
+		return x.Tiers
+	}
+	return nil
+}
+
+func (x *IncentiveCampaign) GetStatus() IncentiveCampaignStatus {
+	if x != nil {
+		return x.Status
+	}
+	return IncentiveCampaignStatus_INCENTIVE_CAMPAIGN_STATUS_UNSPECIFIED
+}
+
+func (x *IncentiveCampaign) GetCancelReason() string {
+	if x != nil {
+		return x.CancelReason
+	}
+	return ""
+}
+
+func (x *IncentiveCampaign) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *IncentiveCampaign) GetSettledAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.SettledAt
+	}
+	return nil
+}
+
+func (x *IncentiveCampaign) GetPaidDrivers() int32 {
+	if x != nil {
+		return x.PaidDrivers
+	}
+	return 0
+}
+
+func (x *IncentiveCampaign) GetPaidTotal() string {
+	if x != nil {
+		return x.PaidTotal
+	}
+	return ""
+}
+
+type IncentiveCampaignResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Campaign      *IncentiveCampaign     `protobuf:"bytes,1,opt,name=campaign,proto3" json:"campaign,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IncentiveCampaignResponse) Reset() {
+	*x = IncentiveCampaignResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[84]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IncentiveCampaignResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IncentiveCampaignResponse) ProtoMessage() {}
+
+func (x *IncentiveCampaignResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[84]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IncentiveCampaignResponse.ProtoReflect.Descriptor instead.
+func (*IncentiveCampaignResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{84}
+}
+
+func (x *IncentiveCampaignResponse) GetCampaign() *IncentiveCampaign {
+	if x != nil {
+		return x.Campaign
+	}
+	return nil
+}
+
+type CreateIncentiveCampaignRequest struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Name         string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description  string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	StartsAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=starts_at,json=startsAt,proto3" json:"starts_at,omitempty"`
+	EndsAt       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=ends_at,json=endsAt,proto3" json:"ends_at,omitempty"`
+	CityId       string                 `protobuf:"bytes,5,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	ZoneIds      []string               `protobuf:"bytes,6,rep,name=zone_ids,json=zoneIds,proto3" json:"zone_ids,omitempty"`
+	VehicleClass string                 `protobuf:"bytes,7,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	DailyStart   string                 `protobuf:"bytes,8,opt,name=daily_start,json=dailyStart,proto3" json:"daily_start,omitempty"`
+	DailyEnd     string                 `protobuf:"bytes,9,opt,name=daily_end,json=dailyEnd,proto3" json:"daily_end,omitempty"`
+	// The deployment's time zone when empty.
+	TimeZone            string           `protobuf:"bytes,10,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	MinAcceptanceRate   string           `protobuf:"bytes,11,opt,name=min_acceptance_rate,json=minAcceptanceRate,proto3" json:"min_acceptance_rate,omitempty"`
+	MaxCancellationRate string           `protobuf:"bytes,12,opt,name=max_cancellation_rate,json=maxCancellationRate,proto3" json:"max_cancellation_rate,omitempty"`
+	MinRating           string           `protobuf:"bytes,13,opt,name=min_rating,json=minRating,proto3" json:"min_rating,omitempty"`
+	Tiers               []*IncentiveTier `protobuf:"bytes,14,rep,name=tiers,proto3" json:"tiers,omitempty"`
+	// Makes a retried create return the same campaign.
+	IdempotencyKey string `protobuf:"bytes,15,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CreateIncentiveCampaignRequest) Reset() {
+	*x = CreateIncentiveCampaignRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[85]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateIncentiveCampaignRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateIncentiveCampaignRequest) ProtoMessage() {}
+
+func (x *CreateIncentiveCampaignRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[85]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateIncentiveCampaignRequest.ProtoReflect.Descriptor instead.
+func (*CreateIncentiveCampaignRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{85}
+}
+
+func (x *CreateIncentiveCampaignRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateIncentiveCampaignRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *CreateIncentiveCampaignRequest) GetStartsAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartsAt
+	}
+	return nil
+}
+
+func (x *CreateIncentiveCampaignRequest) GetEndsAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.EndsAt
+	}
+	return nil
+}
+
+func (x *CreateIncentiveCampaignRequest) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+func (x *CreateIncentiveCampaignRequest) GetZoneIds() []string {
+	if x != nil {
+		return x.ZoneIds
+	}
+	return nil
+}
+
+func (x *CreateIncentiveCampaignRequest) GetVehicleClass() string {
+	if x != nil {
+		return x.VehicleClass
+	}
+	return ""
+}
+
+func (x *CreateIncentiveCampaignRequest) GetDailyStart() string {
+	if x != nil {
+		return x.DailyStart
+	}
+	return ""
+}
+
+func (x *CreateIncentiveCampaignRequest) GetDailyEnd() string {
+	if x != nil {
+		return x.DailyEnd
+	}
+	return ""
+}
+
+func (x *CreateIncentiveCampaignRequest) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *CreateIncentiveCampaignRequest) GetMinAcceptanceRate() string {
+	if x != nil {
+		return x.MinAcceptanceRate
+	}
+	return ""
+}
+
+func (x *CreateIncentiveCampaignRequest) GetMaxCancellationRate() string {
+	if x != nil {
+		return x.MaxCancellationRate
+	}
+	return ""
+}
+
+func (x *CreateIncentiveCampaignRequest) GetMinRating() string {
+	if x != nil {
+		return x.MinRating
+	}
+	return ""
+}
+
+func (x *CreateIncentiveCampaignRequest) GetTiers() []*IncentiveTier {
+	if x != nil {
+		return x.Tiers
+	}
+	return nil
+}
+
+func (x *CreateIncentiveCampaignRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+type ListIncentiveCampaignsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional filter.
+	Status        IncentiveCampaignStatus `protobuf:"varint,1,opt,name=status,proto3,enum=ride.wallet.v1.IncentiveCampaignStatus" json:"status,omitempty"`
+	PageSize      int32                   `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                  `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListIncentiveCampaignsRequest) Reset() {
+	*x = ListIncentiveCampaignsRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[86]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListIncentiveCampaignsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListIncentiveCampaignsRequest) ProtoMessage() {}
+
+func (x *ListIncentiveCampaignsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[86]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListIncentiveCampaignsRequest.ProtoReflect.Descriptor instead.
+func (*ListIncentiveCampaignsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{86}
+}
+
+func (x *ListIncentiveCampaignsRequest) GetStatus() IncentiveCampaignStatus {
+	if x != nil {
+		return x.Status
+	}
+	return IncentiveCampaignStatus_INCENTIVE_CAMPAIGN_STATUS_UNSPECIFIED
+}
+
+func (x *ListIncentiveCampaignsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListIncentiveCampaignsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListIncentiveCampaignsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Campaigns     []*IncentiveCampaign   `protobuf:"bytes,1,rep,name=campaigns,proto3" json:"campaigns,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListIncentiveCampaignsResponse) Reset() {
+	*x = ListIncentiveCampaignsResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[87]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListIncentiveCampaignsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListIncentiveCampaignsResponse) ProtoMessage() {}
+
+func (x *ListIncentiveCampaignsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[87]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListIncentiveCampaignsResponse.ProtoReflect.Descriptor instead.
+func (*ListIncentiveCampaignsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{87}
+}
+
+func (x *ListIncentiveCampaignsResponse) GetCampaigns() []*IncentiveCampaign {
+	if x != nil {
+		return x.Campaigns
+	}
+	return nil
+}
+
+func (x *ListIncentiveCampaignsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type GetIncentiveCampaignRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CampaignId    string                 `protobuf:"bytes,1,opt,name=campaign_id,json=campaignId,proto3" json:"campaign_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetIncentiveCampaignRequest) Reset() {
+	*x = GetIncentiveCampaignRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[88]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetIncentiveCampaignRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetIncentiveCampaignRequest) ProtoMessage() {}
+
+func (x *GetIncentiveCampaignRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[88]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetIncentiveCampaignRequest.ProtoReflect.Descriptor instead.
+func (*GetIncentiveCampaignRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{88}
+}
+
+func (x *GetIncentiveCampaignRequest) GetCampaignId() string {
+	if x != nil {
+		return x.CampaignId
+	}
+	return ""
+}
+
+type CancelIncentiveCampaignRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CampaignId    string                 `protobuf:"bytes,1,opt,name=campaign_id,json=campaignId,proto3" json:"campaign_id,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelIncentiveCampaignRequest) Reset() {
+	*x = CancelIncentiveCampaignRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[89]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelIncentiveCampaignRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelIncentiveCampaignRequest) ProtoMessage() {}
+
+func (x *CancelIncentiveCampaignRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[89]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelIncentiveCampaignRequest.ProtoReflect.Descriptor instead.
+func (*CancelIncentiveCampaignRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{89}
+}
+
+func (x *CancelIncentiveCampaignRequest) GetCampaignId() string {
+	if x != nil {
+		return x.CampaignId
+	}
+	return ""
+}
+
+func (x *CancelIncentiveCampaignRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type IncentivePayout struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	CampaignId       string                 `protobuf:"bytes,1,opt,name=campaign_id,json=campaignId,proto3" json:"campaign_id,omitempty"`
+	DriverId         string                 `protobuf:"bytes,2,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	CompletedTrips   int32                  `protobuf:"varint,3,opt,name=completed_trips,json=completedTrips,proto3" json:"completed_trips,omitempty"`
+	AcceptanceRate   string                 `protobuf:"bytes,4,opt,name=acceptance_rate,json=acceptanceRate,proto3" json:"acceptance_rate,omitempty"`
+	CancellationRate string                 `protobuf:"bytes,5,opt,name=cancellation_rate,json=cancellationRate,proto3" json:"cancellation_rate,omitempty"`
+	Rating           string                 `protobuf:"bytes,6,opt,name=rating,proto3" json:"rating,omitempty"`
+	// The tier reached and what it pays (0 when not eligible).
+	TierTrips int32                 `protobuf:"varint,7,opt,name=tier_trips,json=tierTrips,proto3" json:"tier_trips,omitempty"`
+	Amount    string                `protobuf:"bytes,8,opt,name=amount,proto3" json:"amount,omitempty"`
+	Status    IncentivePayoutStatus `protobuf:"varint,9,opt,name=status,proto3,enum=ride.wallet.v1.IncentivePayoutStatus" json:"status,omitempty"`
+	// Which conditions were missed: acceptance_rate, cancellation_rate, rating.
+	Unmet         []string               `protobuf:"bytes,10,rep,name=unmet,proto3" json:"unmet,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IncentivePayout) Reset() {
+	*x = IncentivePayout{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[90]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IncentivePayout) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IncentivePayout) ProtoMessage() {}
+
+func (x *IncentivePayout) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[90]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IncentivePayout.ProtoReflect.Descriptor instead.
+func (*IncentivePayout) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{90}
+}
+
+func (x *IncentivePayout) GetCampaignId() string {
+	if x != nil {
+		return x.CampaignId
+	}
+	return ""
+}
+
+func (x *IncentivePayout) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+func (x *IncentivePayout) GetCompletedTrips() int32 {
+	if x != nil {
+		return x.CompletedTrips
+	}
+	return 0
+}
+
+func (x *IncentivePayout) GetAcceptanceRate() string {
+	if x != nil {
+		return x.AcceptanceRate
+	}
+	return ""
+}
+
+func (x *IncentivePayout) GetCancellationRate() string {
+	if x != nil {
+		return x.CancellationRate
+	}
+	return ""
+}
+
+func (x *IncentivePayout) GetRating() string {
+	if x != nil {
+		return x.Rating
+	}
+	return ""
+}
+
+func (x *IncentivePayout) GetTierTrips() int32 {
+	if x != nil {
+		return x.TierTrips
+	}
+	return 0
+}
+
+func (x *IncentivePayout) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
+func (x *IncentivePayout) GetStatus() IncentivePayoutStatus {
+	if x != nil {
+		return x.Status
+	}
+	return IncentivePayoutStatus_INCENTIVE_PAYOUT_STATUS_UNSPECIFIED
+}
+
+func (x *IncentivePayout) GetUnmet() []string {
+	if x != nil {
+		return x.Unmet
+	}
+	return nil
+}
+
+func (x *IncentivePayout) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+type ListIncentivePayoutsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CampaignId    string                 `protobuf:"bytes,1,opt,name=campaign_id,json=campaignId,proto3" json:"campaign_id,omitempty"`
+	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListIncentivePayoutsRequest) Reset() {
+	*x = ListIncentivePayoutsRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[91]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListIncentivePayoutsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListIncentivePayoutsRequest) ProtoMessage() {}
+
+func (x *ListIncentivePayoutsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[91]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListIncentivePayoutsRequest.ProtoReflect.Descriptor instead.
+func (*ListIncentivePayoutsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{91}
+}
+
+func (x *ListIncentivePayoutsRequest) GetCampaignId() string {
+	if x != nil {
+		return x.CampaignId
+	}
+	return ""
+}
+
+func (x *ListIncentivePayoutsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListIncentivePayoutsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListIncentivePayoutsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Payouts       []*IncentivePayout     `protobuf:"bytes,1,rep,name=payouts,proto3" json:"payouts,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListIncentivePayoutsResponse) Reset() {
+	*x = ListIncentivePayoutsResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[92]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListIncentivePayoutsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListIncentivePayoutsResponse) ProtoMessage() {}
+
+func (x *ListIncentivePayoutsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[92]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListIncentivePayoutsResponse.ProtoReflect.Descriptor instead.
+func (*ListIncentivePayoutsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{92}
+}
+
+func (x *ListIncentivePayoutsResponse) GetPayouts() []*IncentivePayout {
+	if x != nil {
+		return x.Payouts
+	}
+	return nil
+}
+
+func (x *ListIncentivePayoutsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type ListDriverIncentivesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DriverId      string                 `protobuf:"bytes,1,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDriverIncentivesRequest) Reset() {
+	*x = ListDriverIncentivesRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[93]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDriverIncentivesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDriverIncentivesRequest) ProtoMessage() {}
+
+func (x *ListDriverIncentivesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[93]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDriverIncentivesRequest.ProtoReflect.Descriptor instead.
+func (*ListDriverIncentivesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{93}
+}
+
+func (x *ListDriverIncentivesRequest) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+type DriverIncentive struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Campaign       *IncentiveCampaign     `protobuf:"bytes,1,opt,name=campaign,proto3" json:"campaign,omitempty"`
+	CompletedTrips int32                  `protobuf:"varint,2,opt,name=completed_trips,json=completedTrips,proto3" json:"completed_trips,omitempty"`
+	// The highest tier reached so far, and the next one (0 when none).
+	ReachedTierTrips int32  `protobuf:"varint,3,opt,name=reached_tier_trips,json=reachedTierTrips,proto3" json:"reached_tier_trips,omitempty"`
+	ReachedAmount    string `protobuf:"bytes,4,opt,name=reached_amount,json=reachedAmount,proto3" json:"reached_amount,omitempty"`
+	NextTierTrips    int32  `protobuf:"varint,5,opt,name=next_tier_trips,json=nextTierTrips,proto3" json:"next_tier_trips,omitempty"`
+	NextTierAmount   string `protobuf:"bytes,6,opt,name=next_tier_amount,json=nextTierAmount,proto3" json:"next_tier_amount,omitempty"`
+	AcceptanceRate   string `protobuf:"bytes,7,opt,name=acceptance_rate,json=acceptanceRate,proto3" json:"acceptance_rate,omitempty"`
+	CancellationRate string `protobuf:"bytes,8,opt,name=cancellation_rate,json=cancellationRate,proto3" json:"cancellation_rate,omitempty"`
+	// Conditions currently missed.
+	Unmet []string `protobuf:"bytes,9,rep,name=unmet,proto3" json:"unmet,omitempty"`
+	// Once settled: what was decided for this driver.
+	Payout        *IncentivePayout `protobuf:"bytes,10,opt,name=payout,proto3" json:"payout,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DriverIncentive) Reset() {
+	*x = DriverIncentive{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[94]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DriverIncentive) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DriverIncentive) ProtoMessage() {}
+
+func (x *DriverIncentive) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[94]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DriverIncentive.ProtoReflect.Descriptor instead.
+func (*DriverIncentive) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{94}
+}
+
+func (x *DriverIncentive) GetCampaign() *IncentiveCampaign {
+	if x != nil {
+		return x.Campaign
+	}
+	return nil
+}
+
+func (x *DriverIncentive) GetCompletedTrips() int32 {
+	if x != nil {
+		return x.CompletedTrips
+	}
+	return 0
+}
+
+func (x *DriverIncentive) GetReachedTierTrips() int32 {
+	if x != nil {
+		return x.ReachedTierTrips
+	}
+	return 0
+}
+
+func (x *DriverIncentive) GetReachedAmount() string {
+	if x != nil {
+		return x.ReachedAmount
+	}
+	return ""
+}
+
+func (x *DriverIncentive) GetNextTierTrips() int32 {
+	if x != nil {
+		return x.NextTierTrips
+	}
+	return 0
+}
+
+func (x *DriverIncentive) GetNextTierAmount() string {
+	if x != nil {
+		return x.NextTierAmount
+	}
+	return ""
+}
+
+func (x *DriverIncentive) GetAcceptanceRate() string {
+	if x != nil {
+		return x.AcceptanceRate
+	}
+	return ""
+}
+
+func (x *DriverIncentive) GetCancellationRate() string {
+	if x != nil {
+		return x.CancellationRate
+	}
+	return ""
+}
+
+func (x *DriverIncentive) GetUnmet() []string {
+	if x != nil {
+		return x.Unmet
+	}
+	return nil
+}
+
+func (x *DriverIncentive) GetPayout() *IncentivePayout {
+	if x != nil {
+		return x.Payout
+	}
+	return nil
+}
+
+type ListDriverIncentivesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Incentives    []*DriverIncentive     `protobuf:"bytes,1,rep,name=incentives,proto3" json:"incentives,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDriverIncentivesResponse) Reset() {
+	*x = ListDriverIncentivesResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[95]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDriverIncentivesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDriverIncentivesResponse) ProtoMessage() {}
+
+func (x *ListDriverIncentivesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[95]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDriverIncentivesResponse.ProtoReflect.Descriptor instead.
+func (*ListDriverIncentivesResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{95}
+}
+
+func (x *ListDriverIncentivesResponse) GetIncentives() []*DriverIncentive {
+	if x != nil {
+		return x.Incentives
+	}
+	return nil
+}
+
 var File_ride_wallet_v1_wallet_proto protoreflect.FileDescriptor
 
 const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
@@ -6126,7 +7776,153 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"j\n" +
 	"\x11TipDriverResponse\x12%\n" +
 	"\x03tip\x18\x01 \x01(\v2\x13.ride.wallet.v1.TipR\x03tip\x12.\n" +
-	"\x06wallet\x18\x02 \x01(\v2\x16.ride.wallet.v1.WalletR\x06wallet*T\n" +
+	"\x06wallet\x18\x02 \x01(\v2\x16.ride.wallet.v1.WalletR\x06wallet\"\x83\x01\n" +
+	"\x18GetDriverEarningsRequest\x12\x1b\n" +
+	"\tdriver_id\x18\x01 \x01(\tR\bdriverId\x126\n" +
+	"\x06period\x18\x02 \x01(\x0e2\x1e.ride.wallet.v1.EarningsPeriodR\x06period\x12\x12\n" +
+	"\x04date\x18\x03 \x01(\tR\x04date\"\xf0\x02\n" +
+	"\x0eEarningsTotals\x12\x14\n" +
+	"\x05trips\x18\x01 \x01(\x05R\x05trips\x12\x14\n" +
+	"\x05fares\x18\x02 \x01(\tR\x05fares\x12\x1e\n" +
+	"\n" +
+	"commission\x18\x03 \x01(\tR\n" +
+	"commission\x12#\n" +
+	"\rtrip_earnings\x18\x04 \x01(\tR\ftripEarnings\x12\x12\n" +
+	"\x04fees\x18\x05 \x01(\tR\x04fees\x12\x12\n" +
+	"\x04tips\x18\x06 \x01(\tR\x04tips\x12\x1e\n" +
+	"\n" +
+	"incentives\x18\a \x01(\tR\n" +
+	"incentives\x12\x18\n" +
+	"\arefunds\x18\b \x01(\tR\arefunds\x12 \n" +
+	"\vadjustments\x18\t \x01(\tR\vadjustments\x12!\n" +
+	"\fnet_earnings\x18\n" +
+	" \x01(\tR\vnetEarnings\x12%\n" +
+	"\x0ecash_collected\x18\v \x01(\tR\rcashCollected\x12\x1f\n" +
+	"\vwallet_paid\x18\f \x01(\tR\n" +
+	"walletPaid\"Y\n" +
+	"\vEarningsDay\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x126\n" +
+	"\x06totals\x18\x02 \x01(\v2\x1e.ride.wallet.v1.EarningsTotalsR\x06totals\"\xc6\x02\n" +
+	"\x0eDriverEarnings\x12\x1b\n" +
+	"\tdriver_id\x18\x01 \x01(\tR\bdriverId\x12#\n" +
+	"\rcurrency_code\x18\x02 \x01(\tR\fcurrencyCode\x126\n" +
+	"\x06period\x18\x03 \x01(\x0e2\x1e.ride.wallet.v1.EarningsPeriodR\x06period\x12\x1b\n" +
+	"\tfrom_date\x18\x04 \x01(\tR\bfromDate\x12\x17\n" +
+	"\ato_date\x18\x05 \x01(\tR\x06toDate\x12\x1b\n" +
+	"\ttime_zone\x18\x06 \x01(\tR\btimeZone\x126\n" +
+	"\x06totals\x18\a \x01(\v2\x1e.ride.wallet.v1.EarningsTotalsR\x06totals\x12/\n" +
+	"\x04days\x18\b \x03(\v2\x1b.ride.wallet.v1.EarningsDayR\x04days\"=\n" +
+	"\rIncentiveTier\x12\x14\n" +
+	"\x05trips\x18\x01 \x01(\x05R\x05trips\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\tR\x06amount\"\xf6\x06\n" +
+	"\x11IncentiveCampaign\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12#\n" +
+	"\rcurrency_code\x18\x04 \x01(\tR\fcurrencyCode\x127\n" +
+	"\tstarts_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\bstartsAt\x123\n" +
+	"\aends_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x06endsAt\x12\x17\n" +
+	"\acity_id\x18\a \x01(\tR\x06cityId\x12\x19\n" +
+	"\bzone_ids\x18\b \x03(\tR\azoneIds\x12#\n" +
+	"\rvehicle_class\x18\t \x01(\tR\fvehicleClass\x12\x1f\n" +
+	"\vdaily_start\x18\n" +
+	" \x01(\tR\n" +
+	"dailyStart\x12\x1b\n" +
+	"\tdaily_end\x18\v \x01(\tR\bdailyEnd\x12\x1b\n" +
+	"\ttime_zone\x18\f \x01(\tR\btimeZone\x12.\n" +
+	"\x13min_acceptance_rate\x18\r \x01(\tR\x11minAcceptanceRate\x122\n" +
+	"\x15max_cancellation_rate\x18\x0e \x01(\tR\x13maxCancellationRate\x12\x1d\n" +
+	"\n" +
+	"min_rating\x18\x0f \x01(\tR\tminRating\x123\n" +
+	"\x05tiers\x18\x10 \x03(\v2\x1d.ride.wallet.v1.IncentiveTierR\x05tiers\x12?\n" +
+	"\x06status\x18\x11 \x01(\x0e2'.ride.wallet.v1.IncentiveCampaignStatusR\x06status\x12#\n" +
+	"\rcancel_reason\x18\x12 \x01(\tR\fcancelReason\x129\n" +
+	"\n" +
+	"created_at\x18\x13 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"settled_at\x18\x14 \x01(\v2\x1a.google.protobuf.TimestampR\tsettledAt\x12!\n" +
+	"\fpaid_drivers\x18\x15 \x01(\x05R\vpaidDrivers\x12\x1d\n" +
+	"\n" +
+	"paid_total\x18\x16 \x01(\tR\tpaidTotal\"Z\n" +
+	"\x19IncentiveCampaignResponse\x12=\n" +
+	"\bcampaign\x18\x01 \x01(\v2!.ride.wallet.v1.IncentiveCampaignR\bcampaign\"\xd9\x04\n" +
+	"\x1eCreateIncentiveCampaignRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x127\n" +
+	"\tstarts_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bstartsAt\x123\n" +
+	"\aends_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x06endsAt\x12\x17\n" +
+	"\acity_id\x18\x05 \x01(\tR\x06cityId\x12\x19\n" +
+	"\bzone_ids\x18\x06 \x03(\tR\azoneIds\x12#\n" +
+	"\rvehicle_class\x18\a \x01(\tR\fvehicleClass\x12\x1f\n" +
+	"\vdaily_start\x18\b \x01(\tR\n" +
+	"dailyStart\x12\x1b\n" +
+	"\tdaily_end\x18\t \x01(\tR\bdailyEnd\x12\x1b\n" +
+	"\ttime_zone\x18\n" +
+	" \x01(\tR\btimeZone\x12.\n" +
+	"\x13min_acceptance_rate\x18\v \x01(\tR\x11minAcceptanceRate\x122\n" +
+	"\x15max_cancellation_rate\x18\f \x01(\tR\x13maxCancellationRate\x12\x1d\n" +
+	"\n" +
+	"min_rating\x18\r \x01(\tR\tminRating\x123\n" +
+	"\x05tiers\x18\x0e \x03(\v2\x1d.ride.wallet.v1.IncentiveTierR\x05tiers\x12'\n" +
+	"\x0fidempotency_key\x18\x0f \x01(\tR\x0eidempotencyKey\"\x9c\x01\n" +
+	"\x1dListIncentiveCampaignsRequest\x12?\n" +
+	"\x06status\x18\x01 \x01(\x0e2'.ride.wallet.v1.IncentiveCampaignStatusR\x06status\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\"\x89\x01\n" +
+	"\x1eListIncentiveCampaignsResponse\x12?\n" +
+	"\tcampaigns\x18\x01 \x03(\v2!.ride.wallet.v1.IncentiveCampaignR\tcampaigns\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\">\n" +
+	"\x1bGetIncentiveCampaignRequest\x12\x1f\n" +
+	"\vcampaign_id\x18\x01 \x01(\tR\n" +
+	"campaignId\"Y\n" +
+	"\x1eCancelIncentiveCampaignRequest\x12\x1f\n" +
+	"\vcampaign_id\x18\x01 \x01(\tR\n" +
+	"campaignId\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"\xad\x03\n" +
+	"\x0fIncentivePayout\x12\x1f\n" +
+	"\vcampaign_id\x18\x01 \x01(\tR\n" +
+	"campaignId\x12\x1b\n" +
+	"\tdriver_id\x18\x02 \x01(\tR\bdriverId\x12'\n" +
+	"\x0fcompleted_trips\x18\x03 \x01(\x05R\x0ecompletedTrips\x12'\n" +
+	"\x0facceptance_rate\x18\x04 \x01(\tR\x0eacceptanceRate\x12+\n" +
+	"\x11cancellation_rate\x18\x05 \x01(\tR\x10cancellationRate\x12\x16\n" +
+	"\x06rating\x18\x06 \x01(\tR\x06rating\x12\x1d\n" +
+	"\n" +
+	"tier_trips\x18\a \x01(\x05R\ttierTrips\x12\x16\n" +
+	"\x06amount\x18\b \x01(\tR\x06amount\x12=\n" +
+	"\x06status\x18\t \x01(\x0e2%.ride.wallet.v1.IncentivePayoutStatusR\x06status\x12\x14\n" +
+	"\x05unmet\x18\n" +
+	" \x03(\tR\x05unmet\x129\n" +
+	"\n" +
+	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"z\n" +
+	"\x1bListIncentivePayoutsRequest\x12\x1f\n" +
+	"\vcampaign_id\x18\x01 \x01(\tR\n" +
+	"campaignId\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\"\x81\x01\n" +
+	"\x1cListIncentivePayoutsResponse\x129\n" +
+	"\apayouts\x18\x01 \x03(\v2\x1f.ride.wallet.v1.IncentivePayoutR\apayouts\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\":\n" +
+	"\x1bListDriverIncentivesRequest\x12\x1b\n" +
+	"\tdriver_id\x18\x01 \x01(\tR\bdriverId\"\xc5\x03\n" +
+	"\x0fDriverIncentive\x12=\n" +
+	"\bcampaign\x18\x01 \x01(\v2!.ride.wallet.v1.IncentiveCampaignR\bcampaign\x12'\n" +
+	"\x0fcompleted_trips\x18\x02 \x01(\x05R\x0ecompletedTrips\x12,\n" +
+	"\x12reached_tier_trips\x18\x03 \x01(\x05R\x10reachedTierTrips\x12%\n" +
+	"\x0ereached_amount\x18\x04 \x01(\tR\rreachedAmount\x12&\n" +
+	"\x0fnext_tier_trips\x18\x05 \x01(\x05R\rnextTierTrips\x12(\n" +
+	"\x10next_tier_amount\x18\x06 \x01(\tR\x0enextTierAmount\x12'\n" +
+	"\x0facceptance_rate\x18\a \x01(\tR\x0eacceptanceRate\x12+\n" +
+	"\x11cancellation_rate\x18\b \x01(\tR\x10cancellationRate\x12\x14\n" +
+	"\x05unmet\x18\t \x03(\tR\x05unmet\x127\n" +
+	"\x06payout\x18\n" +
+	" \x01(\v2\x1f.ride.wallet.v1.IncentivePayoutR\x06payout\"_\n" +
+	"\x1cListDriverIncentivesResponse\x12?\n" +
+	"\n" +
+	"incentives\x18\x01 \x03(\v2\x1f.ride.wallet.v1.DriverIncentiveR\n" +
+	"incentives*T\n" +
 	"\tOwnerType\x12\x1a\n" +
 	"\x16OWNER_TYPE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10OWNER_TYPE_RIDER\x10\x01\x12\x15\n" +
@@ -6135,7 +7931,7 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x1aPAYMENT_METHOD_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PAYMENT_METHOD_CASH\x10\x01\x12\x19\n" +
 	"\x15PAYMENT_METHOD_WALLET\x10\x02\x12\x17\n" +
-	"\x13PAYMENT_METHOD_CARD\x10\x03*\xf9\x03\n" +
+	"\x13PAYMENT_METHOD_CARD\x10\x03*\x99\x04\n" +
 	"\x0fTransactionType\x12 \n" +
 	"\x1cTRANSACTION_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17TRANSACTION_TYPE_TOP_UP\x10\x01\x12!\n" +
@@ -6152,7 +7948,24 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x18TRANSACTION_TYPE_VOUCHER\x10\v\x12\x1b\n" +
 	"\x17TRANSACTION_TYPE_REFUND\x10\f\x12\"\n" +
 	"\x1eTRANSACTION_TYPE_PAYOUT_RETURN\x10\r\x12\x18\n" +
-	"\x14TRANSACTION_TYPE_TIP\x10\x0e2\xaa,\n" +
+	"\x14TRANSACTION_TYPE_TIP\x10\x0e\x12\x1e\n" +
+	"\x1aTRANSACTION_TYPE_INCENTIVE\x10\x0f*\x7f\n" +
+	"\x0eEarningsPeriod\x12\x1f\n" +
+	"\x1bEARNINGS_PERIOD_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13EARNINGS_PERIOD_DAY\x10\x01\x12\x18\n" +
+	"\x14EARNINGS_PERIOD_WEEK\x10\x02\x12\x19\n" +
+	"\x15EARNINGS_PERIOD_MONTH\x10\x03*\x8c\x02\n" +
+	"\x17IncentiveCampaignStatus\x12)\n" +
+	"%INCENTIVE_CAMPAIGN_STATUS_UNSPECIFIED\x10\x00\x12'\n" +
+	"#INCENTIVE_CAMPAIGN_STATUS_SCHEDULED\x10\x01\x12%\n" +
+	"!INCENTIVE_CAMPAIGN_STATUS_RUNNING\x10\x02\x12&\n" +
+	"\"INCENTIVE_CAMPAIGN_STATUS_SETTLING\x10\x03\x12%\n" +
+	"!INCENTIVE_CAMPAIGN_STATUS_SETTLED\x10\x04\x12'\n" +
+	"#INCENTIVE_CAMPAIGN_STATUS_CANCELLED\x10\x05*\x8c\x01\n" +
+	"\x15IncentivePayoutStatus\x12'\n" +
+	"#INCENTIVE_PAYOUT_STATUS_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cINCENTIVE_PAYOUT_STATUS_PAID\x10\x01\x12(\n" +
+	"$INCENTIVE_PAYOUT_STATUS_NOT_ELIGIBLE\x10\x022\xf64\n" +
 	"\rWalletService\x12p\n" +
 	"\tGetWallet\x12 .ride.wallet.v1.GetWalletRequest\x1a!.ride.wallet.v1.GetWalletResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/wallets/{owner_id}\x12D\n" +
 	"\x05TopUp\x12\x1c.ride.wallet.v1.TopUpRequest\x1a\x1d.ride.wallet.v1.TopUpResponse\x12S\n" +
@@ -6196,7 +8009,14 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\rApprovePayout\x12$.ride.wallet.v1.ApprovePayoutRequest\x1a\x1e.ride.wallet.v1.PayoutResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/v1/admin/payouts/{payout_id}:approve\x12\x8a\x01\n" +
 	"\x0eMarkPayoutPaid\x12%.ride.wallet.v1.MarkPayoutPaidRequest\x1a\x1e.ride.wallet.v1.PayoutResponse\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/v1/admin/payouts/{payout_id}:markPaid\x12\x84\x01\n" +
 	"\fRejectPayout\x12#.ride.wallet.v1.RejectPayoutRequest\x1a\x1e.ride.wallet.v1.PayoutResponse\"/\x82\xd3\xe4\x93\x02):\x01*\"$/v1/admin/payouts/{payout_id}:reject\x12\x9f\x01\n" +
-	"\x16ProcessZainCashWebhook\x12-.ride.wallet.v1.ProcessZainCashWebhookRequest\x1a..ride.wallet.v1.ProcessZainCashWebhookResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/wallet/zaincash/webhookB@Z>github.com/7akoom/ride-platform/gen/go/ride/wallet/v1;walletv1b\x06proto3"
+	"\x16ProcessZainCashWebhook\x12-.ride.wallet.v1.ProcessZainCashWebhookRequest\x1a..ride.wallet.v1.ProcessZainCashWebhookResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/wallet/zaincash/webhook\x12\x87\x01\n" +
+	"\x11GetDriverEarnings\x12(.ride.wallet.v1.GetDriverEarningsRequest\x1a\x1e.ride.wallet.v1.DriverEarnings\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/drivers/{driver_id}/earnings\x12\x9d\x01\n" +
+	"\x14ListDriverIncentives\x12+.ride.wallet.v1.ListDriverIncentivesRequest\x1a,.ride.wallet.v1.ListDriverIncentivesResponse\"*\x82\xd3\xe4\x93\x02$\x12\"/v1/drivers/{driver_id}/incentives\x12\x95\x01\n" +
+	"\x17CreateIncentiveCampaign\x12..ride.wallet.v1.CreateIncentiveCampaignRequest\x1a).ride.wallet.v1.IncentiveCampaignResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/v1/admin/incentives\x12\x95\x01\n" +
+	"\x16ListIncentiveCampaigns\x12-.ride.wallet.v1.ListIncentiveCampaignsRequest\x1a..ride.wallet.v1.ListIncentiveCampaignsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/admin/incentives\x12\x9a\x01\n" +
+	"\x14GetIncentiveCampaign\x12+.ride.wallet.v1.GetIncentiveCampaignRequest\x1a).ride.wallet.v1.IncentiveCampaignResponse\"*\x82\xd3\xe4\x93\x02$\x12\"/v1/admin/incentives/{campaign_id}\x12\xaa\x01\n" +
+	"\x17CancelIncentiveCampaign\x12..ride.wallet.v1.CancelIncentiveCampaignRequest\x1a).ride.wallet.v1.IncentiveCampaignResponse\"4\x82\xd3\xe4\x93\x02.:\x01*\")/v1/admin/incentives/{campaign_id}:cancel\x12\xa5\x01\n" +
+	"\x14ListIncentivePayouts\x12+.ride.wallet.v1.ListIncentivePayoutsRequest\x1a,.ride.wallet.v1.ListIncentivePayoutsResponse\"2\x82\xd3\xe4\x93\x02,\x12*/v1/admin/incentives/{campaign_id}/payoutsB@Z>github.com/7akoom/ride-platform/gen/go/ride/wallet/v1;walletv1b\x06proto3"
 
 var (
 	file_ride_wallet_v1_wallet_proto_rawDescOnce sync.Once
@@ -6210,253 +8030,311 @@ func file_ride_wallet_v1_wallet_proto_rawDescGZIP() []byte {
 	return file_ride_wallet_v1_wallet_proto_rawDescData
 }
 
-var file_ride_wallet_v1_wallet_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_ride_wallet_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 78)
+var file_ride_wallet_v1_wallet_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_ride_wallet_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 96)
 var file_ride_wallet_v1_wallet_proto_goTypes = []any{
 	(OwnerType)(0),                         // 0: ride.wallet.v1.OwnerType
 	(PaymentMethod)(0),                     // 1: ride.wallet.v1.PaymentMethod
 	(TransactionType)(0),                   // 2: ride.wallet.v1.TransactionType
-	(*Wallet)(nil),                         // 3: ride.wallet.v1.Wallet
-	(*Transaction)(nil),                    // 4: ride.wallet.v1.Transaction
-	(*GetWalletRequest)(nil),               // 5: ride.wallet.v1.GetWalletRequest
-	(*GetWalletResponse)(nil),              // 6: ride.wallet.v1.GetWalletResponse
-	(*TopUpRequest)(nil),                   // 7: ride.wallet.v1.TopUpRequest
-	(*TopUpResponse)(nil),                  // 8: ride.wallet.v1.TopUpResponse
-	(*SettleTripRequest)(nil),              // 9: ride.wallet.v1.SettleTripRequest
-	(*SettleTripResponse)(nil),             // 10: ride.wallet.v1.SettleTripResponse
-	(*ListTransactionsRequest)(nil),        // 11: ride.wallet.v1.ListTransactionsRequest
-	(*ListTransactionsResponse)(nil),       // 12: ride.wallet.v1.ListTransactionsResponse
-	(*CheckDriverStandingRequest)(nil),     // 13: ride.wallet.v1.CheckDriverStandingRequest
-	(*CheckDriverStandingResponse)(nil),    // 14: ride.wallet.v1.CheckDriverStandingResponse
-	(*RequestPayoutRequest)(nil),           // 15: ride.wallet.v1.RequestPayoutRequest
-	(*RequestPayoutResponse)(nil),          // 16: ride.wallet.v1.RequestPayoutResponse
-	(*Payout)(nil),                         // 17: ride.wallet.v1.Payout
-	(*PayoutResponse)(nil),                 // 18: ride.wallet.v1.PayoutResponse
-	(*ListPayoutsRequest)(nil),             // 19: ride.wallet.v1.ListPayoutsRequest
-	(*ListPayoutsResponse)(nil),            // 20: ride.wallet.v1.ListPayoutsResponse
-	(*ListPayoutRequestsRequest)(nil),      // 21: ride.wallet.v1.ListPayoutRequestsRequest
-	(*ApprovePayoutRequest)(nil),           // 22: ride.wallet.v1.ApprovePayoutRequest
-	(*MarkPayoutPaidRequest)(nil),          // 23: ride.wallet.v1.MarkPayoutPaidRequest
-	(*RejectPayoutRequest)(nil),            // 24: ride.wallet.v1.RejectPayoutRequest
-	(*InitiateTopUpRequest)(nil),           // 25: ride.wallet.v1.InitiateTopUpRequest
-	(*InitiateTopUpResponse)(nil),          // 26: ride.wallet.v1.InitiateTopUpResponse
-	(*GetTopUpRequest)(nil),                // 27: ride.wallet.v1.GetTopUpRequest
-	(*GetTopUpResponse)(nil),               // 28: ride.wallet.v1.GetTopUpResponse
-	(*ProcessZainCashWebhookRequest)(nil),  // 29: ride.wallet.v1.ProcessZainCashWebhookRequest
-	(*ProcessZainCashWebhookResponse)(nil), // 30: ride.wallet.v1.ProcessZainCashWebhookResponse
-	(*GetTripSettlementRequest)(nil),       // 31: ride.wallet.v1.GetTripSettlementRequest
-	(*GetTripSettlementResponse)(nil),      // 32: ride.wallet.v1.GetTripSettlementResponse
-	(*RecordTripChangeRequest)(nil),        // 33: ride.wallet.v1.RecordTripChangeRequest
-	(*RecordTripChangeResponse)(nil),       // 34: ride.wallet.v1.RecordTripChangeResponse
-	(*SendTransferRequest)(nil),            // 35: ride.wallet.v1.SendTransferRequest
-	(*Transfer)(nil),                       // 36: ride.wallet.v1.Transfer
-	(*SendTransferResponse)(nil),           // 37: ride.wallet.v1.SendTransferResponse
-	(*ListTransfersRequest)(nil),           // 38: ride.wallet.v1.ListTransfersRequest
-	(*ListTransfersResponse)(nil),          // 39: ride.wallet.v1.ListTransfersResponse
-	(*CreateMoneyRequestRequest)(nil),      // 40: ride.wallet.v1.CreateMoneyRequestRequest
-	(*MoneyRequest)(nil),                   // 41: ride.wallet.v1.MoneyRequest
-	(*MoneyRequestResponse)(nil),           // 42: ride.wallet.v1.MoneyRequestResponse
-	(*ListMoneyRequestsRequest)(nil),       // 43: ride.wallet.v1.ListMoneyRequestsRequest
-	(*ListMoneyRequestsResponse)(nil),      // 44: ride.wallet.v1.ListMoneyRequestsResponse
-	(*GetMoneyRequestRequest)(nil),         // 45: ride.wallet.v1.GetMoneyRequestRequest
-	(*PayMoneyRequestRequest)(nil),         // 46: ride.wallet.v1.PayMoneyRequestRequest
-	(*PayMoneyRequestResponse)(nil),        // 47: ride.wallet.v1.PayMoneyRequestResponse
-	(*CloseMoneyRequestRequest)(nil),       // 48: ride.wallet.v1.CloseMoneyRequestRequest
-	(*GetStatementRequest)(nil),            // 49: ride.wallet.v1.GetStatementRequest
-	(*GetStatementResponse)(nil),           // 50: ride.wallet.v1.GetStatementResponse
-	(*GetRiderDuesRequest)(nil),            // 51: ride.wallet.v1.GetRiderDuesRequest
-	(*RiderDue)(nil),                       // 52: ride.wallet.v1.RiderDue
-	(*GetRiderDuesResponse)(nil),           // 53: ride.wallet.v1.GetRiderDuesResponse
-	(*CreateVoucherBatchRequest)(nil),      // 54: ride.wallet.v1.CreateVoucherBatchRequest
-	(*VoucherBatch)(nil),                   // 55: ride.wallet.v1.VoucherBatch
-	(*VoucherBatchResponse)(nil),           // 56: ride.wallet.v1.VoucherBatchResponse
-	(*ListVoucherBatchesRequest)(nil),      // 57: ride.wallet.v1.ListVoucherBatchesRequest
-	(*ListVoucherBatchesResponse)(nil),     // 58: ride.wallet.v1.ListVoucherBatchesResponse
-	(*GetVoucherBatchRequest)(nil),         // 59: ride.wallet.v1.GetVoucherBatchRequest
-	(*ExportVoucherBatchRequest)(nil),      // 60: ride.wallet.v1.ExportVoucherBatchRequest
-	(*ExportedVoucher)(nil),                // 61: ride.wallet.v1.ExportedVoucher
-	(*ExportVoucherBatchResponse)(nil),     // 62: ride.wallet.v1.ExportVoucherBatchResponse
-	(*CancelVoucherBatchRequest)(nil),      // 63: ride.wallet.v1.CancelVoucherBatchRequest
-	(*Voucher)(nil),                        // 64: ride.wallet.v1.Voucher
-	(*VoucherResponse)(nil),                // 65: ride.wallet.v1.VoucherResponse
-	(*GetVoucherRequest)(nil),              // 66: ride.wallet.v1.GetVoucherRequest
-	(*VoidVoucherRequest)(nil),             // 67: ride.wallet.v1.VoidVoucherRequest
-	(*RedeemVoucherRequest)(nil),           // 68: ride.wallet.v1.RedeemVoucherRequest
-	(*RedeemVoucherResponse)(nil),          // 69: ride.wallet.v1.RedeemVoucherResponse
-	(*InspectWalletRequest)(nil),           // 70: ride.wallet.v1.InspectWalletRequest
-	(*InspectWalletResponse)(nil),          // 71: ride.wallet.v1.InspectWalletResponse
-	(*AdjustWalletRequest)(nil),            // 72: ride.wallet.v1.AdjustWalletRequest
-	(*Adjustment)(nil),                     // 73: ride.wallet.v1.Adjustment
-	(*AdjustmentResponse)(nil),             // 74: ride.wallet.v1.AdjustmentResponse
-	(*RefundTripRequest)(nil),              // 75: ride.wallet.v1.RefundTripRequest
-	(*ListTripRefundsRequest)(nil),         // 76: ride.wallet.v1.ListTripRefundsRequest
-	(*ListTripRefundsResponse)(nil),        // 77: ride.wallet.v1.ListTripRefundsResponse
-	(*TipDriverRequest)(nil),               // 78: ride.wallet.v1.TipDriverRequest
-	(*Tip)(nil),                            // 79: ride.wallet.v1.Tip
-	(*TipDriverResponse)(nil),              // 80: ride.wallet.v1.TipDriverResponse
-	(*timestamppb.Timestamp)(nil),          // 81: google.protobuf.Timestamp
+	(EarningsPeriod)(0),                    // 3: ride.wallet.v1.EarningsPeriod
+	(IncentiveCampaignStatus)(0),           // 4: ride.wallet.v1.IncentiveCampaignStatus
+	(IncentivePayoutStatus)(0),             // 5: ride.wallet.v1.IncentivePayoutStatus
+	(*Wallet)(nil),                         // 6: ride.wallet.v1.Wallet
+	(*Transaction)(nil),                    // 7: ride.wallet.v1.Transaction
+	(*GetWalletRequest)(nil),               // 8: ride.wallet.v1.GetWalletRequest
+	(*GetWalletResponse)(nil),              // 9: ride.wallet.v1.GetWalletResponse
+	(*TopUpRequest)(nil),                   // 10: ride.wallet.v1.TopUpRequest
+	(*TopUpResponse)(nil),                  // 11: ride.wallet.v1.TopUpResponse
+	(*SettleTripRequest)(nil),              // 12: ride.wallet.v1.SettleTripRequest
+	(*SettleTripResponse)(nil),             // 13: ride.wallet.v1.SettleTripResponse
+	(*ListTransactionsRequest)(nil),        // 14: ride.wallet.v1.ListTransactionsRequest
+	(*ListTransactionsResponse)(nil),       // 15: ride.wallet.v1.ListTransactionsResponse
+	(*CheckDriverStandingRequest)(nil),     // 16: ride.wallet.v1.CheckDriverStandingRequest
+	(*CheckDriverStandingResponse)(nil),    // 17: ride.wallet.v1.CheckDriverStandingResponse
+	(*RequestPayoutRequest)(nil),           // 18: ride.wallet.v1.RequestPayoutRequest
+	(*RequestPayoutResponse)(nil),          // 19: ride.wallet.v1.RequestPayoutResponse
+	(*Payout)(nil),                         // 20: ride.wallet.v1.Payout
+	(*PayoutResponse)(nil),                 // 21: ride.wallet.v1.PayoutResponse
+	(*ListPayoutsRequest)(nil),             // 22: ride.wallet.v1.ListPayoutsRequest
+	(*ListPayoutsResponse)(nil),            // 23: ride.wallet.v1.ListPayoutsResponse
+	(*ListPayoutRequestsRequest)(nil),      // 24: ride.wallet.v1.ListPayoutRequestsRequest
+	(*ApprovePayoutRequest)(nil),           // 25: ride.wallet.v1.ApprovePayoutRequest
+	(*MarkPayoutPaidRequest)(nil),          // 26: ride.wallet.v1.MarkPayoutPaidRequest
+	(*RejectPayoutRequest)(nil),            // 27: ride.wallet.v1.RejectPayoutRequest
+	(*InitiateTopUpRequest)(nil),           // 28: ride.wallet.v1.InitiateTopUpRequest
+	(*InitiateTopUpResponse)(nil),          // 29: ride.wallet.v1.InitiateTopUpResponse
+	(*GetTopUpRequest)(nil),                // 30: ride.wallet.v1.GetTopUpRequest
+	(*GetTopUpResponse)(nil),               // 31: ride.wallet.v1.GetTopUpResponse
+	(*ProcessZainCashWebhookRequest)(nil),  // 32: ride.wallet.v1.ProcessZainCashWebhookRequest
+	(*ProcessZainCashWebhookResponse)(nil), // 33: ride.wallet.v1.ProcessZainCashWebhookResponse
+	(*GetTripSettlementRequest)(nil),       // 34: ride.wallet.v1.GetTripSettlementRequest
+	(*GetTripSettlementResponse)(nil),      // 35: ride.wallet.v1.GetTripSettlementResponse
+	(*RecordTripChangeRequest)(nil),        // 36: ride.wallet.v1.RecordTripChangeRequest
+	(*RecordTripChangeResponse)(nil),       // 37: ride.wallet.v1.RecordTripChangeResponse
+	(*SendTransferRequest)(nil),            // 38: ride.wallet.v1.SendTransferRequest
+	(*Transfer)(nil),                       // 39: ride.wallet.v1.Transfer
+	(*SendTransferResponse)(nil),           // 40: ride.wallet.v1.SendTransferResponse
+	(*ListTransfersRequest)(nil),           // 41: ride.wallet.v1.ListTransfersRequest
+	(*ListTransfersResponse)(nil),          // 42: ride.wallet.v1.ListTransfersResponse
+	(*CreateMoneyRequestRequest)(nil),      // 43: ride.wallet.v1.CreateMoneyRequestRequest
+	(*MoneyRequest)(nil),                   // 44: ride.wallet.v1.MoneyRequest
+	(*MoneyRequestResponse)(nil),           // 45: ride.wallet.v1.MoneyRequestResponse
+	(*ListMoneyRequestsRequest)(nil),       // 46: ride.wallet.v1.ListMoneyRequestsRequest
+	(*ListMoneyRequestsResponse)(nil),      // 47: ride.wallet.v1.ListMoneyRequestsResponse
+	(*GetMoneyRequestRequest)(nil),         // 48: ride.wallet.v1.GetMoneyRequestRequest
+	(*PayMoneyRequestRequest)(nil),         // 49: ride.wallet.v1.PayMoneyRequestRequest
+	(*PayMoneyRequestResponse)(nil),        // 50: ride.wallet.v1.PayMoneyRequestResponse
+	(*CloseMoneyRequestRequest)(nil),       // 51: ride.wallet.v1.CloseMoneyRequestRequest
+	(*GetStatementRequest)(nil),            // 52: ride.wallet.v1.GetStatementRequest
+	(*GetStatementResponse)(nil),           // 53: ride.wallet.v1.GetStatementResponse
+	(*GetRiderDuesRequest)(nil),            // 54: ride.wallet.v1.GetRiderDuesRequest
+	(*RiderDue)(nil),                       // 55: ride.wallet.v1.RiderDue
+	(*GetRiderDuesResponse)(nil),           // 56: ride.wallet.v1.GetRiderDuesResponse
+	(*CreateVoucherBatchRequest)(nil),      // 57: ride.wallet.v1.CreateVoucherBatchRequest
+	(*VoucherBatch)(nil),                   // 58: ride.wallet.v1.VoucherBatch
+	(*VoucherBatchResponse)(nil),           // 59: ride.wallet.v1.VoucherBatchResponse
+	(*ListVoucherBatchesRequest)(nil),      // 60: ride.wallet.v1.ListVoucherBatchesRequest
+	(*ListVoucherBatchesResponse)(nil),     // 61: ride.wallet.v1.ListVoucherBatchesResponse
+	(*GetVoucherBatchRequest)(nil),         // 62: ride.wallet.v1.GetVoucherBatchRequest
+	(*ExportVoucherBatchRequest)(nil),      // 63: ride.wallet.v1.ExportVoucherBatchRequest
+	(*ExportedVoucher)(nil),                // 64: ride.wallet.v1.ExportedVoucher
+	(*ExportVoucherBatchResponse)(nil),     // 65: ride.wallet.v1.ExportVoucherBatchResponse
+	(*CancelVoucherBatchRequest)(nil),      // 66: ride.wallet.v1.CancelVoucherBatchRequest
+	(*Voucher)(nil),                        // 67: ride.wallet.v1.Voucher
+	(*VoucherResponse)(nil),                // 68: ride.wallet.v1.VoucherResponse
+	(*GetVoucherRequest)(nil),              // 69: ride.wallet.v1.GetVoucherRequest
+	(*VoidVoucherRequest)(nil),             // 70: ride.wallet.v1.VoidVoucherRequest
+	(*RedeemVoucherRequest)(nil),           // 71: ride.wallet.v1.RedeemVoucherRequest
+	(*RedeemVoucherResponse)(nil),          // 72: ride.wallet.v1.RedeemVoucherResponse
+	(*InspectWalletRequest)(nil),           // 73: ride.wallet.v1.InspectWalletRequest
+	(*InspectWalletResponse)(nil),          // 74: ride.wallet.v1.InspectWalletResponse
+	(*AdjustWalletRequest)(nil),            // 75: ride.wallet.v1.AdjustWalletRequest
+	(*Adjustment)(nil),                     // 76: ride.wallet.v1.Adjustment
+	(*AdjustmentResponse)(nil),             // 77: ride.wallet.v1.AdjustmentResponse
+	(*RefundTripRequest)(nil),              // 78: ride.wallet.v1.RefundTripRequest
+	(*ListTripRefundsRequest)(nil),         // 79: ride.wallet.v1.ListTripRefundsRequest
+	(*ListTripRefundsResponse)(nil),        // 80: ride.wallet.v1.ListTripRefundsResponse
+	(*TipDriverRequest)(nil),               // 81: ride.wallet.v1.TipDriverRequest
+	(*Tip)(nil),                            // 82: ride.wallet.v1.Tip
+	(*TipDriverResponse)(nil),              // 83: ride.wallet.v1.TipDriverResponse
+	(*GetDriverEarningsRequest)(nil),       // 84: ride.wallet.v1.GetDriverEarningsRequest
+	(*EarningsTotals)(nil),                 // 85: ride.wallet.v1.EarningsTotals
+	(*EarningsDay)(nil),                    // 86: ride.wallet.v1.EarningsDay
+	(*DriverEarnings)(nil),                 // 87: ride.wallet.v1.DriverEarnings
+	(*IncentiveTier)(nil),                  // 88: ride.wallet.v1.IncentiveTier
+	(*IncentiveCampaign)(nil),              // 89: ride.wallet.v1.IncentiveCampaign
+	(*IncentiveCampaignResponse)(nil),      // 90: ride.wallet.v1.IncentiveCampaignResponse
+	(*CreateIncentiveCampaignRequest)(nil), // 91: ride.wallet.v1.CreateIncentiveCampaignRequest
+	(*ListIncentiveCampaignsRequest)(nil),  // 92: ride.wallet.v1.ListIncentiveCampaignsRequest
+	(*ListIncentiveCampaignsResponse)(nil), // 93: ride.wallet.v1.ListIncentiveCampaignsResponse
+	(*GetIncentiveCampaignRequest)(nil),    // 94: ride.wallet.v1.GetIncentiveCampaignRequest
+	(*CancelIncentiveCampaignRequest)(nil), // 95: ride.wallet.v1.CancelIncentiveCampaignRequest
+	(*IncentivePayout)(nil),                // 96: ride.wallet.v1.IncentivePayout
+	(*ListIncentivePayoutsRequest)(nil),    // 97: ride.wallet.v1.ListIncentivePayoutsRequest
+	(*ListIncentivePayoutsResponse)(nil),   // 98: ride.wallet.v1.ListIncentivePayoutsResponse
+	(*ListDriverIncentivesRequest)(nil),    // 99: ride.wallet.v1.ListDriverIncentivesRequest
+	(*DriverIncentive)(nil),                // 100: ride.wallet.v1.DriverIncentive
+	(*ListDriverIncentivesResponse)(nil),   // 101: ride.wallet.v1.ListDriverIncentivesResponse
+	(*timestamppb.Timestamp)(nil),          // 102: google.protobuf.Timestamp
 }
 var file_ride_wallet_v1_wallet_proto_depIdxs = []int32{
 	0,   // 0: ride.wallet.v1.Wallet.owner_type:type_name -> ride.wallet.v1.OwnerType
-	81,  // 1: ride.wallet.v1.Wallet.created_at:type_name -> google.protobuf.Timestamp
-	81,  // 2: ride.wallet.v1.Wallet.updated_at:type_name -> google.protobuf.Timestamp
+	102, // 1: ride.wallet.v1.Wallet.created_at:type_name -> google.protobuf.Timestamp
+	102, // 2: ride.wallet.v1.Wallet.updated_at:type_name -> google.protobuf.Timestamp
 	2,   // 3: ride.wallet.v1.Transaction.type:type_name -> ride.wallet.v1.TransactionType
-	81,  // 4: ride.wallet.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
+	102, // 4: ride.wallet.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
 	0,   // 5: ride.wallet.v1.GetWalletRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
-	3,   // 6: ride.wallet.v1.GetWalletResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	6,   // 6: ride.wallet.v1.GetWalletResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	0,   // 7: ride.wallet.v1.TopUpRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
-	3,   // 8: ride.wallet.v1.TopUpResponse.wallet:type_name -> ride.wallet.v1.Wallet
-	4,   // 9: ride.wallet.v1.TopUpResponse.transaction:type_name -> ride.wallet.v1.Transaction
+	6,   // 8: ride.wallet.v1.TopUpResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	7,   // 9: ride.wallet.v1.TopUpResponse.transaction:type_name -> ride.wallet.v1.Transaction
 	1,   // 10: ride.wallet.v1.SettleTripRequest.payment_method:type_name -> ride.wallet.v1.PaymentMethod
 	0,   // 11: ride.wallet.v1.ListTransactionsRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
-	4,   // 12: ride.wallet.v1.ListTransactionsResponse.transactions:type_name -> ride.wallet.v1.Transaction
-	3,   // 13: ride.wallet.v1.RequestPayoutResponse.wallet:type_name -> ride.wallet.v1.Wallet
-	4,   // 14: ride.wallet.v1.RequestPayoutResponse.transaction:type_name -> ride.wallet.v1.Transaction
-	17,  // 15: ride.wallet.v1.RequestPayoutResponse.payout:type_name -> ride.wallet.v1.Payout
-	81,  // 16: ride.wallet.v1.Payout.created_at:type_name -> google.protobuf.Timestamp
-	81,  // 17: ride.wallet.v1.Payout.approved_at:type_name -> google.protobuf.Timestamp
-	81,  // 18: ride.wallet.v1.Payout.paid_at:type_name -> google.protobuf.Timestamp
-	81,  // 19: ride.wallet.v1.Payout.rejected_at:type_name -> google.protobuf.Timestamp
-	17,  // 20: ride.wallet.v1.PayoutResponse.payout:type_name -> ride.wallet.v1.Payout
-	17,  // 21: ride.wallet.v1.ListPayoutsResponse.payouts:type_name -> ride.wallet.v1.Payout
+	7,   // 12: ride.wallet.v1.ListTransactionsResponse.transactions:type_name -> ride.wallet.v1.Transaction
+	6,   // 13: ride.wallet.v1.RequestPayoutResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	7,   // 14: ride.wallet.v1.RequestPayoutResponse.transaction:type_name -> ride.wallet.v1.Transaction
+	20,  // 15: ride.wallet.v1.RequestPayoutResponse.payout:type_name -> ride.wallet.v1.Payout
+	102, // 16: ride.wallet.v1.Payout.created_at:type_name -> google.protobuf.Timestamp
+	102, // 17: ride.wallet.v1.Payout.approved_at:type_name -> google.protobuf.Timestamp
+	102, // 18: ride.wallet.v1.Payout.paid_at:type_name -> google.protobuf.Timestamp
+	102, // 19: ride.wallet.v1.Payout.rejected_at:type_name -> google.protobuf.Timestamp
+	20,  // 20: ride.wallet.v1.PayoutResponse.payout:type_name -> ride.wallet.v1.Payout
+	20,  // 21: ride.wallet.v1.ListPayoutsResponse.payouts:type_name -> ride.wallet.v1.Payout
 	0,   // 22: ride.wallet.v1.InitiateTopUpRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	0,   // 23: ride.wallet.v1.GetTopUpRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
-	81,  // 24: ride.wallet.v1.GetTopUpResponse.created_at:type_name -> google.protobuf.Timestamp
-	81,  // 25: ride.wallet.v1.GetTopUpResponse.updated_at:type_name -> google.protobuf.Timestamp
+	102, // 24: ride.wallet.v1.GetTopUpResponse.created_at:type_name -> google.protobuf.Timestamp
+	102, // 25: ride.wallet.v1.GetTopUpResponse.updated_at:type_name -> google.protobuf.Timestamp
 	0,   // 26: ride.wallet.v1.GetTripSettlementRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	1,   // 27: ride.wallet.v1.GetTripSettlementResponse.payment_method:type_name -> ride.wallet.v1.PaymentMethod
-	81,  // 28: ride.wallet.v1.Transfer.created_at:type_name -> google.protobuf.Timestamp
-	36,  // 29: ride.wallet.v1.SendTransferResponse.transfer:type_name -> ride.wallet.v1.Transfer
-	3,   // 30: ride.wallet.v1.SendTransferResponse.wallet:type_name -> ride.wallet.v1.Wallet
-	36,  // 31: ride.wallet.v1.ListTransfersResponse.transfers:type_name -> ride.wallet.v1.Transfer
-	81,  // 32: ride.wallet.v1.MoneyRequest.expires_at:type_name -> google.protobuf.Timestamp
-	81,  // 33: ride.wallet.v1.MoneyRequest.created_at:type_name -> google.protobuf.Timestamp
-	81,  // 34: ride.wallet.v1.MoneyRequest.closed_at:type_name -> google.protobuf.Timestamp
-	41,  // 35: ride.wallet.v1.MoneyRequestResponse.money_request:type_name -> ride.wallet.v1.MoneyRequest
-	41,  // 36: ride.wallet.v1.ListMoneyRequestsResponse.money_requests:type_name -> ride.wallet.v1.MoneyRequest
-	41,  // 37: ride.wallet.v1.PayMoneyRequestResponse.money_request:type_name -> ride.wallet.v1.MoneyRequest
-	36,  // 38: ride.wallet.v1.PayMoneyRequestResponse.transfer:type_name -> ride.wallet.v1.Transfer
-	3,   // 39: ride.wallet.v1.PayMoneyRequestResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	102, // 28: ride.wallet.v1.Transfer.created_at:type_name -> google.protobuf.Timestamp
+	39,  // 29: ride.wallet.v1.SendTransferResponse.transfer:type_name -> ride.wallet.v1.Transfer
+	6,   // 30: ride.wallet.v1.SendTransferResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	39,  // 31: ride.wallet.v1.ListTransfersResponse.transfers:type_name -> ride.wallet.v1.Transfer
+	102, // 32: ride.wallet.v1.MoneyRequest.expires_at:type_name -> google.protobuf.Timestamp
+	102, // 33: ride.wallet.v1.MoneyRequest.created_at:type_name -> google.protobuf.Timestamp
+	102, // 34: ride.wallet.v1.MoneyRequest.closed_at:type_name -> google.protobuf.Timestamp
+	44,  // 35: ride.wallet.v1.MoneyRequestResponse.money_request:type_name -> ride.wallet.v1.MoneyRequest
+	44,  // 36: ride.wallet.v1.ListMoneyRequestsResponse.money_requests:type_name -> ride.wallet.v1.MoneyRequest
+	44,  // 37: ride.wallet.v1.PayMoneyRequestResponse.money_request:type_name -> ride.wallet.v1.MoneyRequest
+	39,  // 38: ride.wallet.v1.PayMoneyRequestResponse.transfer:type_name -> ride.wallet.v1.Transfer
+	6,   // 39: ride.wallet.v1.PayMoneyRequestResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	0,   // 40: ride.wallet.v1.GetStatementRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	2,   // 41: ride.wallet.v1.GetStatementRequest.types:type_name -> ride.wallet.v1.TransactionType
-	81,  // 42: ride.wallet.v1.GetStatementRequest.from:type_name -> google.protobuf.Timestamp
-	81,  // 43: ride.wallet.v1.GetStatementRequest.to:type_name -> google.protobuf.Timestamp
-	4,   // 44: ride.wallet.v1.GetStatementResponse.entries:type_name -> ride.wallet.v1.Transaction
-	81,  // 45: ride.wallet.v1.RiderDue.created_at:type_name -> google.protobuf.Timestamp
-	52,  // 46: ride.wallet.v1.GetRiderDuesResponse.dues:type_name -> ride.wallet.v1.RiderDue
-	81,  // 47: ride.wallet.v1.CreateVoucherBatchRequest.expires_at:type_name -> google.protobuf.Timestamp
-	81,  // 48: ride.wallet.v1.VoucherBatch.expires_at:type_name -> google.protobuf.Timestamp
-	81,  // 49: ride.wallet.v1.VoucherBatch.created_at:type_name -> google.protobuf.Timestamp
-	81,  // 50: ride.wallet.v1.VoucherBatch.exported_at:type_name -> google.protobuf.Timestamp
-	81,  // 51: ride.wallet.v1.VoucherBatch.cancelled_at:type_name -> google.protobuf.Timestamp
-	55,  // 52: ride.wallet.v1.VoucherBatchResponse.batch:type_name -> ride.wallet.v1.VoucherBatch
-	55,  // 53: ride.wallet.v1.ListVoucherBatchesResponse.batches:type_name -> ride.wallet.v1.VoucherBatch
-	55,  // 54: ride.wallet.v1.ExportVoucherBatchResponse.batch:type_name -> ride.wallet.v1.VoucherBatch
-	61,  // 55: ride.wallet.v1.ExportVoucherBatchResponse.vouchers:type_name -> ride.wallet.v1.ExportedVoucher
-	81,  // 56: ride.wallet.v1.Voucher.expires_at:type_name -> google.protobuf.Timestamp
-	81,  // 57: ride.wallet.v1.Voucher.redeemed_at:type_name -> google.protobuf.Timestamp
-	81,  // 58: ride.wallet.v1.Voucher.voided_at:type_name -> google.protobuf.Timestamp
-	64,  // 59: ride.wallet.v1.VoucherResponse.voucher:type_name -> ride.wallet.v1.Voucher
-	3,   // 60: ride.wallet.v1.RedeemVoucherResponse.wallet:type_name -> ride.wallet.v1.Wallet
-	4,   // 61: ride.wallet.v1.RedeemVoucherResponse.transaction:type_name -> ride.wallet.v1.Transaction
+	102, // 42: ride.wallet.v1.GetStatementRequest.from:type_name -> google.protobuf.Timestamp
+	102, // 43: ride.wallet.v1.GetStatementRequest.to:type_name -> google.protobuf.Timestamp
+	7,   // 44: ride.wallet.v1.GetStatementResponse.entries:type_name -> ride.wallet.v1.Transaction
+	102, // 45: ride.wallet.v1.RiderDue.created_at:type_name -> google.protobuf.Timestamp
+	55,  // 46: ride.wallet.v1.GetRiderDuesResponse.dues:type_name -> ride.wallet.v1.RiderDue
+	102, // 47: ride.wallet.v1.CreateVoucherBatchRequest.expires_at:type_name -> google.protobuf.Timestamp
+	102, // 48: ride.wallet.v1.VoucherBatch.expires_at:type_name -> google.protobuf.Timestamp
+	102, // 49: ride.wallet.v1.VoucherBatch.created_at:type_name -> google.protobuf.Timestamp
+	102, // 50: ride.wallet.v1.VoucherBatch.exported_at:type_name -> google.protobuf.Timestamp
+	102, // 51: ride.wallet.v1.VoucherBatch.cancelled_at:type_name -> google.protobuf.Timestamp
+	58,  // 52: ride.wallet.v1.VoucherBatchResponse.batch:type_name -> ride.wallet.v1.VoucherBatch
+	58,  // 53: ride.wallet.v1.ListVoucherBatchesResponse.batches:type_name -> ride.wallet.v1.VoucherBatch
+	58,  // 54: ride.wallet.v1.ExportVoucherBatchResponse.batch:type_name -> ride.wallet.v1.VoucherBatch
+	64,  // 55: ride.wallet.v1.ExportVoucherBatchResponse.vouchers:type_name -> ride.wallet.v1.ExportedVoucher
+	102, // 56: ride.wallet.v1.Voucher.expires_at:type_name -> google.protobuf.Timestamp
+	102, // 57: ride.wallet.v1.Voucher.redeemed_at:type_name -> google.protobuf.Timestamp
+	102, // 58: ride.wallet.v1.Voucher.voided_at:type_name -> google.protobuf.Timestamp
+	67,  // 59: ride.wallet.v1.VoucherResponse.voucher:type_name -> ride.wallet.v1.Voucher
+	6,   // 60: ride.wallet.v1.RedeemVoucherResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	7,   // 61: ride.wallet.v1.RedeemVoucherResponse.transaction:type_name -> ride.wallet.v1.Transaction
 	0,   // 62: ride.wallet.v1.InspectWalletRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
-	3,   // 63: ride.wallet.v1.InspectWalletResponse.wallet:type_name -> ride.wallet.v1.Wallet
-	4,   // 64: ride.wallet.v1.InspectWalletResponse.recent_transactions:type_name -> ride.wallet.v1.Transaction
-	17,  // 65: ride.wallet.v1.InspectWalletResponse.open_payouts:type_name -> ride.wallet.v1.Payout
+	6,   // 63: ride.wallet.v1.InspectWalletResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	7,   // 64: ride.wallet.v1.InspectWalletResponse.recent_transactions:type_name -> ride.wallet.v1.Transaction
+	20,  // 65: ride.wallet.v1.InspectWalletResponse.open_payouts:type_name -> ride.wallet.v1.Payout
 	0,   // 66: ride.wallet.v1.AdjustWalletRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	0,   // 67: ride.wallet.v1.Adjustment.owner_type:type_name -> ride.wallet.v1.OwnerType
-	81,  // 68: ride.wallet.v1.Adjustment.created_at:type_name -> google.protobuf.Timestamp
-	73,  // 69: ride.wallet.v1.AdjustmentResponse.adjustment:type_name -> ride.wallet.v1.Adjustment
-	3,   // 70: ride.wallet.v1.AdjustmentResponse.wallet:type_name -> ride.wallet.v1.Wallet
-	73,  // 71: ride.wallet.v1.ListTripRefundsResponse.refunds:type_name -> ride.wallet.v1.Adjustment
-	81,  // 72: ride.wallet.v1.Tip.created_at:type_name -> google.protobuf.Timestamp
-	79,  // 73: ride.wallet.v1.TipDriverResponse.tip:type_name -> ride.wallet.v1.Tip
-	3,   // 74: ride.wallet.v1.TipDriverResponse.wallet:type_name -> ride.wallet.v1.Wallet
-	5,   // 75: ride.wallet.v1.WalletService.GetWallet:input_type -> ride.wallet.v1.GetWalletRequest
-	7,   // 76: ride.wallet.v1.WalletService.TopUp:input_type -> ride.wallet.v1.TopUpRequest
-	9,   // 77: ride.wallet.v1.WalletService.SettleTrip:input_type -> ride.wallet.v1.SettleTripRequest
-	11,  // 78: ride.wallet.v1.WalletService.ListTransactions:input_type -> ride.wallet.v1.ListTransactionsRequest
-	13,  // 79: ride.wallet.v1.WalletService.CheckDriverStanding:input_type -> ride.wallet.v1.CheckDriverStandingRequest
-	15,  // 80: ride.wallet.v1.WalletService.RequestPayout:input_type -> ride.wallet.v1.RequestPayoutRequest
-	19,  // 81: ride.wallet.v1.WalletService.ListPayouts:input_type -> ride.wallet.v1.ListPayoutsRequest
-	31,  // 82: ride.wallet.v1.WalletService.GetTripSettlement:input_type -> ride.wallet.v1.GetTripSettlementRequest
-	33,  // 83: ride.wallet.v1.WalletService.RecordTripChange:input_type -> ride.wallet.v1.RecordTripChangeRequest
-	25,  // 84: ride.wallet.v1.WalletService.InitiateTopUp:input_type -> ride.wallet.v1.InitiateTopUpRequest
-	27,  // 85: ride.wallet.v1.WalletService.GetTopUp:input_type -> ride.wallet.v1.GetTopUpRequest
-	78,  // 86: ride.wallet.v1.WalletService.TipDriver:input_type -> ride.wallet.v1.TipDriverRequest
-	35,  // 87: ride.wallet.v1.WalletService.SendTransfer:input_type -> ride.wallet.v1.SendTransferRequest
-	38,  // 88: ride.wallet.v1.WalletService.ListTransfers:input_type -> ride.wallet.v1.ListTransfersRequest
-	40,  // 89: ride.wallet.v1.WalletService.CreateMoneyRequest:input_type -> ride.wallet.v1.CreateMoneyRequestRequest
-	43,  // 90: ride.wallet.v1.WalletService.ListMoneyRequests:input_type -> ride.wallet.v1.ListMoneyRequestsRequest
-	45,  // 91: ride.wallet.v1.WalletService.GetMoneyRequest:input_type -> ride.wallet.v1.GetMoneyRequestRequest
-	46,  // 92: ride.wallet.v1.WalletService.PayMoneyRequest:input_type -> ride.wallet.v1.PayMoneyRequestRequest
-	48,  // 93: ride.wallet.v1.WalletService.DeclineMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
-	48,  // 94: ride.wallet.v1.WalletService.CancelMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
-	49,  // 95: ride.wallet.v1.WalletService.GetStatement:input_type -> ride.wallet.v1.GetStatementRequest
-	51,  // 96: ride.wallet.v1.WalletService.GetRiderDues:input_type -> ride.wallet.v1.GetRiderDuesRequest
-	54,  // 97: ride.wallet.v1.WalletService.CreateVoucherBatch:input_type -> ride.wallet.v1.CreateVoucherBatchRequest
-	57,  // 98: ride.wallet.v1.WalletService.ListVoucherBatches:input_type -> ride.wallet.v1.ListVoucherBatchesRequest
-	59,  // 99: ride.wallet.v1.WalletService.GetVoucherBatch:input_type -> ride.wallet.v1.GetVoucherBatchRequest
-	60,  // 100: ride.wallet.v1.WalletService.ExportVoucherBatch:input_type -> ride.wallet.v1.ExportVoucherBatchRequest
-	63,  // 101: ride.wallet.v1.WalletService.CancelVoucherBatch:input_type -> ride.wallet.v1.CancelVoucherBatchRequest
-	66,  // 102: ride.wallet.v1.WalletService.GetVoucher:input_type -> ride.wallet.v1.GetVoucherRequest
-	67,  // 103: ride.wallet.v1.WalletService.VoidVoucher:input_type -> ride.wallet.v1.VoidVoucherRequest
-	68,  // 104: ride.wallet.v1.WalletService.RedeemVoucher:input_type -> ride.wallet.v1.RedeemVoucherRequest
-	70,  // 105: ride.wallet.v1.WalletService.InspectWallet:input_type -> ride.wallet.v1.InspectWalletRequest
-	49,  // 106: ride.wallet.v1.WalletService.GetStatementForStaff:input_type -> ride.wallet.v1.GetStatementRequest
-	72,  // 107: ride.wallet.v1.WalletService.AdjustWallet:input_type -> ride.wallet.v1.AdjustWalletRequest
-	75,  // 108: ride.wallet.v1.WalletService.RefundTrip:input_type -> ride.wallet.v1.RefundTripRequest
-	76,  // 109: ride.wallet.v1.WalletService.ListTripRefunds:input_type -> ride.wallet.v1.ListTripRefundsRequest
-	21,  // 110: ride.wallet.v1.WalletService.ListPayoutRequests:input_type -> ride.wallet.v1.ListPayoutRequestsRequest
-	22,  // 111: ride.wallet.v1.WalletService.ApprovePayout:input_type -> ride.wallet.v1.ApprovePayoutRequest
-	23,  // 112: ride.wallet.v1.WalletService.MarkPayoutPaid:input_type -> ride.wallet.v1.MarkPayoutPaidRequest
-	24,  // 113: ride.wallet.v1.WalletService.RejectPayout:input_type -> ride.wallet.v1.RejectPayoutRequest
-	29,  // 114: ride.wallet.v1.WalletService.ProcessZainCashWebhook:input_type -> ride.wallet.v1.ProcessZainCashWebhookRequest
-	6,   // 115: ride.wallet.v1.WalletService.GetWallet:output_type -> ride.wallet.v1.GetWalletResponse
-	8,   // 116: ride.wallet.v1.WalletService.TopUp:output_type -> ride.wallet.v1.TopUpResponse
-	10,  // 117: ride.wallet.v1.WalletService.SettleTrip:output_type -> ride.wallet.v1.SettleTripResponse
-	12,  // 118: ride.wallet.v1.WalletService.ListTransactions:output_type -> ride.wallet.v1.ListTransactionsResponse
-	14,  // 119: ride.wallet.v1.WalletService.CheckDriverStanding:output_type -> ride.wallet.v1.CheckDriverStandingResponse
-	16,  // 120: ride.wallet.v1.WalletService.RequestPayout:output_type -> ride.wallet.v1.RequestPayoutResponse
-	20,  // 121: ride.wallet.v1.WalletService.ListPayouts:output_type -> ride.wallet.v1.ListPayoutsResponse
-	32,  // 122: ride.wallet.v1.WalletService.GetTripSettlement:output_type -> ride.wallet.v1.GetTripSettlementResponse
-	34,  // 123: ride.wallet.v1.WalletService.RecordTripChange:output_type -> ride.wallet.v1.RecordTripChangeResponse
-	26,  // 124: ride.wallet.v1.WalletService.InitiateTopUp:output_type -> ride.wallet.v1.InitiateTopUpResponse
-	28,  // 125: ride.wallet.v1.WalletService.GetTopUp:output_type -> ride.wallet.v1.GetTopUpResponse
-	80,  // 126: ride.wallet.v1.WalletService.TipDriver:output_type -> ride.wallet.v1.TipDriverResponse
-	37,  // 127: ride.wallet.v1.WalletService.SendTransfer:output_type -> ride.wallet.v1.SendTransferResponse
-	39,  // 128: ride.wallet.v1.WalletService.ListTransfers:output_type -> ride.wallet.v1.ListTransfersResponse
-	42,  // 129: ride.wallet.v1.WalletService.CreateMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	44,  // 130: ride.wallet.v1.WalletService.ListMoneyRequests:output_type -> ride.wallet.v1.ListMoneyRequestsResponse
-	42,  // 131: ride.wallet.v1.WalletService.GetMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	47,  // 132: ride.wallet.v1.WalletService.PayMoneyRequest:output_type -> ride.wallet.v1.PayMoneyRequestResponse
-	42,  // 133: ride.wallet.v1.WalletService.DeclineMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	42,  // 134: ride.wallet.v1.WalletService.CancelMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	50,  // 135: ride.wallet.v1.WalletService.GetStatement:output_type -> ride.wallet.v1.GetStatementResponse
-	53,  // 136: ride.wallet.v1.WalletService.GetRiderDues:output_type -> ride.wallet.v1.GetRiderDuesResponse
-	56,  // 137: ride.wallet.v1.WalletService.CreateVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
-	58,  // 138: ride.wallet.v1.WalletService.ListVoucherBatches:output_type -> ride.wallet.v1.ListVoucherBatchesResponse
-	56,  // 139: ride.wallet.v1.WalletService.GetVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
-	62,  // 140: ride.wallet.v1.WalletService.ExportVoucherBatch:output_type -> ride.wallet.v1.ExportVoucherBatchResponse
-	56,  // 141: ride.wallet.v1.WalletService.CancelVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
-	65,  // 142: ride.wallet.v1.WalletService.GetVoucher:output_type -> ride.wallet.v1.VoucherResponse
-	65,  // 143: ride.wallet.v1.WalletService.VoidVoucher:output_type -> ride.wallet.v1.VoucherResponse
-	69,  // 144: ride.wallet.v1.WalletService.RedeemVoucher:output_type -> ride.wallet.v1.RedeemVoucherResponse
-	71,  // 145: ride.wallet.v1.WalletService.InspectWallet:output_type -> ride.wallet.v1.InspectWalletResponse
-	50,  // 146: ride.wallet.v1.WalletService.GetStatementForStaff:output_type -> ride.wallet.v1.GetStatementResponse
-	74,  // 147: ride.wallet.v1.WalletService.AdjustWallet:output_type -> ride.wallet.v1.AdjustmentResponse
-	74,  // 148: ride.wallet.v1.WalletService.RefundTrip:output_type -> ride.wallet.v1.AdjustmentResponse
-	77,  // 149: ride.wallet.v1.WalletService.ListTripRefunds:output_type -> ride.wallet.v1.ListTripRefundsResponse
-	20,  // 150: ride.wallet.v1.WalletService.ListPayoutRequests:output_type -> ride.wallet.v1.ListPayoutsResponse
-	18,  // 151: ride.wallet.v1.WalletService.ApprovePayout:output_type -> ride.wallet.v1.PayoutResponse
-	18,  // 152: ride.wallet.v1.WalletService.MarkPayoutPaid:output_type -> ride.wallet.v1.PayoutResponse
-	18,  // 153: ride.wallet.v1.WalletService.RejectPayout:output_type -> ride.wallet.v1.PayoutResponse
-	30,  // 154: ride.wallet.v1.WalletService.ProcessZainCashWebhook:output_type -> ride.wallet.v1.ProcessZainCashWebhookResponse
-	115, // [115:155] is the sub-list for method output_type
-	75,  // [75:115] is the sub-list for method input_type
-	75,  // [75:75] is the sub-list for extension type_name
-	75,  // [75:75] is the sub-list for extension extendee
-	0,   // [0:75] is the sub-list for field type_name
+	102, // 68: ride.wallet.v1.Adjustment.created_at:type_name -> google.protobuf.Timestamp
+	76,  // 69: ride.wallet.v1.AdjustmentResponse.adjustment:type_name -> ride.wallet.v1.Adjustment
+	6,   // 70: ride.wallet.v1.AdjustmentResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	76,  // 71: ride.wallet.v1.ListTripRefundsResponse.refunds:type_name -> ride.wallet.v1.Adjustment
+	102, // 72: ride.wallet.v1.Tip.created_at:type_name -> google.protobuf.Timestamp
+	82,  // 73: ride.wallet.v1.TipDriverResponse.tip:type_name -> ride.wallet.v1.Tip
+	6,   // 74: ride.wallet.v1.TipDriverResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	3,   // 75: ride.wallet.v1.GetDriverEarningsRequest.period:type_name -> ride.wallet.v1.EarningsPeriod
+	85,  // 76: ride.wallet.v1.EarningsDay.totals:type_name -> ride.wallet.v1.EarningsTotals
+	3,   // 77: ride.wallet.v1.DriverEarnings.period:type_name -> ride.wallet.v1.EarningsPeriod
+	85,  // 78: ride.wallet.v1.DriverEarnings.totals:type_name -> ride.wallet.v1.EarningsTotals
+	86,  // 79: ride.wallet.v1.DriverEarnings.days:type_name -> ride.wallet.v1.EarningsDay
+	102, // 80: ride.wallet.v1.IncentiveCampaign.starts_at:type_name -> google.protobuf.Timestamp
+	102, // 81: ride.wallet.v1.IncentiveCampaign.ends_at:type_name -> google.protobuf.Timestamp
+	88,  // 82: ride.wallet.v1.IncentiveCampaign.tiers:type_name -> ride.wallet.v1.IncentiveTier
+	4,   // 83: ride.wallet.v1.IncentiveCampaign.status:type_name -> ride.wallet.v1.IncentiveCampaignStatus
+	102, // 84: ride.wallet.v1.IncentiveCampaign.created_at:type_name -> google.protobuf.Timestamp
+	102, // 85: ride.wallet.v1.IncentiveCampaign.settled_at:type_name -> google.protobuf.Timestamp
+	89,  // 86: ride.wallet.v1.IncentiveCampaignResponse.campaign:type_name -> ride.wallet.v1.IncentiveCampaign
+	102, // 87: ride.wallet.v1.CreateIncentiveCampaignRequest.starts_at:type_name -> google.protobuf.Timestamp
+	102, // 88: ride.wallet.v1.CreateIncentiveCampaignRequest.ends_at:type_name -> google.protobuf.Timestamp
+	88,  // 89: ride.wallet.v1.CreateIncentiveCampaignRequest.tiers:type_name -> ride.wallet.v1.IncentiveTier
+	4,   // 90: ride.wallet.v1.ListIncentiveCampaignsRequest.status:type_name -> ride.wallet.v1.IncentiveCampaignStatus
+	89,  // 91: ride.wallet.v1.ListIncentiveCampaignsResponse.campaigns:type_name -> ride.wallet.v1.IncentiveCampaign
+	5,   // 92: ride.wallet.v1.IncentivePayout.status:type_name -> ride.wallet.v1.IncentivePayoutStatus
+	102, // 93: ride.wallet.v1.IncentivePayout.created_at:type_name -> google.protobuf.Timestamp
+	96,  // 94: ride.wallet.v1.ListIncentivePayoutsResponse.payouts:type_name -> ride.wallet.v1.IncentivePayout
+	89,  // 95: ride.wallet.v1.DriverIncentive.campaign:type_name -> ride.wallet.v1.IncentiveCampaign
+	96,  // 96: ride.wallet.v1.DriverIncentive.payout:type_name -> ride.wallet.v1.IncentivePayout
+	100, // 97: ride.wallet.v1.ListDriverIncentivesResponse.incentives:type_name -> ride.wallet.v1.DriverIncentive
+	8,   // 98: ride.wallet.v1.WalletService.GetWallet:input_type -> ride.wallet.v1.GetWalletRequest
+	10,  // 99: ride.wallet.v1.WalletService.TopUp:input_type -> ride.wallet.v1.TopUpRequest
+	12,  // 100: ride.wallet.v1.WalletService.SettleTrip:input_type -> ride.wallet.v1.SettleTripRequest
+	14,  // 101: ride.wallet.v1.WalletService.ListTransactions:input_type -> ride.wallet.v1.ListTransactionsRequest
+	16,  // 102: ride.wallet.v1.WalletService.CheckDriverStanding:input_type -> ride.wallet.v1.CheckDriverStandingRequest
+	18,  // 103: ride.wallet.v1.WalletService.RequestPayout:input_type -> ride.wallet.v1.RequestPayoutRequest
+	22,  // 104: ride.wallet.v1.WalletService.ListPayouts:input_type -> ride.wallet.v1.ListPayoutsRequest
+	34,  // 105: ride.wallet.v1.WalletService.GetTripSettlement:input_type -> ride.wallet.v1.GetTripSettlementRequest
+	36,  // 106: ride.wallet.v1.WalletService.RecordTripChange:input_type -> ride.wallet.v1.RecordTripChangeRequest
+	28,  // 107: ride.wallet.v1.WalletService.InitiateTopUp:input_type -> ride.wallet.v1.InitiateTopUpRequest
+	30,  // 108: ride.wallet.v1.WalletService.GetTopUp:input_type -> ride.wallet.v1.GetTopUpRequest
+	81,  // 109: ride.wallet.v1.WalletService.TipDriver:input_type -> ride.wallet.v1.TipDriverRequest
+	38,  // 110: ride.wallet.v1.WalletService.SendTransfer:input_type -> ride.wallet.v1.SendTransferRequest
+	41,  // 111: ride.wallet.v1.WalletService.ListTransfers:input_type -> ride.wallet.v1.ListTransfersRequest
+	43,  // 112: ride.wallet.v1.WalletService.CreateMoneyRequest:input_type -> ride.wallet.v1.CreateMoneyRequestRequest
+	46,  // 113: ride.wallet.v1.WalletService.ListMoneyRequests:input_type -> ride.wallet.v1.ListMoneyRequestsRequest
+	48,  // 114: ride.wallet.v1.WalletService.GetMoneyRequest:input_type -> ride.wallet.v1.GetMoneyRequestRequest
+	49,  // 115: ride.wallet.v1.WalletService.PayMoneyRequest:input_type -> ride.wallet.v1.PayMoneyRequestRequest
+	51,  // 116: ride.wallet.v1.WalletService.DeclineMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
+	51,  // 117: ride.wallet.v1.WalletService.CancelMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
+	52,  // 118: ride.wallet.v1.WalletService.GetStatement:input_type -> ride.wallet.v1.GetStatementRequest
+	54,  // 119: ride.wallet.v1.WalletService.GetRiderDues:input_type -> ride.wallet.v1.GetRiderDuesRequest
+	57,  // 120: ride.wallet.v1.WalletService.CreateVoucherBatch:input_type -> ride.wallet.v1.CreateVoucherBatchRequest
+	60,  // 121: ride.wallet.v1.WalletService.ListVoucherBatches:input_type -> ride.wallet.v1.ListVoucherBatchesRequest
+	62,  // 122: ride.wallet.v1.WalletService.GetVoucherBatch:input_type -> ride.wallet.v1.GetVoucherBatchRequest
+	63,  // 123: ride.wallet.v1.WalletService.ExportVoucherBatch:input_type -> ride.wallet.v1.ExportVoucherBatchRequest
+	66,  // 124: ride.wallet.v1.WalletService.CancelVoucherBatch:input_type -> ride.wallet.v1.CancelVoucherBatchRequest
+	69,  // 125: ride.wallet.v1.WalletService.GetVoucher:input_type -> ride.wallet.v1.GetVoucherRequest
+	70,  // 126: ride.wallet.v1.WalletService.VoidVoucher:input_type -> ride.wallet.v1.VoidVoucherRequest
+	71,  // 127: ride.wallet.v1.WalletService.RedeemVoucher:input_type -> ride.wallet.v1.RedeemVoucherRequest
+	73,  // 128: ride.wallet.v1.WalletService.InspectWallet:input_type -> ride.wallet.v1.InspectWalletRequest
+	52,  // 129: ride.wallet.v1.WalletService.GetStatementForStaff:input_type -> ride.wallet.v1.GetStatementRequest
+	75,  // 130: ride.wallet.v1.WalletService.AdjustWallet:input_type -> ride.wallet.v1.AdjustWalletRequest
+	78,  // 131: ride.wallet.v1.WalletService.RefundTrip:input_type -> ride.wallet.v1.RefundTripRequest
+	79,  // 132: ride.wallet.v1.WalletService.ListTripRefunds:input_type -> ride.wallet.v1.ListTripRefundsRequest
+	24,  // 133: ride.wallet.v1.WalletService.ListPayoutRequests:input_type -> ride.wallet.v1.ListPayoutRequestsRequest
+	25,  // 134: ride.wallet.v1.WalletService.ApprovePayout:input_type -> ride.wallet.v1.ApprovePayoutRequest
+	26,  // 135: ride.wallet.v1.WalletService.MarkPayoutPaid:input_type -> ride.wallet.v1.MarkPayoutPaidRequest
+	27,  // 136: ride.wallet.v1.WalletService.RejectPayout:input_type -> ride.wallet.v1.RejectPayoutRequest
+	32,  // 137: ride.wallet.v1.WalletService.ProcessZainCashWebhook:input_type -> ride.wallet.v1.ProcessZainCashWebhookRequest
+	84,  // 138: ride.wallet.v1.WalletService.GetDriverEarnings:input_type -> ride.wallet.v1.GetDriverEarningsRequest
+	99,  // 139: ride.wallet.v1.WalletService.ListDriverIncentives:input_type -> ride.wallet.v1.ListDriverIncentivesRequest
+	91,  // 140: ride.wallet.v1.WalletService.CreateIncentiveCampaign:input_type -> ride.wallet.v1.CreateIncentiveCampaignRequest
+	92,  // 141: ride.wallet.v1.WalletService.ListIncentiveCampaigns:input_type -> ride.wallet.v1.ListIncentiveCampaignsRequest
+	94,  // 142: ride.wallet.v1.WalletService.GetIncentiveCampaign:input_type -> ride.wallet.v1.GetIncentiveCampaignRequest
+	95,  // 143: ride.wallet.v1.WalletService.CancelIncentiveCampaign:input_type -> ride.wallet.v1.CancelIncentiveCampaignRequest
+	97,  // 144: ride.wallet.v1.WalletService.ListIncentivePayouts:input_type -> ride.wallet.v1.ListIncentivePayoutsRequest
+	9,   // 145: ride.wallet.v1.WalletService.GetWallet:output_type -> ride.wallet.v1.GetWalletResponse
+	11,  // 146: ride.wallet.v1.WalletService.TopUp:output_type -> ride.wallet.v1.TopUpResponse
+	13,  // 147: ride.wallet.v1.WalletService.SettleTrip:output_type -> ride.wallet.v1.SettleTripResponse
+	15,  // 148: ride.wallet.v1.WalletService.ListTransactions:output_type -> ride.wallet.v1.ListTransactionsResponse
+	17,  // 149: ride.wallet.v1.WalletService.CheckDriverStanding:output_type -> ride.wallet.v1.CheckDriverStandingResponse
+	19,  // 150: ride.wallet.v1.WalletService.RequestPayout:output_type -> ride.wallet.v1.RequestPayoutResponse
+	23,  // 151: ride.wallet.v1.WalletService.ListPayouts:output_type -> ride.wallet.v1.ListPayoutsResponse
+	35,  // 152: ride.wallet.v1.WalletService.GetTripSettlement:output_type -> ride.wallet.v1.GetTripSettlementResponse
+	37,  // 153: ride.wallet.v1.WalletService.RecordTripChange:output_type -> ride.wallet.v1.RecordTripChangeResponse
+	29,  // 154: ride.wallet.v1.WalletService.InitiateTopUp:output_type -> ride.wallet.v1.InitiateTopUpResponse
+	31,  // 155: ride.wallet.v1.WalletService.GetTopUp:output_type -> ride.wallet.v1.GetTopUpResponse
+	83,  // 156: ride.wallet.v1.WalletService.TipDriver:output_type -> ride.wallet.v1.TipDriverResponse
+	40,  // 157: ride.wallet.v1.WalletService.SendTransfer:output_type -> ride.wallet.v1.SendTransferResponse
+	42,  // 158: ride.wallet.v1.WalletService.ListTransfers:output_type -> ride.wallet.v1.ListTransfersResponse
+	45,  // 159: ride.wallet.v1.WalletService.CreateMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	47,  // 160: ride.wallet.v1.WalletService.ListMoneyRequests:output_type -> ride.wallet.v1.ListMoneyRequestsResponse
+	45,  // 161: ride.wallet.v1.WalletService.GetMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	50,  // 162: ride.wallet.v1.WalletService.PayMoneyRequest:output_type -> ride.wallet.v1.PayMoneyRequestResponse
+	45,  // 163: ride.wallet.v1.WalletService.DeclineMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	45,  // 164: ride.wallet.v1.WalletService.CancelMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	53,  // 165: ride.wallet.v1.WalletService.GetStatement:output_type -> ride.wallet.v1.GetStatementResponse
+	56,  // 166: ride.wallet.v1.WalletService.GetRiderDues:output_type -> ride.wallet.v1.GetRiderDuesResponse
+	59,  // 167: ride.wallet.v1.WalletService.CreateVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
+	61,  // 168: ride.wallet.v1.WalletService.ListVoucherBatches:output_type -> ride.wallet.v1.ListVoucherBatchesResponse
+	59,  // 169: ride.wallet.v1.WalletService.GetVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
+	65,  // 170: ride.wallet.v1.WalletService.ExportVoucherBatch:output_type -> ride.wallet.v1.ExportVoucherBatchResponse
+	59,  // 171: ride.wallet.v1.WalletService.CancelVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
+	68,  // 172: ride.wallet.v1.WalletService.GetVoucher:output_type -> ride.wallet.v1.VoucherResponse
+	68,  // 173: ride.wallet.v1.WalletService.VoidVoucher:output_type -> ride.wallet.v1.VoucherResponse
+	72,  // 174: ride.wallet.v1.WalletService.RedeemVoucher:output_type -> ride.wallet.v1.RedeemVoucherResponse
+	74,  // 175: ride.wallet.v1.WalletService.InspectWallet:output_type -> ride.wallet.v1.InspectWalletResponse
+	53,  // 176: ride.wallet.v1.WalletService.GetStatementForStaff:output_type -> ride.wallet.v1.GetStatementResponse
+	77,  // 177: ride.wallet.v1.WalletService.AdjustWallet:output_type -> ride.wallet.v1.AdjustmentResponse
+	77,  // 178: ride.wallet.v1.WalletService.RefundTrip:output_type -> ride.wallet.v1.AdjustmentResponse
+	80,  // 179: ride.wallet.v1.WalletService.ListTripRefunds:output_type -> ride.wallet.v1.ListTripRefundsResponse
+	23,  // 180: ride.wallet.v1.WalletService.ListPayoutRequests:output_type -> ride.wallet.v1.ListPayoutsResponse
+	21,  // 181: ride.wallet.v1.WalletService.ApprovePayout:output_type -> ride.wallet.v1.PayoutResponse
+	21,  // 182: ride.wallet.v1.WalletService.MarkPayoutPaid:output_type -> ride.wallet.v1.PayoutResponse
+	21,  // 183: ride.wallet.v1.WalletService.RejectPayout:output_type -> ride.wallet.v1.PayoutResponse
+	33,  // 184: ride.wallet.v1.WalletService.ProcessZainCashWebhook:output_type -> ride.wallet.v1.ProcessZainCashWebhookResponse
+	87,  // 185: ride.wallet.v1.WalletService.GetDriverEarnings:output_type -> ride.wallet.v1.DriverEarnings
+	101, // 186: ride.wallet.v1.WalletService.ListDriverIncentives:output_type -> ride.wallet.v1.ListDriverIncentivesResponse
+	90,  // 187: ride.wallet.v1.WalletService.CreateIncentiveCampaign:output_type -> ride.wallet.v1.IncentiveCampaignResponse
+	93,  // 188: ride.wallet.v1.WalletService.ListIncentiveCampaigns:output_type -> ride.wallet.v1.ListIncentiveCampaignsResponse
+	90,  // 189: ride.wallet.v1.WalletService.GetIncentiveCampaign:output_type -> ride.wallet.v1.IncentiveCampaignResponse
+	90,  // 190: ride.wallet.v1.WalletService.CancelIncentiveCampaign:output_type -> ride.wallet.v1.IncentiveCampaignResponse
+	98,  // 191: ride.wallet.v1.WalletService.ListIncentivePayouts:output_type -> ride.wallet.v1.ListIncentivePayoutsResponse
+	145, // [145:192] is the sub-list for method output_type
+	98,  // [98:145] is the sub-list for method input_type
+	98,  // [98:98] is the sub-list for extension type_name
+	98,  // [98:98] is the sub-list for extension extendee
+	0,   // [0:98] is the sub-list for field type_name
 }
 
 func init() { file_ride_wallet_v1_wallet_proto_init() }
@@ -6469,8 +8347,8 @@ func file_ride_wallet_v1_wallet_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_wallet_v1_wallet_proto_rawDesc), len(file_ride_wallet_v1_wallet_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   78,
+			NumEnums:      6,
+			NumMessages:   96,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

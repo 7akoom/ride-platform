@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/7akoom/ride-platform/services/trip-service/internal/application/activity"
 	outboxapp "github.com/7akoom/ride-platform/services/trip-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/schedule"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/share"
@@ -279,6 +280,7 @@ func run() int {
 			scheduleStore, locationClient, clients.NewAddressBook(riderConn), idGenerator, scheduleLimits,
 		)),
 		grpcserver.WithShares(shares),
+		grpcserver.WithActivity(activity.NewService(postgresrepo.NewActivityStore(pool))),
 	)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(

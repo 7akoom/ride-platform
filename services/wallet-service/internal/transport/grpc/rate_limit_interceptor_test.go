@@ -54,9 +54,9 @@ func TestNewRateLimitUnaryInterceptor_PanicsOnInvalidArguments(t *testing.T) {
 		rps   float64
 		burst int
 	}{
-		"zero rps":    {0, 10},
-		"negative rps": {-1, 10},
-		"zero burst":  {10, 0},
+		"zero rps":       {0, 10},
+		"negative rps":   {-1, 10},
+		"zero burst":     {10, 0},
 		"negative burst": {10, -1},
 	}
 

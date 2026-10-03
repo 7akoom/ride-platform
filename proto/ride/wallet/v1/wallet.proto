@@ -331,6 +331,55 @@ service WalletService {
       body: "*"
     };
   }
+
+  // GetDriverEarnings sums what a driver earned in a day, week (Monday to
+  // Sunday) or month, in the deployment's time zone, with a line per day for
+  // a week or month. The driver themselves.
+  rpc GetDriverEarnings(GetDriverEarningsRequest) returns (DriverEarnings) {
+    option (google.api.http) = {
+      get: "/v1/drivers/{driver_id}/earnings"
+    };
+  }
+  // ListDriverIncentives shows the incentive campaigns running, coming up and
+  // recently ended for the driver's class, with how far they are and whether
+  // they still qualify. The driver themselves.
+  rpc ListDriverIncentives(ListDriverIncentivesRequest) returns (ListDriverIncentivesResponse) {
+    option (google.api.http) = {
+      get: "/v1/drivers/{driver_id}/incentives"
+    };
+  }
+
+  // Incentive campaigns: complete N trips in a period, get paid a bonus. Staff
+  // with incentives.manage (or the internal token).
+  rpc CreateIncentiveCampaign(CreateIncentiveCampaignRequest) returns (IncentiveCampaignResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/incentives"
+      body: "*"
+    };
+  }
+  rpc ListIncentiveCampaigns(ListIncentiveCampaignsRequest) returns (ListIncentiveCampaignsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/incentives"
+    };
+  }
+  rpc GetIncentiveCampaign(GetIncentiveCampaignRequest) returns (IncentiveCampaignResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/incentives/{campaign_id}"
+    };
+  }
+  // CancelIncentiveCampaign stops a campaign before it ends; nobody is paid.
+  rpc CancelIncentiveCampaign(CancelIncentiveCampaignRequest) returns (IncentiveCampaignResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/incentives/{campaign_id}:cancel"
+      body: "*"
+    };
+  }
+  // ListIncentivePayouts lists who was paid, or found not to qualify and why.
+  rpc ListIncentivePayouts(ListIncentivePayoutsRequest) returns (ListIncentivePayoutsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/incentives/{campaign_id}/payouts"
+    };
+  }
 }
 
 enum OwnerType {
@@ -371,6 +420,8 @@ enum TransactionType {
   TRANSACTION_TYPE_PAYOUT_RETURN = 13;
   // A tip: out of the rider's wallet, into the driver's.
   TRANSACTION_TYPE_TIP = 14;
+  // An incentive campaign's bonus, paid by the platform to the driver.
+  TRANSACTION_TYPE_INCENTIVE = 15;
 }
 
 message Wallet {
@@ -1030,4 +1081,216 @@ message TipDriverResponse {
   Tip tip = 1;
   // The rider's wallet after it.
   Wallet wallet = 2;
+}
+
+// --- Driver earnings ---------------------------------------------------------
+
+enum EarningsPeriod {
+  EARNINGS_PERIOD_UNSPECIFIED = 0;
+  EARNINGS_PERIOD_DAY = 1;
+  EARNINGS_PERIOD_WEEK = 2;
+  EARNINGS_PERIOD_MONTH = 3;
+}
+
+message GetDriverEarningsRequest {
+  string driver_id = 1;
+  // Day when unspecified.
+  EarningsPeriod period = 2;
+  // Any day in the period, YYYY-MM-DD; today when empty.
+  string date = 3;
+}
+
+// Amounts are decimal strings in the wallet currency.
+message EarningsTotals {
+  // Completed trips.
+  int32 trips = 1;
+  // What riders paid for them.
+  string fares = 2;
+  // The platform's commission on trips and fees.
+  string commission = 3;
+  // Fares less commission.
+  string trip_earnings = 4;
+  // Cancellation and no-show fees, less commission.
+  string fees = 5;
+  string tips = 6;
+  string incentives = 7;
+  // Refunds charged to the driver (negative).
+  string refunds = 8;
+  // Staff adjustments to the driver's wallet.
+  string adjustments = 9;
+  // trip_earnings + fees + tips + incentives + refunds + adjustments.
+  string net_earnings = 10;
+  // Of the fares: what riders paid in cash to the driver, and from their wallets.
+  string cash_collected = 11;
+  string wallet_paid = 12;
+}
+
+message EarningsDay {
+  string date = 1;
+  EarningsTotals totals = 2;
+}
+
+message DriverEarnings {
+  string driver_id = 1;
+  string currency_code = 2;
+  EarningsPeriod period = 3;
+  // First and last day of the period, YYYY-MM-DD.
+  string from_date = 4;
+  string to_date = 5;
+  string time_zone = 6;
+  EarningsTotals totals = 7;
+  // A week or month, day by day.
+  repeated EarningsDay days = 8;
+}
+
+// --- Incentive campaigns -----------------------------------------------------
+
+message IncentiveTier {
+  // Completed trips needed.
+  int32 trips = 1;
+  // The bonus for reaching it (the highest tier reached is paid).
+  string amount = 2;
+}
+
+enum IncentiveCampaignStatus {
+  INCENTIVE_CAMPAIGN_STATUS_UNSPECIFIED = 0;
+  // Not started yet.
+  INCENTIVE_CAMPAIGN_STATUS_SCHEDULED = 1;
+  INCENTIVE_CAMPAIGN_STATUS_RUNNING = 2;
+  // Ended; bonuses are being worked out and paid.
+  INCENTIVE_CAMPAIGN_STATUS_SETTLING = 3;
+  INCENTIVE_CAMPAIGN_STATUS_SETTLED = 4;
+  INCENTIVE_CAMPAIGN_STATUS_CANCELLED = 5;
+}
+
+message IncentiveCampaign {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string currency_code = 4;
+  google.protobuf.Timestamp starts_at = 5;
+  google.protobuf.Timestamp ends_at = 6;
+  // Which trips count; empty means any.
+  string city_id = 7;
+  repeated string zone_ids = 8;
+  string vehicle_class = 9;
+  // Daily hours "HH:MM" in time_zone; empty means all day. May cross midnight.
+  string daily_start = 10;
+  string daily_end = 11;
+  string time_zone = 12;
+  // Conditions to be paid, percentages and a rating; empty means none.
+  string min_acceptance_rate = 13;
+  string max_cancellation_rate = 14;
+  string min_rating = 15;
+  repeated IncentiveTier tiers = 16;
+  IncentiveCampaignStatus status = 17;
+  string cancel_reason = 18;
+  google.protobuf.Timestamp created_at = 19;
+  google.protobuf.Timestamp settled_at = 20;
+  // Once settling: drivers paid and the total paid.
+  int32 paid_drivers = 21;
+  string paid_total = 22;
+}
+
+message IncentiveCampaignResponse {
+  IncentiveCampaign campaign = 1;
+}
+
+message CreateIncentiveCampaignRequest {
+  string name = 1;
+  string description = 2;
+  google.protobuf.Timestamp starts_at = 3;
+  google.protobuf.Timestamp ends_at = 4;
+  string city_id = 5;
+  repeated string zone_ids = 6;
+  string vehicle_class = 7;
+  string daily_start = 8;
+  string daily_end = 9;
+  // The deployment's time zone when empty.
+  string time_zone = 10;
+  string min_acceptance_rate = 11;
+  string max_cancellation_rate = 12;
+  string min_rating = 13;
+  repeated IncentiveTier tiers = 14;
+  // Makes a retried create return the same campaign.
+  string idempotency_key = 15;
+}
+
+message ListIncentiveCampaignsRequest {
+  // Optional filter.
+  IncentiveCampaignStatus status = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListIncentiveCampaignsResponse {
+  repeated IncentiveCampaign campaigns = 1;
+  string next_page_token = 2;
+}
+
+message GetIncentiveCampaignRequest {
+  string campaign_id = 1;
+}
+
+message CancelIncentiveCampaignRequest {
+  string campaign_id = 1;
+  string reason = 2;
+}
+
+enum IncentivePayoutStatus {
+  INCENTIVE_PAYOUT_STATUS_UNSPECIFIED = 0;
+  INCENTIVE_PAYOUT_STATUS_PAID = 1;
+  // Reached a tier but missed a condition.
+  INCENTIVE_PAYOUT_STATUS_NOT_ELIGIBLE = 2;
+}
+
+message IncentivePayout {
+  string campaign_id = 1;
+  string driver_id = 2;
+  int32 completed_trips = 3;
+  string acceptance_rate = 4;
+  string cancellation_rate = 5;
+  string rating = 6;
+  // The tier reached and what it pays (0 when not eligible).
+  int32 tier_trips = 7;
+  string amount = 8;
+  IncentivePayoutStatus status = 9;
+  // Which conditions were missed: acceptance_rate, cancellation_rate, rating.
+  repeated string unmet = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+message ListIncentivePayoutsRequest {
+  string campaign_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListIncentivePayoutsResponse {
+  repeated IncentivePayout payouts = 1;
+  string next_page_token = 2;
+}
+
+message ListDriverIncentivesRequest {
+  string driver_id = 1;
+}
+
+message DriverIncentive {
+  IncentiveCampaign campaign = 1;
+  int32 completed_trips = 2;
+  // The highest tier reached so far, and the next one (0 when none).
+  int32 reached_tier_trips = 3;
+  string reached_amount = 4;
+  int32 next_tier_trips = 5;
+  string next_tier_amount = 6;
+  string acceptance_rate = 7;
+  string cancellation_rate = 8;
+  // Conditions currently missed.
+  repeated string unmet = 9;
+  // Once settled: what was decided for this driver.
+  IncentivePayout payout = 10;
+}
+
+message ListDriverIncentivesResponse {
+  repeated DriverIncentive incentives = 1;
 }

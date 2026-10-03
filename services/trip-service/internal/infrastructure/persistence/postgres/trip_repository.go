@@ -56,12 +56,13 @@ func (r *TripRepository) Create(
 		    (id, rider_id, pickup_latitude, pickup_longitude,
 		     dropoff_latitude, dropoff_longitude, vehicle_class, payment_method,
 		     pickup_address, dropoff_address, pickup_details, pickup_note, pickup_photo_media_id,
-		     quote_id, quoted_fare, currency_code, passenger_name, passenger_phone, scheduled, stops)
+		     quote_id, quoted_fare, currency_code, passenger_name, passenger_phone, scheduled, stops,
+		     pickup_zone_id, pickup_city_id)
 		 VALUES ($1, $2, $3, $4, $5, $6, COALESCE(NULLIF($7::text, ''), 'economy'),
 		         COALESCE(NULLIF($8::text, ''), 'cash'),
 		         $9, $10, $11, $12, NULLIF($13::text, '')::uuid,
 		         NULLIF($14::text, '')::uuid, NULLIF($15::text, '')::numeric, NULLIF($16::text, ''),
-		         $17, $18, $19, $20)
+		         $17, $18, $19, $20, NULLIF($21::text, '')::uuid, NULLIF($22::text, '')::uuid)
 		 RETURNING `+tripColumns,
 		input.ID,
 		input.RiderID,
@@ -83,6 +84,8 @@ func (r *TripRepository) Create(
 		input.PassengerPhone,
 		input.Scheduled,
 		stops,
+		input.PickupZoneID,
+		input.PickupCityID,
 	)
 
 	if err := scanTrip(row, &created); err != nil {

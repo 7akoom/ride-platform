@@ -946,6 +946,7 @@ services:
       DRIVER_SERVICE_ADDRESS: driver-service:50053
       IDENTITY_SERVICE_ADDRESS: identity-service:50051
       STAFF_SERVICE_ADDRESS: staff-service:50061
+      WALLET_TIME_ZONE: ${WALLET_TIME_ZONE:-Asia/Baghdad}
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro

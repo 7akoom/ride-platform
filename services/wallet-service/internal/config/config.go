@@ -79,6 +79,11 @@ type Config struct {
 	VoucherCodeKey           string
 	VoucherRedeemMaxFailures string
 	VoucherRedeemWindow      string
+
+	// Earnings and incentives (see config/incentives.go).
+	WalletTimeZone         string
+	IncentiveSettleDelay   string
+	IncentiveCheckInterval string
 }
 
 func Load() Config {
@@ -224,6 +229,10 @@ func Load() Config {
 		VoucherCodeKey:           getEnv("VOUCHER_CODE_KEY", developmentVoucherCodeKey),
 		VoucherRedeemMaxFailures: getEnv("VOUCHER_REDEEM_MAX_FAILURES", "5"),
 		VoucherRedeemWindow:      getEnv("VOUCHER_REDEEM_WINDOW", "1h"),
+
+		WalletTimeZone:         getEnv("WALLET_TIME_ZONE", "UTC"),
+		IncentiveSettleDelay:   getEnv("INCENTIVE_SETTLE_DELAY", "30m"),
+		IncentiveCheckInterval: getEnv("INCENTIVE_CHECK_INTERVAL", "1m"),
 	}
 }
 

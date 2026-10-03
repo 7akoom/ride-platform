@@ -761,6 +761,203 @@
         ]
       }
     },
+    "/v1/admin/incentives": {
+      "get": {
+        "operationId": "WalletService_ListIncentiveCampaigns",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListIncentiveCampaignsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "status",
+            "description": "Optional filter.\n\n - INCENTIVE_CAMPAIGN_STATUS_SCHEDULED: Not started yet.\n - INCENTIVE_CAMPAIGN_STATUS_SETTLING: Ended; bonuses are being worked out and paid.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "INCENTIVE_CAMPAIGN_STATUS_UNSPECIFIED",
+              "INCENTIVE_CAMPAIGN_STATUS_SCHEDULED",
+              "INCENTIVE_CAMPAIGN_STATUS_RUNNING",
+              "INCENTIVE_CAMPAIGN_STATUS_SETTLING",
+              "INCENTIVE_CAMPAIGN_STATUS_SETTLED",
+              "INCENTIVE_CAMPAIGN_STATUS_CANCELLED"
+            ],
+            "default": "INCENTIVE_CAMPAIGN_STATUS_UNSPECIFIED"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      },
+      "post": {
+        "summary": "Incentive campaigns: complete N trips in a period, get paid a bonus. Staff\nwith incentives.manage (or the internal token).",
+        "operationId": "WalletService_CreateIncentiveCampaign",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1IncentiveCampaignResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateIncentiveCampaignRequest"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/admin/incentives/{campaignId}": {
+      "get": {
+        "operationId": "WalletService_GetIncentiveCampaign",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1IncentiveCampaignResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/admin/incentives/{campaignId}/payouts": {
+      "get": {
+        "summary": "ListIncentivePayouts lists who was paid, or found not to qualify and why.",
+        "operationId": "WalletService_ListIncentivePayouts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListIncentivePayoutsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/admin/incentives/{campaignId}:cancel": {
+      "post": {
+        "summary": "CancelIncentiveCampaign stops a campaign before it ends; nobody is paid.",
+        "operationId": "WalletService_CancelIncentiveCampaign",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1IncentiveCampaignResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceCancelIncentiveCampaignBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/admin/payouts": {
       "get": {
         "summary": "The payout queue: status pending, approved, paid or rejected; oldest\nfirst, so the queue is worked in order.",
@@ -2369,7 +2566,7 @@
           },
           {
             "name": "types",
-            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.",
+            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.\n - TRANSACTION_TYPE_INCENTIVE: An incentive campaign's bonus, paid by the platform to the driver.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -2390,7 +2587,8 @@
                 "TRANSACTION_TYPE_VOUCHER",
                 "TRANSACTION_TYPE_REFUND",
                 "TRANSACTION_TYPE_PAYOUT_RETURN",
-                "TRANSACTION_TYPE_TIP"
+                "TRANSACTION_TYPE_TIP",
+                "TRANSACTION_TYPE_INCENTIVE"
               ]
             },
             "collectionFormat": "multi"
@@ -3349,6 +3547,89 @@
         ],
         "tags": [
           "DriverService"
+        ]
+      }
+    },
+    "/v1/drivers/{driverId}/earnings": {
+      "get": {
+        "summary": "GetDriverEarnings sums what a driver earned in a day, week (Monday to\nSunday) or month, in the deployment's time zone, with a line per day for\na week or month. The driver themselves.",
+        "operationId": "WalletService_GetDriverEarnings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DriverEarnings"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "period",
+            "description": "Day when unspecified.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "EARNINGS_PERIOD_UNSPECIFIED",
+              "EARNINGS_PERIOD_DAY",
+              "EARNINGS_PERIOD_WEEK",
+              "EARNINGS_PERIOD_MONTH"
+            ],
+            "default": "EARNINGS_PERIOD_UNSPECIFIED"
+          },
+          {
+            "name": "date",
+            "description": "Any day in the period, YYYY-MM-DD; today when empty.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/drivers/{driverId}/incentives": {
+      "get": {
+        "summary": "ListDriverIncentives shows the incentive campaigns running, coming up and\nrecently ended for the driver's class, with how far they are and whether\nthey still qualify. The driver themselves.",
+        "operationId": "WalletService_ListDriverIncentives",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListDriverIncentivesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
         ]
       }
     },
@@ -6147,7 +6428,7 @@
           },
           {
             "name": "types",
-            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.",
+            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.\n - TRANSACTION_TYPE_INCENTIVE: An incentive campaign's bonus, paid by the platform to the driver.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -6168,7 +6449,8 @@
                 "TRANSACTION_TYPE_VOUCHER",
                 "TRANSACTION_TYPE_REFUND",
                 "TRANSACTION_TYPE_PAYOUT_RETURN",
-                "TRANSACTION_TYPE_TIP"
+                "TRANSACTION_TYPE_TIP",
+                "TRANSACTION_TYPE_INCENTIVE"
               ]
             },
             "collectionFormat": "multi"
@@ -7510,6 +7792,14 @@
     "WalletServiceApprovePayoutBody": {
       "type": "object"
     },
+    "WalletServiceCancelIncentiveCampaignBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
     "WalletServiceCancelMoneyRequestBody": {
       "type": "object"
     },
@@ -8323,6 +8613,67 @@
         }
       }
     },
+    "v1CreateIncentiveCampaignRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "startsAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endsAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cityId": {
+          "type": "string"
+        },
+        "zoneIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "vehicleClass": {
+          "type": "string"
+        },
+        "dailyStart": {
+          "type": "string"
+        },
+        "dailyEnd": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string",
+          "description": "The deployment's time zone when empty."
+        },
+        "minAcceptanceRate": {
+          "type": "string"
+        },
+        "maxCancellationRate": {
+          "type": "string"
+        },
+        "minRating": {
+          "type": "string"
+        },
+        "tiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1IncentiveTier"
+          }
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "description": "Makes a retried create return the same campaign."
+        }
+      }
+    },
     "v1CreatePlaceRequest": {
       "type": "object",
       "properties": {
@@ -8825,6 +9176,85 @@
         }
       }
     },
+    "v1DriverEarnings": {
+      "type": "object",
+      "properties": {
+        "driverId": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "period": {
+          "$ref": "#/definitions/v1EarningsPeriod"
+        },
+        "fromDate": {
+          "type": "string",
+          "description": "First and last day of the period, YYYY-MM-DD."
+        },
+        "toDate": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "totals": {
+          "$ref": "#/definitions/v1EarningsTotals"
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1EarningsDay"
+          },
+          "description": "A week or month, day by day."
+        }
+      }
+    },
+    "v1DriverIncentive": {
+      "type": "object",
+      "properties": {
+        "campaign": {
+          "$ref": "#/definitions/v1IncentiveCampaign"
+        },
+        "completedTrips": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "reachedTierTrips": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The highest tier reached so far, and the next one (0 when none)."
+        },
+        "reachedAmount": {
+          "type": "string"
+        },
+        "nextTierTrips": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "nextTierAmount": {
+          "type": "string"
+        },
+        "acceptanceRate": {
+          "type": "string"
+        },
+        "cancellationRate": {
+          "type": "string"
+        },
+        "unmet": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Conditions currently missed."
+        },
+        "payout": {
+          "$ref": "#/definitions/v1IncentivePayout",
+          "description": "Once settled: what was decided for this driver."
+        }
+      }
+    },
     "v1DriverStatus": {
       "type": "string",
       "enum": [
@@ -8885,6 +9315,79 @@
           "format": "date-time"
         }
       }
+    },
+    "v1EarningsDay": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "totals": {
+          "$ref": "#/definitions/v1EarningsTotals"
+        }
+      }
+    },
+    "v1EarningsPeriod": {
+      "type": "string",
+      "enum": [
+        "EARNINGS_PERIOD_UNSPECIFIED",
+        "EARNINGS_PERIOD_DAY",
+        "EARNINGS_PERIOD_WEEK",
+        "EARNINGS_PERIOD_MONTH"
+      ],
+      "default": "EARNINGS_PERIOD_UNSPECIFIED"
+    },
+    "v1EarningsTotals": {
+      "type": "object",
+      "properties": {
+        "trips": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Completed trips."
+        },
+        "fares": {
+          "type": "string",
+          "description": "What riders paid for them."
+        },
+        "commission": {
+          "type": "string",
+          "description": "The platform's commission on trips and fees."
+        },
+        "tripEarnings": {
+          "type": "string",
+          "description": "Fares less commission."
+        },
+        "fees": {
+          "type": "string",
+          "description": "Cancellation and no-show fees, less commission."
+        },
+        "tips": {
+          "type": "string"
+        },
+        "incentives": {
+          "type": "string"
+        },
+        "refunds": {
+          "type": "string",
+          "description": "Refunds charged to the driver (negative)."
+        },
+        "adjustments": {
+          "type": "string",
+          "description": "Staff adjustments to the driver's wallet."
+        },
+        "netEarnings": {
+          "type": "string",
+          "description": "trip_earnings + fees + tips + incentives + refunds + adjustments."
+        },
+        "cashCollected": {
+          "type": "string",
+          "description": "Of the fares: what riders paid in cash to the driver, and from their wallets."
+        },
+        "walletPaid": {
+          "type": "string"
+        }
+      },
+      "description": "Amounts are decimal strings in the wallet currency."
     },
     "v1EntityType": {
       "type": "string",
@@ -9511,6 +10014,184 @@
       ],
       "default": "IDENTITY_STATUS_UNSPECIFIED"
     },
+    "v1IncentiveCampaign": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "startsAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endsAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cityId": {
+          "type": "string",
+          "description": "Which trips count; empty means any."
+        },
+        "zoneIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "vehicleClass": {
+          "type": "string"
+        },
+        "dailyStart": {
+          "type": "string",
+          "description": "Daily hours \"HH:MM\" in time_zone; empty means all day. May cross midnight."
+        },
+        "dailyEnd": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "minAcceptanceRate": {
+          "type": "string",
+          "description": "Conditions to be paid, percentages and a rating; empty means none."
+        },
+        "maxCancellationRate": {
+          "type": "string"
+        },
+        "minRating": {
+          "type": "string"
+        },
+        "tiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1IncentiveTier"
+          }
+        },
+        "status": {
+          "$ref": "#/definitions/v1IncentiveCampaignStatus"
+        },
+        "cancelReason": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "settledAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "paidDrivers": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Once settling: drivers paid and the total paid."
+        },
+        "paidTotal": {
+          "type": "string"
+        }
+      }
+    },
+    "v1IncentiveCampaignResponse": {
+      "type": "object",
+      "properties": {
+        "campaign": {
+          "$ref": "#/definitions/v1IncentiveCampaign"
+        }
+      }
+    },
+    "v1IncentiveCampaignStatus": {
+      "type": "string",
+      "enum": [
+        "INCENTIVE_CAMPAIGN_STATUS_UNSPECIFIED",
+        "INCENTIVE_CAMPAIGN_STATUS_SCHEDULED",
+        "INCENTIVE_CAMPAIGN_STATUS_RUNNING",
+        "INCENTIVE_CAMPAIGN_STATUS_SETTLING",
+        "INCENTIVE_CAMPAIGN_STATUS_SETTLED",
+        "INCENTIVE_CAMPAIGN_STATUS_CANCELLED"
+      ],
+      "default": "INCENTIVE_CAMPAIGN_STATUS_UNSPECIFIED",
+      "description": " - INCENTIVE_CAMPAIGN_STATUS_SCHEDULED: Not started yet.\n - INCENTIVE_CAMPAIGN_STATUS_SETTLING: Ended; bonuses are being worked out and paid."
+    },
+    "v1IncentivePayout": {
+      "type": "object",
+      "properties": {
+        "campaignId": {
+          "type": "string"
+        },
+        "driverId": {
+          "type": "string"
+        },
+        "completedTrips": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "acceptanceRate": {
+          "type": "string"
+        },
+        "cancellationRate": {
+          "type": "string"
+        },
+        "rating": {
+          "type": "string"
+        },
+        "tierTrips": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The tier reached and what it pays (0 when not eligible)."
+        },
+        "amount": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1IncentivePayoutStatus"
+        },
+        "unmet": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Which conditions were missed: acceptance_rate, cancellation_rate, rating."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1IncentivePayoutStatus": {
+      "type": "string",
+      "enum": [
+        "INCENTIVE_PAYOUT_STATUS_UNSPECIFIED",
+        "INCENTIVE_PAYOUT_STATUS_PAID",
+        "INCENTIVE_PAYOUT_STATUS_NOT_ELIGIBLE"
+      ],
+      "default": "INCENTIVE_PAYOUT_STATUS_UNSPECIFIED",
+      "description": " - INCENTIVE_PAYOUT_STATUS_NOT_ELIGIBLE: Reached a tier but missed a condition."
+    },
+    "v1IncentiveTier": {
+      "type": "object",
+      "properties": {
+        "trips": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Completed trips needed."
+        },
+        "amount": {
+          "type": "string",
+          "description": "The bonus for reaching it (the highest tier reached is paid)."
+        }
+      }
+    },
     "v1InitiateTopUpRequest": {
       "type": "object",
       "properties": {
@@ -9691,6 +10372,18 @@
         }
       }
     },
+    "v1ListDriverIncentivesResponse": {
+      "type": "object",
+      "properties": {
+        "incentives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DriverIncentive"
+          }
+        }
+      }
+    },
     "v1ListDriversResponse": {
       "type": "object",
       "properties": {
@@ -9699,6 +10392,36 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1Driver"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListIncentiveCampaignsResponse": {
+      "type": "object",
+      "properties": {
+        "campaigns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1IncentiveCampaign"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListIncentivePayoutsResponse": {
+      "type": "object",
+      "properties": {
+        "payouts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1IncentivePayout"
           }
         },
         "nextPageToken": {
@@ -11823,10 +12546,11 @@
         "TRANSACTION_TYPE_VOUCHER",
         "TRANSACTION_TYPE_REFUND",
         "TRANSACTION_TYPE_PAYOUT_RETURN",
-        "TRANSACTION_TYPE_TIP"
+        "TRANSACTION_TYPE_TIP",
+        "TRANSACTION_TYPE_INCENTIVE"
       ],
       "default": "TRANSACTION_TYPE_UNSPECIFIED",
-      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's."
+      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.\n - TRANSACTION_TYPE_INCENTIVE: An incentive campaign's bonus, paid by the platform to the driver."
     },
     "v1Transfer": {
       "type": "object",

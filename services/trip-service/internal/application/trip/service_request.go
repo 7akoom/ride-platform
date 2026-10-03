@@ -77,12 +77,12 @@ func (s *service) RequestTrip(
 		return Trip{}, err
 	}
 
-	served, err := s.zoneChecker.CheckServiceZone(ctx, pickup.Latitude, pickup.Longitude)
+	zone, err := s.zoneChecker.CheckServiceZone(ctx, pickup.Latitude, pickup.Longitude)
 	if err != nil {
 		return Trip{}, fmt.Errorf("check pickup service zone: %w", err)
 	}
 
-	if !served {
+	if !zone.Served {
 		return Trip{}, ErrPickupOutsideServiceZone
 	}
 
@@ -118,6 +118,9 @@ func (s *service) RequestTrip(
 		PassengerPhone: passengerPhone,
 		Scheduled:      tripID != "" && tripID == strings.TrimSpace(input.ScheduledTripID),
 		Stops:          stops,
+
+		PickupZoneID: zone.ZoneID,
+		PickupCityID: zone.CityID,
 	}
 
 	if quoteID != "" {

@@ -88,6 +88,8 @@ const (
 	TxPayoutReturn TransactionType = "payout_return"
 	// A tip: out of the rider's wallet, into the driver's.
 	TxTip TransactionType = "tip"
+	// An incentive campaign's bonus, paid by the platform to the driver.
+	TxIncentive TransactionType = "incentive"
 )
 
 type Wallet struct {

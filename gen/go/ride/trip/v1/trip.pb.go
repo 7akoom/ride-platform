@@ -4239,6 +4239,363 @@ func (x *GetSharedTripResponse) GetTrip() *SharedTrip {
 	return nil
 }
 
+// ActivityScope is the period and the trips that count.
+type ActivityScope struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	From  *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To    *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	// Optional: only trips picked up in this city, or in one of these zones.
+	CityId  string   `protobuf:"bytes,3,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	ZoneIds []string `protobuf:"bytes,4,rep,name=zone_ids,json=zoneIds,proto3" json:"zone_ids,omitempty"`
+	// Optional: economy or comfort.
+	VehicleClass string `protobuf:"bytes,5,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	// Optional daily hours, minutes after local midnight in time_zone; the
+	// window may cross midnight. Equal values (or both 0) mean all day.
+	DailyStartMinute int32 `protobuf:"varint,6,opt,name=daily_start_minute,json=dailyStartMinute,proto3" json:"daily_start_minute,omitempty"`
+	DailyEndMinute   int32 `protobuf:"varint,7,opt,name=daily_end_minute,json=dailyEndMinute,proto3" json:"daily_end_minute,omitempty"`
+	// IANA time zone of the daily hours; UTC when empty.
+	TimeZone      string `protobuf:"bytes,8,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ActivityScope) Reset() {
+	*x = ActivityScope{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[65]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ActivityScope) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActivityScope) ProtoMessage() {}
+
+func (x *ActivityScope) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[65]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActivityScope.ProtoReflect.Descriptor instead.
+func (*ActivityScope) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{65}
+}
+
+func (x *ActivityScope) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *ActivityScope) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *ActivityScope) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+func (x *ActivityScope) GetZoneIds() []string {
+	if x != nil {
+		return x.ZoneIds
+	}
+	return nil
+}
+
+func (x *ActivityScope) GetVehicleClass() string {
+	if x != nil {
+		return x.VehicleClass
+	}
+	return ""
+}
+
+func (x *ActivityScope) GetDailyStartMinute() int32 {
+	if x != nil {
+		return x.DailyStartMinute
+	}
+	return 0
+}
+
+func (x *ActivityScope) GetDailyEndMinute() int32 {
+	if x != nil {
+		return x.DailyEndMinute
+	}
+	return 0
+}
+
+func (x *ActivityScope) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+type DriverActivity struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	DriverId       string                 `protobuf:"bytes,1,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	CompletedTrips int32                  `protobuf:"varint,2,opt,name=completed_trips,json=completedTrips,proto3" json:"completed_trips,omitempty"`
+	OffersAccepted int32                  `protobuf:"varint,3,opt,name=offers_accepted,json=offersAccepted,proto3" json:"offers_accepted,omitempty"`
+	// Rejected, or left to expire.
+	OffersDeclined int32 `protobuf:"varint,4,opt,name=offers_declined,json=offersDeclined,proto3" json:"offers_declined,omitempty"`
+	// Trips the driver cancelled after accepting them.
+	DriverCancellations int32 `protobuf:"varint,5,opt,name=driver_cancellations,json=driverCancellations,proto3" json:"driver_cancellations,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *DriverActivity) Reset() {
+	*x = DriverActivity{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[66]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DriverActivity) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DriverActivity) ProtoMessage() {}
+
+func (x *DriverActivity) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[66]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DriverActivity.ProtoReflect.Descriptor instead.
+func (*DriverActivity) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{66}
+}
+
+func (x *DriverActivity) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+func (x *DriverActivity) GetCompletedTrips() int32 {
+	if x != nil {
+		return x.CompletedTrips
+	}
+	return 0
+}
+
+func (x *DriverActivity) GetOffersAccepted() int32 {
+	if x != nil {
+		return x.OffersAccepted
+	}
+	return 0
+}
+
+func (x *DriverActivity) GetOffersDeclined() int32 {
+	if x != nil {
+		return x.OffersDeclined
+	}
+	return 0
+}
+
+func (x *DriverActivity) GetDriverCancellations() int32 {
+	if x != nil {
+		return x.DriverCancellations
+	}
+	return 0
+}
+
+type GetDriverActivityRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DriverId      string                 `protobuf:"bytes,1,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	Scope         *ActivityScope         `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDriverActivityRequest) Reset() {
+	*x = GetDriverActivityRequest{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[67]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDriverActivityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDriverActivityRequest) ProtoMessage() {}
+
+func (x *GetDriverActivityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[67]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDriverActivityRequest.ProtoReflect.Descriptor instead.
+func (*GetDriverActivityRequest) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{67}
+}
+
+func (x *GetDriverActivityRequest) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+func (x *GetDriverActivityRequest) GetScope() *ActivityScope {
+	if x != nil {
+		return x.Scope
+	}
+	return nil
+}
+
+type ListDriverActivityRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Scope             *ActivityScope         `protobuf:"bytes,1,opt,name=scope,proto3" json:"scope,omitempty"`
+	MinCompletedTrips int32                  `protobuf:"varint,2,opt,name=min_completed_trips,json=minCompletedTrips,proto3" json:"min_completed_trips,omitempty"`
+	PageSize          int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// The last driver id of the previous page.
+	PageToken     string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDriverActivityRequest) Reset() {
+	*x = ListDriverActivityRequest{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[68]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDriverActivityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDriverActivityRequest) ProtoMessage() {}
+
+func (x *ListDriverActivityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[68]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDriverActivityRequest.ProtoReflect.Descriptor instead.
+func (*ListDriverActivityRequest) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{68}
+}
+
+func (x *ListDriverActivityRequest) GetScope() *ActivityScope {
+	if x != nil {
+		return x.Scope
+	}
+	return nil
+}
+
+func (x *ListDriverActivityRequest) GetMinCompletedTrips() int32 {
+	if x != nil {
+		return x.MinCompletedTrips
+	}
+	return 0
+}
+
+func (x *ListDriverActivityRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListDriverActivityRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListDriverActivityResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Drivers       []*DriverActivity      `protobuf:"bytes,1,rep,name=drivers,proto3" json:"drivers,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDriverActivityResponse) Reset() {
+	*x = ListDriverActivityResponse{}
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[69]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDriverActivityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDriverActivityResponse) ProtoMessage() {}
+
+func (x *ListDriverActivityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_trip_v1_trip_proto_msgTypes[69]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDriverActivityResponse.ProtoReflect.Descriptor instead.
+func (*ListDriverActivityResponse) Descriptor() ([]byte, []int) {
+	return file_ride_trip_v1_trip_proto_rawDescGZIP(), []int{69}
+}
+
+func (x *ListDriverActivityResponse) GetDrivers() []*DriverActivity {
+	if x != nil {
+		return x.Drivers
+	}
+	return nil
+}
+
+func (x *ListDriverActivityResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
 var File_ride_trip_v1_trip_proto protoreflect.FileDescriptor
 
 const file_ride_trip_v1_trip_proto_rawDesc = "" +
@@ -4545,7 +4902,34 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\fcancelled_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\vcancelledAt\x12B\n" +
 	"\x0flink_expires_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\rlinkExpiresAt\"E\n" +
 	"\x15GetSharedTripResponse\x12,\n" +
-	"\x04trip\x18\x01 \x01(\v2\x18.ride.trip.v1.SharedTripR\x04trip*\xb1\x01\n" +
+	"\x04trip\x18\x01 \x01(\v2\x18.ride.trip.v1.SharedTripR\x04trip\"\xb9\x02\n" +
+	"\rActivityScope\x12.\n" +
+	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x17\n" +
+	"\acity_id\x18\x03 \x01(\tR\x06cityId\x12\x19\n" +
+	"\bzone_ids\x18\x04 \x03(\tR\azoneIds\x12#\n" +
+	"\rvehicle_class\x18\x05 \x01(\tR\fvehicleClass\x12,\n" +
+	"\x12daily_start_minute\x18\x06 \x01(\x05R\x10dailyStartMinute\x12(\n" +
+	"\x10daily_end_minute\x18\a \x01(\x05R\x0edailyEndMinute\x12\x1b\n" +
+	"\ttime_zone\x18\b \x01(\tR\btimeZone\"\xdb\x01\n" +
+	"\x0eDriverActivity\x12\x1b\n" +
+	"\tdriver_id\x18\x01 \x01(\tR\bdriverId\x12'\n" +
+	"\x0fcompleted_trips\x18\x02 \x01(\x05R\x0ecompletedTrips\x12'\n" +
+	"\x0foffers_accepted\x18\x03 \x01(\x05R\x0eoffersAccepted\x12'\n" +
+	"\x0foffers_declined\x18\x04 \x01(\x05R\x0eoffersDeclined\x121\n" +
+	"\x14driver_cancellations\x18\x05 \x01(\x05R\x13driverCancellations\"j\n" +
+	"\x18GetDriverActivityRequest\x12\x1b\n" +
+	"\tdriver_id\x18\x01 \x01(\tR\bdriverId\x121\n" +
+	"\x05scope\x18\x02 \x01(\v2\x1b.ride.trip.v1.ActivityScopeR\x05scope\"\xba\x01\n" +
+	"\x19ListDriverActivityRequest\x121\n" +
+	"\x05scope\x18\x01 \x01(\v2\x1b.ride.trip.v1.ActivityScopeR\x05scope\x12.\n" +
+	"\x13min_completed_trips\x18\x02 \x01(\x05R\x11minCompletedTrips\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageToken\"|\n" +
+	"\x1aListDriverActivityResponse\x126\n" +
+	"\adrivers\x18\x01 \x03(\v2\x1c.ride.trip.v1.DriverActivityR\adrivers\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\xb1\x01\n" +
 	"\n" +
 	"TripStatus\x12\x1b\n" +
 	"\x17TRIP_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
@@ -4561,7 +4945,7 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\aRatedBy\x12\x18\n" +
 	"\x14RATED_BY_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eRATED_BY_RIDER\x10\x01\x12\x13\n" +
-	"\x0fRATED_BY_DRIVER\x10\x022\xc5\x1b\n" +
+	"\x0fRATED_BY_DRIVER\x10\x022\x89\x1d\n" +
 	"\vTripService\x12h\n" +
 	"\vRequestTrip\x12 .ride.trip.v1.RequestTripRequest\x1a!.ride.trip.v1.RequestTripResponse\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/trips\x12v\n" +
 	"\n" +
@@ -4593,7 +4977,9 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x13CancelScheduledTrip\x12(.ride.trip.v1.CancelScheduledTripRequest\x1a#.ride.trip.v1.ScheduledTripResponse\"9\x82\xd3\xe4\x93\x023:\x01*\"./v1/scheduled-trips/{scheduled_trip_id}:cancel\x12s\n" +
 	"\tShareTrip\x12\x1e.ride.trip.v1.ShareTripRequest\x1a\x1f.ride.trip.v1.ShareTripResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v1/trips/{trip_id}/shares\x12\x8a\x01\n" +
 	"\x0fStopSharingTrip\x12$.ride.trip.v1.StopSharingTripRequest\x1a%.ride.trip.v1.StopSharingTripResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/v1/trips/{trip_id}/shares:stop\x12z\n" +
-	"\rGetSharedTrip\x12\".ride.trip.v1.GetSharedTripRequest\x1a#.ride.trip.v1.GetSharedTripResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/shared-trips/{token}B<Z:github.com/7akoom/ride-platform/gen/go/ride/trip/v1;tripv1b\x06proto3"
+	"\rGetSharedTrip\x12\".ride.trip.v1.GetSharedTripRequest\x1a#.ride.trip.v1.GetSharedTripResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/shared-trips/{token}\x12Y\n" +
+	"\x11GetDriverActivity\x12&.ride.trip.v1.GetDriverActivityRequest\x1a\x1c.ride.trip.v1.DriverActivity\x12g\n" +
+	"\x12ListDriverActivity\x12'.ride.trip.v1.ListDriverActivityRequest\x1a(.ride.trip.v1.ListDriverActivityResponseB<Z:github.com/7akoom/ride-platform/gen/go/ride/trip/v1;tripv1b\x06proto3"
 
 var (
 	file_ride_trip_v1_trip_proto_rawDescOnce sync.Once
@@ -4608,7 +4994,7 @@ func file_ride_trip_v1_trip_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_trip_v1_trip_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_ride_trip_v1_trip_proto_msgTypes = make([]protoimpl.MessageInfo, 65)
+var file_ride_trip_v1_trip_proto_msgTypes = make([]protoimpl.MessageInfo, 70)
 var file_ride_trip_v1_trip_proto_goTypes = []any{
 	(TripStatus)(0),                        // 0: ride.trip.v1.TripStatus
 	(SosTriggeredBy)(0),                    // 1: ride.trip.v1.SosTriggeredBy
@@ -4678,21 +5064,26 @@ var file_ride_trip_v1_trip_proto_goTypes = []any{
 	(*GetSharedTripRequest)(nil),           // 65: ride.trip.v1.GetSharedTripRequest
 	(*SharedTrip)(nil),                     // 66: ride.trip.v1.SharedTrip
 	(*GetSharedTripResponse)(nil),          // 67: ride.trip.v1.GetSharedTripResponse
-	(*timestamppb.Timestamp)(nil),          // 68: google.protobuf.Timestamp
+	(*ActivityScope)(nil),                  // 68: ride.trip.v1.ActivityScope
+	(*DriverActivity)(nil),                 // 69: ride.trip.v1.DriverActivity
+	(*GetDriverActivityRequest)(nil),       // 70: ride.trip.v1.GetDriverActivityRequest
+	(*ListDriverActivityRequest)(nil),      // 71: ride.trip.v1.ListDriverActivityRequest
+	(*ListDriverActivityResponse)(nil),     // 72: ride.trip.v1.ListDriverActivityResponse
+	(*timestamppb.Timestamp)(nil),          // 73: google.protobuf.Timestamp
 }
 var file_ride_trip_v1_trip_proto_depIdxs = []int32{
 	0,   // 0: ride.trip.v1.Trip.status:type_name -> ride.trip.v1.TripStatus
 	3,   // 1: ride.trip.v1.Trip.pickup:type_name -> ride.trip.v1.Coordinates
 	3,   // 2: ride.trip.v1.Trip.dropoff:type_name -> ride.trip.v1.Coordinates
-	68,  // 3: ride.trip.v1.Trip.requested_at:type_name -> google.protobuf.Timestamp
-	68,  // 4: ride.trip.v1.Trip.accepted_at:type_name -> google.protobuf.Timestamp
-	68,  // 5: ride.trip.v1.Trip.started_at:type_name -> google.protobuf.Timestamp
-	68,  // 6: ride.trip.v1.Trip.completed_at:type_name -> google.protobuf.Timestamp
-	68,  // 7: ride.trip.v1.Trip.cancelled_at:type_name -> google.protobuf.Timestamp
-	68,  // 8: ride.trip.v1.Trip.arrived_at:type_name -> google.protobuf.Timestamp
+	73,  // 3: ride.trip.v1.Trip.requested_at:type_name -> google.protobuf.Timestamp
+	73,  // 4: ride.trip.v1.Trip.accepted_at:type_name -> google.protobuf.Timestamp
+	73,  // 5: ride.trip.v1.Trip.started_at:type_name -> google.protobuf.Timestamp
+	73,  // 6: ride.trip.v1.Trip.completed_at:type_name -> google.protobuf.Timestamp
+	73,  // 7: ride.trip.v1.Trip.cancelled_at:type_name -> google.protobuf.Timestamp
+	73,  // 8: ride.trip.v1.Trip.arrived_at:type_name -> google.protobuf.Timestamp
 	5,   // 9: ride.trip.v1.Trip.stops:type_name -> ride.trip.v1.TripStop
 	3,   // 10: ride.trip.v1.TripStop.coordinates:type_name -> ride.trip.v1.Coordinates
-	68,  // 11: ride.trip.v1.TripStop.reached_at:type_name -> google.protobuf.Timestamp
+	73,  // 11: ride.trip.v1.TripStop.reached_at:type_name -> google.protobuf.Timestamp
 	3,   // 12: ride.trip.v1.RequestTripRequest.pickup:type_name -> ride.trip.v1.Coordinates
 	3,   // 13: ride.trip.v1.RequestTripRequest.dropoff:type_name -> ride.trip.v1.Coordinates
 	5,   // 14: ride.trip.v1.RequestTripRequest.stops:type_name -> ride.trip.v1.TripStop
@@ -4706,122 +5097,131 @@ var file_ride_trip_v1_trip_proto_depIdxs = []int32{
 	4,   // 22: ride.trip.v1.GetTripResponse.trip:type_name -> ride.trip.v1.Trip
 	1,   // 23: ride.trip.v1.TriggerSOSRequest.triggered_by:type_name -> ride.trip.v1.SosTriggeredBy
 	3,   // 24: ride.trip.v1.TriggerSOSRequest.location:type_name -> ride.trip.v1.Coordinates
-	68,  // 25: ride.trip.v1.TriggerSOSResponse.triggered_at:type_name -> google.protobuf.Timestamp
+	73,  // 25: ride.trip.v1.TriggerSOSResponse.triggered_at:type_name -> google.protobuf.Timestamp
 	3,   // 26: ride.trip.v1.Waypoint.location:type_name -> ride.trip.v1.Coordinates
-	68,  // 27: ride.trip.v1.Waypoint.recorded_at:type_name -> google.protobuf.Timestamp
+	73,  // 27: ride.trip.v1.Waypoint.recorded_at:type_name -> google.protobuf.Timestamp
 	3,   // 28: ride.trip.v1.RecordWaypointRequest.location:type_name -> ride.trip.v1.Coordinates
 	24,  // 29: ride.trip.v1.GetTripPathResponse.waypoints:type_name -> ride.trip.v1.Waypoint
 	3,   // 30: ride.trip.v1.GetDriverLocationResponse.location:type_name -> ride.trip.v1.Coordinates
-	68,  // 31: ride.trip.v1.GetDriverLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
+	73,  // 31: ride.trip.v1.GetDriverLocationResponse.updated_at:type_name -> google.protobuf.Timestamp
 	4,   // 32: ride.trip.v1.GetActiveTripResponse.trip:type_name -> ride.trip.v1.Trip
 	4,   // 33: ride.trip.v1.ListTripsResponse.trips:type_name -> ride.trip.v1.Trip
 	3,   // 34: ride.trip.v1.TripOffer.pickup:type_name -> ride.trip.v1.Coordinates
 	3,   // 35: ride.trip.v1.TripOffer.dropoff:type_name -> ride.trip.v1.Coordinates
-	68,  // 36: ride.trip.v1.TripOffer.offered_at:type_name -> google.protobuf.Timestamp
-	68,  // 37: ride.trip.v1.TripOffer.expires_at:type_name -> google.protobuf.Timestamp
+	73,  // 36: ride.trip.v1.TripOffer.offered_at:type_name -> google.protobuf.Timestamp
+	73,  // 37: ride.trip.v1.TripOffer.expires_at:type_name -> google.protobuf.Timestamp
 	5,   // 38: ride.trip.v1.TripOffer.stops:type_name -> ride.trip.v1.TripStop
-	68,  // 39: ride.trip.v1.OfferTripResponse.offered_at:type_name -> google.protobuf.Timestamp
-	68,  // 40: ride.trip.v1.OfferTripResponse.expires_at:type_name -> google.protobuf.Timestamp
+	73,  // 39: ride.trip.v1.OfferTripResponse.offered_at:type_name -> google.protobuf.Timestamp
+	73,  // 40: ride.trip.v1.OfferTripResponse.expires_at:type_name -> google.protobuf.Timestamp
 	35,  // 41: ride.trip.v1.GetPendingOfferResponse.offer:type_name -> ride.trip.v1.TripOffer
 	4,   // 42: ride.trip.v1.AcceptOfferResponse.trip:type_name -> ride.trip.v1.Trip
 	2,   // 43: ride.trip.v1.RateTripRequest.rated_by:type_name -> ride.trip.v1.RatedBy
 	48,  // 44: ride.trip.v1.GetTripDriverResponse.driver:type_name -> ride.trip.v1.TripDriver
 	49,  // 45: ride.trip.v1.TripDriver.vehicle:type_name -> ride.trip.v1.TripVehicle
-	68,  // 46: ride.trip.v1.GetPickupPhotoResponse.expires_at:type_name -> google.protobuf.Timestamp
+	73,  // 46: ride.trip.v1.GetPickupPhotoResponse.expires_at:type_name -> google.protobuf.Timestamp
 	3,   // 47: ride.trip.v1.RecentDestination.coordinates:type_name -> ride.trip.v1.Coordinates
-	68,  // 48: ride.trip.v1.RecentDestination.last_trip_at:type_name -> google.protobuf.Timestamp
+	73,  // 48: ride.trip.v1.RecentDestination.last_trip_at:type_name -> google.protobuf.Timestamp
 	53,  // 49: ride.trip.v1.ListRecentDestinationsResponse.destinations:type_name -> ride.trip.v1.RecentDestination
 	3,   // 50: ride.trip.v1.ScheduleTripRequest.pickup:type_name -> ride.trip.v1.Coordinates
 	3,   // 51: ride.trip.v1.ScheduleTripRequest.dropoff:type_name -> ride.trip.v1.Coordinates
-	68,  // 52: ride.trip.v1.ScheduleTripRequest.scheduled_at:type_name -> google.protobuf.Timestamp
+	73,  // 52: ride.trip.v1.ScheduleTripRequest.scheduled_at:type_name -> google.protobuf.Timestamp
 	5,   // 53: ride.trip.v1.ScheduleTripRequest.stops:type_name -> ride.trip.v1.TripStop
-	68,  // 54: ride.trip.v1.ScheduledTrip.scheduled_at:type_name -> google.protobuf.Timestamp
+	73,  // 54: ride.trip.v1.ScheduledTrip.scheduled_at:type_name -> google.protobuf.Timestamp
 	3,   // 55: ride.trip.v1.ScheduledTrip.pickup:type_name -> ride.trip.v1.Coordinates
 	3,   // 56: ride.trip.v1.ScheduledTrip.dropoff:type_name -> ride.trip.v1.Coordinates
-	68,  // 57: ride.trip.v1.ScheduledTrip.created_at:type_name -> google.protobuf.Timestamp
-	68,  // 58: ride.trip.v1.ScheduledTrip.cancelled_at:type_name -> google.protobuf.Timestamp
-	68,  // 59: ride.trip.v1.ScheduledTrip.dispatched_at:type_name -> google.protobuf.Timestamp
+	73,  // 57: ride.trip.v1.ScheduledTrip.created_at:type_name -> google.protobuf.Timestamp
+	73,  // 58: ride.trip.v1.ScheduledTrip.cancelled_at:type_name -> google.protobuf.Timestamp
+	73,  // 59: ride.trip.v1.ScheduledTrip.dispatched_at:type_name -> google.protobuf.Timestamp
 	5,   // 60: ride.trip.v1.ScheduledTrip.stops:type_name -> ride.trip.v1.TripStop
 	56,  // 61: ride.trip.v1.ScheduledTripResponse.scheduled_trip:type_name -> ride.trip.v1.ScheduledTrip
 	56,  // 62: ride.trip.v1.ListScheduledTripsResponse.scheduled_trips:type_name -> ride.trip.v1.ScheduledTrip
-	68,  // 63: ride.trip.v1.ShareTripResponse.created_at:type_name -> google.protobuf.Timestamp
-	68,  // 64: ride.trip.v1.ShareTripResponse.expires_at:type_name -> google.protobuf.Timestamp
+	73,  // 63: ride.trip.v1.ShareTripResponse.created_at:type_name -> google.protobuf.Timestamp
+	73,  // 64: ride.trip.v1.ShareTripResponse.expires_at:type_name -> google.protobuf.Timestamp
 	0,   // 65: ride.trip.v1.SharedTrip.status:type_name -> ride.trip.v1.TripStatus
 	3,   // 66: ride.trip.v1.SharedTrip.pickup:type_name -> ride.trip.v1.Coordinates
 	3,   // 67: ride.trip.v1.SharedTrip.dropoff:type_name -> ride.trip.v1.Coordinates
 	5,   // 68: ride.trip.v1.SharedTrip.stops:type_name -> ride.trip.v1.TripStop
 	49,  // 69: ride.trip.v1.SharedTrip.vehicle:type_name -> ride.trip.v1.TripVehicle
 	3,   // 70: ride.trip.v1.SharedTrip.driver_location:type_name -> ride.trip.v1.Coordinates
-	68,  // 71: ride.trip.v1.SharedTrip.driver_location_updated_at:type_name -> google.protobuf.Timestamp
-	68,  // 72: ride.trip.v1.SharedTrip.requested_at:type_name -> google.protobuf.Timestamp
-	68,  // 73: ride.trip.v1.SharedTrip.accepted_at:type_name -> google.protobuf.Timestamp
-	68,  // 74: ride.trip.v1.SharedTrip.arrived_at:type_name -> google.protobuf.Timestamp
-	68,  // 75: ride.trip.v1.SharedTrip.started_at:type_name -> google.protobuf.Timestamp
-	68,  // 76: ride.trip.v1.SharedTrip.completed_at:type_name -> google.protobuf.Timestamp
-	68,  // 77: ride.trip.v1.SharedTrip.cancelled_at:type_name -> google.protobuf.Timestamp
-	68,  // 78: ride.trip.v1.SharedTrip.link_expires_at:type_name -> google.protobuf.Timestamp
+	73,  // 71: ride.trip.v1.SharedTrip.driver_location_updated_at:type_name -> google.protobuf.Timestamp
+	73,  // 72: ride.trip.v1.SharedTrip.requested_at:type_name -> google.protobuf.Timestamp
+	73,  // 73: ride.trip.v1.SharedTrip.accepted_at:type_name -> google.protobuf.Timestamp
+	73,  // 74: ride.trip.v1.SharedTrip.arrived_at:type_name -> google.protobuf.Timestamp
+	73,  // 75: ride.trip.v1.SharedTrip.started_at:type_name -> google.protobuf.Timestamp
+	73,  // 76: ride.trip.v1.SharedTrip.completed_at:type_name -> google.protobuf.Timestamp
+	73,  // 77: ride.trip.v1.SharedTrip.cancelled_at:type_name -> google.protobuf.Timestamp
+	73,  // 78: ride.trip.v1.SharedTrip.link_expires_at:type_name -> google.protobuf.Timestamp
 	66,  // 79: ride.trip.v1.GetSharedTripResponse.trip:type_name -> ride.trip.v1.SharedTrip
-	6,   // 80: ride.trip.v1.TripService.RequestTrip:input_type -> ride.trip.v1.RequestTripRequest
-	8,   // 81: ride.trip.v1.TripService.AcceptTrip:input_type -> ride.trip.v1.AcceptTripRequest
-	15,  // 82: ride.trip.v1.TripService.MarkDriverArrived:input_type -> ride.trip.v1.MarkDriverArrivedRequest
-	17,  // 83: ride.trip.v1.TripService.ReachStop:input_type -> ride.trip.v1.ReachStopRequest
-	10,  // 84: ride.trip.v1.TripService.StartTrip:input_type -> ride.trip.v1.StartTripRequest
-	12,  // 85: ride.trip.v1.TripService.CompleteTrip:input_type -> ride.trip.v1.CompleteTripRequest
-	14,  // 86: ride.trip.v1.TripService.CancelTrip:input_type -> ride.trip.v1.CancelTripRequest
-	20,  // 87: ride.trip.v1.TripService.GetTrip:input_type -> ride.trip.v1.GetTripRequest
-	22,  // 88: ride.trip.v1.TripService.TriggerSOS:input_type -> ride.trip.v1.TriggerSOSRequest
-	25,  // 89: ride.trip.v1.TripService.RecordWaypoint:input_type -> ride.trip.v1.RecordWaypointRequest
-	27,  // 90: ride.trip.v1.TripService.GetTripPath:input_type -> ride.trip.v1.GetTripPathRequest
-	29,  // 91: ride.trip.v1.TripService.GetDriverLocation:input_type -> ride.trip.v1.GetDriverLocationRequest
-	46,  // 92: ride.trip.v1.TripService.GetTripDriver:input_type -> ride.trip.v1.GetTripDriverRequest
-	31,  // 93: ride.trip.v1.TripService.GetActiveTrip:input_type -> ride.trip.v1.GetActiveTripRequest
-	33,  // 94: ride.trip.v1.TripService.ListTrips:input_type -> ride.trip.v1.ListTripsRequest
-	36,  // 95: ride.trip.v1.TripService.OfferTrip:input_type -> ride.trip.v1.OfferTripRequest
-	38,  // 96: ride.trip.v1.TripService.GetPendingOffer:input_type -> ride.trip.v1.GetPendingOfferRequest
-	40,  // 97: ride.trip.v1.TripService.AcceptOffer:input_type -> ride.trip.v1.AcceptOfferRequest
-	42,  // 98: ride.trip.v1.TripService.RejectOffer:input_type -> ride.trip.v1.RejectOfferRequest
-	50,  // 99: ride.trip.v1.TripService.GetPickupPhoto:input_type -> ride.trip.v1.GetPickupPhotoRequest
-	52,  // 100: ride.trip.v1.TripService.ListRecentDestinations:input_type -> ride.trip.v1.ListRecentDestinationsRequest
-	44,  // 101: ride.trip.v1.TripService.RateTrip:input_type -> ride.trip.v1.RateTripRequest
-	55,  // 102: ride.trip.v1.TripService.ScheduleTrip:input_type -> ride.trip.v1.ScheduleTripRequest
-	58,  // 103: ride.trip.v1.TripService.ListScheduledTrips:input_type -> ride.trip.v1.ListScheduledTripsRequest
-	60,  // 104: ride.trip.v1.TripService.CancelScheduledTrip:input_type -> ride.trip.v1.CancelScheduledTripRequest
-	61,  // 105: ride.trip.v1.TripService.ShareTrip:input_type -> ride.trip.v1.ShareTripRequest
-	63,  // 106: ride.trip.v1.TripService.StopSharingTrip:input_type -> ride.trip.v1.StopSharingTripRequest
-	65,  // 107: ride.trip.v1.TripService.GetSharedTrip:input_type -> ride.trip.v1.GetSharedTripRequest
-	7,   // 108: ride.trip.v1.TripService.RequestTrip:output_type -> ride.trip.v1.RequestTripResponse
-	9,   // 109: ride.trip.v1.TripService.AcceptTrip:output_type -> ride.trip.v1.AcceptTripResponse
-	16,  // 110: ride.trip.v1.TripService.MarkDriverArrived:output_type -> ride.trip.v1.MarkDriverArrivedResponse
-	18,  // 111: ride.trip.v1.TripService.ReachStop:output_type -> ride.trip.v1.ReachStopResponse
-	11,  // 112: ride.trip.v1.TripService.StartTrip:output_type -> ride.trip.v1.StartTripResponse
-	13,  // 113: ride.trip.v1.TripService.CompleteTrip:output_type -> ride.trip.v1.CompleteTripResponse
-	19,  // 114: ride.trip.v1.TripService.CancelTrip:output_type -> ride.trip.v1.CancelTripResponse
-	21,  // 115: ride.trip.v1.TripService.GetTrip:output_type -> ride.trip.v1.GetTripResponse
-	23,  // 116: ride.trip.v1.TripService.TriggerSOS:output_type -> ride.trip.v1.TriggerSOSResponse
-	26,  // 117: ride.trip.v1.TripService.RecordWaypoint:output_type -> ride.trip.v1.RecordWaypointResponse
-	28,  // 118: ride.trip.v1.TripService.GetTripPath:output_type -> ride.trip.v1.GetTripPathResponse
-	30,  // 119: ride.trip.v1.TripService.GetDriverLocation:output_type -> ride.trip.v1.GetDriverLocationResponse
-	47,  // 120: ride.trip.v1.TripService.GetTripDriver:output_type -> ride.trip.v1.GetTripDriverResponse
-	32,  // 121: ride.trip.v1.TripService.GetActiveTrip:output_type -> ride.trip.v1.GetActiveTripResponse
-	34,  // 122: ride.trip.v1.TripService.ListTrips:output_type -> ride.trip.v1.ListTripsResponse
-	37,  // 123: ride.trip.v1.TripService.OfferTrip:output_type -> ride.trip.v1.OfferTripResponse
-	39,  // 124: ride.trip.v1.TripService.GetPendingOffer:output_type -> ride.trip.v1.GetPendingOfferResponse
-	41,  // 125: ride.trip.v1.TripService.AcceptOffer:output_type -> ride.trip.v1.AcceptOfferResponse
-	43,  // 126: ride.trip.v1.TripService.RejectOffer:output_type -> ride.trip.v1.RejectOfferResponse
-	51,  // 127: ride.trip.v1.TripService.GetPickupPhoto:output_type -> ride.trip.v1.GetPickupPhotoResponse
-	54,  // 128: ride.trip.v1.TripService.ListRecentDestinations:output_type -> ride.trip.v1.ListRecentDestinationsResponse
-	45,  // 129: ride.trip.v1.TripService.RateTrip:output_type -> ride.trip.v1.RateTripResponse
-	57,  // 130: ride.trip.v1.TripService.ScheduleTrip:output_type -> ride.trip.v1.ScheduledTripResponse
-	59,  // 131: ride.trip.v1.TripService.ListScheduledTrips:output_type -> ride.trip.v1.ListScheduledTripsResponse
-	57,  // 132: ride.trip.v1.TripService.CancelScheduledTrip:output_type -> ride.trip.v1.ScheduledTripResponse
-	62,  // 133: ride.trip.v1.TripService.ShareTrip:output_type -> ride.trip.v1.ShareTripResponse
-	64,  // 134: ride.trip.v1.TripService.StopSharingTrip:output_type -> ride.trip.v1.StopSharingTripResponse
-	67,  // 135: ride.trip.v1.TripService.GetSharedTrip:output_type -> ride.trip.v1.GetSharedTripResponse
-	108, // [108:136] is the sub-list for method output_type
-	80,  // [80:108] is the sub-list for method input_type
-	80,  // [80:80] is the sub-list for extension type_name
-	80,  // [80:80] is the sub-list for extension extendee
-	0,   // [0:80] is the sub-list for field type_name
+	73,  // 80: ride.trip.v1.ActivityScope.from:type_name -> google.protobuf.Timestamp
+	73,  // 81: ride.trip.v1.ActivityScope.to:type_name -> google.protobuf.Timestamp
+	68,  // 82: ride.trip.v1.GetDriverActivityRequest.scope:type_name -> ride.trip.v1.ActivityScope
+	68,  // 83: ride.trip.v1.ListDriverActivityRequest.scope:type_name -> ride.trip.v1.ActivityScope
+	69,  // 84: ride.trip.v1.ListDriverActivityResponse.drivers:type_name -> ride.trip.v1.DriverActivity
+	6,   // 85: ride.trip.v1.TripService.RequestTrip:input_type -> ride.trip.v1.RequestTripRequest
+	8,   // 86: ride.trip.v1.TripService.AcceptTrip:input_type -> ride.trip.v1.AcceptTripRequest
+	15,  // 87: ride.trip.v1.TripService.MarkDriverArrived:input_type -> ride.trip.v1.MarkDriverArrivedRequest
+	17,  // 88: ride.trip.v1.TripService.ReachStop:input_type -> ride.trip.v1.ReachStopRequest
+	10,  // 89: ride.trip.v1.TripService.StartTrip:input_type -> ride.trip.v1.StartTripRequest
+	12,  // 90: ride.trip.v1.TripService.CompleteTrip:input_type -> ride.trip.v1.CompleteTripRequest
+	14,  // 91: ride.trip.v1.TripService.CancelTrip:input_type -> ride.trip.v1.CancelTripRequest
+	20,  // 92: ride.trip.v1.TripService.GetTrip:input_type -> ride.trip.v1.GetTripRequest
+	22,  // 93: ride.trip.v1.TripService.TriggerSOS:input_type -> ride.trip.v1.TriggerSOSRequest
+	25,  // 94: ride.trip.v1.TripService.RecordWaypoint:input_type -> ride.trip.v1.RecordWaypointRequest
+	27,  // 95: ride.trip.v1.TripService.GetTripPath:input_type -> ride.trip.v1.GetTripPathRequest
+	29,  // 96: ride.trip.v1.TripService.GetDriverLocation:input_type -> ride.trip.v1.GetDriverLocationRequest
+	46,  // 97: ride.trip.v1.TripService.GetTripDriver:input_type -> ride.trip.v1.GetTripDriverRequest
+	31,  // 98: ride.trip.v1.TripService.GetActiveTrip:input_type -> ride.trip.v1.GetActiveTripRequest
+	33,  // 99: ride.trip.v1.TripService.ListTrips:input_type -> ride.trip.v1.ListTripsRequest
+	36,  // 100: ride.trip.v1.TripService.OfferTrip:input_type -> ride.trip.v1.OfferTripRequest
+	38,  // 101: ride.trip.v1.TripService.GetPendingOffer:input_type -> ride.trip.v1.GetPendingOfferRequest
+	40,  // 102: ride.trip.v1.TripService.AcceptOffer:input_type -> ride.trip.v1.AcceptOfferRequest
+	42,  // 103: ride.trip.v1.TripService.RejectOffer:input_type -> ride.trip.v1.RejectOfferRequest
+	50,  // 104: ride.trip.v1.TripService.GetPickupPhoto:input_type -> ride.trip.v1.GetPickupPhotoRequest
+	52,  // 105: ride.trip.v1.TripService.ListRecentDestinations:input_type -> ride.trip.v1.ListRecentDestinationsRequest
+	44,  // 106: ride.trip.v1.TripService.RateTrip:input_type -> ride.trip.v1.RateTripRequest
+	55,  // 107: ride.trip.v1.TripService.ScheduleTrip:input_type -> ride.trip.v1.ScheduleTripRequest
+	58,  // 108: ride.trip.v1.TripService.ListScheduledTrips:input_type -> ride.trip.v1.ListScheduledTripsRequest
+	60,  // 109: ride.trip.v1.TripService.CancelScheduledTrip:input_type -> ride.trip.v1.CancelScheduledTripRequest
+	61,  // 110: ride.trip.v1.TripService.ShareTrip:input_type -> ride.trip.v1.ShareTripRequest
+	63,  // 111: ride.trip.v1.TripService.StopSharingTrip:input_type -> ride.trip.v1.StopSharingTripRequest
+	65,  // 112: ride.trip.v1.TripService.GetSharedTrip:input_type -> ride.trip.v1.GetSharedTripRequest
+	70,  // 113: ride.trip.v1.TripService.GetDriverActivity:input_type -> ride.trip.v1.GetDriverActivityRequest
+	71,  // 114: ride.trip.v1.TripService.ListDriverActivity:input_type -> ride.trip.v1.ListDriverActivityRequest
+	7,   // 115: ride.trip.v1.TripService.RequestTrip:output_type -> ride.trip.v1.RequestTripResponse
+	9,   // 116: ride.trip.v1.TripService.AcceptTrip:output_type -> ride.trip.v1.AcceptTripResponse
+	16,  // 117: ride.trip.v1.TripService.MarkDriverArrived:output_type -> ride.trip.v1.MarkDriverArrivedResponse
+	18,  // 118: ride.trip.v1.TripService.ReachStop:output_type -> ride.trip.v1.ReachStopResponse
+	11,  // 119: ride.trip.v1.TripService.StartTrip:output_type -> ride.trip.v1.StartTripResponse
+	13,  // 120: ride.trip.v1.TripService.CompleteTrip:output_type -> ride.trip.v1.CompleteTripResponse
+	19,  // 121: ride.trip.v1.TripService.CancelTrip:output_type -> ride.trip.v1.CancelTripResponse
+	21,  // 122: ride.trip.v1.TripService.GetTrip:output_type -> ride.trip.v1.GetTripResponse
+	23,  // 123: ride.trip.v1.TripService.TriggerSOS:output_type -> ride.trip.v1.TriggerSOSResponse
+	26,  // 124: ride.trip.v1.TripService.RecordWaypoint:output_type -> ride.trip.v1.RecordWaypointResponse
+	28,  // 125: ride.trip.v1.TripService.GetTripPath:output_type -> ride.trip.v1.GetTripPathResponse
+	30,  // 126: ride.trip.v1.TripService.GetDriverLocation:output_type -> ride.trip.v1.GetDriverLocationResponse
+	47,  // 127: ride.trip.v1.TripService.GetTripDriver:output_type -> ride.trip.v1.GetTripDriverResponse
+	32,  // 128: ride.trip.v1.TripService.GetActiveTrip:output_type -> ride.trip.v1.GetActiveTripResponse
+	34,  // 129: ride.trip.v1.TripService.ListTrips:output_type -> ride.trip.v1.ListTripsResponse
+	37,  // 130: ride.trip.v1.TripService.OfferTrip:output_type -> ride.trip.v1.OfferTripResponse
+	39,  // 131: ride.trip.v1.TripService.GetPendingOffer:output_type -> ride.trip.v1.GetPendingOfferResponse
+	41,  // 132: ride.trip.v1.TripService.AcceptOffer:output_type -> ride.trip.v1.AcceptOfferResponse
+	43,  // 133: ride.trip.v1.TripService.RejectOffer:output_type -> ride.trip.v1.RejectOfferResponse
+	51,  // 134: ride.trip.v1.TripService.GetPickupPhoto:output_type -> ride.trip.v1.GetPickupPhotoResponse
+	54,  // 135: ride.trip.v1.TripService.ListRecentDestinations:output_type -> ride.trip.v1.ListRecentDestinationsResponse
+	45,  // 136: ride.trip.v1.TripService.RateTrip:output_type -> ride.trip.v1.RateTripResponse
+	57,  // 137: ride.trip.v1.TripService.ScheduleTrip:output_type -> ride.trip.v1.ScheduledTripResponse
+	59,  // 138: ride.trip.v1.TripService.ListScheduledTrips:output_type -> ride.trip.v1.ListScheduledTripsResponse
+	57,  // 139: ride.trip.v1.TripService.CancelScheduledTrip:output_type -> ride.trip.v1.ScheduledTripResponse
+	62,  // 140: ride.trip.v1.TripService.ShareTrip:output_type -> ride.trip.v1.ShareTripResponse
+	64,  // 141: ride.trip.v1.TripService.StopSharingTrip:output_type -> ride.trip.v1.StopSharingTripResponse
+	67,  // 142: ride.trip.v1.TripService.GetSharedTrip:output_type -> ride.trip.v1.GetSharedTripResponse
+	69,  // 143: ride.trip.v1.TripService.GetDriverActivity:output_type -> ride.trip.v1.DriverActivity
+	72,  // 144: ride.trip.v1.TripService.ListDriverActivity:output_type -> ride.trip.v1.ListDriverActivityResponse
+	115, // [115:145] is the sub-list for method output_type
+	85,  // [85:115] is the sub-list for method input_type
+	85,  // [85:85] is the sub-list for extension type_name
+	85,  // [85:85] is the sub-list for extension extendee
+	0,   // [0:85] is the sub-list for field type_name
 }
 
 func init() { file_ride_trip_v1_trip_proto_init() }
@@ -4835,7 +5235,7 @@ func file_ride_trip_v1_trip_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_trip_v1_trip_proto_rawDesc), len(file_ride_trip_v1_trip_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   65,
+			NumMessages:   70,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

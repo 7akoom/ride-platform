@@ -7,6 +7,7 @@ import (
 	"time"
 
 	tripv1 "github.com/7akoom/ride-platform/gen/go/ride/trip/v1"
+	"github.com/7akoom/ride-platform/services/trip-service/internal/application/activity"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/schedule"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/share"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
@@ -27,6 +28,7 @@ type TripHandler struct {
 
 	schedules *schedule.Service
 	shares    *share.Service
+	activity  *activity.Service
 }
 
 // HandlerOption customises a TripHandler.
