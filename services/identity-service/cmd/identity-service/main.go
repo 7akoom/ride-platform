@@ -642,6 +642,8 @@ func run() int {
 		),
 	)
 
+	server.RegisterAccountStatusService(grpcserver.NewAccountStatusHandler(authService, logger))
+
 	logger.Info(
 		"identity service starting",
 		"grpc_address", cfg.GRPCAddress,

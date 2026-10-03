@@ -5181,8 +5181,12 @@ type AdjustWalletRequest struct {
 	Reason string `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
 	// Required: a retry with the same key is the same adjustment.
 	IdempotencyKey string `protobuf:"bytes,5,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Only from another service (internal token) acting for a staff member it
+	// already authorized (support-service): that person's identity, recorded as
+	// who made it. Refused from anyone else.
+	ActingIdentityId string `protobuf:"bytes,6,opt,name=acting_identity_id,json=actingIdentityId,proto3" json:"acting_identity_id,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *AdjustWalletRequest) Reset() {
@@ -5246,6 +5250,13 @@ func (x *AdjustWalletRequest) GetReason() string {
 func (x *AdjustWalletRequest) GetIdempotencyKey() string {
 	if x != nil {
 		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *AdjustWalletRequest) GetActingIdentityId() string {
+	if x != nil {
+		return x.ActingIdentityId
 	}
 	return ""
 }
@@ -5456,8 +5467,11 @@ type RefundTripRequest struct {
 	DriverAmount   string `protobuf:"bytes,3,opt,name=driver_amount,json=driverAmount,proto3" json:"driver_amount,omitempty"`
 	Reason         string `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
 	IdempotencyKey string `protobuf:"bytes,5,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// As in AdjustWalletRequest: only from support-service, for the staff
+	// member it authorized.
+	ActingIdentityId string `protobuf:"bytes,6,opt,name=acting_identity_id,json=actingIdentityId,proto3" json:"acting_identity_id,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *RefundTripRequest) Reset() {
@@ -5521,6 +5535,13 @@ func (x *RefundTripRequest) GetReason() string {
 func (x *RefundTripRequest) GetIdempotencyKey() string {
 	if x != nil {
 		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *RefundTripRequest) GetActingIdentityId() string {
+	if x != nil {
+		return x.ActingIdentityId
 	}
 	return ""
 }
@@ -7717,14 +7738,15 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x06wallet\x18\x01 \x01(\v2\x16.ride.wallet.v1.WalletR\x06wallet\x12L\n" +
 	"\x13recent_transactions\x18\x02 \x03(\v2\x1b.ride.wallet.v1.TransactionR\x12recentTransactions\x12)\n" +
 	"\x10outstanding_dues\x18\x03 \x01(\tR\x0foutstandingDues\x129\n" +
-	"\fopen_payouts\x18\x04 \x03(\v2\x16.ride.wallet.v1.PayoutR\vopenPayouts\"\xc3\x01\n" +
+	"\fopen_payouts\x18\x04 \x03(\v2\x16.ride.wallet.v1.PayoutR\vopenPayouts\"\xf1\x01\n" +
 	"\x13AdjustWalletRequest\x128\n" +
 	"\n" +
 	"owner_type\x18\x01 \x01(\x0e2\x19.ride.wallet.v1.OwnerTypeR\townerType\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x16\n" +
 	"\x06amount\x18\x03 \x01(\tR\x06amount\x12\x16\n" +
 	"\x06reason\x18\x04 \x01(\tR\x06reason\x12'\n" +
-	"\x0fidempotency_key\x18\x05 \x01(\tR\x0eidempotencyKey\"\xb6\x03\n" +
+	"\x0fidempotency_key\x18\x05 \x01(\tR\x0eidempotencyKey\x12,\n" +
+	"\x12acting_identity_id\x18\x06 \x01(\tR\x10actingIdentityId\"\xb6\x03\n" +
 	"\n" +
 	"Adjustment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -7748,13 +7770,14 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\n" +
 	"adjustment\x18\x01 \x01(\v2\x1a.ride.wallet.v1.AdjustmentR\n" +
 	"adjustment\x12.\n" +
-	"\x06wallet\x18\x02 \x01(\v2\x16.ride.wallet.v1.WalletR\x06wallet\"\xaa\x01\n" +
+	"\x06wallet\x18\x02 \x01(\v2\x16.ride.wallet.v1.WalletR\x06wallet\"\xd8\x01\n" +
 	"\x11RefundTripRequest\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\tR\x06amount\x12#\n" +
 	"\rdriver_amount\x18\x03 \x01(\tR\fdriverAmount\x12\x16\n" +
 	"\x06reason\x18\x04 \x01(\tR\x06reason\x12'\n" +
-	"\x0fidempotency_key\x18\x05 \x01(\tR\x0eidempotencyKey\"1\n" +
+	"\x0fidempotency_key\x18\x05 \x01(\tR\x0eidempotencyKey\x12,\n" +
+	"\x12acting_identity_id\x18\x06 \x01(\tR\x10actingIdentityId\"1\n" +
 	"\x16ListTripRefundsRequest\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\"\x99\x01\n" +
 	"\x17ListTripRefundsResponse\x124\n" +

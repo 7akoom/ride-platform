@@ -15,6 +15,10 @@
       "name": "DriverService"
     },
     {
+      "name": "IdentityAccountService",
+      "description": "IdentityAccountService suspends and reactivates people (internal only:\nsupport-service, with the internal service token, after a staff member with\nsupport.suspend asked; no route from outside). Suspending revokes every\nsession at once and refuses sign-in until reactivated."
+    },
+    {
       "name": "IdentityService"
     },
     {
@@ -44,6 +48,10 @@
     {
       "name": "StaffService",
       "description": "StaffService owns who works on the platform (operators, finance, support),\nwhat each of them may do, and the audit trail of what they did.\n\nStaff sign in like everyone else, through identity-service (an email OTP).\nIdentity only proves who they are; the roles and permissions here decide what\nthey may do. Every admin RPC in any service asks AuthorizeStaffAction first,\nwhich records the attempt before it runs."
+    },
+    {
+      "name": "SupportService",
+      "description": "SupportService: riders and drivers ask for help in tickets, and support\nstaff answer them.\n\nA ticket belongs to the person who opened it, as a rider or as a driver,\nand may name one of their trips or wallet transactions. Messages go back and\nforth; a staff reply reaches the person as a push. Staff may also write\ninternal notes the person never sees.\n\nSafety tickets (a safety category, or an SOS raised during a trip) are\nurgent, and only staff with support.safety see them. The other party of\nthe trip never sees a ticket about them.\n\nLost items: a ticket in a lost-item category brings in the trip's driver,\nwho is told and can answer inside the same ticket; neither side sees the\nother's phone.\n\nFrom a ticket, staff may refund a trip, waive a cancellation or no-show fee,\ncredit a wallet (support.refund), and suspend or reactivate an account\n(support.suspend). Money above SUPPORT_REFUND_LIMIT for one ticket waits\nfor another staff member with support.approve."
     },
     {
       "name": "TripService"
@@ -1857,6 +1865,642 @@
         ],
         "tags": [
           "StaffService"
+        ]
+      }
+    },
+    "/v1/admin/support/actions": {
+      "get": {
+        "summary": "The approval queue of actions over the limit, oldest first. Needs\nsupport.approve.",
+        "operationId": "SupportService_ListPendingTicketActions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListPendingTicketActionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/actions/{actionId}:approve": {
+      "post": {
+        "summary": "ApproveTicketAction runs a waiting action. Needs support.approve, and\nsomeone other than who asked for it.",
+        "operationId": "SupportService_ApproveTicketAction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TicketActionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "actionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceApproveTicketActionBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/actions/{actionId}:reject": {
+      "post": {
+        "operationId": "SupportService_RejectTicketAction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TicketActionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "actionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceRejectTicketActionBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/categories": {
+      "get": {
+        "summary": "Categories. Needs support.configure.",
+        "operationId": "SupportService_AdminListSupportCategories",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSupportCategoriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/categories/{category.key}": {
+      "put": {
+        "operationId": "SupportService_UpsertSupportCategory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SupportCategoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "category.key",
+            "description": "Stable key: lowercase letters, digits and underscores.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceUpsertSupportCategoryBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/safety-tickets": {
+      "get": {
+        "summary": "ListSafetyQueue is the queue of safety tickets. Needs support.safety.",
+        "operationId": "SupportService_ListSafetyQueue",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSupportQueueResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "status",
+            "description": "Optional filters. No status: everything not resolved or closed.\n\n - TICKET_STATUS_OPEN: Waiting for staff.\n - TICKET_STATUS_IN_PROGRESS: A staff member is working on it.\n - TICKET_STATUS_WAITING_USER: Waiting for the person to answer.\n - TICKET_STATUS_RESOLVED: Sorted; a message from the person reopens it.\n - TICKET_STATUS_CLOSED: Final.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "TICKET_STATUS_UNSPECIFIED",
+              "TICKET_STATUS_OPEN",
+              "TICKET_STATUS_IN_PROGRESS",
+              "TICKET_STATUS_WAITING_USER",
+              "TICKET_STATUS_RESOLVED",
+              "TICKET_STATUS_CLOSED"
+            ],
+            "default": "TICKET_STATUS_UNSPECIFIED"
+          },
+          {
+            "name": "categoryKey",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "TICKET_PRIORITY_UNSPECIFIED",
+              "TICKET_PRIORITY_LOW",
+              "TICKET_PRIORITY_NORMAL",
+              "TICKET_PRIORITY_HIGH",
+              "TICKET_PRIORITY_URGENT"
+            ],
+            "default": "TICKET_PRIORITY_UNSPECIFIED"
+          },
+          {
+            "name": "assignedStaffId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "unassignedOnly",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "audience",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "AUDIENCE_UNSPECIFIED",
+              "AUDIENCE_RIDER",
+              "AUDIENCE_DRIVER"
+            ],
+            "default": "AUDIENCE_UNSPECIFIED"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/tickets": {
+      "get": {
+        "summary": "Staff. support.read: the queue and tickets (safety ones also need\nsupport.safety). support.reply: claim, answer, change status and\npriority. support.manage: assign to someone else. Every call is audited.",
+        "operationId": "SupportService_ListSupportQueue",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSupportQueueResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "status",
+            "description": "Optional filters. No status: everything not resolved or closed.\n\n - TICKET_STATUS_OPEN: Waiting for staff.\n - TICKET_STATUS_IN_PROGRESS: A staff member is working on it.\n - TICKET_STATUS_WAITING_USER: Waiting for the person to answer.\n - TICKET_STATUS_RESOLVED: Sorted; a message from the person reopens it.\n - TICKET_STATUS_CLOSED: Final.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "TICKET_STATUS_UNSPECIFIED",
+              "TICKET_STATUS_OPEN",
+              "TICKET_STATUS_IN_PROGRESS",
+              "TICKET_STATUS_WAITING_USER",
+              "TICKET_STATUS_RESOLVED",
+              "TICKET_STATUS_CLOSED"
+            ],
+            "default": "TICKET_STATUS_UNSPECIFIED"
+          },
+          {
+            "name": "categoryKey",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "TICKET_PRIORITY_UNSPECIFIED",
+              "TICKET_PRIORITY_LOW",
+              "TICKET_PRIORITY_NORMAL",
+              "TICKET_PRIORITY_HIGH",
+              "TICKET_PRIORITY_URGENT"
+            ],
+            "default": "TICKET_PRIORITY_UNSPECIFIED"
+          },
+          {
+            "name": "assignedStaffId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "unassignedOnly",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "audience",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "AUDIENCE_UNSPECIFIED",
+              "AUDIENCE_RIDER",
+              "AUDIENCE_DRIVER"
+            ],
+            "default": "AUDIENCE_UNSPECIFIED"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/tickets/{ticketId}": {
+      "get": {
+        "operationId": "SupportService_GetTicketForStaff",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffTicketDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/tickets/{ticketId}/actions": {
+      "post": {
+        "summary": "RequestTicketAction acts from a ticket: refund, fee waiver and wallet\ncredit need support.refund; suspend and reactivate need support.suspend.\nMoney that takes the ticket over SUPPORT_REFUND_LIMIT waits for approval\n(status PENDING_APPROVAL) instead of running.",
+        "operationId": "SupportService_RequestTicketAction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TicketActionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceRequestTicketActionBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/tickets/{ticketId}/messages": {
+      "post": {
+        "summary": "ReplyToTicket answers the person (or writes an internal note). A reply\nto an unassigned ticket assigns it to the caller.",
+        "operationId": "SupportService_ReplyToTicket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffTicketDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceReplyToTicketBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/tickets/{ticketId}:assign": {
+      "post": {
+        "summary": "AssignTicket gives a ticket to a staff member (empty staff_id: back to\nthe queue). Needs support.manage.",
+        "operationId": "SupportService_AssignTicket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffTicketDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceAssignTicketBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/tickets/{ticketId}:claim": {
+      "post": {
+        "summary": "ClaimTicket assigns an unassigned ticket to the caller.",
+        "operationId": "SupportService_ClaimTicket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffTicketDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceClaimTicketBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/tickets/{ticketId}:set-priority": {
+      "post": {
+        "summary": "SetTicketPriority: a safety ticket stays urgent.",
+        "operationId": "SupportService_SetTicketPriority",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffTicketDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceSetTicketPriorityBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/tickets/{ticketId}:set-status": {
+      "post": {
+        "operationId": "SupportService_SetTicketStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StaffTicketDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceSetTicketStatusBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
         ]
       }
     },
@@ -5511,6 +6155,277 @@
         ]
       }
     },
+    "/v1/support/categories": {
+      "get": {
+        "summary": "ListSupportCategories lists the active categories for riders or drivers,\nin their display order.",
+        "operationId": "SupportService_ListSupportCategories",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSupportCategoriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "audience",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "AUDIENCE_UNSPECIFIED",
+              "AUDIENCE_RIDER",
+              "AUDIENCE_DRIVER"
+            ],
+            "default": "AUDIENCE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/support/tickets": {
+      "get": {
+        "summary": "ListMyTickets lists the caller's tickets as a rider or driver, newest\nactivity first. A driver also sees lost-item tickets about their trips.",
+        "operationId": "SupportService_ListMyTickets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListMyTicketsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "audience",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "AUDIENCE_UNSPECIFIED",
+              "AUDIENCE_RIDER",
+              "AUDIENCE_DRIVER"
+            ],
+            "default": "AUDIENCE_UNSPECIFIED"
+          },
+          {
+            "name": "openOnly",
+            "description": "Only tickets still open (not resolved or closed).",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      },
+      "post": {
+        "summary": "CreateTicket opens a ticket as the caller's rider or driver profile. A\ncategory that needs a trip needs one of the caller's trips from the last\nSUPPORT_TRIP_MAX_AGE. An open ticket of the same category about the same\ntrip is returned instead of a second one (existing = true).",
+        "operationId": "SupportService_CreateTicket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateTicketResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateTicketRequest"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/support/tickets/{ticketId}": {
+      "get": {
+        "summary": "GetMyTicket reads one of the caller's tickets with its messages (internal\nnotes left out).",
+        "operationId": "SupportService_GetMyTicket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TicketDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/support/tickets/{ticketId}/attachments/{mediaId}": {
+      "get": {
+        "summary": "GetAttachmentURL returns a short-lived link to a file attached to a\nticket, for the people in it and for staff who may see the ticket.",
+        "operationId": "SupportService_GetAttachmentURL",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetAttachmentURLResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/support/tickets/{ticketId}/messages": {
+      "post": {
+        "summary": "AddTicketMessage writes in one of the caller's tickets. A message on a\nresolved ticket reopens it; a closed ticket takes no more messages.",
+        "operationId": "SupportService_AddTicketMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TicketDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceAddTicketMessageBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/support/tickets/{ticketId}:close": {
+      "post": {
+        "summary": "CloseMyTicket: the person who opened the ticket says it is sorted.",
+        "operationId": "SupportService_CloseMyTicket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TicketDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceCloseMyTicketBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
     "/v1/trips": {
       "get": {
         "summary": "ListTrips is the caller's trip history, newest first, one page at a time. Name\nexactly one of rider_id and driver_id, and it must be the caller's own profile.\nPass the previous page's next_page_token to get the following page; an empty\nnext_page_token means that was the last one.",
@@ -7668,6 +8583,162 @@
         }
       }
     },
+    "SupportServiceAddTicketMessageBody": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "attachmentMediaIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "SupportServiceApproveTicketActionBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "SupportServiceAssignTicketBody": {
+      "type": "object",
+      "properties": {
+        "staffId": {
+          "type": "string"
+        }
+      }
+    },
+    "SupportServiceClaimTicketBody": {
+      "type": "object"
+    },
+    "SupportServiceCloseMyTicketBody": {
+      "type": "object"
+    },
+    "SupportServiceRejectTicketActionBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "3-300 characters."
+        }
+      }
+    },
+    "SupportServiceReplyToTicketBody": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "internal": {
+          "type": "boolean",
+          "description": "An internal note: only staff see it, nobody is told."
+        },
+        "attachmentMediaIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Up to 5 of the caller's READY SUPPORT_ATTACHMENT uploads."
+        },
+        "setStatus": {
+          "$ref": "#/definitions/v1TicketStatus",
+          "description": "Optional: the status the ticket takes after a reply (WAITING_USER,\nRESOLVED...). A reply that is not internal defaults to WAITING_USER."
+        }
+      }
+    },
+    "SupportServiceRequestTicketActionBody": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/v1ActionKind"
+        },
+        "amount": {
+          "type": "string",
+          "description": "REFUND and COMPENSATION: positive decimal string."
+        },
+        "driverAmount": {
+          "type": "string",
+          "description": "REFUND: how much of it is taken back from the trip's driver."
+        },
+        "target": {
+          "$ref": "#/definitions/v1ActionTarget",
+          "description": "SUSPEND_ACCOUNT and REACTIVATE_ACCOUNT."
+        },
+        "reason": {
+          "type": "string",
+          "description": "3-300 characters."
+        },
+        "suspendUntil": {
+          "type": "string",
+          "format": "date-time",
+          "description": "SUSPEND_ACCOUNT: optional, 1 hour to 90 days from now."
+        }
+      }
+    },
+    "SupportServiceSetTicketPriorityBody": {
+      "type": "object",
+      "properties": {
+        "priority": {
+          "$ref": "#/definitions/v1TicketPriority"
+        }
+      }
+    },
+    "SupportServiceSetTicketStatusBody": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v1TicketStatus"
+        }
+      }
+    },
+    "SupportServiceUpsertSupportCategoryBody": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "object",
+          "properties": {
+            "audience": {
+              "$ref": "#/definitions/v1CategoryAudience"
+            },
+            "nameEn": {
+              "type": "string"
+            },
+            "nameAr": {
+              "type": "string"
+            },
+            "nameKu": {
+              "type": "string"
+            },
+            "defaultPriority": {
+              "$ref": "#/definitions/v1TicketPriority"
+            },
+            "requiresTrip": {
+              "type": "boolean",
+              "description": "The ticket must name one of the person's trips."
+            },
+            "safety": {
+              "type": "boolean"
+            },
+            "lostItem": {
+              "type": "boolean",
+              "description": "Brings the trip's driver into the ticket."
+            },
+            "active": {
+              "type": "boolean"
+            },
+            "sortOrder": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        }
+      }
+    },
     "TripServiceAcceptOfferBody": {
       "type": "object",
       "properties": {
@@ -7786,6 +8857,10 @@
         "idempotencyKey": {
           "type": "string",
           "description": "Required: a retry with the same key is the same adjustment."
+        },
+        "actingIdentityId": {
+          "type": "string",
+          "description": "Only from another service (internal token) acting for a staff member it\nalready authorized (support-service): that person's identity, recorded as\nwho made it. Refused from anyone else."
         }
       }
     },
@@ -7913,6 +8988,10 @@
         },
         "idempotencyKey": {
           "type": "string"
+        },
+        "actingIdentityId": {
+          "type": "string",
+          "description": "As in AdjustWalletRequest: only from support-service, for the staff\nmember it authorized."
         }
       }
     },
@@ -8099,6 +9178,42 @@
         }
       }
     },
+    "v1ActionKind": {
+      "type": "string",
+      "enum": [
+        "ACTION_KIND_UNSPECIFIED",
+        "ACTION_KIND_REFUND",
+        "ACTION_KIND_WAIVE_FEE",
+        "ACTION_KIND_COMPENSATION",
+        "ACTION_KIND_SUSPEND_ACCOUNT",
+        "ACTION_KIND_REACTIVATE_ACCOUNT"
+      ],
+      "default": "ACTION_KIND_UNSPECIFIED",
+      "description": " - ACTION_KIND_REFUND: Give the rider back money for the ticket's trip (wallet RefundTrip).\n - ACTION_KIND_WAIVE_FEE: Waive what is left of the ticket's cancelled trip's fee.\n - ACTION_KIND_COMPENSATION: Credit the wallet of the person who opened the ticket."
+    },
+    "v1ActionStatus": {
+      "type": "string",
+      "enum": [
+        "ACTION_STATUS_UNSPECIFIED",
+        "ACTION_STATUS_PENDING_APPROVAL",
+        "ACTION_STATUS_COMPLETED",
+        "ACTION_STATUS_REJECTED",
+        "ACTION_STATUS_FAILED",
+        "ACTION_STATUS_PROCESSING"
+      ],
+      "default": "ACTION_STATUS_UNSPECIFIED",
+      "description": " - ACTION_STATUS_FAILED: It was allowed but the other service refused (reason in failure_reason).\n - ACTION_STATUS_PROCESSING: Allowed and being carried out; a service that did not answer is asked\nagain until it does."
+    },
+    "v1ActionTarget": {
+      "type": "string",
+      "enum": [
+        "ACTION_TARGET_UNSPECIFIED",
+        "ACTION_TARGET_REQUESTER",
+        "ACTION_TARGET_COUNTERPART"
+      ],
+      "default": "ACTION_TARGET_UNSPECIFIED",
+      "description": "Whose account a suspend or reactivate is about.\n\n - ACTION_TARGET_REQUESTER: The person who opened the ticket.\n - ACTION_TARGET_COUNTERPART: The other side of the ticket's trip."
+    },
     "v1Adjustment": {
       "type": "object",
       "properties": {
@@ -8166,6 +9281,15 @@
           "$ref": "#/definitions/v1Driver"
         }
       }
+    },
+    "v1Audience": {
+      "type": "string",
+      "enum": [
+        "AUDIENCE_UNSPECIFIED",
+        "AUDIENCE_RIDER",
+        "AUDIENCE_DRIVER"
+      ],
+      "default": "AUDIENCE_UNSPECIFIED"
     },
     "v1AuditDecision": {
       "type": "string",
@@ -8259,6 +9383,16 @@
           "format": "int64"
         }
       }
+    },
+    "v1CategoryAudience": {
+      "type": "string",
+      "enum": [
+        "CATEGORY_AUDIENCE_UNSPECIFIED",
+        "CATEGORY_AUDIENCE_RIDER",
+        "CATEGORY_AUDIENCE_DRIVER",
+        "CATEGORY_AUDIENCE_BOTH"
+      ],
+      "default": "CATEGORY_AUDIENCE_UNSPECIFIED"
     },
     "v1CheckDriverStandingResponse": {
       "type": "object",
@@ -8764,6 +9898,56 @@
         },
         "surgePercent": {
           "type": "string"
+        }
+      }
+    },
+    "v1CreateTicketRequest": {
+      "type": "object",
+      "properties": {
+        "audience": {
+          "$ref": "#/definitions/v1Audience"
+        },
+        "categoryKey": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Optional, up to 120 characters (the apps show the category's name\nwhen it is empty)."
+        },
+        "body": {
+          "type": "string",
+          "description": "The first message, 1-4000 characters."
+        },
+        "tripId": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "attachmentMediaIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Up to 5 of the caller's READY SUPPORT_ATTACHMENT uploads."
+        }
+      }
+    },
+    "v1CreateTicketResponse": {
+      "type": "object",
+      "properties": {
+        "ticket": {
+          "$ref": "#/definitions/v1Ticket"
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TicketMessage"
+          }
+        },
+        "existing": {
+          "type": "boolean"
         }
       }
     },
@@ -9579,6 +10763,18 @@
       "properties": {
         "trip": {
           "$ref": "#/definitions/v1Trip"
+        }
+      }
+    },
+    "v1GetAttachmentURLResponse": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -10456,6 +11652,21 @@
         }
       }
     },
+    "v1ListMyTicketsResponse": {
+      "type": "object",
+      "properties": {
+        "tickets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Ticket"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListNotificationsResponse": {
       "type": "object",
       "properties": {
@@ -10495,6 +11706,21 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1PendingDriverDocument"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListPendingTicketActionsResponse": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TicketAction"
           }
         },
         "nextPageToken": {
@@ -10615,6 +11841,33 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1StaffMember"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListSupportCategoriesResponse": {
+      "type": "object",
+      "properties": {
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SupportCategory"
+          }
+        }
+      }
+    },
+    "v1ListSupportQueueResponse": {
+      "type": "object",
+      "properties": {
+        "tickets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1StaffTicket"
           }
         },
         "nextPageToken": {
@@ -10890,6 +12143,18 @@
       ],
       "default": "MEDIA_STATUS_UNSPECIFIED",
       "description": " - MEDIA_STATUS_PENDING: Reserved, waiting for the bytes and CompleteUpload.\n - MEDIA_STATUS_REJECTED: The bytes failed the checks; the object was deleted.\n - MEDIA_STATUS_EXPIRED: Never completed in time; the reservation was dropped."
+    },
+    "v1MessageAuthor": {
+      "type": "string",
+      "enum": [
+        "MESSAGE_AUTHOR_UNSPECIFIED",
+        "MESSAGE_AUTHOR_REQUESTER",
+        "MESSAGE_AUTHOR_PARTICIPANT",
+        "MESSAGE_AUTHOR_STAFF",
+        "MESSAGE_AUTHOR_SYSTEM"
+      ],
+      "default": "MESSAGE_AUTHOR_UNSPECIFIED",
+      "description": " - MESSAGE_AUTHOR_SYSTEM: What happened to the ticket (status, assignment, actions); staff only."
     },
     "v1MoneyRequest": {
       "type": "object",
@@ -12362,6 +13627,62 @@
       "default": "STAFF_STATUS_UNSPECIFIED",
       "description": " - STAFF_STATUS_INVITED: Invited, waiting for the person to sign in and accept.\n - STAFF_STATUS_REVOKED: An invitation cancelled before it was accepted."
     },
+    "v1StaffTicket": {
+      "type": "object",
+      "properties": {
+        "ticket": {
+          "$ref": "#/definitions/v1Ticket"
+        },
+        "requesterIdentityId": {
+          "type": "string"
+        },
+        "requesterProfileId": {
+          "type": "string",
+          "description": "The rider or driver profile that opened it."
+        },
+        "counterpartProfileId": {
+          "type": "string",
+          "description": "The other side of the trip (driver for a rider's ticket, rider for a\ndriver's), when there is a trip."
+        },
+        "participantDriverId": {
+          "type": "string",
+          "description": "The driver brought into a lost-item ticket."
+        },
+        "assignedStaffId": {
+          "type": "string"
+        },
+        "firstResponseAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sosAlertId": {
+          "type": "string"
+        }
+      },
+      "description": "StaffTicket is a ticket with what only staff see."
+    },
+    "v1StaffTicketDetailResponse": {
+      "type": "object",
+      "properties": {
+        "ticket": {
+          "$ref": "#/definitions/v1StaffTicket"
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TicketMessage"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TicketAction"
+          }
+        }
+      }
+    },
     "v1StartTripResponse": {
       "type": "object",
       "properties": {
@@ -12377,6 +13698,56 @@
           "type": "integer",
           "format": "int32",
           "description": "How many live links were stopped."
+        }
+      }
+    },
+    "v1SupportCategory": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Stable key: lowercase letters, digits and underscores."
+        },
+        "audience": {
+          "$ref": "#/definitions/v1CategoryAudience"
+        },
+        "nameEn": {
+          "type": "string"
+        },
+        "nameAr": {
+          "type": "string"
+        },
+        "nameKu": {
+          "type": "string"
+        },
+        "defaultPriority": {
+          "$ref": "#/definitions/v1TicketPriority"
+        },
+        "requiresTrip": {
+          "type": "boolean",
+          "description": "The ticket must name one of the person's trips."
+        },
+        "safety": {
+          "type": "boolean"
+        },
+        "lostItem": {
+          "type": "boolean",
+          "description": "Brings the trip's driver into the ticket."
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "sortOrder": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1SupportCategoryResponse": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "$ref": "#/definitions/v1SupportCategory"
         }
       }
     },
@@ -12460,6 +13831,229 @@
           "$ref": "#/definitions/v1SurgeRule"
         }
       }
+    },
+    "v1Ticket": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string",
+          "description": "Human reference, e.g. S-000123."
+        },
+        "audience": {
+          "$ref": "#/definitions/v1Audience"
+        },
+        "categoryKey": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1TicketStatus"
+        },
+        "priority": {
+          "$ref": "#/definitions/v1TicketPriority"
+        },
+        "safety": {
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/definitions/v1TicketSource"
+        },
+        "tripId": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastMessageAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolvedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "closedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "role": {
+          "$ref": "#/definitions/v1TicketRole",
+          "description": "For the caller's own view."
+        }
+      }
+    },
+    "v1TicketAction": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "ticketId": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/v1ActionKind"
+        },
+        "status": {
+          "$ref": "#/definitions/v1ActionStatus"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Money actions: decimal strings."
+        },
+        "driverAmount": {
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/definitions/v1ActionTarget"
+        },
+        "targetProfileId": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "requestedByStaffId": {
+          "type": "string"
+        },
+        "decidedByStaffId": {
+          "type": "string"
+        },
+        "decisionReason": {
+          "type": "string"
+        },
+        "failureReason": {
+          "type": "string"
+        },
+        "suspendUntil": {
+          "type": "string",
+          "format": "date-time",
+          "description": "A suspension lifted automatically at this time; empty: until reactivated."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "decidedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1TicketActionResponse": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "$ref": "#/definitions/v1TicketAction"
+        }
+      }
+    },
+    "v1TicketDetailResponse": {
+      "type": "object",
+      "properties": {
+        "ticket": {
+          "$ref": "#/definitions/v1Ticket"
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TicketMessage"
+          }
+        }
+      }
+    },
+    "v1TicketMessage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "author": {
+          "$ref": "#/definitions/v1MessageAuthor"
+        },
+        "staffId": {
+          "type": "string",
+          "description": "Who wrote a staff message; only in staff views."
+        },
+        "body": {
+          "type": "string"
+        },
+        "internal": {
+          "type": "boolean",
+          "description": "Only staff see internal notes and system messages."
+        },
+        "attachmentMediaIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1TicketPriority": {
+      "type": "string",
+      "enum": [
+        "TICKET_PRIORITY_UNSPECIFIED",
+        "TICKET_PRIORITY_LOW",
+        "TICKET_PRIORITY_NORMAL",
+        "TICKET_PRIORITY_HIGH",
+        "TICKET_PRIORITY_URGENT"
+      ],
+      "default": "TICKET_PRIORITY_UNSPECIFIED"
+    },
+    "v1TicketRole": {
+      "type": "string",
+      "enum": [
+        "TICKET_ROLE_UNSPECIFIED",
+        "TICKET_ROLE_REQUESTER",
+        "TICKET_ROLE_PARTICIPANT"
+      ],
+      "default": "TICKET_ROLE_UNSPECIFIED",
+      "description": "How the caller is in a ticket.\n\n - TICKET_ROLE_PARTICIPANT: The trip's driver brought into a lost-item ticket."
+    },
+    "v1TicketSource": {
+      "type": "string",
+      "enum": [
+        "TICKET_SOURCE_UNSPECIFIED",
+        "TICKET_SOURCE_APP",
+        "TICKET_SOURCE_SOS"
+      ],
+      "default": "TICKET_SOURCE_UNSPECIFIED"
+    },
+    "v1TicketStatus": {
+      "type": "string",
+      "enum": [
+        "TICKET_STATUS_UNSPECIFIED",
+        "TICKET_STATUS_OPEN",
+        "TICKET_STATUS_IN_PROGRESS",
+        "TICKET_STATUS_WAITING_USER",
+        "TICKET_STATUS_RESOLVED",
+        "TICKET_STATUS_CLOSED"
+      ],
+      "default": "TICKET_STATUS_UNSPECIFIED",
+      "description": " - TICKET_STATUS_OPEN: Waiting for staff.\n - TICKET_STATUS_IN_PROGRESS: A staff member is working on it.\n - TICKET_STATUS_WAITING_USER: Waiting for the person to answer.\n - TICKET_STATUS_RESOLVED: Sorted; a message from the person reopens it.\n - TICKET_STATUS_CLOSED: Final."
     },
     "v1Tip": {
       "type": "object",

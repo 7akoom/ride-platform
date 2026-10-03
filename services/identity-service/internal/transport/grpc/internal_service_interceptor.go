@@ -18,6 +18,8 @@ var internalMethods = map[string]struct{}{
 	identityv1.WalletPinService_VerifyWalletPin_FullMethodName:             {},
 	identityv1.IdentityDirectoryService_FindIdentityByPhone_FullMethodName: {},
 	identityv1.IdentityDirectoryService_GetIdentityPhone_FullMethodName:    {},
+	identityv1.IdentityAccountService_SuspendIdentity_FullMethodName:       {},
+	identityv1.IdentityAccountService_ReactivateIdentity_FullMethodName:    {},
 }
 
 func isInternalMethod(fullMethod string) bool {

@@ -89,6 +89,15 @@ func (s *Server) RegisterWalletPinService(handler *WalletPinHandler) {
 	identityv1.RegisterIdentityDirectoryServiceServer(s.grpcServer, handler.Directory())
 }
 
+// RegisterAccountStatusService registers suspend and reactivate (internal).
+func (s *Server) RegisterAccountStatusService(handler *AccountStatusHandler) {
+	if handler == nil {
+		panic("account status handler is required")
+	}
+
+	identityv1.RegisterIdentityAccountServiceServer(s.grpcServer, handler)
+}
+
 func (s *Server) Run() error {
 	listener, err := net.Listen("tcp", s.address)
 	if err != nil {

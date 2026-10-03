@@ -46,6 +46,10 @@ const (
 	// driverEventsDurable tells drivers about their account review and
 	// their documents (reviewed, expiring, expired).
 	driverEventsDurable = "notification-driver-events"
+
+	// supportEventsDurable: replies, resolved tickets and lost-item reports
+	// from support-service.
+	supportEventsDurable = "notification-support-events"
 )
 
 func main() {
@@ -320,6 +324,22 @@ func run() int {
 		return 1
 	}
 	defer driverSubscription.Stop()
+
+	supportSubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		"SUPPORT_EVENTS",
+		supportEventsDurable,
+		events.SupportSubjects,
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to support events", "error", err)
+
+		return 1
+	}
+	defer supportSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

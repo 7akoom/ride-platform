@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package ride.identity.v1;
+
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1";
+
+// IdentityAccountService suspends and reactivates people (internal only:
+// support-service, with the internal service token, after a staff member with
+// support.suspend asked; no route from outside). Suspending revokes every
+// session at once and refuses sign-in until reactivated.
+service IdentityAccountService {
+  rpc SuspendIdentity(SuspendIdentityRequest) returns (IdentityAccountStatusResponse);
+  rpc ReactivateIdentity(ReactivateIdentityRequest) returns (IdentityAccountStatusResponse);
+}
+
+message SuspendIdentityRequest {
+  string identity_id = 1;
+}
+
+message ReactivateIdentityRequest {
+  string identity_id = 1;
+}
+
+message IdentityAccountStatusResponse {
+  // active, suspended or disabled.
+  string previous_status = 1;
+  string current_status = 2;
+  bool changed = 3;
+}

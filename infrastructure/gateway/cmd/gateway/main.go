@@ -18,6 +18,7 @@ import (
 	pricingv1 "github.com/7akoom/ride-platform/gen/go/ride/pricing/v1"
 	riderv1 "github.com/7akoom/ride-platform/gen/go/ride/rider/v1"
 	staffv1 "github.com/7akoom/ride-platform/gen/go/ride/staff/v1"
+	supportv1 "github.com/7akoom/ride-platform/gen/go/ride/support/v1"
 	tripv1 "github.com/7akoom/ride-platform/gen/go/ride/trip/v1"
 	walletv1 "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1"
 	"github.com/7akoom/ride-platform/infrastructure/gateway/internal/config"
@@ -194,6 +195,20 @@ func run() int {
 
 	if err := mediav1.RegisterMediaServiceHandler(ctx, mux, mediaConn); err != nil {
 		logger.Error("failed to register media-service gateway handler", "error", err)
+
+		return 1
+	}
+
+	supportConn, err := dialBackend(cfg.SupportServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to support-service", "error", err)
+
+		return 1
+	}
+	defer supportConn.Close()
+
+	if err := supportv1.RegisterSupportServiceHandler(ctx, mux, supportConn); err != nil {
+		logger.Error("failed to register support-service gateway handler", "error", err)
 
 		return 1
 	}

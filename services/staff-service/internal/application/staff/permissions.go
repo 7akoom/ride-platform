@@ -30,6 +30,20 @@ const (
 	// PermissionIncentivesManage: drivers' incentive campaigns (bonuses
 	// paid from the platform's money). Only the owner holds it by default.
 	PermissionIncentivesManage = "incentives.manage"
+	// Support desk. read: the queue and tickets; reply: claim, answer, change
+	// status and priority; manage: assign tickets to others; refund: refunds,
+	// fee waivers and wallet credits from a ticket (up to the ticket limit);
+	// approve: money over that limit, asked by someone else; suspend: suspend
+	// and reactivate accounts; safety: safety tickets and SOS; configure:
+	// ticket categories.
+	PermissionSupportRead      = "support.read"
+	PermissionSupportReply     = "support.reply"
+	PermissionSupportManage    = "support.manage"
+	PermissionSupportRefund    = "support.refund"
+	PermissionSupportApprove   = "support.approve"
+	PermissionSupportSuspend   = "support.suspend"
+	PermissionSupportSafety    = "support.safety"
+	PermissionSupportConfigure = "support.configure"
 )
 
 // RoleKeyOwner is the system role that always holds every permission,
@@ -54,6 +68,14 @@ var permissionCatalog = map[string]string{
 	PermissionWalletsAdjust:    "Credit or debit a wallet with a reason, and refund trips (optionally charging the driver)",
 	PermissionPayoutsManage:    "Work the drivers' payout queue: approve, mark paid, reject",
 	PermissionIncentivesManage: "Create and cancel drivers' incentive campaigns and see who was paid",
+	PermissionSupportRead:      "See the support queue and tickets (not safety ones)",
+	PermissionSupportReply:     "Claim and answer support tickets, change their status and priority",
+	PermissionSupportManage:    "Assign support tickets to other staff",
+	PermissionSupportRefund:    "Refund trips, waive fees and credit wallets from a ticket, up to the ticket limit",
+	PermissionSupportApprove:   "Approve or reject ticket money above the limit that someone else asked for",
+	PermissionSupportSuspend:   "Suspend and reactivate riders' and drivers' accounts from a ticket",
+	PermissionSupportSafety:    "See and work safety tickets and SOS alerts",
+	PermissionSupportConfigure: "Create and change support ticket categories",
 }
 
 // PermissionInfo describes one grantable permission.

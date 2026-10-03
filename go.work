@@ -13,6 +13,7 @@ use (
 	./services/pricing-service
 	./services/rider-service
 	./services/staff-service
+	./services/support-service
 	./services/trip-service
 	./services/wallet-service
 )

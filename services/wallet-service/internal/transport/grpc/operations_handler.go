@@ -182,7 +182,7 @@ func (h *WalletHandler) AdjustWallet(
 		return nil, errOperationsUnavailable
 	}
 
-	staff, err := personFrom(ctx, "a wallet is adjusted by a staff member")
+	staff, err := staffActor(ctx, request.GetActingIdentityId(), "a wallet is adjusted by a staff member")
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func (h *WalletHandler) RefundTrip(
 		return nil, errOperationsUnavailable
 	}
 
-	staff, err := personFrom(ctx, "a trip is refunded by a staff member")
+	staff, err := staffActor(ctx, request.GetActingIdentityId(), "a trip is refunded by a staff member")
 	if err != nil {
 		return nil, err
 	}

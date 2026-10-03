@@ -1010,6 +1010,10 @@ message AdjustWalletRequest {
   string reason = 4;
   // Required: a retry with the same key is the same adjustment.
   string idempotency_key = 5;
+  // Only from another service (internal token) acting for a staff member it
+  // already authorized (support-service): that person's identity, recorded as
+  // who made it. Refused from anyone else.
+  string acting_identity_id = 6;
 }
 
 // Adjustment is a staff member's correction or refund.
@@ -1046,6 +1050,9 @@ message RefundTripRequest {
   string driver_amount = 3;
   string reason = 4;
   string idempotency_key = 5;
+  // As in AdjustWalletRequest: only from support-service, for the staff
+  // member it authorized.
+  string acting_identity_id = 6;
 }
 
 message ListTripRefundsRequest {

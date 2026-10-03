@@ -309,6 +309,34 @@ services:
 
     restart: unless-stopped
 
+  support-postgres:
+    image: postgres:17-alpine3.24
+    container_name: ride-support-postgres
+
+    environment:
+      POSTGRES_DB: ${SUPPORT_DB_NAME:?SUPPORT_DB_NAME is required}
+      POSTGRES_USER: ${SUPPORT_DB_USER:?SUPPORT_DB_USER is required}
+      POSTGRES_PASSWORD: ${SUPPORT_DB_PASSWORD:?SUPPORT_DB_PASSWORD is required}
+
+    ports:
+      - "127.0.0.1:5444:5432"
+
+    volumes:
+      - support-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${SUPPORT_DB_USER} -d ${SUPPORT_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
   # Object store for uploaded files (S3 API on 127.0.0.1:8333). The apps send
   # and read files here directly with URLs media-service signs; the S3 API
   # refuses anything unsigned. In production put it behind the HTTPS proxy
@@ -598,6 +626,29 @@ services:
       NATS_URL: nats://nats:4222
       STREAM_NAME: WALLET_EVENTS
       STREAM_CONFIG: /streams/wallet-events.json
+
+    volumes:
+      - ./nats/bootstrap.sh:/bootstrap.sh:ro
+      - ./nats/streams:/streams:ro
+
+    command:
+      - /bin/sh
+      - /bootstrap.sh
+
+    restart: "no"
+
+  support-nats-bootstrap:
+    image: natsio/nats-box:0.19.7
+    container_name: ride-support-nats-bootstrap
+
+    depends_on:
+      nats:
+        condition: service_healthy
+
+    environment:
+      NATS_URL: nats://nats:4222
+      STREAM_NAME: SUPPORT_EVENTS
+      STREAM_CONFIG: /streams/support-events.json
 
     volumes:
       - ./nats/bootstrap.sh:/bootstrap.sh:ro
@@ -1006,6 +1057,8 @@ services:
         condition: service_healthy
       wallet-nats-bootstrap:
         condition: service_completed_successfully
+      support-nats-bootstrap:
+        condition: service_completed_successfully
       rider-service:
         condition: service_started
       driver-service:
@@ -1126,6 +1179,66 @@ services:
 
     restart: unless-stopped
 
+  # Support desk: riders' and drivers' tickets, the staff queue, refunds and
+  # suspensions from a ticket, and a safety ticket for every SOS.
+  support-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        SERVICE_NAME: support-service
+    image: ride-platform/support-service:dev
+    container_name: ride-support-service
+
+    env_file:
+      - ../../services/support-service/.env
+
+    environment:
+      GRPC_ADDRESS: ":50063"
+      METRICS_ADDRESS: ":9103"
+      DATABASE_URL: postgres://${SUPPORT_DB_USER}:${SUPPORT_DB_PASSWORD}@support-postgres:5432/${SUPPORT_DB_NAME}?sslmode=disable
+      NATS_URL: nats://nats:4222
+      STAFF_SERVICE_ADDRESS: staff-service:50061
+      MEDIA_SERVICE_ADDRESS: media-service:50062
+      TRIP_SERVICE_ADDRESS: trip-service:50055
+      RIDER_SERVICE_ADDRESS: rider-service:50052
+      DRIVER_SERVICE_ADDRESS: driver-service:50053
+      WALLET_SERVICE_ADDRESS: wallet-service:50058
+      IDENTITY_SERVICE_ADDRESS: identity-service:50051
+
+    volumes:
+      - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
+
+    depends_on:
+      support-postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      support-nats-bootstrap:
+        condition: service_completed_successfully
+      trip-nats-bootstrap:
+        condition: service_completed_successfully
+      staff-service:
+        condition: service_started
+      media-service:
+        condition: service_started
+      trip-service:
+        condition: service_started
+      rider-service:
+        condition: service_started
+      driver-service:
+        condition: service_started
+      wallet-service:
+        condition: service_started
+      identity-service:
+        condition: service_started
+
+    ports:
+      - "127.0.0.1:50063:50063"
+      - "127.0.0.1:9103:9103"
+
+    restart: unless-stopped
+
   gateway:
     build:
       context: ../..
@@ -1145,6 +1258,7 @@ services:
       IDENTITY_SERVICE_ADDRESS: identity-service:50051
       STAFF_SERVICE_ADDRESS: staff-service:50061
       MEDIA_SERVICE_ADDRESS: media-service:50062
+      SUPPORT_SERVICE_ADDRESS: support-service:50063
       ALLOWED_ORIGINS: http://localhost:3000
 
     depends_on:
@@ -1167,6 +1281,8 @@ services:
       staff-service:
         condition: service_started
       media-service:
+        condition: service_started
+      support-service:
         condition: service_started
 
     ports:
@@ -1231,6 +1347,7 @@ volumes:
   analytics-postgres-data:
   staff-postgres-data:
   media-postgres-data:
+  support-postgres-data:
   seaweedfs-data:
   identity-valkey-data:
   location-valkey-data:
