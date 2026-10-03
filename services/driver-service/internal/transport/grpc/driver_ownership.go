@@ -101,6 +101,46 @@ var ownerChecks = map[string]ownerCheck{
 
 		return c.ownsDriver(ctx, r.GetDriverId())
 	},
+	driverRPCPrefix + "AddVehicle": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*driverv1.AddVehicleRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsDriver(ctx, r.GetDriverId())
+	},
+	driverRPCPrefix + "ListVehicles": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*driverv1.ListVehiclesRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsDriver(ctx, r.GetDriverId())
+	},
+	driverRPCPrefix + "UpdateVehicle": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*driverv1.UpdateVehicleRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsDriver(ctx, r.GetDriverId())
+	},
+	driverRPCPrefix + "ActivateVehicle": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*driverv1.VehicleActionRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsDriver(ctx, r.GetDriverId())
+	},
+	driverRPCPrefix + "RetireVehicle": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*driverv1.VehicleActionRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsDriver(ctx, r.GetDriverId())
+	},
 	driverRPCPrefix + "UpdateAvailability": func(ctx context.Context, c caller, request any) (bool, error) {
 		r, ok := request.(*driverv1.UpdateAvailabilityRequest)
 		if !ok {

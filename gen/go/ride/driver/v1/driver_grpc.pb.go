@@ -35,6 +35,14 @@ const (
 	DriverService_ListPendingDriverDocuments_FullMethodName   = "/ride.driver.v1.DriverService/ListPendingDriverDocuments"
 	DriverService_ApproveDriverDocument_FullMethodName        = "/ride.driver.v1.DriverService/ApproveDriverDocument"
 	DriverService_RejectDriverDocument_FullMethodName         = "/ride.driver.v1.DriverService/RejectDriverDocument"
+	DriverService_AddVehicle_FullMethodName                   = "/ride.driver.v1.DriverService/AddVehicle"
+	DriverService_ListVehicles_FullMethodName                 = "/ride.driver.v1.DriverService/ListVehicles"
+	DriverService_UpdateVehicle_FullMethodName                = "/ride.driver.v1.DriverService/UpdateVehicle"
+	DriverService_ActivateVehicle_FullMethodName              = "/ride.driver.v1.DriverService/ActivateVehicle"
+	DriverService_RetireVehicle_FullMethodName                = "/ride.driver.v1.DriverService/RetireVehicle"
+	DriverService_ListPendingVehicles_FullMethodName          = "/ride.driver.v1.DriverService/ListPendingVehicles"
+	DriverService_ApproveVehicle_FullMethodName               = "/ride.driver.v1.DriverService/ApproveVehicle"
+	DriverService_RejectVehicle_FullMethodName                = "/ride.driver.v1.DriverService/RejectVehicle"
 )
 
 // DriverServiceClient is the client API for DriverService service.
@@ -96,6 +104,31 @@ type DriverServiceClient interface {
 	// approved one (a driver who is online then goes offline), with the reason
 	// the driver is shown. Staff with drivers.approve, or the internal token.
 	RejectDriverDocument(ctx context.Context, in *RejectDriverDocumentRequest, opts ...grpc.CallOption) (*DriverDocumentResponse, error)
+	// AddVehicle registers another car for the driver. It waits for staff review
+	// (and its documents) before it can be made active. At most 5 cars in service.
+	AddVehicle(ctx context.Context, in *AddVehicleRequest, opts ...grpc.CallOption) (*VehicleResponse, error)
+	// ListVehicles lists the driver's cars, retired ones last. The driver, or
+	// staff with drivers.read.
+	ListVehicles(ctx context.Context, in *ListVehiclesRequest, opts ...grpc.CallOption) (*ListVehiclesResponse, error)
+	// UpdateVehicle corrects a car that is still pending or was rejected; a
+	// rejected car goes back to review.
+	UpdateVehicle(ctx context.Context, in *UpdateVehicleRequest, opts ...grpc.CallOption) (*VehicleResponse, error)
+	// ActivateVehicle makes an approved car the one the driver works with. The
+	// driver must be offline.
+	ActivateVehicle(ctx context.Context, in *VehicleActionRequest, opts ...grpc.CallOption) (*VehicleResponse, error)
+	// RetireVehicle takes a car out of service for good (sold, scrapped); its
+	// documents go with it. The active car cannot be retired.
+	RetireVehicle(ctx context.Context, in *VehicleActionRequest, opts ...grpc.CallOption) (*VehicleResponse, error)
+	// ListPendingVehicles is the car review queue, oldest first. Staff with
+	// drivers.read, or the internal token.
+	ListPendingVehicles(ctx context.Context, in *ListPendingVehiclesRequest, opts ...grpc.CallOption) (*ListPendingVehiclesResponse, error)
+	// ApproveVehicle approves a pending car once its required documents are
+	// approved and in date; the reviewer may set its year and class. Staff with
+	// drivers.approve, or the internal token.
+	ApproveVehicle(ctx context.Context, in *ApproveVehicleRequest, opts ...grpc.CallOption) (*VehicleResponse, error)
+	// RejectVehicle turns down a pending car, with the reason the driver is
+	// shown. Staff with drivers.approve, or the internal token.
+	RejectVehicle(ctx context.Context, in *RejectVehicleRequest, opts ...grpc.CallOption) (*VehicleResponse, error)
 }
 
 type driverServiceClient struct {
@@ -266,6 +299,86 @@ func (c *driverServiceClient) RejectDriverDocument(ctx context.Context, in *Reje
 	return out, nil
 }
 
+func (c *driverServiceClient) AddVehicle(ctx context.Context, in *AddVehicleRequest, opts ...grpc.CallOption) (*VehicleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VehicleResponse)
+	err := c.cc.Invoke(ctx, DriverService_AddVehicle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) ListVehicles(ctx context.Context, in *ListVehiclesRequest, opts ...grpc.CallOption) (*ListVehiclesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListVehiclesResponse)
+	err := c.cc.Invoke(ctx, DriverService_ListVehicles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) UpdateVehicle(ctx context.Context, in *UpdateVehicleRequest, opts ...grpc.CallOption) (*VehicleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VehicleResponse)
+	err := c.cc.Invoke(ctx, DriverService_UpdateVehicle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) ActivateVehicle(ctx context.Context, in *VehicleActionRequest, opts ...grpc.CallOption) (*VehicleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VehicleResponse)
+	err := c.cc.Invoke(ctx, DriverService_ActivateVehicle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) RetireVehicle(ctx context.Context, in *VehicleActionRequest, opts ...grpc.CallOption) (*VehicleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VehicleResponse)
+	err := c.cc.Invoke(ctx, DriverService_RetireVehicle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) ListPendingVehicles(ctx context.Context, in *ListPendingVehiclesRequest, opts ...grpc.CallOption) (*ListPendingVehiclesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPendingVehiclesResponse)
+	err := c.cc.Invoke(ctx, DriverService_ListPendingVehicles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) ApproveVehicle(ctx context.Context, in *ApproveVehicleRequest, opts ...grpc.CallOption) (*VehicleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VehicleResponse)
+	err := c.cc.Invoke(ctx, DriverService_ApproveVehicle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) RejectVehicle(ctx context.Context, in *RejectVehicleRequest, opts ...grpc.CallOption) (*VehicleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VehicleResponse)
+	err := c.cc.Invoke(ctx, DriverService_RejectVehicle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DriverServiceServer is the server API for DriverService service.
 // All implementations must embed UnimplementedDriverServiceServer
 // for forward compatibility.
@@ -325,6 +438,31 @@ type DriverServiceServer interface {
 	// approved one (a driver who is online then goes offline), with the reason
 	// the driver is shown. Staff with drivers.approve, or the internal token.
 	RejectDriverDocument(context.Context, *RejectDriverDocumentRequest) (*DriverDocumentResponse, error)
+	// AddVehicle registers another car for the driver. It waits for staff review
+	// (and its documents) before it can be made active. At most 5 cars in service.
+	AddVehicle(context.Context, *AddVehicleRequest) (*VehicleResponse, error)
+	// ListVehicles lists the driver's cars, retired ones last. The driver, or
+	// staff with drivers.read.
+	ListVehicles(context.Context, *ListVehiclesRequest) (*ListVehiclesResponse, error)
+	// UpdateVehicle corrects a car that is still pending or was rejected; a
+	// rejected car goes back to review.
+	UpdateVehicle(context.Context, *UpdateVehicleRequest) (*VehicleResponse, error)
+	// ActivateVehicle makes an approved car the one the driver works with. The
+	// driver must be offline.
+	ActivateVehicle(context.Context, *VehicleActionRequest) (*VehicleResponse, error)
+	// RetireVehicle takes a car out of service for good (sold, scrapped); its
+	// documents go with it. The active car cannot be retired.
+	RetireVehicle(context.Context, *VehicleActionRequest) (*VehicleResponse, error)
+	// ListPendingVehicles is the car review queue, oldest first. Staff with
+	// drivers.read, or the internal token.
+	ListPendingVehicles(context.Context, *ListPendingVehiclesRequest) (*ListPendingVehiclesResponse, error)
+	// ApproveVehicle approves a pending car once its required documents are
+	// approved and in date; the reviewer may set its year and class. Staff with
+	// drivers.approve, or the internal token.
+	ApproveVehicle(context.Context, *ApproveVehicleRequest) (*VehicleResponse, error)
+	// RejectVehicle turns down a pending car, with the reason the driver is
+	// shown. Staff with drivers.approve, or the internal token.
+	RejectVehicle(context.Context, *RejectVehicleRequest) (*VehicleResponse, error)
 	mustEmbedUnimplementedDriverServiceServer()
 }
 
@@ -382,6 +520,30 @@ func (UnimplementedDriverServiceServer) ApproveDriverDocument(context.Context, *
 }
 func (UnimplementedDriverServiceServer) RejectDriverDocument(context.Context, *RejectDriverDocumentRequest) (*DriverDocumentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RejectDriverDocument not implemented")
+}
+func (UnimplementedDriverServiceServer) AddVehicle(context.Context, *AddVehicleRequest) (*VehicleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AddVehicle not implemented")
+}
+func (UnimplementedDriverServiceServer) ListVehicles(context.Context, *ListVehiclesRequest) (*ListVehiclesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListVehicles not implemented")
+}
+func (UnimplementedDriverServiceServer) UpdateVehicle(context.Context, *UpdateVehicleRequest) (*VehicleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateVehicle not implemented")
+}
+func (UnimplementedDriverServiceServer) ActivateVehicle(context.Context, *VehicleActionRequest) (*VehicleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ActivateVehicle not implemented")
+}
+func (UnimplementedDriverServiceServer) RetireVehicle(context.Context, *VehicleActionRequest) (*VehicleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RetireVehicle not implemented")
+}
+func (UnimplementedDriverServiceServer) ListPendingVehicles(context.Context, *ListPendingVehiclesRequest) (*ListPendingVehiclesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPendingVehicles not implemented")
+}
+func (UnimplementedDriverServiceServer) ApproveVehicle(context.Context, *ApproveVehicleRequest) (*VehicleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ApproveVehicle not implemented")
+}
+func (UnimplementedDriverServiceServer) RejectVehicle(context.Context, *RejectVehicleRequest) (*VehicleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RejectVehicle not implemented")
 }
 func (UnimplementedDriverServiceServer) mustEmbedUnimplementedDriverServiceServer() {}
 func (UnimplementedDriverServiceServer) testEmbeddedByValue()                       {}
@@ -692,6 +854,150 @@ func _DriverService_RejectDriverDocument_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DriverService_AddVehicle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddVehicleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).AddVehicle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_AddVehicle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).AddVehicle(ctx, req.(*AddVehicleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_ListVehicles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListVehiclesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ListVehicles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ListVehicles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ListVehicles(ctx, req.(*ListVehiclesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_UpdateVehicle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateVehicleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).UpdateVehicle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_UpdateVehicle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).UpdateVehicle(ctx, req.(*UpdateVehicleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_ActivateVehicle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VehicleActionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ActivateVehicle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ActivateVehicle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ActivateVehicle(ctx, req.(*VehicleActionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_RetireVehicle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VehicleActionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).RetireVehicle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_RetireVehicle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).RetireVehicle(ctx, req.(*VehicleActionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_ListPendingVehicles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPendingVehiclesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ListPendingVehicles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ListPendingVehicles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ListPendingVehicles(ctx, req.(*ListPendingVehiclesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_ApproveVehicle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveVehicleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ApproveVehicle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ApproveVehicle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ApproveVehicle(ctx, req.(*ApproveVehicleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_RejectVehicle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RejectVehicleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).RejectVehicle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_RejectVehicle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).RejectVehicle(ctx, req.(*RejectVehicleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DriverService_ServiceDesc is the grpc.ServiceDesc for DriverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -762,6 +1068,38 @@ var DriverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RejectDriverDocument",
 			Handler:    _DriverService_RejectDriverDocument_Handler,
+		},
+		{
+			MethodName: "AddVehicle",
+			Handler:    _DriverService_AddVehicle_Handler,
+		},
+		{
+			MethodName: "ListVehicles",
+			Handler:    _DriverService_ListVehicles_Handler,
+		},
+		{
+			MethodName: "UpdateVehicle",
+			Handler:    _DriverService_UpdateVehicle_Handler,
+		},
+		{
+			MethodName: "ActivateVehicle",
+			Handler:    _DriverService_ActivateVehicle_Handler,
+		},
+		{
+			MethodName: "RetireVehicle",
+			Handler:    _DriverService_RetireVehicle_Handler,
+		},
+		{
+			MethodName: "ListPendingVehicles",
+			Handler:    _DriverService_ListPendingVehicles_Handler,
+		},
+		{
+			MethodName: "ApproveVehicle",
+			Handler:    _DriverService_ApproveVehicle_Handler,
+		},
+		{
+			MethodName: "RejectVehicle",
+			Handler:    _DriverService_RejectVehicle_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

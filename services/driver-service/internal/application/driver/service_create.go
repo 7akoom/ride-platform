@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 func (s *service) CreateDriver(
@@ -32,6 +33,12 @@ func (s *service) CreateDriver(
 		return Driver{}, err
 	}
 
+	if !ValidVehicleYear(input.VehicleYear, time.Now()) {
+		return Driver{}, ErrInvalidVehicleYear
+	}
+
+	vehicle.Year = input.VehicleYear
+
 	// Clients that predate vehicle classes send none; they become economy.
 	if vehicle.Class == "" {
 		vehicle.Class = VehicleClassEconomy
@@ -53,6 +60,7 @@ func (s *service) CreateDriver(
 		ctx,
 		CreateInput{
 			ID:          s.idGenerator.NewID(),
+			VehicleID:   s.idGenerator.NewID(),
 			IdentityID:  identityID,
 			DisplayName: displayName.String(),
 			Vehicle:     vehicle,

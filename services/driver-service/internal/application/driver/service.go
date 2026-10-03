@@ -10,6 +10,7 @@ type CreateDriverInput struct {
 	VehicleColor string
 	VehiclePlate string
 	VehicleClass string
+	VehicleYear  int
 }
 
 type UpdateDriverProfileInput struct {
@@ -20,6 +21,8 @@ type UpdateDriverProfileInput struct {
 	VehicleColor string
 	VehiclePlate string
 	VehicleClass string
+	// 0 leaves the year unchanged.
+	VehicleYear int
 }
 
 type UpdateDriverAvailabilityInput struct {

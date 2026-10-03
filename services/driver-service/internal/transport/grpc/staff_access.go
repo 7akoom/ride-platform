@@ -54,6 +54,8 @@ func staffTargetOf(request any) string {
 		return r.GetDriverId()
 	case interface{ GetDocumentId() string }:
 		return r.GetDocumentId()
+	case interface{ GetVehicleId() string }:
+		return r.GetVehicleId()
 	case interface{ GetCode() string }:
 		return r.GetCode()
 	default:

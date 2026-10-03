@@ -15,6 +15,7 @@ import (
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
 	outboxapp "github.com/7akoom/ride-platform/services/driver-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/ratings"
+	"github.com/7akoom/ride-platform/services/driver-service/internal/application/vehicles"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/config"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/infrastructure/clients"
 	clockinfra "github.com/7akoom/ride-platform/services/driver-service/internal/infrastructure/clock"
@@ -171,10 +172,14 @@ func run() int {
 	driverRepository := postgresrepo.NewDriverRepository(pool)
 	idGenerator := identifier.NewUUIDGenerator()
 
+	vehicleRepository := postgresrepo.NewVehicleRepository(pool)
+	mediaDocuments := clients.NewMediaDocuments(mediaConn)
+
 	documentService := documents.NewService(
 		postgresrepo.NewDocumentRepository(pool),
 		postgresrepo.NewDocumentDrivers(driverRepository),
-		clients.NewMediaDocuments(mediaConn),
+		vehicleRepository,
+		mediaDocuments,
 		idGenerator,
 		clockinfra.NewSystemClock(),
 		documents.Config{Location: documentsConfig.Location, ReminderDays: documentsConfig.ReminderDays},
@@ -182,7 +187,15 @@ func run() int {
 	)
 
 	driverService := driver.NewService(driverRepository, idGenerator, documentService)
-	driverHandler := grpcserver.NewDriverHandler(driverService, documentService, logger)
+	vehicleService := vehicles.NewService(
+		vehicleRepository,
+		documentService,
+		mediaDocuments,
+		idGenerator,
+		clockinfra.NewSystemClock(),
+		logger,
+	)
+	driverHandler := grpcserver.NewDriverHandler(driverService, documentService, vehicleService, logger)
 
 	ratingSubscription, err := subscribeTripRatings(
 		ctx,

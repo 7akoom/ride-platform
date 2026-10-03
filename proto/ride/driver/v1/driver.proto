@@ -136,6 +136,70 @@ service DriverService {
       body: "*"
     };
   }
+
+  // AddVehicle registers another car for the driver. It waits for staff review
+  // (and its documents) before it can be made active. At most 5 cars in service.
+  rpc AddVehicle(AddVehicleRequest) returns (VehicleResponse) {
+    option (google.api.http) = {
+      post: "/v1/drivers/{driver_id}/vehicles"
+      body: "*"
+    };
+  }
+  // ListVehicles lists the driver's cars, retired ones last. The driver, or
+  // staff with drivers.read.
+  rpc ListVehicles(ListVehiclesRequest) returns (ListVehiclesResponse) {
+    option (google.api.http) = {
+      get: "/v1/drivers/{driver_id}/vehicles"
+    };
+  }
+  // UpdateVehicle corrects a car that is still pending or was rejected; a
+  // rejected car goes back to review.
+  rpc UpdateVehicle(UpdateVehicleRequest) returns (VehicleResponse) {
+    option (google.api.http) = {
+      patch: "/v1/drivers/{driver_id}/vehicles/{vehicle_id}"
+      body: "*"
+    };
+  }
+  // ActivateVehicle makes an approved car the one the driver works with. The
+  // driver must be offline.
+  rpc ActivateVehicle(VehicleActionRequest) returns (VehicleResponse) {
+    option (google.api.http) = {
+      post: "/v1/drivers/{driver_id}/vehicles/{vehicle_id}:activate"
+      body: "*"
+    };
+  }
+  // RetireVehicle takes a car out of service for good (sold, scrapped); its
+  // documents go with it. The active car cannot be retired.
+  rpc RetireVehicle(VehicleActionRequest) returns (VehicleResponse) {
+    option (google.api.http) = {
+      post: "/v1/drivers/{driver_id}/vehicles/{vehicle_id}:retire"
+      body: "*"
+    };
+  }
+  // ListPendingVehicles is the car review queue, oldest first. Staff with
+  // drivers.read, or the internal token.
+  rpc ListPendingVehicles(ListPendingVehiclesRequest) returns (ListPendingVehiclesResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/vehicles"
+    };
+  }
+  // ApproveVehicle approves a pending car once its required documents are
+  // approved and in date; the reviewer may set its year and class. Staff with
+  // drivers.approve, or the internal token.
+  rpc ApproveVehicle(ApproveVehicleRequest) returns (VehicleResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/vehicles/{vehicle_id}:approve"
+      body: "*"
+    };
+  }
+  // RejectVehicle turns down a pending car, with the reason the driver is
+  // shown. Staff with drivers.approve, or the internal token.
+  rpc RejectVehicle(RejectVehicleRequest) returns (VehicleResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/vehicles/{vehicle_id}:reject"
+      body: "*"
+    };
+  }
 }
 
 enum DriverStatus {
@@ -161,6 +225,10 @@ message Vehicle {
   string color = 3;
   string plate_number = 4;
   string vehicle_class = 5; // economy or comfort
+  // The active car's id; ignored on input.
+  string id = 6;
+  // Year of manufacture; 0 when not given (older registrations).
+  int32 year = 7;
 }
 
 message Driver {
@@ -268,6 +336,9 @@ message DriverDocumentType {
   // Inactive types are not asked for.
   bool active = 9;
   int32 sort_order = 10;
+  // "driver" (ID, licence, photo) or "vehicle" (registration, car photos):
+  // a vehicle document is handed in for one car.
+  string scope = 11;
 }
 
 enum DriverDocumentStatus {
@@ -294,6 +365,8 @@ message DriverDocument {
   google.protobuf.Timestamp reviewed_at = 10;
   // An approved document whose last valid day has passed.
   bool expired = 11;
+  // The car a vehicle document is for; empty for the driver's own documents.
+  string vehicle_id = 12;
 }
 
 enum DocumentRequirementState {
@@ -320,6 +393,8 @@ message DocumentRequirement {
   DriverDocument pending = 4;
   // The last one turned down, if no newer one was submitted since.
   DriverDocument rejected = 5;
+  // The car a vehicle requirement is for; empty for the driver's own.
+  string vehicle_id = 6;
 }
 
 message ListDriverDocumentTypesRequest {}
@@ -345,6 +420,8 @@ message SubmitDriverDocumentRequest {
   string document_number = 4;
   // YYYY-MM-DD, after today. Required when the type has an expiry; ignored otherwise.
   string expires_on = 5;
+  // For a vehicle document: the car. Empty means the active car.
+  string vehicle_id = 6;
 }
 
 message DriverDocumentResponse {
@@ -355,14 +432,21 @@ message ListDriverDocumentsRequest {
   string driver_id = 1;
   // Also return every document ever submitted, newest first.
   bool include_history = 2;
+  // Only the vehicle requirements of this car (e.g. a new one). Empty: the
+  // driver's own and the active car's.
+  string vehicle_id = 3;
 }
 
 message ListDriverDocumentsResponse {
-  // One per active document type, in the app's order.
+  // One per active document type (per car for vehicle types), in the app's order.
   repeated DocumentRequirement requirements = 1;
-  // Every required document is approved and in date.
+  // Every required document of the driver and of the active car is approved
+  // and in date, and the active car is not rejected (a new driver's first car
+  // is approved together with them).
   bool compliant = 2;
   repeated DriverDocument history = 3;
+  // The car the vehicle requirements are for, if any.
+  DriverVehicle vehicle = 4;
 }
 
 message ListPendingDriverDocumentsRequest {
@@ -390,6 +474,102 @@ message ApproveDriverDocumentRequest {
 
 message RejectDriverDocumentRequest {
   string document_id = 1;
+  // Shown to the driver. Required.
+  string reason = 2;
+}
+
+enum VehicleStatus {
+  VEHICLE_STATUS_UNSPECIFIED = 0;
+  VEHICLE_STATUS_PENDING = 1;
+  VEHICLE_STATUS_APPROVED = 2;
+  VEHICLE_STATUS_REJECTED = 3;
+  // Out of service for good.
+  VEHICLE_STATUS_RETIRED = 4;
+}
+
+message DriverVehicle {
+  string id = 1;
+  string driver_id = 2;
+  string make = 3;
+  string model = 4;
+  string color = 5;
+  string plate_number = 6;
+  // 0 when not given (older registrations).
+  int32 year = 7;
+  string vehicle_class = 8;
+  VehicleStatus status = 9;
+  // The car the driver works with.
+  bool active = 10;
+  string rejection_reason = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp reviewed_at = 13;
+}
+
+message VehicleResponse {
+  DriverVehicle vehicle = 1;
+}
+
+message AddVehicleRequest {
+  string driver_id = 1;
+  string make = 2;
+  string model = 3;
+  string color = 4;
+  string plate_number = 5;
+  int32 year = 6;
+  // economy or comfort; staff may change it on approval. Empty: economy.
+  string vehicle_class = 7;
+}
+
+message ListVehiclesRequest {
+  string driver_id = 1;
+}
+
+message ListVehiclesResponse {
+  repeated DriverVehicle vehicles = 1;
+}
+
+message UpdateVehicleRequest {
+  string driver_id = 1;
+  string vehicle_id = 2;
+  string make = 3;
+  string model = 4;
+  string color = 5;
+  string plate_number = 6;
+  int32 year = 7;
+  string vehicle_class = 8;
+}
+
+message VehicleActionRequest {
+  string driver_id = 1;
+  string vehicle_id = 2;
+}
+
+message ListPendingVehiclesRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message PendingVehicle {
+  DriverVehicle vehicle = 1;
+  string driver_display_name = 2;
+  DriverStatus driver_status = 3;
+}
+
+message ListPendingVehiclesResponse {
+  repeated PendingVehicle vehicles = 1;
+  string next_page_token = 2;
+}
+
+message ApproveVehicleRequest {
+  string vehicle_id = 1;
+  // Optional: set when the driver left it out or got it wrong.
+  int32 year = 2;
+  // Optional: economy or comfort, what the car qualifies for.
+  string vehicle_class = 3;
+}
+
+message RejectVehicleRequest {
+  string vehicle_id = 1;
   // Shown to the driver. Required.
   string reason = 2;
 }

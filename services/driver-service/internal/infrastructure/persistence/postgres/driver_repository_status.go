@@ -44,7 +44,7 @@ func (r *DriverRepository) UpdateStatus(
            AND status = ANY($3::text[])
          RETURNING id, identity_id, display_name, status, availability_status,
                    vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
-                   vehicle_class,
+                   vehicle_class, COALESCE(vehicle_id::text, ''), COALESCE(vehicle_year, 0),
                    rating_average, rating_count, created_at, updated_at,
 		           rejection_reason`,
 		input.DriverID,
@@ -57,6 +57,20 @@ func (r *DriverRepository) UpdateStatus(
 
 	err = scanDriver(row, &updated)
 	if err == nil {
+		// Approving the driver approves the first car reviewed with them.
+		if input.To == driver.StatusActive {
+			if _, err := tx.Exec(
+				ctx,
+				`UPDATE vehicles
+				 SET status = 'approved', rejection_reason = '', reviewed_at = CURRENT_TIMESTAMP,
+				     updated_at = CURRENT_TIMESTAMP
+				 WHERE driver_id = $1 AND active AND status = 'pending'`,
+				updated.ID,
+			); err != nil {
+				return driver.Driver{}, fmt.Errorf("approve the driver's vehicle: %w", err)
+			}
+		}
+
 		if eventType, tells := statusEvents[input.To]; tells {
 			payload := map[string]string{"driver_id": updated.ID, "reason": updated.RejectionReason}
 

@@ -6,7 +6,9 @@ import (
 )
 
 type CreateInput struct {
-	ID          string
+	ID string
+	// VehicleID is the id of the driver's first car, made active with them.
+	VehicleID   string
 	IdentityID  string
 	DisplayName string
 	Vehicle     Vehicle
@@ -92,10 +94,21 @@ type Compliance struct {
 	Missing []string
 }
 
-// ComplianceChecker tells whether a driver's required documents are all
-// approved and in date.
+// CompliancePurpose is what the documents are checked for.
+type CompliancePurpose int
+
+const (
+	// ForWork: going online. The active car must be approved too.
+	ForWork CompliancePurpose = iota + 1
+	// ForApproval: approving the driver, which also approves their first
+	// car, so a car still waiting for review is fine; a rejected one is not.
+	ForApproval
+)
+
+// ComplianceChecker tells whether a driver's required documents, and those
+// of their active car, are all approved and in date.
 type ComplianceChecker interface {
-	CheckCompliance(ctx context.Context, driverID string) (Compliance, error)
+	CheckCompliance(ctx context.Context, driverID string, purpose CompliancePurpose) (Compliance, error)
 }
 
 type IDGenerator interface {

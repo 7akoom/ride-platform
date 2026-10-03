@@ -9,6 +9,7 @@ import (
 	driverv1 "github.com/7akoom/ride-platform/gen/go/ride/driver/v1"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/documents"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
+	"github.com/7akoom/ride-platform/services/driver-service/internal/application/vehicles"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -19,12 +20,14 @@ type DriverHandler struct {
 
 	driverService driver.Service
 	documents     *documents.Service
+	vehicles      *vehicles.Service
 	logger        *slog.Logger
 }
 
 func NewDriverHandler(
 	driverService driver.Service,
 	documentService *documents.Service,
+	vehicleService *vehicles.Service,
 	logger *slog.Logger,
 ) *DriverHandler {
 	if driverService == nil {
@@ -35,6 +38,10 @@ func NewDriverHandler(
 		panic("document service is required")
 	}
 
+	if vehicleService == nil {
+		panic("vehicle service is required")
+	}
+
 	if logger == nil {
 		panic("logger is required")
 	}
@@ -42,6 +49,7 @@ func NewDriverHandler(
 	return &DriverHandler{
 		driverService: driverService,
 		documents:     documentService,
+		vehicles:      vehicleService,
 		logger:        logger,
 	}
 }
@@ -66,6 +74,7 @@ func (h *DriverHandler) CreateDriver(
 			VehicleColor: vehicle.GetColor(),
 			VehiclePlate: vehicle.GetPlateNumber(),
 			VehicleClass: vehicle.GetVehicleClass(),
+			VehicleYear:  int(vehicle.GetYear()),
 		},
 	)
 	if err != nil {
@@ -133,6 +142,7 @@ func (h *DriverHandler) UpdateDriverProfile(
 			VehicleColor: vehicle.GetColor(),
 			VehiclePlate: vehicle.GetPlateNumber(),
 			VehicleClass: vehicle.GetVehicleClass(),
+			VehicleYear:  int(vehicle.GetYear()),
 		},
 	)
 	if err != nil {
@@ -287,6 +297,7 @@ func (h *DriverHandler) mapDriverError(err error) error {
 		errors.Is(err, driver.ErrVehicleFieldsRequired),
 		errors.Is(err, driver.ErrInvalidVehicleClass),
 		errors.Is(err, driver.ErrInvalidAvailability),
+		errors.Is(err, driver.ErrInvalidVehicleYear),
 		errors.Is(err, driver.ErrRejectionReasonTooLong),
 		errors.Is(err, driver.ErrInvalidListQuery),
 		errors.Is(err, driver.ErrInvalidPageToken):
@@ -349,6 +360,8 @@ func toProtoDriver(d driver.Driver) *driverv1.Driver {
 			Color:        d.Vehicle.Color,
 			PlateNumber:  d.Vehicle.PlateNumber,
 			VehicleClass: string(d.Vehicle.Class),
+			Id:           d.Vehicle.ID,
+			Year:         int32(d.Vehicle.Year),
 		},
 		RatingAverage:   d.RatingAverage,
 		RatingCount:     d.RatingCount,

@@ -43,7 +43,7 @@ func (s *service) ApproveDriver(
 		return Driver{}, fmt.Errorf("change driver status to %s: %w", StatusActive, ErrInvalidStatusTransition)
 	}
 
-	compliance, err := s.compliance.CheckCompliance(ctx, trimmedID)
+	compliance, err := s.compliance.CheckCompliance(ctx, trimmedID, ForApproval)
 	if err != nil {
 		return Driver{}, fmt.Errorf("check driver documents: %w", err)
 	}

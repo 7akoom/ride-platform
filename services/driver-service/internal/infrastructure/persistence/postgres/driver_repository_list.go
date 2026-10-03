@@ -9,7 +9,7 @@ import (
 
 const driverListColumns = `id, identity_id, display_name, status, availability_status,
 	vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
-	vehicle_class,
+	vehicle_class, COALESCE(vehicle_id::text, ''), COALESCE(vehicle_year, 0),
 	rating_average, rating_count, created_at, updated_at,
 	rejection_reason`
 

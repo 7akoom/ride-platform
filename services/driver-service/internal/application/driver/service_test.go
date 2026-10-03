@@ -106,13 +106,15 @@ func (g *fakeIDGenerator) NewID() string { return g.id }
 
 // fakeCompliance answers compliant unless told otherwise.
 type fakeCompliance struct {
-	missing []string
-	err     error
-	calls   int
+	missing  []string
+	err      error
+	calls    int
+	purposes []driver.CompliancePurpose
 }
 
-func (c *fakeCompliance) CheckCompliance(_ context.Context, _ string) (driver.Compliance, error) {
+func (c *fakeCompliance) CheckCompliance(_ context.Context, _ string, purpose driver.CompliancePurpose) (driver.Compliance, error) {
 	c.calls++
+	c.purposes = append(c.purposes, purpose)
 
 	if c.err != nil {
 		return driver.Compliance{}, c.err

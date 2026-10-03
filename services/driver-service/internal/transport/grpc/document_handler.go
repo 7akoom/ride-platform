@@ -54,6 +54,7 @@ func (h *DriverHandler) UpsertDriverDocumentType(
 
 	saved, err := h.documents.UpsertType(ctx, documents.Type{
 		Code:           request.GetCode(),
+		Scope:          documents.Scope(t.GetScope()),
 		MediaPurpose:   documents.MediaPurpose(t.GetMediaPurpose()),
 		NameEN:         t.GetNameEn(),
 		NameAR:         t.GetNameAr(),
@@ -81,6 +82,7 @@ func (h *DriverHandler) SubmitDriverDocument(
 
 	created, err := h.documents.Submit(ctx, documents.SubmitInput{
 		DriverID:  request.GetDriverId(),
+		VehicleID: request.GetVehicleId(),
 		TypeCode:  request.GetTypeCode(),
 		MediaID:   request.GetMediaId(),
 		Number:    request.GetDocumentNumber(),
@@ -101,20 +103,30 @@ func (h *DriverHandler) ListDriverDocuments(
 		return nil, status.Error(codes.InvalidArgument, "request is required")
 	}
 
-	overview, err := h.documents.Overview(ctx, request.GetDriverId(), request.GetIncludeHistory())
+	overview, err := h.documents.Overview(ctx, request.GetDriverId(), request.GetIncludeHistory(), request.GetVehicleId())
 	if err != nil {
 		return nil, h.mapDocumentError(err)
 	}
 
 	response := &driverv1.ListDriverDocumentsResponse{Compliant: overview.Compliant}
 
+	if overview.Vehicle != nil {
+		car, err := h.vehicles.Get(ctx, overview.Vehicle.ID)
+		if err != nil {
+			return nil, h.mapVehicleError(err)
+		}
+
+		response.Vehicle = toProtoVehicle(car)
+	}
+
 	for _, req := range overview.Requirements {
 		response.Requirements = append(response.Requirements, &driverv1.DocumentRequirement{
-			Type:     toProtoDocumentType(req.Type),
-			State:    toProtoRequirementState(req.State),
-			Approved: toProtoDocumentOrNil(req.Approved, overview.Today),
-			Pending:  toProtoDocumentOrNil(req.Pending, overview.Today),
-			Rejected: toProtoDocumentOrNil(req.Rejected, overview.Today),
+			Type:      toProtoDocumentType(req.Type),
+			State:     toProtoRequirementState(req.State),
+			Approved:  toProtoDocumentOrNil(req.Approved, overview.Today),
+			Pending:   toProtoDocumentOrNil(req.Pending, overview.Today),
+			Rejected:  toProtoDocumentOrNil(req.Rejected, overview.Today),
+			VehicleId: req.VehicleID,
 		})
 	}
 
@@ -215,6 +227,11 @@ func (h *DriverHandler) mapDocumentError(err error) error {
 		return status.Error(codes.NotFound, "document type not found")
 	case errors.Is(err, documents.ErrDocumentNotFound):
 		return status.Error(codes.NotFound, "document not found")
+	case errors.Is(err, documents.ErrVehicleNotFound):
+		return status.Error(codes.NotFound, "vehicle not found")
+	case errors.Is(err, documents.ErrNoActiveVehicle),
+		errors.Is(err, documents.ErrVehicleRetired):
+		return status.Error(codes.FailedPrecondition, err.Error())
 	case errors.Is(err, documents.ErrMediaAlreadyUsed),
 		errors.Is(err, documents.ErrNumberTaken):
 		return status.Error(codes.AlreadyExists, err.Error())
@@ -261,6 +278,7 @@ func documentsMessage(err error) string {
 func toProtoDocumentType(t documents.Type) *driverv1.DriverDocumentType {
 	return &driverv1.DriverDocumentType{
 		Code:           t.Code,
+		Scope:          string(t.Scope),
 		MediaPurpose:   string(t.MediaPurpose),
 		NameEn:         t.NameEN,
 		NameAr:         t.NameAR,
@@ -293,6 +311,7 @@ func toProtoDocument(d documents.Document, today documents.Date) *driverv1.Drive
 		RejectionReason: d.RejectionReason,
 		SubmittedAt:     timestamppb.New(d.CreatedAt),
 		Expired:         d.ExpiredOn(today),
+		VehicleId:       d.VehicleID,
 	}
 
 	if !d.ReviewedAt.IsZero() {

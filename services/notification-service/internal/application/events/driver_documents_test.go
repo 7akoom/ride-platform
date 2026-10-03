@@ -69,3 +69,23 @@ func TestADriverEventWithoutADriverIsSkipped(t *testing.T) {
 		t.Fatalf("sent %+v", h.notifications.sendCalls)
 	}
 }
+
+func TestTheDriverHearsAboutTheirCar(t *testing.T) {
+	for decision, eventKey := range map[string]string{"approved": "driver.vehicle_approved", "rejected": "driver.vehicle_rejected"} {
+		h := newHarness()
+		payload := `{"driver_id":"driver-1","plate_number":"ERB 123","make":"Kia","model":"Rio","decision":"` + decision + `","reason":"blurry"}`
+
+		if err := h.handler().Dispatch(context.Background(), "driver.vehicle_reviewed", envelopeWithPayload("evt-v", payload)); err != nil {
+			t.Fatal(err)
+		}
+
+		call := h.notifications.sendCalls[0]
+		if call.EventKey != eventKey || call.RecipientID != "driver-1" || call.Variables["car"] != "Kia Rio" || call.Variables["plate"] != "ERB 123" {
+			t.Errorf("%s: %+v", decision, call)
+		}
+
+		if (decision == "rejected") != (call.Variables["reason"] == "blurry") {
+			t.Errorf("%s: reason %q", decision, call.Variables["reason"])
+		}
+	}
+}

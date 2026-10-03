@@ -51,12 +51,12 @@ func (r *DriverRepository) Create(
 		`INSERT INTO drivers
 		    (id, identity_id, display_name,
 		     vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
-		     vehicle_class)
+		     vehicle_class, vehicle_id, vehicle_year)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7,
-		         COALESCE(NULLIF($8::text, ''), 'economy'))
+		         COALESCE(NULLIF($8::text, ''), 'economy'), $9, NULLIF($10::int, 0))
 		 RETURNING id, identity_id, display_name, status, availability_status,
 		           vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
-		           vehicle_class,
+		           vehicle_class, COALESCE(vehicle_id::text, ''), COALESCE(vehicle_year, 0),
 		           rating_average, rating_count, created_at, updated_at,
 		           rejection_reason`,
 		input.ID,
@@ -67,6 +67,8 @@ func (r *DriverRepository) Create(
 		input.Vehicle.Color,
 		input.Vehicle.PlateNumber,
 		string(input.Vehicle.Class),
+		input.VehicleID,
+		input.Vehicle.Year,
 	)
 
 	if err := scanDriver(row, &created); err != nil {
@@ -81,6 +83,24 @@ func (r *DriverRepository) Create(
 		}
 
 		return driver.Driver{}, fmt.Errorf("insert driver: %w", err)
+	}
+
+	// The first car, active and waiting with the driver's own review.
+	if _, err := tx.Exec(
+		ctx,
+		`INSERT INTO vehicles
+		    (id, driver_id, make, model, color, plate_number, year, vehicle_class, status, active)
+		 VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7::int, 0), $8, 'pending', TRUE)`,
+		input.VehicleID, created.ID,
+		created.Vehicle.Make, created.Vehicle.Model, created.Vehicle.Color, created.Vehicle.PlateNumber,
+		created.Vehicle.Year, string(created.Vehicle.Class),
+	); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
+			return driver.Driver{}, driver.ErrPlateNumberTaken
+		}
+
+		return driver.Driver{}, fmt.Errorf("insert the driver's first vehicle: %w", err)
 	}
 
 	payload, err := json.Marshal(map[string]string{
@@ -125,7 +145,7 @@ func (r *DriverRepository) FindByID(
 		ctx,
 		`SELECT id, identity_id, display_name, status, availability_status,
 		        vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
-		        vehicle_class,
+		        vehicle_class, COALESCE(vehicle_id::text, ''), COALESCE(vehicle_year, 0),
 		        rating_average, rating_count, created_at, updated_at,
 		           rejection_reason
 		 FROM drivers
@@ -154,7 +174,7 @@ func (r *DriverRepository) FindByIdentityID(
 		ctx,
 		`SELECT id, identity_id, display_name, status, availability_status,
 		        vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
-		        vehicle_class,
+		        vehicle_class, COALESCE(vehicle_id::text, ''), COALESCE(vehicle_year, 0),
 		        rating_average, rating_count, created_at, updated_at,
 		           rejection_reason
 		 FROM drivers
@@ -181,7 +201,13 @@ func (r *DriverRepository) UpdateProfile(
 	ctx context.Context,
 	input driver.UpdateProfileInput,
 ) (driver.Driver, error) {
-	row := r.pool.QueryRow(
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return driver.Driver{}, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	row := tx.QueryRow(
 		ctx,
 		`UPDATE drivers
 		 SET display_name = $2,
@@ -190,11 +216,12 @@ func (r *DriverRepository) UpdateProfile(
 		     vehicle_color = $5,
 		     vehicle_plate_number = $6,
 		     vehicle_class = COALESCE(NULLIF($7::text, ''), vehicle_class),
+		     vehicle_year = COALESCE(NULLIF($8::int, 0), vehicle_year),
 		     updated_at = CURRENT_TIMESTAMP
 		 WHERE id = $1
 		 RETURNING id, identity_id, display_name, status, availability_status,
 		           vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
-		           vehicle_class,
+		           vehicle_class, COALESCE(vehicle_id::text, ''), COALESCE(vehicle_year, 0),
 		           rating_average, rating_count, created_at, updated_at,
 		           rejection_reason`,
 		input.DriverID,
@@ -204,6 +231,7 @@ func (r *DriverRepository) UpdateProfile(
 		input.Vehicle.Color,
 		input.Vehicle.PlateNumber,
 		string(input.Vehicle.Class),
+		input.Vehicle.Year,
 	)
 
 	var updated driver.Driver
@@ -222,6 +250,30 @@ func (r *DriverRepository) UpdateProfile(
 		return driver.Driver{}, fmt.Errorf("update driver profile: %w", err)
 	}
 
+	// A car still under review follows the profile; an approved one only
+	// changes through staff.
+	if _, err := tx.Exec(
+		ctx,
+		`UPDATE vehicles
+		 SET make = $2, model = $3, color = $4, plate_number = $5,
+		     vehicle_class = $6, year = NULLIF($7::int, 0), updated_at = CURRENT_TIMESTAMP
+		 WHERE driver_id = $1 AND active AND status IN ('pending', 'rejected')`,
+		updated.ID,
+		updated.Vehicle.Make, updated.Vehicle.Model, updated.Vehicle.Color, updated.Vehicle.PlateNumber,
+		string(updated.Vehicle.Class), updated.Vehicle.Year,
+	); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
+			return driver.Driver{}, driver.ErrPlateNumberTaken
+		}
+
+		return driver.Driver{}, fmt.Errorf("update the driver's vehicle: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return driver.Driver{}, fmt.Errorf("commit transaction: %w", err)
+	}
+
 	return updated, nil
 }
 
@@ -237,7 +289,7 @@ func (r *DriverRepository) UpdateAvailability(
 		 WHERE id = $1
 		 RETURNING id, identity_id, display_name, status, availability_status,
 		           vehicle_make, vehicle_model, vehicle_color, vehicle_plate_number,
-		           vehicle_class,
+		           vehicle_class, COALESCE(vehicle_id::text, ''), COALESCE(vehicle_year, 0),
 		           rating_average, rating_count, created_at, updated_at,
 		           rejection_reason`,
 		input.DriverID,
@@ -271,6 +323,8 @@ func scanDriver(row pgx.Row, dest *driver.Driver) error {
 		&dest.Vehicle.Color,
 		&dest.Vehicle.PlateNumber,
 		&vehicleClass,
+		&dest.Vehicle.ID,
+		&dest.Vehicle.Year,
 		&dest.RatingAverage,
 		&dest.RatingCount,
 		&dest.CreatedAt,

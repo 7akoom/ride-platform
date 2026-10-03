@@ -23,6 +23,10 @@ func TestApproveDriver_RefusedWhileDocumentsAreIncomplete(t *testing.T) {
 	if len(repo.updateStatusCalls) != 0 {
 		t.Error("the driver was approved without their documents")
 	}
+
+	if len(compliance.purposes) != 1 || compliance.purposes[0] != driver.ForApproval {
+		t.Errorf("checked for %v, want approval", compliance.purposes)
+	}
 }
 
 func TestApproveDriver_AlreadyActiveIsReturnedWithoutChecks(t *testing.T) {
@@ -68,7 +72,8 @@ func TestUpdateAvailability_IncompleteDocumentsCannotGoAvailable(t *testing.T) {
 	repo := &fakeRepository{findByIDResult: driver.Driver{
 		ID: "d1", Status: driver.StatusActive, AvailabilityStatus: driver.AvailabilityOffline,
 	}}
-	svc := newServiceWithCompliance(repo, &fakeCompliance{missing: []string{"vehicle_registration_front"}})
+	compliance := &fakeCompliance{missing: []string{"vehicle_registration_front"}}
+	svc := newServiceWithCompliance(repo, compliance)
 
 	_, err := svc.UpdateAvailability(context.Background(), driver.UpdateDriverAvailabilityInput{
 		DriverID: "d1", AvailabilityStatus: driver.AvailabilityAvailable,
@@ -79,6 +84,33 @@ func TestUpdateAvailability_IncompleteDocumentsCannotGoAvailable(t *testing.T) {
 
 	if len(repo.updateAvailabilityCalls) != 0 {
 		t.Error("the repository was written to")
+	}
+
+	if compliance.purposes[0] != driver.ForWork {
+		t.Errorf("checked for %v, want work", compliance.purposes)
+	}
+}
+
+func TestVehicleYear(t *testing.T) {
+	repo := &fakeRepository{}
+	svc := newService(repo, "id")
+
+	in := validCreateInput()
+	in.VehicleYear = 1975
+
+	if _, err := svc.CreateDriver(context.Background(), in); !errors.Is(err, driver.ErrInvalidVehicleYear) {
+		t.Fatalf("a 1975 car: got %v", err)
+	}
+
+	in.VehicleYear = 2019
+	repo.findByIdentityIDErr = driver.ErrDriverNotFound
+
+	if _, err := svc.CreateDriver(context.Background(), in); err != nil {
+		t.Fatalf("a 2019 car: %v", err)
+	}
+
+	if got := repo.createCalls[0]; got.Vehicle.Year != 2019 || got.VehicleID == "" {
+		t.Errorf("created with %+v", got)
 	}
 }
 

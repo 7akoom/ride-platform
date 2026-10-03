@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 )
 
 func (s *service) UpdateDriverProfile(
@@ -34,6 +35,12 @@ func (s *service) UpdateDriverProfile(
 		return Driver{}, err
 	}
 
+	if !ValidVehicleYear(input.VehicleYear, time.Now()) {
+		return Driver{}, ErrInvalidVehicleYear
+	}
+
+	vehicle.Year = input.VehicleYear
+
 	current, err := s.repository.FindByID(ctx, driverID)
 	if err != nil {
 		return Driver{}, fmt.Errorf("find driver: %w", err)
@@ -63,11 +70,12 @@ func (s *service) UpdateDriverProfile(
 }
 
 // sameVehicle compares a requested vehicle with the stored one; an empty
-// requested class means "unchanged".
+// requested class or a zero year means "unchanged".
 func sameVehicle(requested, stored Vehicle) bool {
 	return requested.Make == stored.Make &&
 		requested.Model == stored.Model &&
 		requested.Color == stored.Color &&
 		requested.PlateNumber == stored.PlateNumber &&
-		(requested.Class == "" || requested.Class == stored.Class)
+		(requested.Class == "" || requested.Class == stored.Class) &&
+		(requested.Year == 0 || requested.Year == stored.Year)
 }

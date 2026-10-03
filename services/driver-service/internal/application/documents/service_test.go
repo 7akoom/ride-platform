@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/documents"
+	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
 )
 
 const (
@@ -125,6 +126,40 @@ func (r *fakeRepo) RunExpiry(context.Context, documents.Date, []int, int) (docum
 	return documents.ExpiryRound{}, nil
 }
 
+const carID = "ca000000-0000-4000-8000-000000000001"
+
+// fakeVehicles has one car, active and approved, unless told otherwise.
+type fakeVehicles struct {
+	none   bool
+	status string
+	cars   map[string]documents.VehicleRef
+}
+
+func (v *fakeVehicles) ActiveVehicle(context.Context, string) (documents.VehicleRef, bool, error) {
+	if v.none {
+		return documents.VehicleRef{}, false, nil
+	}
+
+	status := v.status
+	if status == "" {
+		status = "approved"
+	}
+
+	return documents.VehicleRef{ID: carID, DriverID: driverID, Status: status, Active: true}, true, nil
+}
+
+func (v *fakeVehicles) Vehicle(ctx context.Context, id string) (documents.VehicleRef, error) {
+	if car, ok := v.cars[id]; ok {
+		return car, nil
+	}
+
+	if active, found, _ := v.ActiveVehicle(ctx, driverID); found && active.ID == id {
+		return active, nil
+	}
+
+	return documents.VehicleRef{}, documents.ErrVehicleNotFound
+}
+
 type fakeDrivers struct{ err error }
 
 func (d fakeDrivers) IdentityOf(context.Context, string) (string, error) {
@@ -177,12 +212,18 @@ func (fixedClock) Now() time.Time { return now }
 func newService(t *testing.T, repo *fakeRepo, media *fakeMedia) *documents.Service {
 	t.Helper()
 
+	return newServiceWith(t, repo, media, &fakeVehicles{})
+}
+
+func newServiceWith(t *testing.T, repo *fakeRepo, media *fakeMedia, cars *fakeVehicles) *documents.Service {
+	t.Helper()
+
 	baghdad, err := time.LoadLocation("Asia/Baghdad")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return documents.NewService(repo, fakeDrivers{}, media, fixedIDs{}, fixedClock{},
+	return documents.NewService(repo, fakeDrivers{}, cars, media, fixedIDs{}, fixedClock{},
 		documents.Config{Location: baghdad, ReminderDays: []int{30, 7, 1, 7}},
 		slog.New(slog.NewTextHandler(io.Discard, nil)))
 }
@@ -268,7 +309,7 @@ func TestSubmit_Refusals(t *testing.T) {
 		if c.change != nil {
 			c.change(&in)
 		} else {
-			svc = documents.NewService(repo, fakeDrivers{}, &otherOwnerMedia{}, fixedIDs{}, fixedClock{},
+			svc = documents.NewService(repo, fakeDrivers{}, &fakeVehicles{}, &otherOwnerMedia{}, fixedIDs{}, fixedClock{},
 				documents.Config{Location: time.UTC}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 		}
 
@@ -293,7 +334,7 @@ func TestSubmit_ExpiryIsJudgedInTheDeploymentsTimeZone(t *testing.T) {
 	late := time.Date(2026, 9, 27, 22, 30, 0, 0, time.UTC)
 	baghdad, _ := time.LoadLocation("Asia/Baghdad")
 
-	svc := documents.NewService(&fakeRepo{}, fakeDrivers{}, &fakeMedia{}, fixedIDs{}, clockAt(late),
+	svc := documents.NewService(&fakeRepo{}, fakeDrivers{}, &fakeVehicles{}, &fakeMedia{}, fixedIDs{}, clockAt(late),
 		documents.Config{Location: baghdad}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	in := submitLicence()
@@ -377,7 +418,7 @@ func TestOverview_States(t *testing.T) {
 		docs := append(c.docs, documents.Document{TypeCode: "photo", Status: documents.StatusApproved})
 		svc := newService(t, &fakeRepo{docs: docs}, &fakeMedia{})
 
-		got, err := svc.Overview(context.Background(), driverID, false)
+		got, err := svc.Overview(context.Background(), driverID, false, "")
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -407,7 +448,7 @@ func TestOverview_ARejectionOlderThanAWaitingOneIsHistory(t *testing.T) {
 		{TypeCode: "licence", Status: documents.StatusRejected, CreatedAt: now.Add(-time.Hour)},
 	}
 
-	got, err := newService(t, &fakeRepo{docs: docs}, &fakeMedia{}).Overview(context.Background(), driverID, false)
+	got, err := newService(t, &fakeRepo{docs: docs}, &fakeMedia{}).Overview(context.Background(), driverID, false, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -420,7 +461,7 @@ func TestOverview_ARejectionOlderThanAWaitingOneIsHistory(t *testing.T) {
 func TestCheckCompliance_NamesWhatIsMissing(t *testing.T) {
 	svc := newService(t, &fakeRepo{docs: []documents.Document{{TypeCode: "photo", Status: documents.StatusApproved}}}, &fakeMedia{})
 
-	got, err := svc.CheckCompliance(context.Background(), driverID)
+	got, err := svc.CheckCompliance(context.Background(), driverID, driver.ForWork)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -618,5 +659,129 @@ func TestNormalizeNumber(t *testing.T) {
 		if got, err := documents.NormalizeNumber(in); err != nil || got != want {
 			t.Errorf("%q: got %q, %v", in, got, err)
 		}
+	}
+}
+
+// --- cars -----------------------------------------------------------------------------
+
+func withCarType(t *testing.T) {
+	t.Helper()
+
+	types["registration"] = documents.Type{Code: "registration", Scope: documents.ScopeVehicle,
+		MediaPurpose: documents.PurposeDriverDocument, NameEN: "Registration", NameAR: "سنوية", NameKU: "ساڵانە",
+		Required: true, Active: true, SortOrder: 5}
+
+	t.Cleanup(func() { delete(types, "registration") })
+}
+
+func TestSubmit_AVehicleDocumentGoesToTheActiveCarOrTheOneNamed(t *testing.T) {
+	withCarType(t)
+
+	other := "ca000000-0000-4000-8000-000000000002"
+	cars := &fakeVehicles{cars: map[string]documents.VehicleRef{
+		other:                                  {ID: other, DriverID: driverID, Status: "pending"},
+		"ca000000-0000-4000-8000-000000000003": {ID: "ca000000-0000-4000-8000-000000000003", DriverID: "someone-else", Status: "approved"},
+		"ca000000-0000-4000-8000-000000000004": {ID: "ca000000-0000-4000-8000-000000000004", DriverID: driverID, Status: "retired"},
+	}}
+
+	repo := &fakeRepo{}
+	svc := newServiceWith(t, repo, &fakeMedia{}, cars)
+	in := documents.SubmitInput{DriverID: driverID, TypeCode: "registration", MediaID: mediaID}
+
+	if got, err := svc.Submit(context.Background(), in); err != nil || got.VehicleID != carID {
+		t.Fatalf("to the active car: %+v %v", got, err)
+	}
+
+	in.VehicleID = other
+	if got, err := svc.Submit(context.Background(), in); err != nil || got.VehicleID != other {
+		t.Fatalf("to a named car: %+v %v", got, err)
+	}
+
+	in.VehicleID = "ca000000-0000-4000-8000-000000000003"
+	if _, err := svc.Submit(context.Background(), in); !errors.Is(err, documents.ErrVehicleNotFound) {
+		t.Errorf("someone else's car: %v", err)
+	}
+
+	in.VehicleID = "ca000000-0000-4000-8000-000000000004"
+	if _, err := svc.Submit(context.Background(), in); !errors.Is(err, documents.ErrVehicleRetired) {
+		t.Errorf("a retired car: %v", err)
+	}
+
+	noCar := newServiceWith(t, &fakeRepo{}, &fakeMedia{}, &fakeVehicles{none: true})
+	if _, err := noCar.Submit(context.Background(), documents.SubmitInput{DriverID: driverID, TypeCode: "registration", MediaID: mediaID}); !errors.Is(err, documents.ErrNoActiveVehicle) {
+		t.Errorf("no car: %v", err)
+	}
+
+	// A driver document never names a car.
+	photo := documents.SubmitInput{DriverID: driverID, TypeCode: "photo", MediaID: mediaID, VehicleID: other}
+	if got, err := svc.Submit(context.Background(), photo); err != nil || got.VehicleID != "" {
+		t.Errorf("a driver document: %+v %v", got, err)
+	}
+}
+
+func TestCompliance_CountsTheActiveCarsDocumentsAndApproval(t *testing.T) {
+	withCarType(t)
+
+	ready := []documents.Document{
+		{TypeCode: "licence", Status: documents.StatusApproved, ExpiresOn: date("2028-01-01")},
+		{TypeCode: "photo", Status: documents.StatusApproved},
+	}
+
+	carDoc := documents.Document{TypeCode: "registration", VehicleID: carID, Status: documents.StatusApproved}
+	otherCarDoc := documents.Document{TypeCode: "registration", VehicleID: "ca000000-0000-4000-8000-000000000009", Status: documents.StatusApproved}
+
+	cases := map[string]struct {
+		docs      []documents.Document
+		cars      *fakeVehicles
+		purpose   driver.CompliancePurpose
+		compliant bool
+		missing   string
+	}{
+		"everything":                 {append(ready[:2:2], carDoc), &fakeVehicles{}, driver.ForWork, true, ""},
+		"another car's registration": {append(ready[:2:2], otherCarDoc), &fakeVehicles{}, driver.ForWork, false, "registration"},
+		"car not approved, to work":  {append(ready[:2:2], carDoc), &fakeVehicles{status: "pending"}, driver.ForWork, false, documents.MissingVehicleApproval},
+		"car pending, for approval":  {append(ready[:2:2], carDoc), &fakeVehicles{status: "pending"}, driver.ForApproval, true, ""},
+		"car rejected, for approval": {append(ready[:2:2], carDoc), &fakeVehicles{status: "rejected"}, driver.ForApproval, false, documents.MissingVehicleApproval},
+		"no car at all":              {ready, &fakeVehicles{none: true}, driver.ForApproval, false, documents.MissingVehicleApproval},
+	}
+
+	for name, c := range cases {
+		svc := newServiceWith(t, &fakeRepo{docs: c.docs}, &fakeMedia{}, c.cars)
+
+		got, err := svc.CheckCompliance(context.Background(), driverID, c.purpose)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+
+		if got.Compliant != c.compliant || (c.missing != "" && !slices.Contains(got.Missing, c.missing)) {
+			t.Errorf("%s: got %+v", name, got)
+		}
+	}
+}
+
+func TestOverview_OfOneCar(t *testing.T) {
+	withCarType(t)
+
+	other := "ca000000-0000-4000-8000-000000000002"
+	cars := &fakeVehicles{cars: map[string]documents.VehicleRef{other: {ID: other, DriverID: driverID, Status: "pending"}}}
+	docs := []documents.Document{{TypeCode: "registration", VehicleID: other, Status: documents.StatusPending}}
+	svc := newServiceWith(t, &fakeRepo{docs: docs}, &fakeMedia{}, cars)
+
+	got, err := svc.Overview(context.Background(), driverID, false, other)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got.Requirements) != 1 || got.Requirements[0].VehicleID != other || got.Requirements[0].State != documents.StatePendingReview {
+		t.Fatalf("got %+v", got.Requirements)
+	}
+
+	missing, err := svc.VehicleDocumentsMissing(context.Background(), driverID, other)
+	if err != nil || !slices.Equal(missing, []string{"registration"}) {
+		t.Errorf("missing %v %v", missing, err)
+	}
+
+	if _, err := svc.Overview(context.Background(), driverID, false, "ca000000-0000-4000-8000-00000000dead"); !errors.Is(err, documents.ErrVehicleNotFound) {
+		t.Errorf("unknown car: %v", err)
 	}
 }

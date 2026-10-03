@@ -38,6 +38,7 @@ type Config struct {
 type Service struct {
 	repository Repository
 	drivers    Drivers
+	vehicles   Vehicles
 	media      Media
 	ids        IDGenerator
 	clock      Clock
@@ -50,6 +51,7 @@ var _ driver.ComplianceChecker = (*Service)(nil)
 func NewService(
 	repository Repository,
 	drivers Drivers,
+	vehicles Vehicles,
 	media Media,
 	ids IDGenerator,
 	clock Clock,
@@ -57,7 +59,7 @@ func NewService(
 	logger *slog.Logger,
 ) *Service {
 	switch {
-	case repository == nil, drivers == nil, media == nil, ids == nil, clock == nil, logger == nil:
+	case repository == nil, drivers == nil, vehicles == nil, media == nil, ids == nil, clock == nil, logger == nil:
 		panic("document service dependencies are required")
 	case config.Location == nil:
 		panic("document time zone is required")
@@ -70,6 +72,7 @@ func NewService(
 	return &Service{
 		repository: repository,
 		drivers:    drivers,
+		vehicles:   vehicles,
 		media:      media,
 		ids:        ids,
 		clock:      clock,
@@ -112,7 +115,11 @@ func (s *Service) UpsertType(ctx context.Context, t Type) (Type, error) {
 		}
 	}
 
-	if !t.MediaPurpose.Valid() || t.SortOrder < 0 || t.SortOrder > maxSortOrder {
+	if t.Scope == "" {
+		t.Scope = ScopeDriver
+	}
+
+	if !t.MediaPurpose.Valid() || !t.Scope.Valid() || t.SortOrder < 0 || t.SortOrder > maxSortOrder {
 		return Type{}, ErrInvalidType
 	}
 
@@ -127,7 +134,9 @@ func (s *Service) UpsertType(ctx context.Context, t Type) (Type, error) {
 // --- the driver's side -----------------------------------------------------
 
 type SubmitInput struct {
-	DriverID  string
+	DriverID string
+	// VehicleID names the car of a vehicle document; empty means the active car.
+	VehicleID string
 	TypeCode  string
 	MediaID   string
 	Number    string
@@ -173,6 +182,14 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (Document, error) 
 		return Document{}, err
 	}
 
+	vehicleID := ""
+
+	if docType.Scope == ScopeVehicle {
+		if vehicleID, err = s.vehicleFor(ctx, driverID, in.VehicleID); err != nil {
+			return Document{}, err
+		}
+	}
+
 	if err := s.media.Hold(ctx, mediaID, identityID, docType.MediaPurpose); err != nil {
 		return Document{}, err
 	}
@@ -180,6 +197,7 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (Document, error) 
 	created, superseded, err := s.repository.Submit(ctx, Document{
 		ID:        s.ids.NewID(),
 		DriverID:  driverID,
+		VehicleID: vehicleID,
 		TypeCode:  docType.Code,
 		MediaID:   mediaID,
 		Number:    number,
@@ -198,6 +216,43 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (Document, error) 
 	s.discardAll(ctx, superseded)
 
 	return created, nil
+}
+
+// vehicleFor picks the car a vehicle document is for: the one named, which
+// must be the driver's and in service, or the active one.
+func (s *Service) vehicleFor(ctx context.Context, driverID, rawVehicleID string) (string, error) {
+	vehicleID := strings.ToLower(strings.TrimSpace(rawVehicleID))
+
+	if vehicleID == "" {
+		active, found, err := s.vehicles.ActiveVehicle(ctx, driverID)
+		if err != nil {
+			return "", fmt.Errorf("find the active car: %w", err)
+		}
+
+		if !found {
+			return "", ErrNoActiveVehicle
+		}
+
+		return active.ID, nil
+	}
+
+	if !uuidShape.MatchString(vehicleID) {
+		return "", ErrVehicleNotFound
+	}
+
+	car, err := s.vehicles.Vehicle(ctx, vehicleID)
+	if err != nil {
+		return "", err
+	}
+
+	switch {
+	case car.DriverID != driverID:
+		return "", ErrVehicleNotFound
+	case car.Status == "retired":
+		return "", ErrVehicleRetired
+	}
+
+	return car.ID, nil
 }
 
 // details checks the number and expiry a type asks for; what it does not ask
@@ -257,24 +312,35 @@ const (
 
 // Requirement is one active type and the driver's documents for it.
 type Requirement struct {
-	Type     Type
-	State    State
-	Approved *Document
-	Pending  *Document
-	Rejected *Document
+	Type Type
+	// VehicleID is the car of a vehicle requirement.
+	VehicleID string
+	State     State
+	Approved  *Document
+	Pending   *Document
+	Rejected  *Document
 }
 
 // Overview is everything the driver (or a reviewer) needs about their documents.
 type Overview struct {
 	Requirements []Requirement
-	Compliant    bool
-	Missing      []string
-	History      []Document
-	Today        Date
+	// Compliant: every required document shown is approved and in date and,
+	// for the driver's overview, the active car is approved.
+	Compliant bool
+	Missing   []string
+	History   []Document
+	Today     Date
+	// Vehicle is the car the vehicle requirements are for, if any.
+	Vehicle *VehicleRef
 }
 
-// Overview shows, per active type, where the driver stands.
-func (s *Service) Overview(ctx context.Context, driverID string, includeHistory bool) (Overview, error) {
+// MissingVehicleApproval stands in Missing when the active car itself is
+// not approved (or there is none).
+const MissingVehicleApproval = "vehicle_approval"
+
+// Overview shows where the driver stands: per driver type, and per vehicle
+// type for the active car; or, with vehicleID, only that car's.
+func (s *Service) Overview(ctx context.Context, driverID string, includeHistory bool, vehicleID string) (Overview, error) {
 	driverID = strings.ToLower(strings.TrimSpace(driverID))
 	if !uuidShape.MatchString(driverID) {
 		return Overview{}, ErrDriverNotFound
@@ -284,10 +350,22 @@ func (s *Service) Overview(ctx context.Context, driverID string, includeHistory 
 		return Overview{}, err
 	}
 
-	return s.overview(ctx, driverID, includeHistory)
+	// A driver's first car is approved together with them, so while it
+	// waits it does not count against the documents being complete; an
+	// approved driver's active car is always approved.
+	if strings.TrimSpace(vehicleID) == "" {
+		return s.overview(ctx, driverID, includeHistory, driver.ForApproval)
+	}
+
+	car, err := s.vehicles.Vehicle(ctx, strings.ToLower(strings.TrimSpace(vehicleID)))
+	if err != nil || car.DriverID != driverID {
+		return Overview{}, ErrVehicleNotFound
+	}
+
+	return s.vehicleOverview(ctx, car, includeHistory)
 }
 
-func (s *Service) overview(ctx context.Context, driverID string, includeHistory bool) (Overview, error) {
+func (s *Service) overview(ctx context.Context, driverID string, includeHistory bool, purpose driver.CompliancePurpose) (Overview, error) {
 	types, err := s.repository.ListTypes(ctx, false)
 	if err != nil {
 		return Overview{}, fmt.Errorf("list document types: %w", err)
@@ -298,17 +376,36 @@ func (s *Service) overview(ctx context.Context, driverID string, includeHistory 
 		return Overview{}, fmt.Errorf("list documents: %w", err)
 	}
 
+	active, found, err := s.vehicles.ActiveVehicle(ctx, driverID)
+	if err != nil {
+		return Overview{}, fmt.Errorf("find the active car: %w", err)
+	}
+
 	today := s.Today()
 	overview := Overview{Compliant: true, Today: today}
 
-	for _, t := range types {
-		req := s.requirement(t, docs, today)
-		overview.Requirements = append(overview.Requirements, req)
+	if found {
+		overview.Vehicle = &active
+	}
 
-		if t.Required && req.State != StateApproved && req.State != StateExpiringSoon {
-			overview.Compliant = false
-			overview.Missing = append(overview.Missing, t.Code)
+	for _, t := range types {
+		vehicleID := ""
+
+		if t.Scope == ScopeVehicle {
+			if !found {
+				continue
+			}
+
+			vehicleID = active.ID
 		}
+
+		s.add(&overview, t, docs, vehicleID, today)
+	}
+
+	carOK := found && (active.Status == "approved" || (purpose == driver.ForApproval && active.Status == "pending"))
+	if !carOK {
+		overview.Compliant = false
+		overview.Missing = append(overview.Missing, MissingVehicleApproval)
 	}
 
 	if includeHistory {
@@ -318,13 +415,66 @@ func (s *Service) overview(ctx context.Context, driverID string, includeHistory 
 	return overview, nil
 }
 
-// requirement picks, from docs (newest first), the ones in force for t.
-func (s *Service) requirement(t Type, docs []Document, today Date) Requirement {
-	req := Requirement{Type: t}
+func (s *Service) vehicleOverview(ctx context.Context, car VehicleRef, includeHistory bool) (Overview, error) {
+	types, err := s.repository.ListTypes(ctx, false)
+	if err != nil {
+		return Overview{}, fmt.Errorf("list document types: %w", err)
+	}
+
+	docs, err := s.repository.ListByDriver(ctx, car.DriverID, includeHistory)
+	if err != nil {
+		return Overview{}, fmt.Errorf("list documents: %w", err)
+	}
+
+	today := s.Today()
+	overview := Overview{Compliant: true, Today: today, Vehicle: &car}
+
+	for _, t := range types {
+		if t.Scope == ScopeVehicle {
+			s.add(&overview, t, docs, car.ID, today)
+		}
+	}
+
+	if includeHistory {
+		for _, d := range docs {
+			if d.VehicleID == car.ID {
+				overview.History = append(overview.History, d)
+			}
+		}
+	}
+
+	return overview, nil
+}
+
+// add appends t's requirement (for a car when vehicleID is set) and counts it.
+func (s *Service) add(overview *Overview, t Type, docs []Document, vehicleID string, today Date) {
+	req := s.requirement(t, docs, vehicleID, today)
+	overview.Requirements = append(overview.Requirements, req)
+
+	if t.Required && req.State != StateApproved && req.State != StateExpiringSoon {
+		overview.Compliant = false
+		overview.Missing = append(overview.Missing, t.Code)
+	}
+}
+
+// VehicleDocumentsMissing names a car's required types not approved and in date.
+func (s *Service) VehicleDocumentsMissing(ctx context.Context, driverID, vehicleID string) ([]string, error) {
+	overview, err := s.vehicleOverview(ctx, VehicleRef{ID: vehicleID, DriverID: driverID}, false)
+	if err != nil {
+		return nil, err
+	}
+
+	return overview.Missing, nil
+}
+
+// requirement picks, from docs (newest first), the ones in force for t
+// (and, for a vehicle type, for that car).
+func (s *Service) requirement(t Type, docs []Document, vehicleID string, today Date) Requirement {
+	req := Requirement{Type: t, VehicleID: vehicleID}
 
 	for i := range docs {
 		d := &docs[i]
-		if d.TypeCode != t.Code {
+		if d.TypeCode != t.Code || d.VehicleID != vehicleID {
 			continue
 		}
 
@@ -371,13 +521,13 @@ func (s *Service) reminderWindow() int {
 }
 
 // CheckCompliance tells driver-service whether the driver may be approved or go online.
-func (s *Service) CheckCompliance(ctx context.Context, driverID string) (driver.Compliance, error) {
+func (s *Service) CheckCompliance(ctx context.Context, driverID string, purpose driver.CompliancePurpose) (driver.Compliance, error) {
 	driverID = strings.ToLower(strings.TrimSpace(driverID))
 	if !uuidShape.MatchString(driverID) {
 		return driver.Compliance{}, driver.ErrDriverNotFound
 	}
 
-	overview, err := s.overview(ctx, driverID, false)
+	overview, err := s.overview(ctx, driverID, false, purpose)
 	if err != nil {
 		return driver.Compliance{}, err
 	}
@@ -477,12 +627,23 @@ func (s *Service) Reject(ctx context.Context, in RejectInput) (Document, error) 
 		return Document{}, ErrDocumentNotReviewable
 	}
 
+	inForce := doc.VehicleID == ""
+
+	if !inForce {
+		car, err := s.vehicles.Vehicle(ctx, doc.VehicleID)
+		if err != nil {
+			return Document{}, fmt.Errorf("find the document's car: %w", err)
+		}
+
+		inForce = car.Active
+	}
+
 	rejected, err := s.repository.Reject(ctx, RejectRecord{
 		DocumentID:     doc.ID,
 		ExpectedStatus: doc.Status,
 		Reason:         reason,
 		ReviewedBy:     reviewer(in.ReviewedBy),
-		TakeOffline:    doc.Status == StatusApproved && docType.Required && docType.Active,
+		TakeOffline:    doc.Status == StatusApproved && docType.Required && docType.Active && inForce,
 		Type:           docType,
 	})
 	if err != nil {

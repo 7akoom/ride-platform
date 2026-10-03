@@ -20,11 +20,12 @@ const (
 	eventDocumentExpired  = "driver.document_expired"
 )
 
-const documentColumns = `d.id::text, d.driver_id::text, d.type_code, d.media_id::text, d.document_number,
+const documentColumns = `d.id::text, d.driver_id::text, COALESCE(d.vehicle_id::text, ''), d.type_code,
+	d.media_id::text, d.document_number,
 	d.expires_on, d.status, d.rejection_reason, COALESCE(d.reviewed_by::text, ''), d.reviewed_at,
 	d.created_at, d.updated_at`
 
-const typeColumns = `code, media_purpose, name_en, name_ar, name_ku, required, requires_number,
+const typeColumns = `code, scope, media_purpose, name_en, name_ar, name_ku, required, requires_number,
 	requires_expiry, active, sort_order`
 
 // DocumentRepository keeps document types and the documents drivers hand in.
@@ -86,10 +87,11 @@ func (r *DocumentRepository) UpsertType(ctx context.Context, t documents.Type) (
 		ctx,
 		`INSERT INTO driver_document_types
 		    (code, media_purpose, name_en, name_ar, name_ku, required, requires_number,
-		     requires_expiry, active, sort_order)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		     requires_expiry, active, sort_order, scope)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		 ON CONFLICT (code) DO UPDATE
 		 SET media_purpose = EXCLUDED.media_purpose,
+		     scope = EXCLUDED.scope,
 		     name_en = EXCLUDED.name_en,
 		     name_ar = EXCLUDED.name_ar,
 		     name_ku = EXCLUDED.name_ku,
@@ -101,7 +103,7 @@ func (r *DocumentRepository) UpsertType(ctx context.Context, t documents.Type) (
 		     updated_at = CURRENT_TIMESTAMP
 		 RETURNING `+typeColumns,
 		t.Code, string(t.MediaPurpose), t.NameEN, t.NameAR, t.NameKU,
-		t.Required, t.RequiresNumber, t.RequiresExpiry, t.Active, t.SortOrder,
+		t.Required, t.RequiresNumber, t.RequiresExpiry, t.Active, t.SortOrder, string(t.Scope),
 	), &saved)
 	if err != nil {
 		return documents.Type{}, fmt.Errorf("upsert document type: %w", err)
@@ -134,8 +136,9 @@ func (r *DocumentRepository) Submit(ctx context.Context, d documents.Document) (
 		`UPDATE driver_documents AS d
 		 SET status = 'superseded', superseded_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
 		 WHERE d.driver_id = $1 AND d.type_code = $2 AND d.status IN ('pending', 'rejected')
+		   AND d.vehicle_id IS NOT DISTINCT FROM NULLIF($3, '')::uuid
 		 RETURNING `+documentColumns,
-		d.DriverID, d.TypeCode,
+		d.DriverID, d.TypeCode, d.VehicleID,
 	))
 	if err != nil {
 		return documents.Document{}, nil, fmt.Errorf("supersede earlier documents: %w", err)
@@ -146,10 +149,10 @@ func (r *DocumentRepository) Submit(ctx context.Context, d documents.Document) (
 	err = scanDocument(tx.QueryRow(
 		ctx,
 		`INSERT INTO driver_documents AS d
-		    (id, driver_id, type_code, media_id, document_number, expires_on, status)
-		 VALUES ($1, $2, $3, $4, $5, $6, 'pending')
+		    (id, driver_id, type_code, media_id, document_number, expires_on, status, vehicle_id)
+		 VALUES ($1, $2, $3, $4, $5, $6, 'pending', NULLIF($7, '')::uuid)
 		 RETURNING `+documentColumns,
-		d.ID, d.DriverID, d.TypeCode, d.MediaID, d.Number, nullableDate(d.ExpiresOn),
+		d.ID, d.DriverID, d.TypeCode, d.MediaID, d.Number, nullableDate(d.ExpiresOn), d.VehicleID,
 	), &created)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -227,8 +230,9 @@ func (r *DocumentRepository) Approve(ctx context.Context, record documents.Appro
 		`UPDATE driver_documents AS d
 		 SET status = 'superseded', superseded_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
 		 WHERE d.driver_id = $1 AND d.type_code = $2 AND d.status = 'approved' AND d.id <> $3
+		   AND d.vehicle_id IS NOT DISTINCT FROM NULLIF($4, '')::uuid
 		 RETURNING `+documentColumns,
-		current.DriverID, current.TypeCode, current.ID,
+		current.DriverID, current.TypeCode, current.ID, current.VehicleID,
 	))
 	if err != nil {
 		return documents.Document{}, nil, fmt.Errorf("supersede the approved document: %w", err)
@@ -362,6 +366,7 @@ func (r *DocumentRepository) ListPending(ctx context.Context, query documents.Pe
 
 type expiryRow struct {
 	id, driverID, typeCode string
+	inForce                bool
 	expiresOn              time.Time
 	remindedDays           *int32
 	nameEN, nameAR, nameKU string
@@ -402,10 +407,13 @@ func (r *DocumentRepository) remind(ctx context.Context, tx pgx.Tx, today docume
 	due, err := collectExpiryRows(tx.Query(
 		ctx,
 		`SELECT d.id::text, d.driver_id::text, d.type_code, d.expires_on, d.reminded_days,
-		        t.name_en, t.name_ar, t.name_ku, t.required
+		        t.name_en, t.name_ar, t.name_ku, t.required,
+		        (d.vehicle_id IS NULL OR COALESCE(v.active, FALSE))
 		 FROM driver_documents AS d
 		 JOIN driver_document_types AS t ON t.code = d.type_code
+		 LEFT JOIN vehicles AS v ON v.id = d.vehicle_id
 		 WHERE d.status = 'approved' AND t.active
+		   AND (v.id IS NULL OR v.status <> 'retired')
 		   AND d.expires_on >= $1::date AND d.expires_on <= $1::date + $2::int
 		   AND (d.reminded_days IS NULL OR d.reminded_days > (
 		        SELECT min(x) FROM unnest($3::int[]) AS x WHERE x >= d.expires_on - $1::date))
@@ -456,10 +464,13 @@ func (r *DocumentRepository) expire(ctx context.Context, tx pgx.Tx, today docume
 	due, err := collectExpiryRows(tx.Query(
 		ctx,
 		`SELECT d.id::text, d.driver_id::text, d.type_code, d.expires_on, d.reminded_days,
-		        t.name_en, t.name_ar, t.name_ku, t.required
+		        t.name_en, t.name_ar, t.name_ku, t.required,
+		        (d.vehicle_id IS NULL OR COALESCE(v.active, FALSE))
 		 FROM driver_documents AS d
 		 JOIN driver_document_types AS t ON t.code = d.type_code
+		 LEFT JOIN vehicles AS v ON v.id = d.vehicle_id
 		 WHERE d.status = 'approved' AND t.active
+		   AND (v.id IS NULL OR v.status <> 'retired')
 		   AND d.expires_on < $1::date AND d.expired_notified_at IS NULL
 		 ORDER BY d.expires_on, d.id
 		 LIMIT $2
@@ -481,7 +492,7 @@ func (r *DocumentRepository) expire(ctx context.Context, tx pgx.Tx, today docume
 			return 0, 0, fmt.Errorf("record an expiry: %w", err)
 		}
 
-		if row.required {
+		if row.required && row.inForce {
 			tag, err := tx.Exec(
 				ctx,
 				`UPDATE drivers
@@ -507,16 +518,17 @@ func (r *DocumentRepository) expire(ctx context.Context, tx pgx.Tx, today docume
 // --- scanning ------------------------------------------------------------------
 
 func scanType(row pgx.Row, t *documents.Type) error {
-	var purpose string
+	var purpose, scope string
 
 	if err := row.Scan(
-		&t.Code, &purpose, &t.NameEN, &t.NameAR, &t.NameKU,
+		&t.Code, &scope, &purpose, &t.NameEN, &t.NameAR, &t.NameKU,
 		&t.Required, &t.RequiresNumber, &t.RequiresExpiry, &t.Active, &t.SortOrder,
 	); err != nil {
 		return err
 	}
 
 	t.MediaPurpose = documents.MediaPurpose(purpose)
+	t.Scope = documents.Scope(scope)
 
 	return nil
 }
@@ -529,7 +541,7 @@ func scanDocument(row pgx.Row, d *documents.Document, extra ...any) error {
 	)
 
 	dest := []any{
-		&d.ID, &d.DriverID, &d.TypeCode, &d.MediaID, &d.Number,
+		&d.ID, &d.DriverID, &d.VehicleID, &d.TypeCode, &d.MediaID, &d.Number,
 		&expiresOn, &status, &d.RejectionReason, &d.ReviewedBy, &reviewedAt,
 		&d.CreatedAt, &d.UpdatedAt,
 	}
@@ -572,7 +584,7 @@ func collectExpiryRows(rows pgx.Rows, err error) ([]expiryRow, error) {
 		var e expiryRow
 
 		return e, row.Scan(&e.id, &e.driverID, &e.typeCode, &e.expiresOn, &e.remindedDays,
-			&e.nameEN, &e.nameAR, &e.nameKU, &e.required)
+			&e.nameEN, &e.nameAR, &e.nameKU, &e.required, &e.inForce)
 	})
 }
 
@@ -587,6 +599,7 @@ func nullableDate(d documents.Date) any {
 func reviewedPayload(d documents.Document, t documents.Type, decision, reason string, withdrawn bool) map[string]any {
 	return map[string]any{
 		"driver_id":        d.DriverID,
+		"vehicle_id":       d.VehicleID,
 		"document_id":      d.ID,
 		"type_code":        d.TypeCode,
 		"document_name_en": t.NameEN,

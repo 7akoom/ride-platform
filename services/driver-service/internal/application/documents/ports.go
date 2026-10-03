@@ -77,6 +77,23 @@ type Repository interface {
 	RunExpiry(ctx context.Context, today Date, thresholds []int, limit int) (ExpiryRound, error)
 }
 
+// VehicleRef is what documents need to know about a car.
+type VehicleRef struct {
+	ID       string
+	DriverID string
+	// Status is pending, approved, rejected or retired.
+	Status string
+	Active bool
+}
+
+// Vehicles finds a driver's cars.
+type Vehicles interface {
+	// ActiveVehicle reports the driver's active car; found is false without one.
+	ActiveVehicle(ctx context.Context, driverID string) (ref VehicleRef, found bool, err error)
+	// Vehicle returns ErrVehicleNotFound for an unknown car.
+	Vehicle(ctx context.Context, vehicleID string) (VehicleRef, error)
+}
+
 // Drivers finds who a driver is, to check a file belongs to them.
 type Drivers interface {
 	// IdentityOf returns ErrDriverNotFound for an unknown driver.

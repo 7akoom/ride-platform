@@ -126,6 +126,8 @@ func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) err
 		return h.handleDriverStatus(ctx, subject, envelope)
 	case SubjectDriverDocumentReviewed, SubjectDriverDocumentExpiring, SubjectDriverDocumentExpired:
 		return h.handleDriverDocument(ctx, subject, envelope)
+	case SubjectDriverVehicleReviewed:
+		return h.handleDriverVehicle(ctx, envelope)
 	default:
 		h.logger.WarnContext(ctx, "no notification mapping for subject; skipping", "subject", subject)
 

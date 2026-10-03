@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/7akoom/ride-platform/services/notification-service/internal/application/notification"
 )
@@ -15,6 +16,7 @@ const (
 	SubjectDriverDocumentReviewed = "driver.document_reviewed"
 	SubjectDriverDocumentExpiring = "driver.document_expiring"
 	SubjectDriverDocumentExpired  = "driver.document_expired"
+	SubjectDriverVehicleReviewed  = "driver.vehicle_reviewed"
 )
 
 // DriverSubjects are the driver events that notify the driver.
@@ -24,6 +26,7 @@ var DriverSubjects = []string{
 	SubjectDriverDocumentReviewed,
 	SubjectDriverDocumentExpiring,
 	SubjectDriverDocumentExpired,
+	SubjectDriverVehicleReviewed,
 }
 
 type driverStatusPayload struct {
@@ -108,6 +111,42 @@ func (h *Handler) handleDriverDocument(ctx context.Context, subject string, enve
 		variables["days"] = fmt.Sprint(payload.DaysLeft)
 	default:
 		eventKey = "driver.document_expired"
+	}
+
+	return h.sendToDriver(ctx, payload.DriverID, eventKey, variables, envelope.EventID)
+}
+
+type driverVehiclePayload struct {
+	DriverID    string `json:"driver_id"`
+	PlateNumber string `json:"plate_number"`
+	Make        string `json:"make"`
+	Model       string `json:"model"`
+	Decision    string `json:"decision"`
+	Reason      string `json:"reason"`
+}
+
+func (h *Handler) handleDriverVehicle(ctx context.Context, envelope Envelope) error {
+	var payload driverVehiclePayload
+
+	if err := json.Unmarshal(envelope.Payload, &payload); err != nil {
+		return fmt.Errorf("decode %s payload: %w", SubjectDriverVehicleReviewed, err)
+	}
+
+	if payload.DriverID == "" {
+		h.logger.WarnContext(ctx, "vehicle event without a driver; skipping")
+
+		return nil
+	}
+
+	variables := map[string]string{
+		"car":   strings.TrimSpace(payload.Make + " " + payload.Model),
+		"plate": payload.PlateNumber,
+	}
+
+	eventKey := "driver.vehicle_approved"
+	if payload.Decision != "approved" {
+		eventKey = "driver.vehicle_rejected"
+		variables["reason"] = payload.Reason
 	}
 
 	return h.sendToDriver(ctx, payload.DriverID, eventKey, variables, envelope.EventID)

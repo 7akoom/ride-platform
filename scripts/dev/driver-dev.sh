@@ -84,6 +84,8 @@ case "$CMD" in
                 left join lateral (
                   select status, document_number, expires_on from driver_documents
                   where driver_id = '$ID' and type_code = t.code and status <> 'superseded'
+                    and (t.scope = 'driver'
+                         or vehicle_id = (select id from vehicles where driver_id = '$ID' and active))
                   order by (status = 'approved') desc, created_at desc limit 1) d on true
                 where t.active
                 order by t.sort_order, t.code;"
@@ -98,15 +100,17 @@ case "$CMD" in
     ID="$(driver_id_for "$1")"
     [ -n "$ID" ] || { echo "no driver is called \"$1\". Try: bash scripts/dev/driver-dev.sh list" >&2; exit 1; }
     driver_sql "insert into driver_documents
-                  (id, driver_id, type_code, media_id, document_number, expires_on, status, reviewed_at)
+                  (id, driver_id, type_code, media_id, document_number, expires_on, status, reviewed_at, vehicle_id)
                 select gen_random_uuid(), '$ID', t.code, gen_random_uuid(),
                        case when t.requires_number then 'DEV-' || left(md5('$ID' || t.code), 12) else '' end,
                        case when t.requires_expiry then current_date + 365 end,
-                       'approved', now()
+                       'approved', now(), car.id
                 from driver_document_types t
+                left join vehicles car on t.scope = 'vehicle' and car.driver_id = '$ID' and car.active
                 where t.active and t.required
                   and not exists (select 1 from driver_documents d
-                                  where d.driver_id = '$ID' and d.type_code = t.code and d.status = 'approved')
+                                  where d.driver_id = '$ID' and d.type_code = t.code and d.status = 'approved'
+                                    and d.vehicle_id is not distinct from car.id)
                 on conflict do nothing;" > /dev/null || { echo "could not mark the documents" >&2; exit 1; }
     echo "every required document of \"$1\" is now approved (placeholders, no files). Next:"
     echo "  bash scripts/dev/driver-dev.sh approve \"$1\""

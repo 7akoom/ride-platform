@@ -92,11 +92,23 @@ func (d DisplayName) String() string {
 // untouched. Once a Vehicle is read back from the database Class is
 // always set.
 type Vehicle struct {
+	// ID is the active car's id in the vehicles table; empty on input.
+	ID          string
 	Make        string
 	Model       string
 	Color       string
 	PlateNumber string
 	Class       VehicleClass
+	// Year of manufacture; 0 when not given.
+	Year int
+}
+
+const minVehicleYear = 1980
+
+// ValidVehicleYear reports whether year is 0 (not given) or a plausible
+// year of manufacture, at most next year's models.
+func ValidVehicleYear(year int, now time.Time) bool {
+	return year == 0 || (year >= minVehicleYear && year <= now.Year()+1)
 }
 
 func NewVehicle(make_, model, color, plateNumber, vehicleClass string) (Vehicle, error) {

@@ -1873,6 +1873,122 @@
         ]
       }
     },
+    "/v1/admin/vehicles": {
+      "get": {
+        "summary": "ListPendingVehicles is the car review queue, oldest first. Staff with\ndrivers.read, or the internal token.",
+        "operationId": "DriverService_ListPendingVehicles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListPendingVehiclesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/admin/vehicles/{vehicleId}:approve": {
+      "post": {
+        "summary": "ApproveVehicle approves a pending car once its required documents are\napproved and in date; the reviewer may set its year and class. Staff with\ndrivers.approve, or the internal token.",
+        "operationId": "DriverService_ApproveVehicle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VehicleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceApproveVehicleBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/admin/vehicles/{vehicleId}:reject": {
+      "post": {
+        "summary": "RejectVehicle turns down a pending car, with the reason the driver is\nshown. Staff with drivers.approve, or the internal token.",
+        "operationId": "DriverService_RejectVehicle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VehicleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceRejectVehicleBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
     "/v1/admin/voucher-batches": {
       "get": {
         "summary": "ListVoucherBatches: newest first; status created, exported or cancelled.",
@@ -3185,6 +3301,13 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "vehicleId",
+            "description": "Only the vehicle requirements of this car (e.g. a new one). Empty: the\ndriver's own and the active car's.",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -3414,6 +3537,209 @@
         ],
         "tags": [
           "WalletService"
+        ]
+      }
+    },
+    "/v1/drivers/{driverId}/vehicles": {
+      "get": {
+        "summary": "ListVehicles lists the driver's cars, retired ones last. The driver, or\nstaff with drivers.read.",
+        "operationId": "DriverService_ListVehicles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListVehiclesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      },
+      "post": {
+        "summary": "AddVehicle registers another car for the driver. It waits for staff review\n(and its documents) before it can be made active. At most 5 cars in service.",
+        "operationId": "DriverService_AddVehicle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VehicleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceAddVehicleBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/drivers/{driverId}/vehicles/{vehicleId}": {
+      "patch": {
+        "summary": "UpdateVehicle corrects a car that is still pending or was rejected; a\nrejected car goes back to review.",
+        "operationId": "DriverService_UpdateVehicle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VehicleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceUpdateVehicleBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/drivers/{driverId}/vehicles/{vehicleId}:activate": {
+      "post": {
+        "summary": "ActivateVehicle makes an approved car the one the driver works with. The\ndriver must be offline.",
+        "operationId": "DriverService_ActivateVehicle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VehicleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceActivateVehicleBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/drivers/{driverId}/vehicles/{vehicleId}:retire": {
+      "post": {
+        "summary": "RetireVehicle takes a car out of service for good (sold, scrapped); its\ndocuments go with it. The active car cannot be retired.",
+        "operationId": "DriverService_RetireVehicle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VehicleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceRetireVehicleBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
         ]
       }
     },
@@ -6635,6 +6961,34 @@
     }
   },
   "definitions": {
+    "DriverServiceActivateVehicleBody": {
+      "type": "object"
+    },
+    "DriverServiceAddVehicleBody": {
+      "type": "object",
+      "properties": {
+        "make": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "plateNumber": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "vehicleClass": {
+          "type": "string",
+          "description": "economy or comfort; staff may change it on approval. Empty: economy."
+        }
+      }
+    },
     "DriverServiceApproveDriverBody": {
       "type": "object"
     },
@@ -6647,6 +7001,20 @@
         },
         "expiresOn": {
           "type": "string"
+        }
+      }
+    },
+    "DriverServiceApproveVehicleBody": {
+      "type": "object",
+      "properties": {
+        "year": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Optional: set when the driver left it out or got it wrong."
+        },
+        "vehicleClass": {
+          "type": "string",
+          "description": "Optional: economy or comfort, what the car qualifies for."
         }
       }
     },
@@ -6668,6 +7036,18 @@
         }
       }
     },
+    "DriverServiceRejectVehicleBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "Shown to the driver. Required."
+        }
+      }
+    },
+    "DriverServiceRetireVehicleBody": {
+      "type": "object"
+    },
     "DriverServiceSubmitDriverDocumentBody": {
       "type": "object",
       "properties": {
@@ -6684,6 +7064,10 @@
         "expiresOn": {
           "type": "string",
           "description": "YYYY-MM-DD, after today. Required when the type has an expiry; ignored otherwise."
+        },
+        "vehicleId": {
+          "type": "string",
+          "description": "For a vehicle document: the car. Empty means the active car."
         }
       }
     },
@@ -6703,6 +7087,30 @@
         },
         "vehicle": {
           "$ref": "#/definitions/v1Vehicle"
+        }
+      }
+    },
+    "DriverServiceUpdateVehicleBody": {
+      "type": "object",
+      "properties": {
+        "make": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "plateNumber": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "vehicleClass": {
+          "type": "string"
         }
       }
     },
@@ -8232,6 +8640,10 @@
         "rejected": {
           "$ref": "#/definitions/v1DriverDocument",
           "description": "The last one turned down, if no newer one was submitted since."
+        },
+        "vehicleId": {
+          "type": "string",
+          "description": "The car a vehicle requirement is for; empty for the driver's own."
         }
       }
     },
@@ -8332,6 +8744,10 @@
         "expired": {
           "type": "boolean",
           "description": "An approved document whose last valid day has passed."
+        },
+        "vehicleId": {
+          "type": "string",
+          "description": "The car a vehicle document is for; empty for the driver's own documents."
         }
       }
     },
@@ -8394,6 +8810,10 @@
         "sortOrder": {
           "type": "integer",
           "format": "int32"
+        },
+        "scope": {
+          "type": "string",
+          "description": "\"driver\" (ID, licence, photo) or \"vehicle\" (registration, car photos):\na vehicle document is handed in for one car."
         }
       }
     },
@@ -8416,6 +8836,55 @@
       ],
       "default": "DRIVER_STATUS_UNSPECIFIED",
       "description": " - DRIVER_STATUS_PENDING: Registered, waiting for an operator to review the driver.\n - DRIVER_STATUS_REJECTED: Reviewed and turned down by an operator."
+    },
+    "v1DriverVehicle": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "driverId": {
+          "type": "string"
+        },
+        "make": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "plateNumber": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int32",
+          "description": "0 when not given (older registrations)."
+        },
+        "vehicleClass": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1VehicleStatus"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "The car the driver works with."
+        },
+        "rejectionReason": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     },
     "v1EntityType": {
       "type": "string",
@@ -9203,11 +9672,11 @@
             "type": "object",
             "$ref": "#/definitions/v1DocumentRequirement"
           },
-          "description": "One per active document type, in the app's order."
+          "description": "One per active document type (per car for vehicle types), in the app's order."
         },
         "compliant": {
           "type": "boolean",
-          "description": "Every required document is approved and in date."
+          "description": "Every required document of the driver and of the active car is approved\nand in date, and the active car is not rejected (a new driver's first car\nis approved together with them)."
         },
         "history": {
           "type": "array",
@@ -9215,6 +9684,10 @@
             "type": "object",
             "$ref": "#/definitions/v1DriverDocument"
           }
+        },
+        "vehicle": {
+          "$ref": "#/definitions/v1DriverVehicle",
+          "description": "The car the vehicle requirements are for, if any."
         }
       }
     },
@@ -9299,6 +9772,21 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1PendingDriverDocument"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListPendingVehiclesResponse": {
+      "type": "object",
+      "properties": {
+        "vehicles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1PendingVehicle"
           }
         },
         "nextPageToken": {
@@ -9483,6 +9971,18 @@
         "nextPageToken": {
           "type": "string",
           "description": "Empty on the last page."
+        }
+      }
+    },
+    "v1ListVehiclesResponse": {
+      "type": "object",
+      "properties": {
+        "vehicles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DriverVehicle"
+          }
         }
       }
     },
@@ -9872,6 +10372,20 @@
       "properties": {
         "document": {
           "$ref": "#/definitions/v1DriverDocument"
+        },
+        "driverDisplayName": {
+          "type": "string"
+        },
+        "driverStatus": {
+          "$ref": "#/definitions/v1DriverStatus"
+        }
+      }
+    },
+    "v1PendingVehicle": {
+      "type": "object",
+      "properties": {
+        "vehicle": {
+          "$ref": "#/definitions/v1DriverVehicle"
         },
         "driverDisplayName": {
           "type": "string"
@@ -11701,8 +12215,37 @@
         "vehicleClass": {
           "type": "string",
           "title": "economy or comfort"
+        },
+        "id": {
+          "type": "string",
+          "description": "The active car's id; ignored on input."
+        },
+        "year": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Year of manufacture; 0 when not given (older registrations)."
         }
       }
+    },
+    "v1VehicleResponse": {
+      "type": "object",
+      "properties": {
+        "vehicle": {
+          "$ref": "#/definitions/v1DriverVehicle"
+        }
+      }
+    },
+    "v1VehicleStatus": {
+      "type": "string",
+      "enum": [
+        "VEHICLE_STATUS_UNSPECIFIED",
+        "VEHICLE_STATUS_PENDING",
+        "VEHICLE_STATUS_APPROVED",
+        "VEHICLE_STATUS_REJECTED",
+        "VEHICLE_STATUS_RETIRED"
+      ],
+      "default": "VEHICLE_STATUS_UNSPECIFIED",
+      "description": " - VEHICLE_STATUS_RETIRED: Out of service for good."
     },
     "v1VerifiedIdentifier": {
       "type": "object",

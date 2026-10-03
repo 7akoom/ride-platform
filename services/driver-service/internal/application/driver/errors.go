@@ -10,6 +10,7 @@ var (
 	ErrVehicleFieldsRequired  = errors.New("vehicle make, model, and plate number are required")
 	ErrInvalidVehicleClass    = errors.New("invalid vehicle class")
 	ErrInvalidAvailability    = errors.New("invalid availability status")
+	ErrInvalidVehicleYear     = errors.New("vehicle year must be between 1980 and next year")
 	ErrRejectionReasonTooLong = errors.New("rejection reason exceeds maximum length")
 	ErrInvalidListQuery       = errors.New("invalid driver list query")
 	ErrInvalidPageToken       = errors.New("page_token is not valid")

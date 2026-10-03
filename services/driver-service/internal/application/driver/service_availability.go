@@ -39,7 +39,7 @@ func (s *service) UpdateAvailability(
 		// A driver released from a trip (busy to available) whose document
 		// ran out meanwhile ends up offline rather than stuck busy.
 		if target == AvailabilityAvailable {
-			compliance, err := s.compliance.CheckCompliance(ctx, driverID)
+			compliance, err := s.compliance.CheckCompliance(ctx, driverID, ForWork)
 			if err != nil {
 				return Driver{}, fmt.Errorf("check driver documents: %w", err)
 			}

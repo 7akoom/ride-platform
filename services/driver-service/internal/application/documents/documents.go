@@ -20,9 +20,22 @@ func (p MediaPurpose) Valid() bool {
 	return p == PurposeDriverDocument || p == PurposeProfilePhoto
 }
 
+// Scope says whose document a type is: the driver's own, or one car's.
+type Scope string
+
+const (
+	ScopeDriver  Scope = "driver"
+	ScopeVehicle Scope = "vehicle"
+)
+
+func (s Scope) Valid() bool {
+	return s == ScopeDriver || s == ScopeVehicle
+}
+
 // Type is one kind of document a driver is asked for.
 type Type struct {
 	Code           string
+	Scope          Scope
 	MediaPurpose   MediaPurpose
 	NameEN         string
 	NameAR         string
@@ -45,8 +58,10 @@ const (
 
 // Document is one file a driver handed in for a type.
 type Document struct {
-	ID              string
-	DriverID        string
+	ID       string
+	DriverID string
+	// VehicleID is the car a vehicle document is for; empty otherwise.
+	VehicleID       string
 	TypeCode        string
 	MediaID         string
 	Number          string
@@ -161,7 +176,7 @@ var (
 	ErrTypeNotFound          = errors.New("document type not found")
 	ErrDocumentNotFound      = errors.New("document not found")
 	ErrInvalidTypeCode       = errors.New("document type code must be 2-40 lower-case letters, digits or '_', starting with a letter")
-	ErrInvalidType           = errors.New("document type is not valid: names 1-80 characters, purpose driver_document or profile_photo, sort order 0-1000")
+	ErrInvalidType           = errors.New("document type is not valid: names 1-80 characters, purpose driver_document or profile_photo, scope driver or vehicle, sort order 0-1000")
 	ErrMediaIDRequired       = errors.New("media_id is required")
 	ErrInvalidMediaID        = errors.New("media_id is not valid")
 	ErrMediaNotUsable        = errors.New("the file is not a ready upload of this driver, of the purpose this document type needs")
@@ -180,4 +195,7 @@ var (
 	ErrReasonTooLong         = errors.New("reason exceeds 500 characters")
 	ErrInvalidPageToken      = errors.New("page_token is not valid")
 	ErrInvalidPageSize       = errors.New("page_size is not valid")
+	ErrVehicleNotFound       = errors.New("vehicle not found")
+	ErrNoActiveVehicle       = errors.New("the driver has no active car to hand this document in for")
+	ErrVehicleRetired        = errors.New("the car is retired")
 )

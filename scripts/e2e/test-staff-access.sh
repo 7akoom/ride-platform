@@ -51,16 +51,17 @@ sql() { # <container> <query>
   docker exec "$1" sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "$1"' _ "$2"
 }
 
-# approve_documents <driver id>: every required document approved, as a
-# reviewer would leave them (a fixture: the files themselves are not needed
+# approve_documents <driver id>: every required document of the driver and
+# their active car approved, as a reviewer would leave them (a fixture: the files themselves are not needed
 # here; scripts/e2e/test-driver-documents.sh covers the real review).
 approve_documents() {
   sql ride-driver-postgres "insert into driver_documents
-      (id, driver_id, type_code, media_id, document_number, expires_on, status, reviewed_at)
+      (id, driver_id, type_code, media_id, document_number, expires_on, status, reviewed_at, vehicle_id)
     select gen_random_uuid(), '$1', code, gen_random_uuid(),
            case when requires_number then 'E2E-' || left(md5('$1' || code), 12) else '' end,
            case when requires_expiry then current_date + 365 end,
-           'approved', now()
+           'approved', now(),
+           case when scope = 'vehicle' then (select id from vehicles where driver_id = '$1' and active) end
     from driver_document_types
     where active and required
     on conflict do nothing;" > /dev/null
