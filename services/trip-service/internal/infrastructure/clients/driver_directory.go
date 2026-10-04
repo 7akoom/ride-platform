@@ -43,7 +43,7 @@ func (d *DriverDirectory) DriverSummary(
 	driver := response.GetDriver()
 	vehicle := driver.GetVehicle()
 
-	return trip.DriverSummary{
+	summary := trip.DriverSummary{
 		DisplayName:   driver.GetDisplayName(),
 		VehicleMake:   vehicle.GetMake(),
 		VehicleModel:  vehicle.GetModel(),
@@ -52,5 +52,15 @@ func (d *DriverDirectory) DriverSummary(
 		VehicleClass:  vehicle.GetVehicleClass(),
 		RatingAverage: driver.GetRatingAverage(),
 		RatingCount:   driver.GetRatingCount(),
-	}, nil
+	}
+
+	// The photo is best effort: no approved photo, or media-service not answering, leaves
+	// it out instead of failing the whole card.
+	photo, err := d.client.GetDriverPhoto(ctx, &driverv1.GetDriverPhotoRequest{DriverId: driverID})
+	if err == nil && photo.GetUrl() != "" {
+		summary.PhotoURL = photo.GetUrl()
+		summary.PhotoURLExpiresAt = photo.GetExpiresAt().AsTime()
+	}
+
+	return summary, nil
 }

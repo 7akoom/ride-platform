@@ -38,6 +38,12 @@ var methodAccess = map[string]accessLevel{
 	"/ride.rider.v1.RiderService/GetSavedAddress":    accessOwner,
 	"/ride.rider.v1.RiderService/UpdateSavedAddress": accessOwner,
 	"/ride.rider.v1.RiderService/DeleteSavedAddress": accessOwner,
+
+	"/ride.rider.v1.RiderService/GetRiderDetails":    accessOwner,
+	"/ride.rider.v1.RiderService/UpdateRiderDetails": accessOwner,
+	"/ride.rider.v1.RiderService/SetRiderPhoto":      accessOwner,
+	"/ride.rider.v1.RiderService/DeleteRiderPhoto":   accessOwner,
+	"/ride.rider.v1.RiderService/GetRiderPhoto":      accessOwner,
 }
 
 func NewAuthorizationUnaryInterceptor(riders RiderReader) googlegrpc.UnaryServerInterceptor {

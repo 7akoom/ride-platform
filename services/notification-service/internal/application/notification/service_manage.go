@@ -89,14 +89,29 @@ func (s *service) List(
 		limit = maxListLimit
 	}
 
+	before, err := decodePageToken(input.PageToken)
+	if err != nil {
+		return ListResult{}, err
+	}
+
+	// One more than the page shows whether there is a next page.
 	notifications, err := s.repository.List(ctx, ListInput{
 		RecipientType: input.RecipientType,
 		RecipientID:   recipientID,
-		Limit:         limit,
+		Limit:         limit + 1,
 		UnreadOnly:    input.UnreadOnly,
+		Before:        before,
 	})
 	if err != nil {
 		return ListResult{}, fmt.Errorf("list notifications: %w", err)
+	}
+
+	nextPageToken := ""
+
+	if len(notifications) > limit {
+		notifications = notifications[:limit]
+		last := notifications[limit-1]
+		nextPageToken = encodePageToken(PageCursor{CreatedAt: last.CreatedAt, ID: last.ID})
 	}
 
 	// Returned alongside the list so a client can render a badge count
@@ -106,7 +121,26 @@ func (s *service) List(
 		return ListResult{}, fmt.Errorf("count unread notifications: %w", err)
 	}
 
-	return ListResult{Notifications: notifications, UnreadCount: unreadCount}, nil
+	return ListResult{Notifications: notifications, UnreadCount: unreadCount, NextPageToken: nextPageToken}, nil
+}
+
+// UnreadCount is the badge number of the recipient's inbox.
+func (s *service) UnreadCount(ctx context.Context, recipientType RecipientType, recipientID string) (int, error) {
+	if !recipientType.Valid() {
+		return 0, ErrInvalidRecipientType
+	}
+
+	trimmedID := strings.TrimSpace(recipientID)
+	if trimmedID == "" {
+		return 0, ErrRecipientIDRequired
+	}
+
+	count, err := s.repository.UnreadCount(ctx, recipientType, trimmedID)
+	if err != nil {
+		return 0, fmt.Errorf("count unread notifications: %w", err)
+	}
+
+	return count, nil
 }
 
 func (s *service) MarkAsRead(

@@ -637,6 +637,114 @@
         ]
       }
     },
+    "/v1/admin/driver-name-changes": {
+      "get": {
+        "summary": "The review queue, oldest first. Needs drivers.read.",
+        "operationId": "DriverService_ListPendingNameChanges",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListNameChangesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/admin/driver-name-changes/{nameChangeId}:approve": {
+      "post": {
+        "operationId": "DriverService_ApproveNameChange",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1NameChangeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "nameChangeId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceApproveNameChangeBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
+    "/v1/admin/driver-name-changes/{nameChangeId}:reject": {
+      "post": {
+        "operationId": "DriverService_RejectNameChange",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1NameChangeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "nameChangeId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceRejectNameChangeBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
     "/v1/admin/drivers": {
       "get": {
         "summary": "ListDrivers lists drivers for the review queue and the admin, newest first,\noptionally by status. Staff with drivers.read, or the internal token.",
@@ -4377,6 +4485,74 @@
         ]
       }
     },
+    "/v1/drivers/{driverId}/details": {
+      "get": {
+        "summary": "Details: gender, date of birth (18 or older) and nationality (ISO 3166\nalpha-2). The driver's own (staff with drivers.read too).",
+        "operationId": "DriverService_GetDriverDetails",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DriverDetailsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      },
+      "patch": {
+        "summary": "UpdateDriverDetails changes only the fields sent. Once the driver is\napproved, a field already given only changes through support\n(FAILED_PRECONDITION); an empty one can still be filled in.",
+        "operationId": "DriverService_UpdateDriverDetails",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DriverDetailsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceUpdateDriverDetailsBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
     "/v1/drivers/{driverId}/documents": {
       "get": {
         "summary": "ListDriverDocuments shows, per document type, where the driver stands, and\nwhether they may work. The driver, or staff with drivers.read.",
@@ -4542,6 +4718,73 @@
         ]
       }
     },
+    "/v1/drivers/{driverId}/name-changes": {
+      "get": {
+        "operationId": "DriverService_ListNameChanges",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListNameChangesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      },
+      "post": {
+        "summary": "Name changes: an approved driver's name changes only after staff check\nit against the approved ID (drivers.approve). One open request at a\ntime; a pending driver just edits the profile.",
+        "operationId": "DriverService_RequestNameChange",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1NameChangeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DriverServiceRequestNameChangeBody"
+            }
+          }
+        ],
+        "tags": [
+          "DriverService"
+        ]
+      }
+    },
     "/v1/drivers/{driverId}/offer": {
       "get": {
         "summary": "GetPendingOffer is the Driver app's poll target: the trip it is being offered,\nwith what it needs to decide (where from and to, vehicle class, payment method,\nwhen the offer ends), or NOT_FOUND when there is none. It does not say who the\nrider is. driver_id must be the caller's own driver profile.",
@@ -4651,6 +4894,37 @@
         ],
         "tags": [
           "WalletService"
+        ]
+      }
+    },
+    "/v1/drivers/{driverId}/photo": {
+      "get": {
+        "summary": "GetDriverPhoto: a short-lived link to the driver's approved profile\nphoto (the PROFILE_PHOTO document), for the driver and for services\n(trip-service shows it to the rider). NOT_FOUND without one.",
+        "operationId": "DriverService_GetDriverPhoto",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DriverPhotoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DriverService"
         ]
       }
     },
@@ -5616,6 +5890,13 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "pageToken",
+            "description": "From a previous response, for the next (older) page.",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -5649,6 +5930,48 @@
             "schema": {
               "$ref": "#/definitions/v1MarkAsReadRequest"
             }
+          }
+        ],
+        "tags": [
+          "NotificationService"
+        ]
+      }
+    },
+    "/v1/notifications:unread-count": {
+      "get": {
+        "operationId": "NotificationService_GetUnreadCount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetUnreadCountResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "recipientType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "RECIPIENT_TYPE_UNSPECIFIED",
+              "RECIPIENT_TYPE_RIDER",
+              "RECIPIENT_TYPE_DRIVER"
+            ],
+            "default": "RECIPIENT_TYPE_UNSPECIFIED"
+          },
+          {
+            "name": "recipientId",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -6144,6 +6467,170 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/RiderServiceUpdateSavedAddressBody"
+            }
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      }
+    },
+    "/v1/riders/{riderId}/details": {
+      "get": {
+        "summary": "Details: gender, date of birth (18 or older) and nationality (ISO 3166\nalpha-2), all optional; and whether a photo is set. The caller's own.",
+        "operationId": "RiderService_GetRiderDetails",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RiderDetailsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      },
+      "patch": {
+        "summary": "UpdateRiderDetails changes only the fields sent; an empty value clears\none.",
+        "operationId": "RiderService_UpdateRiderDetails",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RiderDetailsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RiderServiceUpdateRiderDetailsBody"
+            }
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      }
+    },
+    "/v1/riders/{riderId}/photo": {
+      "get": {
+        "summary": "GetRiderPhoto: a short-lived link to the picture, for the rider (and for\nservices). NOT_FOUND without one.",
+        "operationId": "RiderService_GetRiderPhoto",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PhotoURLResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      },
+      "delete": {
+        "operationId": "RiderService_DeleteRiderPhoto",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RiderDetailsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RiderService"
+        ]
+      },
+      "put": {
+        "summary": "SetRiderPhoto uses one of the caller's READY PROFILE_PHOTO uploads as\ntheir picture; the old one is deleted.",
+        "operationId": "RiderService_SetRiderPhoto",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RiderDetailsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RiderServiceSetRiderPhotoBody"
             }
           }
         ],
@@ -8660,6 +9147,9 @@
         }
       }
     },
+    "DriverServiceApproveNameChangeBody": {
+      "type": "object"
+    },
     "DriverServiceApproveVehicleBody": {
       "type": "object",
       "properties": {
@@ -8692,12 +9182,32 @@
         }
       }
     },
+    "DriverServiceRejectNameChangeBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "Required, up to 500 characters; the driver sees it."
+        }
+      }
+    },
     "DriverServiceRejectVehicleBody": {
       "type": "object",
       "properties": {
         "reason": {
           "type": "string",
           "description": "Shown to the driver. Required."
+        }
+      }
+    },
+    "DriverServiceRequestNameChangeBody": {
+      "type": "object",
+      "properties": {
+        "requestedName": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
         }
       }
     },
@@ -8732,6 +9242,21 @@
       "properties": {
         "availabilityStatus": {
           "$ref": "#/definitions/v1AvailabilityStatus"
+        }
+      }
+    },
+    "DriverServiceUpdateDriverDetailsBody": {
+      "type": "object",
+      "properties": {
+        "gender": {
+          "$ref": "#/definitions/rideDriverV1Gender",
+          "description": "Only the fields present change. GENDER_UNSPECIFIED or \"\" clears one\n(before approval)."
+        },
+        "dateOfBirth": {
+          "type": "string"
+        },
+        "nationality": {
+          "type": "string"
         }
       }
     },
@@ -8964,6 +9489,29 @@
         "photoMediaId": {
           "type": "string",
           "description": "Optional: a READY upload of the caller's with purpose ADDRESS_PHOTO. It is\nthen kept by the address (the owner can no longer delete it on its own) and\ndeleted with it."
+        }
+      }
+    },
+    "RiderServiceSetRiderPhotoBody": {
+      "type": "object",
+      "properties": {
+        "mediaId": {
+          "type": "string"
+        }
+      }
+    },
+    "RiderServiceUpdateRiderDetailsBody": {
+      "type": "object",
+      "properties": {
+        "gender": {
+          "$ref": "#/definitions/rideRiderV1Gender",
+          "description": "Only the fields present change. GENDER_UNSPECIFIED or \"\" clears one."
+        },
+        "dateOfBirth": {
+          "type": "string"
+        },
+        "nationality": {
+          "type": "string"
         }
       }
     },
@@ -9683,6 +10231,15 @@
       },
       "additionalProperties": {}
     },
+    "rideDriverV1Gender": {
+      "type": "string",
+      "enum": [
+        "GENDER_UNSPECIFIED",
+        "GENDER_MALE",
+        "GENDER_FEMALE"
+      ],
+      "default": "GENDER_UNSPECIFIED"
+    },
     "rideLocationV1Coordinates": {
       "type": "object",
       "properties": {
@@ -9721,6 +10278,15 @@
           "format": "double"
         }
       }
+    },
+    "rideRiderV1Gender": {
+      "type": "string",
+      "enum": [
+        "GENDER_UNSPECIFIED",
+        "GENDER_MALE",
+        "GENDER_FEMALE"
+      ],
+      "default": "GENDER_UNSPECIFIED"
     },
     "rideTripV1Coordinates": {
       "type": "object",
@@ -10848,6 +11414,41 @@
         }
       }
     },
+    "v1DriverDetails": {
+      "type": "object",
+      "properties": {
+        "driverId": {
+          "type": "string"
+        },
+        "gender": {
+          "$ref": "#/definitions/rideDriverV1Gender"
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "YYYY-MM-DD, empty when not given."
+        },
+        "nationality": {
+          "type": "string",
+          "description": "ISO 3166-1 alpha-2, empty when not given."
+        },
+        "hasPhoto": {
+          "type": "boolean",
+          "description": "An approved profile photo exists."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1DriverDetailsResponse": {
+      "type": "object",
+      "properties": {
+        "details": {
+          "$ref": "#/definitions/v1DriverDetails"
+        }
+      }
+    },
     "v1DriverDocument": {
       "type": "object",
       "properties": {
@@ -11045,6 +11646,18 @@
         "payout": {
           "$ref": "#/definitions/v1IncentivePayout",
           "description": "Once settled: what was decided for this driver."
+        }
+      }
+    },
+    "v1DriverPhotoResponse": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -11843,6 +12456,15 @@
         }
       }
     },
+    "v1GetUnreadCountResponse": {
+      "type": "object",
+      "properties": {
+        "unreadCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "v1GetWalletResponse": {
       "type": "object",
       "properties": {
@@ -12482,6 +13104,18 @@
         }
       }
     },
+    "v1ListNameChangesResponse": {
+      "type": "object",
+      "properties": {
+        "nameChanges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1NameChange"
+          }
+        }
+      }
+    },
     "v1ListNotificationsResponse": {
       "type": "object",
       "properties": {
@@ -12495,6 +13129,10 @@
         "unreadCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "nextPageToken": {
+          "type": "string",
+          "description": "Empty on the last page."
         }
       }
     },
@@ -13073,6 +13711,59 @@
         }
       }
     },
+    "v1NameChange": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "driverId": {
+          "type": "string"
+        },
+        "currentName": {
+          "type": "string"
+        },
+        "requestedName": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why the driver asks (a marriage, a typo...), up to 300 characters."
+        },
+        "status": {
+          "$ref": "#/definitions/v1NameChangeStatus"
+        },
+        "rejectionReason": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "decidedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1NameChangeResponse": {
+      "type": "object",
+      "properties": {
+        "nameChange": {
+          "$ref": "#/definitions/v1NameChange"
+        }
+      }
+    },
+    "v1NameChangeStatus": {
+      "type": "string",
+      "enum": [
+        "NAME_CHANGE_STATUS_UNSPECIFIED",
+        "NAME_CHANGE_STATUS_PENDING",
+        "NAME_CHANGE_STATUS_APPROVED",
+        "NAME_CHANGE_STATUS_REJECTED"
+      ],
+      "default": "NAME_CHANGE_STATUS_UNSPECIFIED"
+    },
     "v1Notification": {
       "type": "object",
       "properties": {
@@ -13247,6 +13938,18 @@
         },
         "description": {
           "type": "string"
+        }
+      }
+    },
+    "v1PhotoURLResponse": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -13910,6 +14613,40 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "v1RiderDetails": {
+      "type": "object",
+      "properties": {
+        "riderId": {
+          "type": "string"
+        },
+        "gender": {
+          "$ref": "#/definitions/rideRiderV1Gender"
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "YYYY-MM-DD, empty when not given."
+        },
+        "nationality": {
+          "type": "string",
+          "description": "ISO 3166-1 alpha-2 (IQ, SY...), empty when not given."
+        },
+        "hasPhoto": {
+          "type": "boolean"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1RiderDetailsResponse": {
+      "type": "object",
+      "properties": {
+        "details": {
+          "$ref": "#/definitions/v1RiderDetails"
         }
       }
     },
@@ -15202,6 +15939,14 @@
         "ratingCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "A short-lived link to the driver's approved photo; empty without one."
+        },
+        "photoUrlExpiresAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

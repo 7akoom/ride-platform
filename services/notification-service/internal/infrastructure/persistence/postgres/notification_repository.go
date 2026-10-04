@@ -408,20 +408,20 @@ func (r *NotificationRepository) List(
 	input notification.ListInput,
 ) ([]notification.Notification, error) {
 	query := notificationSelectSQL + ` WHERE recipient_type = $1 AND recipient_id = $2`
+	args := []any{string(input.RecipientType), input.RecipientID, input.Limit}
 
 	if input.UnreadOnly {
 		query += ` AND read_at IS NULL`
 	}
 
-	query += ` ORDER BY created_at DESC LIMIT $3`
+	if input.Before != nil {
+		query += ` AND (created_at, id::text) < ($4, $5)`
+		args = append(args, input.Before.CreatedAt, input.Before.ID)
+	}
 
-	rows, err := r.pool.Query(
-		ctx,
-		query,
-		string(input.RecipientType),
-		input.RecipientID,
-		input.Limit,
-	)
+	query += ` ORDER BY created_at DESC, id::text DESC LIMIT $3`
+
+	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("select notifications: %w", err)
 	}

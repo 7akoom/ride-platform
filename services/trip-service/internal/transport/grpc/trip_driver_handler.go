@@ -8,6 +8,7 @@ import (
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // driverSummarizer is what trip.WithDriverProfile adds to a trip.Service. The handler asks
@@ -44,18 +45,23 @@ func (h *TripHandler) GetTripDriver(
 		return nil, h.mapTripError(err)
 	}
 
-	return &tripv1.GetTripDriverResponse{
-		Driver: &tripv1.TripDriver{
-			DisplayName: summary.DisplayName,
-			Vehicle: &tripv1.TripVehicle{
-				Make:         summary.VehicleMake,
-				Model:        summary.VehicleModel,
-				Color:        summary.VehicleColor,
-				PlateNumber:  summary.PlateNumber,
-				VehicleClass: summary.VehicleClass,
-			},
-			RatingAverage: summary.RatingAverage,
-			RatingCount:   summary.RatingCount,
+	driver := &tripv1.TripDriver{
+		DisplayName: summary.DisplayName,
+		Vehicle: &tripv1.TripVehicle{
+			Make:         summary.VehicleMake,
+			Model:        summary.VehicleModel,
+			Color:        summary.VehicleColor,
+			PlateNumber:  summary.PlateNumber,
+			VehicleClass: summary.VehicleClass,
 		},
-	}, nil
+		RatingAverage: summary.RatingAverage,
+		RatingCount:   summary.RatingCount,
+	}
+
+	if summary.PhotoURL != "" {
+		driver.PhotoUrl = summary.PhotoURL
+		driver.PhotoUrlExpiresAt = timestamppb.New(summary.PhotoURLExpiresAt)
+	}
+
+	return &tripv1.GetTripDriverResponse{Driver: driver}, nil
 }

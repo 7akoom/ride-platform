@@ -73,6 +73,12 @@ var ownerChecks = map[string]ownerCheck{
 	riderRPCPrefix + "UpdateSavedAddress": ownerOfRiderID,
 	riderRPCPrefix + "DeleteSavedAddress": ownerOfRiderID,
 
+	riderRPCPrefix + "GetRiderDetails":    ownerOfRiderID,
+	riderRPCPrefix + "UpdateRiderDetails": ownerOfRiderID,
+	riderRPCPrefix + "SetRiderPhoto":      ownerOfRiderID,
+	riderRPCPrefix + "DeleteRiderPhoto":   ownerOfRiderID,
+	riderRPCPrefix + "GetRiderPhoto":      ownerOfRiderID,
+
 	riderRPCPrefix + "CreateRider": func(_ context.Context, c caller, request any) (bool, error) {
 		r, ok := request.(*riderv1.CreateRiderRequest)
 		if !ok {

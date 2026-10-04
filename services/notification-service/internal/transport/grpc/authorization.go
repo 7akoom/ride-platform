@@ -38,6 +38,7 @@ var methodAccess = map[string]accessLevel{
 	"/ride.notification.v1.NotificationService/UnregisterDevice":  accessOwner,
 	"/ride.notification.v1.NotificationService/ListNotifications": accessOwner,
 	"/ride.notification.v1.NotificationService/MarkAsRead":        accessOwner,
+	"/ride.notification.v1.NotificationService/GetUnreadCount":    accessOwner,
 }
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver, devices DeviceOwnerReader) googlegrpc.UnaryServerInterceptor {

@@ -83,6 +83,14 @@ out and a colleague signs in on the same handset, `RegisterDevice`
 reassigns the token to the new owner rather than rejecting it —
 notifications must follow the account, not the device's history.
 
+## Inbox, badge and pages
+
+`GET /v1/notifications:unread-count` is the badge number on its own.
+`ListNotifications` returns newest first with `unread_count`, and pages with
+an opaque `page_token` / `next_page_token` (created_at, then id: a new
+notification does not shift the pages). `MarkAsRead` without ids marks
+everything read.
+
 ## Safety detail
 
 `MarkAsRead` scopes every update by recipient, even when explicit IDs

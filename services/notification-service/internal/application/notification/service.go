@@ -21,6 +21,7 @@ type SendResult struct {
 type ListResult struct {
 	Notifications []Notification
 	UnreadCount   int
+	NextPageToken string
 }
 
 type Service interface {
@@ -29,6 +30,7 @@ type Service interface {
 	UnregisterDevice(ctx context.Context, deviceToken string) (bool, error)
 	List(ctx context.Context, input ListInput) (ListResult, error)
 	MarkAsRead(ctx context.Context, recipientType RecipientType, recipientID string, ids []string) (int, error)
+	UnreadCount(ctx context.Context, recipientType RecipientType, recipientID string) (int, error)
 	UpsertTemplate(ctx context.Context, input UpsertTemplateInput) (int, error)
 }
 

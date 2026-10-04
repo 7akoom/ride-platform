@@ -7,6 +7,7 @@ import (
 
 	riderv1 "github.com/7akoom/ride-platform/gen/go/ride/rider/v1"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/application/address"
+	"github.com/7akoom/ride-platform/services/rider-service/internal/application/profile"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/application/rider"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -21,6 +22,9 @@ type RiderHandler struct {
 
 	// addresses serves saved addresses; nil until WithAddresses.
 	addresses *address.Service
+
+	// profile serves personal details and pictures; nil until WithProfile.
+	profile *profile.Service
 }
 
 func NewRiderHandler(

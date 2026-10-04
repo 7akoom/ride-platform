@@ -14,6 +14,19 @@ and their saved addresses. No driver or trip data lives here.
   internal token for other services) and a rider reaches only their own
   profile.
 
+## Personal details and photo
+
+`GET/PATCH /v1/riders/{id}/details`: gender (male/female), date of birth
+(`YYYY-MM-DD`, at least 18 years old) and nationality (ISO 3166-1 alpha-2).
+All optional; a PATCH changes only the fields it sends, and an empty value
+clears one. They live in `rider_details` (migration 00006), beside the
+profile.
+
+`PUT /v1/riders/{id}/photo {media_id}` sets the profile photo from the
+rider's own READY `PROFILE_PHOTO` upload (media-service holds it); the photo
+it replaces, or `DELETE .../photo`, releases and deletes the old file.
+`GET .../photo` is a short-lived link.
+
 ## Saved addresses
 
 A rider keeps up to 20 addresses: at most one home and one work, and others

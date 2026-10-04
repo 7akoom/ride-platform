@@ -66,6 +66,10 @@ func (s *fakeNotificationService) List(_ context.Context, _ notification.ListInp
 	return notification.ListResult{}, nil
 }
 
+func (s *fakeNotificationService) UnreadCount(_ context.Context, _ notification.RecipientType, _ string) (int, error) {
+	return 0, nil
+}
+
 func (s *fakeNotificationService) MarkAsRead(_ context.Context, _ notification.RecipientType, _ string, _ []string) (int, error) {
 	return 0, nil
 }

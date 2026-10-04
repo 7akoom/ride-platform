@@ -73,6 +73,7 @@ per-source OTP limit counts every user as one source.
 | POST | `/v1/trips/{tripId}:sos` | rider or driver, as themselves | `triggeredBy` must match the caller's role |
 | POST | `/v1/trips/{tripId}:waypoint` | driver of the trip | every 15-30 s; throttled server-side |
 | GET | `/v1/trips/{tripId}/path` | rider or driver of the trip | |
+| GET | `/v1/trips/{tripId}/driver` | **rider** of the trip | the driver's `displayName`, `vehicle`, rating, and `photoUrl` / `photoUrlExpiresAt` (a short-lived link to the approved profile photo; empty when there is none). 400 before a driver accepts |
 | GET | `/v1/trips/{tripId}/driver-location` | **rider** of the trip | only while accepted or in progress; 404 means the driver has not reported for 30 s, keep polling |
 | GET | `/v1/trips:active?rider_id=` or `?driver_id=` | the profile's owner | the requested, accepted or in-progress trip; 404 `no active trip` when there is none. Call it when the app opens, to resume a trip |
 | GET | `/v1/trips?rider_id=` or `?driver_id=` | the profile's owner | history, newest first: `page_size` (1-50, default 20) and `page_token`; the response's `nextPageToken` is empty on the last page |
@@ -114,6 +115,16 @@ gateway it always answers 403 to a user, and the internal token is refused with 
 | PATCH | `/v1/drivers/{driverId}` | the driver |
 | PUT | `/v1/drivers/{driverId}/availability` | the driver |
 | GET | `/v1/identities/{identityId}/driver` | the identity's owner |
+| GET | `/v1/riders/{riderId}/details` | the rider |
+| PATCH | `/v1/riders/{riderId}/details` | the rider: `gender` (`GENDER_MALE`/`GENDER_FEMALE`), `dateOfBirth` (`YYYY-MM-DD`, 18+), `nationality` (ISO alpha-2); only the fields sent change, empty clears one |
+| PUT | `/v1/riders/{riderId}/photo` | the rider: `mediaId` of their READY `MEDIA_PURPOSE_PROFILE_PHOTO` upload (400 otherwise); the old photo is deleted |
+| DELETE | `/v1/riders/{riderId}/photo` | the rider |
+| GET | `/v1/riders/{riderId}/photo` | the rider: `url`, `expiresAt`; 404 without a photo |
+| GET | `/v1/drivers/{driverId}/details` | the driver, or `drivers.read` |
+| PATCH | `/v1/drivers/{driverId}/details` | the driver: as for riders; once approved a detail already given is locked (400), an empty one can be filled |
+| GET | `/v1/drivers/{driverId}/photo` | the driver, or `drivers.read`: the approved `profile_photo` document; 404 without one |
+| POST | `/v1/drivers/{driverId}/name-changes` | the driver, once approved: `requestedName` (1-120), `reason` (up to 300); 409 while one waits, 400 for the current name or before approval (change it with `PATCH /v1/drivers/{driverId}` then) |
+| GET | `/v1/drivers/{driverId}/name-changes` | the driver, or `drivers.read`: newest first, with status and `rejectionReason` |
 
 ### Saved addresses (rider)
 
@@ -208,7 +219,8 @@ refused with `FAILED_PRECONDITION` and the rider asks for a new quote.
 |---|---|---|---|
 | POST | `/v1/devices` | the recipient | body: `recipientType`, `recipientId`, `deviceToken`, `platform`, `locale` |
 | POST | `/v1/devices:unregister` | the device's owner | token in the body: push tokens contain `:` |
-| GET | `/v1/notifications` | the recipient | `?recipient_type=&recipient_id=&limit=&unread_only=` |
+| GET | `/v1/notifications` | the recipient | `?recipient_type=&recipient_id=&limit=&unread_only=&page_token=`: newest first, `unreadCount`, and `nextPageToken` while there is more (400 for a made-up token) |
+| GET | `/v1/notifications:unread-count` | the recipient | `?recipient_type=&recipient_id=`: `unreadCount`, the badge |
 | POST | `/v1/notifications:read` | the recipient | empty `notificationIds` marks everything read |
 
 ### Wallet
@@ -300,6 +312,9 @@ before it runs. A caller who is not staff, or lacks the permission, gets 403.
 | GET | `/v1/drivers/{driverId}` | the driver, or `drivers.read` | |
 | POST | `/v1/admin/drivers/{driverId}:approve` | `drivers.approve` | clears any earlier rejection reason |
 | POST | `/v1/admin/drivers/{driverId}:reject` | `drivers.approve` | `reason` is required and shown to the driver (`rejectionReason`) |
+| GET | `/v1/admin/driver-name-changes?page_size=` | `drivers.read` | name changes waiting for review, oldest first |
+| POST | `/v1/admin/driver-name-changes/{nameChangeId}:approve` | `drivers.approve` | renames the driver; the driver is told (`driver.name_change_approved`) |
+| POST | `/v1/admin/driver-name-changes/{nameChangeId}:reject` | `drivers.approve` | `reason` required (up to 500), shown to the driver |
 | GET | `/v1/admin/cities` | `zones.manage` | every city, inactive ones too |
 | POST | `/v1/admin/cities` | `zones.manage` | `name`, `names` (`{"ar":…, "ku":…, "en":…}`), `timeZone` (IANA, for example `Asia/Baghdad`), `center`; 409 for a name already used |
 | PATCH | `/v1/admin/cities/{cityId}` | `zones.manage` | replaces `name`, `names`, `timeZone`, `center` |

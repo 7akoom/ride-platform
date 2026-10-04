@@ -52,7 +52,25 @@ func (c caller) ownsDriver(ctx context.Context, driverID string) (bool, error) {
 	return found.IdentityID != "" && found.IdentityID == c.identityID, nil
 }
 
+// driverIDGetter is every request that names the driver profile.
+type driverIDGetter interface{ GetDriverId() string }
+
+func ownerOfDriverID(ctx context.Context, c caller, request any) (bool, error) {
+	r, ok := request.(driverIDGetter)
+	if !ok {
+		return false, nil
+	}
+
+	return c.ownsDriver(ctx, r.GetDriverId())
+}
+
 var ownerChecks = map[string]ownerCheck{
+	driverRPCPrefix + "GetDriverDetails":    ownerOfDriverID,
+	driverRPCPrefix + "UpdateDriverDetails": ownerOfDriverID,
+	driverRPCPrefix + "GetDriverPhoto":      ownerOfDriverID,
+	driverRPCPrefix + "RequestNameChange":   ownerOfDriverID,
+	driverRPCPrefix + "ListNameChanges":     ownerOfDriverID,
+
 	driverRPCPrefix + "CreateDriver": func(_ context.Context, c caller, request any) (bool, error) {
 		r, ok := request.(*driverv1.CreateDriverRequest)
 		if !ok {

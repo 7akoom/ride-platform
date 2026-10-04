@@ -17,6 +17,7 @@ const (
 	SubjectDriverDocumentExpiring = "driver.document_expiring"
 	SubjectDriverDocumentExpired  = "driver.document_expired"
 	SubjectDriverVehicleReviewed  = "driver.vehicle_reviewed"
+	SubjectDriverNameChange       = "driver.name_change_reviewed"
 )
 
 // DriverSubjects are the driver events that notify the driver.
@@ -27,6 +28,7 @@ var DriverSubjects = []string{
 	SubjectDriverDocumentExpiring,
 	SubjectDriverDocumentExpired,
 	SubjectDriverVehicleReviewed,
+	SubjectDriverNameChange,
 }
 
 type driverStatusPayload struct {
@@ -146,6 +148,38 @@ func (h *Handler) handleDriverVehicle(ctx context.Context, envelope Envelope) er
 	eventKey := "driver.vehicle_approved"
 	if payload.Decision != "approved" {
 		eventKey = "driver.vehicle_rejected"
+		variables["reason"] = payload.Reason
+	}
+
+	return h.sendToDriver(ctx, payload.DriverID, eventKey, variables, envelope.EventID)
+}
+
+type driverNameChangePayload struct {
+	DriverID      string `json:"driver_id"`
+	NameChangeID  string `json:"name_change_id"`
+	Decision      string `json:"decision"`
+	RequestedName string `json:"requested_name"`
+	Reason        string `json:"reason"`
+}
+
+func (h *Handler) handleDriverNameChange(ctx context.Context, envelope Envelope) error {
+	var payload driverNameChangePayload
+
+	if err := json.Unmarshal(envelope.Payload, &payload); err != nil {
+		return fmt.Errorf("decode %s payload: %w", SubjectDriverNameChange, err)
+	}
+
+	if payload.DriverID == "" {
+		h.logger.WarnContext(ctx, "name change event without a driver; skipping")
+
+		return nil
+	}
+
+	variables := map[string]string{"name": payload.RequestedName}
+
+	eventKey := "driver.name_change_approved"
+	if payload.Decision != "approved" {
+		eventKey = "driver.name_change_rejected"
 		variables["reason"] = payload.Reason
 	}
 

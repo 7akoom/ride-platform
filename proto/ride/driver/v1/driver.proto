@@ -200,6 +200,63 @@ service DriverService {
       body: "*"
     };
   }
+  // Details: gender, date of birth (18 or older) and nationality (ISO 3166
+  // alpha-2). The driver's own (staff with drivers.read too).
+  rpc GetDriverDetails(GetDriverDetailsRequest) returns (DriverDetailsResponse) {
+    option (google.api.http) = {
+      get: "/v1/drivers/{driver_id}/details"
+    };
+  }
+  // UpdateDriverDetails changes only the fields sent. Once the driver is
+  // approved, a field already given only changes through support
+  // (FAILED_PRECONDITION); an empty one can still be filled in.
+  rpc UpdateDriverDetails(UpdateDriverDetailsRequest) returns (DriverDetailsResponse) {
+    option (google.api.http) = {
+      patch: "/v1/drivers/{driver_id}/details"
+      body: "*"
+    };
+  }
+  // GetDriverPhoto: a short-lived link to the driver's approved profile
+  // photo (the PROFILE_PHOTO document), for the driver and for services
+  // (trip-service shows it to the rider). NOT_FOUND without one.
+  rpc GetDriverPhoto(GetDriverPhotoRequest) returns (DriverPhotoResponse) {
+    option (google.api.http) = {
+      get: "/v1/drivers/{driver_id}/photo"
+    };
+  }
+  // Name changes: an approved driver's name changes only after staff check
+  // it against the approved ID (drivers.approve). One open request at a
+  // time; a pending driver just edits the profile.
+  rpc RequestNameChange(RequestNameChangeRequest) returns (NameChangeResponse) {
+    option (google.api.http) = {
+      post: "/v1/drivers/{driver_id}/name-changes"
+      body: "*"
+    };
+  }
+  rpc ListNameChanges(ListNameChangesRequest) returns (ListNameChangesResponse) {
+    option (google.api.http) = {
+      get: "/v1/drivers/{driver_id}/name-changes"
+    };
+  }
+  // The review queue, oldest first. Needs drivers.read.
+  rpc ListPendingNameChanges(ListPendingNameChangesRequest) returns (ListNameChangesResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/driver-name-changes"
+    };
+  }
+  rpc ApproveNameChange(ApproveNameChangeRequest) returns (NameChangeResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/driver-name-changes/{name_change_id}:approve"
+      body: "*"
+    };
+  }
+  rpc RejectNameChange(RejectNameChangeRequest) returns (NameChangeResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/driver-name-changes/{name_change_id}:reject"
+      body: "*"
+    };
+  }
+
 }
 
 enum DriverStatus {
@@ -571,5 +628,101 @@ message ApproveVehicleRequest {
 message RejectVehicleRequest {
   string vehicle_id = 1;
   // Shown to the driver. Required.
+  string reason = 2;
+}
+
+enum Gender {
+  GENDER_UNSPECIFIED = 0;
+  GENDER_MALE = 1;
+  GENDER_FEMALE = 2;
+}
+
+message DriverDetails {
+  string driver_id = 1;
+  Gender gender = 2;
+  // YYYY-MM-DD, empty when not given.
+  string date_of_birth = 3;
+  // ISO 3166-1 alpha-2, empty when not given.
+  string nationality = 4;
+  // An approved profile photo exists.
+  bool has_photo = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message GetDriverDetailsRequest {
+  string driver_id = 1;
+}
+
+message DriverDetailsResponse {
+  DriverDetails details = 1;
+}
+
+message UpdateDriverDetailsRequest {
+  string driver_id = 1;
+  // Only the fields present change. GENDER_UNSPECIFIED or "" clears one
+  // (before approval).
+  optional Gender gender = 2;
+  optional string date_of_birth = 3;
+  optional string nationality = 4;
+}
+
+message GetDriverPhotoRequest {
+  string driver_id = 1;
+}
+
+message DriverPhotoResponse {
+  string url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+enum NameChangeStatus {
+  NAME_CHANGE_STATUS_UNSPECIFIED = 0;
+  NAME_CHANGE_STATUS_PENDING = 1;
+  NAME_CHANGE_STATUS_APPROVED = 2;
+  NAME_CHANGE_STATUS_REJECTED = 3;
+}
+
+message NameChange {
+  string id = 1;
+  string driver_id = 2;
+  string current_name = 3;
+  string requested_name = 4;
+  // Why the driver asks (a marriage, a typo...), up to 300 characters.
+  string reason = 5;
+  NameChangeStatus status = 6;
+  string rejection_reason = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp decided_at = 9;
+}
+
+message RequestNameChangeRequest {
+  string driver_id = 1;
+  string requested_name = 2;
+  string reason = 3;
+}
+
+message NameChangeResponse {
+  NameChange name_change = 1;
+}
+
+message ListNameChangesRequest {
+  string driver_id = 1;
+}
+
+message ListNameChangesResponse {
+  repeated NameChange name_changes = 1;
+}
+
+message ListPendingNameChangesRequest {
+  int32 page_size = 1;
+}
+
+message ApproveNameChangeRequest {
+  string name_change_id = 1;
+}
+
+message RejectNameChangeRequest {
+  string name_change_id = 1;
+  // Required, up to 500 characters; the driver sees it.
   string reason = 2;
 }

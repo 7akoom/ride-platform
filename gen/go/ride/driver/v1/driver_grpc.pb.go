@@ -43,6 +43,14 @@ const (
 	DriverService_ListPendingVehicles_FullMethodName          = "/ride.driver.v1.DriverService/ListPendingVehicles"
 	DriverService_ApproveVehicle_FullMethodName               = "/ride.driver.v1.DriverService/ApproveVehicle"
 	DriverService_RejectVehicle_FullMethodName                = "/ride.driver.v1.DriverService/RejectVehicle"
+	DriverService_GetDriverDetails_FullMethodName             = "/ride.driver.v1.DriverService/GetDriverDetails"
+	DriverService_UpdateDriverDetails_FullMethodName          = "/ride.driver.v1.DriverService/UpdateDriverDetails"
+	DriverService_GetDriverPhoto_FullMethodName               = "/ride.driver.v1.DriverService/GetDriverPhoto"
+	DriverService_RequestNameChange_FullMethodName            = "/ride.driver.v1.DriverService/RequestNameChange"
+	DriverService_ListNameChanges_FullMethodName              = "/ride.driver.v1.DriverService/ListNameChanges"
+	DriverService_ListPendingNameChanges_FullMethodName       = "/ride.driver.v1.DriverService/ListPendingNameChanges"
+	DriverService_ApproveNameChange_FullMethodName            = "/ride.driver.v1.DriverService/ApproveNameChange"
+	DriverService_RejectNameChange_FullMethodName             = "/ride.driver.v1.DriverService/RejectNameChange"
 )
 
 // DriverServiceClient is the client API for DriverService service.
@@ -129,6 +137,26 @@ type DriverServiceClient interface {
 	// RejectVehicle turns down a pending car, with the reason the driver is
 	// shown. Staff with drivers.approve, or the internal token.
 	RejectVehicle(ctx context.Context, in *RejectVehicleRequest, opts ...grpc.CallOption) (*VehicleResponse, error)
+	// Details: gender, date of birth (18 or older) and nationality (ISO 3166
+	// alpha-2). The driver's own (staff with drivers.read too).
+	GetDriverDetails(ctx context.Context, in *GetDriverDetailsRequest, opts ...grpc.CallOption) (*DriverDetailsResponse, error)
+	// UpdateDriverDetails changes only the fields sent. Once the driver is
+	// approved, a field already given only changes through support
+	// (FAILED_PRECONDITION); an empty one can still be filled in.
+	UpdateDriverDetails(ctx context.Context, in *UpdateDriverDetailsRequest, opts ...grpc.CallOption) (*DriverDetailsResponse, error)
+	// GetDriverPhoto: a short-lived link to the driver's approved profile
+	// photo (the PROFILE_PHOTO document), for the driver and for services
+	// (trip-service shows it to the rider). NOT_FOUND without one.
+	GetDriverPhoto(ctx context.Context, in *GetDriverPhotoRequest, opts ...grpc.CallOption) (*DriverPhotoResponse, error)
+	// Name changes: an approved driver's name changes only after staff check
+	// it against the approved ID (drivers.approve). One open request at a
+	// time; a pending driver just edits the profile.
+	RequestNameChange(ctx context.Context, in *RequestNameChangeRequest, opts ...grpc.CallOption) (*NameChangeResponse, error)
+	ListNameChanges(ctx context.Context, in *ListNameChangesRequest, opts ...grpc.CallOption) (*ListNameChangesResponse, error)
+	// The review queue, oldest first. Needs drivers.read.
+	ListPendingNameChanges(ctx context.Context, in *ListPendingNameChangesRequest, opts ...grpc.CallOption) (*ListNameChangesResponse, error)
+	ApproveNameChange(ctx context.Context, in *ApproveNameChangeRequest, opts ...grpc.CallOption) (*NameChangeResponse, error)
+	RejectNameChange(ctx context.Context, in *RejectNameChangeRequest, opts ...grpc.CallOption) (*NameChangeResponse, error)
 }
 
 type driverServiceClient struct {
@@ -379,6 +407,86 @@ func (c *driverServiceClient) RejectVehicle(ctx context.Context, in *RejectVehic
 	return out, nil
 }
 
+func (c *driverServiceClient) GetDriverDetails(ctx context.Context, in *GetDriverDetailsRequest, opts ...grpc.CallOption) (*DriverDetailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DriverDetailsResponse)
+	err := c.cc.Invoke(ctx, DriverService_GetDriverDetails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) UpdateDriverDetails(ctx context.Context, in *UpdateDriverDetailsRequest, opts ...grpc.CallOption) (*DriverDetailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DriverDetailsResponse)
+	err := c.cc.Invoke(ctx, DriverService_UpdateDriverDetails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) GetDriverPhoto(ctx context.Context, in *GetDriverPhotoRequest, opts ...grpc.CallOption) (*DriverPhotoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DriverPhotoResponse)
+	err := c.cc.Invoke(ctx, DriverService_GetDriverPhoto_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) RequestNameChange(ctx context.Context, in *RequestNameChangeRequest, opts ...grpc.CallOption) (*NameChangeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NameChangeResponse)
+	err := c.cc.Invoke(ctx, DriverService_RequestNameChange_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) ListNameChanges(ctx context.Context, in *ListNameChangesRequest, opts ...grpc.CallOption) (*ListNameChangesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListNameChangesResponse)
+	err := c.cc.Invoke(ctx, DriverService_ListNameChanges_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) ListPendingNameChanges(ctx context.Context, in *ListPendingNameChangesRequest, opts ...grpc.CallOption) (*ListNameChangesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListNameChangesResponse)
+	err := c.cc.Invoke(ctx, DriverService_ListPendingNameChanges_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) ApproveNameChange(ctx context.Context, in *ApproveNameChangeRequest, opts ...grpc.CallOption) (*NameChangeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NameChangeResponse)
+	err := c.cc.Invoke(ctx, DriverService_ApproveNameChange_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) RejectNameChange(ctx context.Context, in *RejectNameChangeRequest, opts ...grpc.CallOption) (*NameChangeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NameChangeResponse)
+	err := c.cc.Invoke(ctx, DriverService_RejectNameChange_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DriverServiceServer is the server API for DriverService service.
 // All implementations must embed UnimplementedDriverServiceServer
 // for forward compatibility.
@@ -463,6 +571,26 @@ type DriverServiceServer interface {
 	// RejectVehicle turns down a pending car, with the reason the driver is
 	// shown. Staff with drivers.approve, or the internal token.
 	RejectVehicle(context.Context, *RejectVehicleRequest) (*VehicleResponse, error)
+	// Details: gender, date of birth (18 or older) and nationality (ISO 3166
+	// alpha-2). The driver's own (staff with drivers.read too).
+	GetDriverDetails(context.Context, *GetDriverDetailsRequest) (*DriverDetailsResponse, error)
+	// UpdateDriverDetails changes only the fields sent. Once the driver is
+	// approved, a field already given only changes through support
+	// (FAILED_PRECONDITION); an empty one can still be filled in.
+	UpdateDriverDetails(context.Context, *UpdateDriverDetailsRequest) (*DriverDetailsResponse, error)
+	// GetDriverPhoto: a short-lived link to the driver's approved profile
+	// photo (the PROFILE_PHOTO document), for the driver and for services
+	// (trip-service shows it to the rider). NOT_FOUND without one.
+	GetDriverPhoto(context.Context, *GetDriverPhotoRequest) (*DriverPhotoResponse, error)
+	// Name changes: an approved driver's name changes only after staff check
+	// it against the approved ID (drivers.approve). One open request at a
+	// time; a pending driver just edits the profile.
+	RequestNameChange(context.Context, *RequestNameChangeRequest) (*NameChangeResponse, error)
+	ListNameChanges(context.Context, *ListNameChangesRequest) (*ListNameChangesResponse, error)
+	// The review queue, oldest first. Needs drivers.read.
+	ListPendingNameChanges(context.Context, *ListPendingNameChangesRequest) (*ListNameChangesResponse, error)
+	ApproveNameChange(context.Context, *ApproveNameChangeRequest) (*NameChangeResponse, error)
+	RejectNameChange(context.Context, *RejectNameChangeRequest) (*NameChangeResponse, error)
 	mustEmbedUnimplementedDriverServiceServer()
 }
 
@@ -544,6 +672,30 @@ func (UnimplementedDriverServiceServer) ApproveVehicle(context.Context, *Approve
 }
 func (UnimplementedDriverServiceServer) RejectVehicle(context.Context, *RejectVehicleRequest) (*VehicleResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RejectVehicle not implemented")
+}
+func (UnimplementedDriverServiceServer) GetDriverDetails(context.Context, *GetDriverDetailsRequest) (*DriverDetailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDriverDetails not implemented")
+}
+func (UnimplementedDriverServiceServer) UpdateDriverDetails(context.Context, *UpdateDriverDetailsRequest) (*DriverDetailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateDriverDetails not implemented")
+}
+func (UnimplementedDriverServiceServer) GetDriverPhoto(context.Context, *GetDriverPhotoRequest) (*DriverPhotoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDriverPhoto not implemented")
+}
+func (UnimplementedDriverServiceServer) RequestNameChange(context.Context, *RequestNameChangeRequest) (*NameChangeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestNameChange not implemented")
+}
+func (UnimplementedDriverServiceServer) ListNameChanges(context.Context, *ListNameChangesRequest) (*ListNameChangesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListNameChanges not implemented")
+}
+func (UnimplementedDriverServiceServer) ListPendingNameChanges(context.Context, *ListPendingNameChangesRequest) (*ListNameChangesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPendingNameChanges not implemented")
+}
+func (UnimplementedDriverServiceServer) ApproveNameChange(context.Context, *ApproveNameChangeRequest) (*NameChangeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ApproveNameChange not implemented")
+}
+func (UnimplementedDriverServiceServer) RejectNameChange(context.Context, *RejectNameChangeRequest) (*NameChangeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RejectNameChange not implemented")
 }
 func (UnimplementedDriverServiceServer) mustEmbedUnimplementedDriverServiceServer() {}
 func (UnimplementedDriverServiceServer) testEmbeddedByValue()                       {}
@@ -998,6 +1150,150 @@ func _DriverService_RejectVehicle_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DriverService_GetDriverDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDriverDetailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).GetDriverDetails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_GetDriverDetails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).GetDriverDetails(ctx, req.(*GetDriverDetailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_UpdateDriverDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateDriverDetailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).UpdateDriverDetails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_UpdateDriverDetails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).UpdateDriverDetails(ctx, req.(*UpdateDriverDetailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_GetDriverPhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDriverPhotoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).GetDriverPhoto(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_GetDriverPhoto_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).GetDriverPhoto(ctx, req.(*GetDriverPhotoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_RequestNameChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestNameChangeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).RequestNameChange(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_RequestNameChange_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).RequestNameChange(ctx, req.(*RequestNameChangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_ListNameChanges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListNameChangesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ListNameChanges(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ListNameChanges_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ListNameChanges(ctx, req.(*ListNameChangesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_ListPendingNameChanges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPendingNameChangesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ListPendingNameChanges(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ListPendingNameChanges_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ListPendingNameChanges(ctx, req.(*ListPendingNameChangesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_ApproveNameChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveNameChangeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).ApproveNameChange(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_ApproveNameChange_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).ApproveNameChange(ctx, req.(*ApproveNameChangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_RejectNameChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RejectNameChangeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).RejectNameChange(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_RejectNameChange_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).RejectNameChange(ctx, req.(*RejectNameChangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DriverService_ServiceDesc is the grpc.ServiceDesc for DriverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1100,6 +1396,38 @@ var DriverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RejectVehicle",
 			Handler:    _DriverService_RejectVehicle_Handler,
+		},
+		{
+			MethodName: "GetDriverDetails",
+			Handler:    _DriverService_GetDriverDetails_Handler,
+		},
+		{
+			MethodName: "UpdateDriverDetails",
+			Handler:    _DriverService_UpdateDriverDetails_Handler,
+		},
+		{
+			MethodName: "GetDriverPhoto",
+			Handler:    _DriverService_GetDriverPhoto_Handler,
+		},
+		{
+			MethodName: "RequestNameChange",
+			Handler:    _DriverService_RequestNameChange_Handler,
+		},
+		{
+			MethodName: "ListNameChanges",
+			Handler:    _DriverService_ListNameChanges_Handler,
+		},
+		{
+			MethodName: "ListPendingNameChanges",
+			Handler:    _DriverService_ListPendingNameChanges_Handler,
+		},
+		{
+			MethodName: "ApproveNameChange",
+			Handler:    _DriverService_ApproveNameChange_Handler,
+		},
+		{
+			MethodName: "RejectNameChange",
+			Handler:    _DriverService_RejectNameChange_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

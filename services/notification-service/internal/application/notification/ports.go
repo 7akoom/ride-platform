@@ -1,6 +1,9 @@
 package notification
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type PersistInput struct {
 	RecipientType  RecipientType
@@ -33,6 +36,17 @@ type ListInput struct {
 	RecipientID   string
 	Limit         int
 	UnreadOnly    bool
+	// PageToken continues a previous page (its NextPageToken).
+	PageToken string
+	// Before is the decoded PageToken the repository pages from: notifications
+	// older than it, newest first. Nil for the first page.
+	Before *PageCursor
+}
+
+// PageCursor is the last notification of a page: created_at, then id.
+type PageCursor struct {
+	CreatedAt time.Time
+	ID        string
 }
 
 type Repository interface {

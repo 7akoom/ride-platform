@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/documents"
+	"github.com/7akoom/ride-platform/services/driver-service/internal/application/profile"
 )
 
 const mediaCallTimeout = 5 * time.Second
@@ -21,7 +22,10 @@ type MediaDocuments struct {
 	media mediav1.MediaServiceClient
 }
 
-var _ documents.Media = (*MediaDocuments)(nil)
+var (
+	_ documents.Media = (*MediaDocuments)(nil)
+	_ profile.Media   = (*MediaDocuments)(nil)
+)
 
 func NewMediaDocuments(conn grpc.ClientConnInterface) *MediaDocuments {
 	if conn == nil {
@@ -85,4 +89,21 @@ func (m *MediaDocuments) Discard(ctx context.Context, mediaID string) error {
 	}
 
 	return nil
+}
+
+// DownloadURL is a short-lived link to a file this service holds.
+func (m *MediaDocuments) DownloadURL(ctx context.Context, mediaID string) (string, time.Time, error) {
+	ctx, cancel := context.WithTimeout(ctx, mediaCallTimeout)
+	defer cancel()
+
+	response, err := m.media.GetDownloadURL(ctx, &mediav1.GetDownloadURLRequest{MediaId: mediaID})
+	if status.Code(err) == codes.NotFound || status.Code(err) == codes.FailedPrecondition {
+		return "", time.Time{}, profile.ErrNoPhoto
+	}
+
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("%w: %v", profile.ErrMediaUnavailable, err)
+	}
+
+	return response.GetUrl(), response.GetExpiresAt().AsTime(), nil
 }

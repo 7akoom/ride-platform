@@ -35,7 +35,13 @@ service NotificationService {
       post: "/v1/notifications:read"
       body: "*"
     };
+  }  // GetUnreadCount: the badge of the caller's own inbox, without the list.
+  rpc GetUnreadCount(GetUnreadCountRequest) returns (GetUnreadCountResponse) {
+    option (google.api.http) = {
+      get: "/v1/notifications:unread-count"
+    };
   }
+
   rpc UpsertTemplate(UpsertTemplateRequest) returns (UpsertTemplateResponse);
 }
 
@@ -134,11 +140,24 @@ message ListNotificationsRequest {
   string recipient_id = 2;
   int32 limit = 3;
   bool unread_only = 4;
+  // From a previous response, for the next (older) page.
+  string page_token = 5;
 }
 
 message ListNotificationsResponse {
   repeated Notification notifications = 1;
   int32 unread_count = 2;
+  // Empty on the last page.
+  string next_page_token = 3;
+}
+
+message GetUnreadCountRequest {
+  RecipientType recipient_type = 1;
+  string recipient_id = 2;
+}
+
+message GetUnreadCountResponse {
+  int32 unread_count = 1;
 }
 
 message MarkAsReadRequest {

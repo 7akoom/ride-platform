@@ -630,6 +630,9 @@ message TripDriver {
   TripVehicle vehicle = 2;
   double rating_average = 3;
   int32 rating_count = 4;
+  // A short-lived link to the driver's approved photo; empty without one.
+  string photo_url = 5;
+  google.protobuf.Timestamp photo_url_expires_at = 6;
 }
 
 message TripVehicle {

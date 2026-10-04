@@ -58,6 +58,8 @@ func staffTargetOf(request any) string {
 		return r.GetVehicleId()
 	case interface{ GetCode() string }:
 		return r.GetCode()
+	case interface{ GetNameChangeId() string }:
+		return r.GetNameChangeId()
 	default:
 		return ""
 	}

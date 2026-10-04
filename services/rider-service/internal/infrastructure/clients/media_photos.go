@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/7akoom/ride-platform/services/rider-service/internal/application/address"
+	"github.com/7akoom/ride-platform/services/rider-service/internal/application/profile"
 )
 
 const mediaCallTimeout = 5 * time.Second
@@ -21,7 +22,10 @@ type MediaPhotos struct {
 	media mediav1.MediaServiceClient
 }
 
-var _ address.Photos = (*MediaPhotos)(nil)
+var (
+	_ address.Photos = (*MediaPhotos)(nil)
+	_ profile.Media  = (*MediaPhotos)(nil)
+)
 
 func NewMediaPhotos(conn grpc.ClientConnInterface) *MediaPhotos {
 	if conn == nil {
@@ -80,4 +84,43 @@ func (m *MediaPhotos) Discard(ctx context.Context, mediaID string) error {
 	}
 
 	return nil
+}
+
+// HoldProfilePhoto keeps the rider's picture. It refuses a file that is not a
+// READY profile photo of that identity.
+func (m *MediaPhotos) HoldProfilePhoto(ctx context.Context, mediaID, ownerIdentityID string) error {
+	ctx, cancel := context.WithTimeout(ctx, mediaCallTimeout)
+	defer cancel()
+
+	_, err := m.media.HoldMedia(ctx, &mediav1.HoldMediaRequest{
+		MediaId:         mediaID,
+		OwnerIdentityId: ownerIdentityID,
+		Purpose:         mediav1.MediaPurpose_MEDIA_PURPOSE_PROFILE_PHOTO,
+	})
+
+	switch status.Code(err) {
+	case codes.OK:
+		return nil
+	case codes.NotFound, codes.FailedPrecondition, codes.InvalidArgument, codes.PermissionDenied:
+		return profile.ErrPhotoNotUsable
+	default:
+		return fmt.Errorf("%w: %v", profile.ErrMediaUnavailable, err)
+	}
+}
+
+// DownloadURL is a short-lived link to a file this service holds.
+func (m *MediaPhotos) DownloadURL(ctx context.Context, mediaID string) (string, time.Time, error) {
+	ctx, cancel := context.WithTimeout(ctx, mediaCallTimeout)
+	defer cancel()
+
+	response, err := m.media.GetDownloadURL(ctx, &mediav1.GetDownloadURLRequest{MediaId: mediaID})
+	if status.Code(err) == codes.NotFound || status.Code(err) == codes.FailedPrecondition {
+		return "", time.Time{}, profile.ErrNoPhoto
+	}
+
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("%w: %v", profile.ErrMediaUnavailable, err)
+	}
+
+	return response.GetUrl(), response.GetExpiresAt().AsTime(), nil
 }

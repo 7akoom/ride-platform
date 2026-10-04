@@ -116,6 +116,7 @@ func (h *NotificationHandler) ListNotifications(
 		RecipientID:   request.GetRecipientId(),
 		Limit:         int(request.GetLimit()),
 		UnreadOnly:    request.GetUnreadOnly(),
+		PageToken:     request.GetPageToken(),
 	})
 	if err != nil {
 		return nil, h.mapNotificationError(err)
@@ -130,7 +131,28 @@ func (h *NotificationHandler) ListNotifications(
 	return &notificationv1.ListNotificationsResponse{
 		Notifications: protoNotifications,
 		UnreadCount:   int32(result.UnreadCount),
+		NextPageToken: result.NextPageToken,
 	}, nil
+}
+
+func (h *NotificationHandler) GetUnreadCount(
+	ctx context.Context,
+	request *notificationv1.GetUnreadCountRequest,
+) (*notificationv1.GetUnreadCountResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	count, err := h.notificationService.UnreadCount(
+		ctx,
+		toDomainRecipientType(request.GetRecipientType()),
+		request.GetRecipientId(),
+	)
+	if err != nil {
+		return nil, h.mapNotificationError(err)
+	}
+
+	return &notificationv1.GetUnreadCountResponse{UnreadCount: int32(count)}, nil
 }
 
 func (h *NotificationHandler) MarkAsRead(
@@ -206,6 +228,7 @@ func (h *NotificationHandler) mapNotificationError(err error) error {
 		errors.Is(err, notification.ErrDeviceTokenRequired),
 		errors.Is(err, notification.ErrInvalidPlatform),
 		errors.Is(err, notification.ErrInvalidChannel),
+		errors.Is(err, notification.ErrInvalidPageToken),
 		errors.Is(err, notification.ErrTranslationsRequired):
 		return status.Error(codes.InvalidArgument, err.Error())
 

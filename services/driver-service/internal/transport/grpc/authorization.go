@@ -62,6 +62,16 @@ var methodAccess = map[string]accessLevel{
 	"/ride.driver.v1.DriverService/ListPendingVehicles": accessStaff,
 	"/ride.driver.v1.DriverService/ApproveVehicle":      accessStaff,
 	"/ride.driver.v1.DriverService/RejectVehicle":       accessStaff,
+
+	// Personal details, photo and name changes.
+	"/ride.driver.v1.DriverService/GetDriverDetails":       accessOwner,
+	"/ride.driver.v1.DriverService/UpdateDriverDetails":    accessOwner,
+	"/ride.driver.v1.DriverService/GetDriverPhoto":         accessOwner,
+	"/ride.driver.v1.DriverService/RequestNameChange":      accessOwner,
+	"/ride.driver.v1.DriverService/ListNameChanges":        accessOwner,
+	"/ride.driver.v1.DriverService/ListPendingNameChanges": accessStaff,
+	"/ride.driver.v1.DriverService/ApproveNameChange":      accessStaff,
+	"/ride.driver.v1.DriverService/RejectNameChange":       accessStaff,
 }
 
 // staffPermissions names the staff permission for every accessStaff method,
@@ -83,6 +93,13 @@ var staffPermissions = map[string]string{
 	"/ride.driver.v1.DriverService/ListPendingVehicles": "drivers.read",
 	"/ride.driver.v1.DriverService/ApproveVehicle":      "drivers.approve",
 	"/ride.driver.v1.DriverService/RejectVehicle":       "drivers.approve",
+
+	"/ride.driver.v1.DriverService/GetDriverDetails":       "drivers.read",
+	"/ride.driver.v1.DriverService/GetDriverPhoto":         "drivers.read",
+	"/ride.driver.v1.DriverService/ListNameChanges":        "drivers.read",
+	"/ride.driver.v1.DriverService/ListPendingNameChanges": "drivers.read",
+	"/ride.driver.v1.DriverService/ApproveNameChange":      "drivers.approve",
+	"/ride.driver.v1.DriverService/RejectNameChange":       "drivers.approve",
 }
 
 func NewAuthorizationUnaryInterceptor(drivers DriverReader, staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {

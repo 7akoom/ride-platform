@@ -89,6 +89,14 @@ var ownerChecks = map[string]ownerCheck{
 
 		return ownsRecipient(ctx, c, r.GetRecipientType(), r.GetRecipientId())
 	},
+	notificationRPCPrefix + "GetUnreadCount": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*notificationv1.GetUnreadCountRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return ownsRecipient(ctx, c, r.GetRecipientType(), r.GetRecipientId())
+	},
 	// MarkAsRead only ever touches notifications of the recipient it names
 	// (the query filters on recipient as well as id), so owning the recipient
 	// is enough: ids belonging to anyone else are simply not matched.

@@ -65,6 +65,42 @@ service RiderService {
       delete: "/v1/riders/{rider_id}/addresses/{address_id}"
     };
   }
+  // Details: gender, date of birth (18 or older) and nationality (ISO 3166
+  // alpha-2), all optional; and whether a photo is set. The caller's own.
+  rpc GetRiderDetails(GetRiderDetailsRequest) returns (RiderDetailsResponse) {
+    option (google.api.http) = {
+      get: "/v1/riders/{rider_id}/details"
+    };
+  }
+  // UpdateRiderDetails changes only the fields sent; an empty value clears
+  // one.
+  rpc UpdateRiderDetails(UpdateRiderDetailsRequest) returns (RiderDetailsResponse) {
+    option (google.api.http) = {
+      patch: "/v1/riders/{rider_id}/details"
+      body: "*"
+    };
+  }
+  // SetRiderPhoto uses one of the caller's READY PROFILE_PHOTO uploads as
+  // their picture; the old one is deleted.
+  rpc SetRiderPhoto(SetRiderPhotoRequest) returns (RiderDetailsResponse) {
+    option (google.api.http) = {
+      put: "/v1/riders/{rider_id}/photo"
+      body: "*"
+    };
+  }
+  rpc DeleteRiderPhoto(DeleteRiderPhotoRequest) returns (RiderDetailsResponse) {
+    option (google.api.http) = {
+      delete: "/v1/riders/{rider_id}/photo"
+    };
+  }
+  // GetRiderPhoto: a short-lived link to the picture, for the rider (and for
+  // services). NOT_FOUND without one.
+  rpc GetRiderPhoto(GetRiderPhotoRequest) returns (PhotoURLResponse) {
+    option (google.api.http) = {
+      get: "/v1/riders/{rider_id}/photo"
+    };
+  }
+
 }
 
 enum RiderStatus {
@@ -202,3 +238,54 @@ message DeleteSavedAddressRequest {
 }
 
 message DeleteSavedAddressResponse {}
+
+enum Gender {
+  GENDER_UNSPECIFIED = 0;
+  GENDER_MALE = 1;
+  GENDER_FEMALE = 2;
+}
+
+message RiderDetails {
+  string rider_id = 1;
+  Gender gender = 2;
+  // YYYY-MM-DD, empty when not given.
+  string date_of_birth = 3;
+  // ISO 3166-1 alpha-2 (IQ, SY...), empty when not given.
+  string nationality = 4;
+  bool has_photo = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message GetRiderDetailsRequest {
+  string rider_id = 1;
+}
+
+message RiderDetailsResponse {
+  RiderDetails details = 1;
+}
+
+message UpdateRiderDetailsRequest {
+  string rider_id = 1;
+  // Only the fields present change. GENDER_UNSPECIFIED or "" clears one.
+  optional Gender gender = 2;
+  optional string date_of_birth = 3;
+  optional string nationality = 4;
+}
+
+message SetRiderPhotoRequest {
+  string rider_id = 1;
+  string media_id = 2;
+}
+
+message DeleteRiderPhotoRequest {
+  string rider_id = 1;
+}
+
+message GetRiderPhotoRequest {
+  string rider_id = 1;
+}
+
+message PhotoURLResponse {
+  string url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}

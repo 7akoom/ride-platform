@@ -13,6 +13,7 @@ import (
 
 	"github.com/7akoom/ride-platform/services/rider-service/internal/application/address"
 	outboxapp "github.com/7akoom/ride-platform/services/rider-service/internal/application/outbox"
+	"github.com/7akoom/ride-platform/services/rider-service/internal/application/profile"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/application/ratings"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/application/rider"
 	"github.com/7akoom/ride-platform/services/rider-service/internal/config"
@@ -173,7 +174,17 @@ func run() int {
 		logger,
 	)
 
-	riderHandler := grpcserver.NewRiderHandler(riderService, logger).WithAddresses(addressService)
+	profileService := profile.NewService(
+		postgresrepo.NewDetailsRepository(pool),
+		riderService,
+		clients.NewMediaPhotos(mediaConn),
+		clockinfra.NewSystemClock(),
+		logger,
+	)
+
+	riderHandler := grpcserver.NewRiderHandler(riderService, logger).
+		WithAddresses(addressService).
+		WithProfile(profileService)
 
 	ratingSubscription, err := subscribeTripRatings(
 		ctx,

@@ -9,6 +9,7 @@ var (
 	ErrDeviceTokenRequired  = errors.New("device token is required")
 	ErrInvalidPlatform      = errors.New("invalid platform")
 	ErrInvalidChannel       = errors.New("invalid channel")
+	ErrInvalidPageToken     = errors.New("invalid page token")
 
 	ErrTemplateNotFound     = errors.New("no template found for this event key")
 	ErrTranslationNotFound  = errors.New("template has no translation for any acceptable locale")

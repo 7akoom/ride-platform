@@ -3,6 +3,7 @@ package trip
 import (
 	"context"
 	"errors"
+	"time"
 )
 
 var (
@@ -25,6 +26,10 @@ type DriverSummary struct {
 	VehicleClass  string
 	RatingAverage float64
 	RatingCount   int32
+	// PhotoURL is a short-lived link to the driver's approved profile photo; empty when
+	// there is none or it could not be read (the rest of the summary is still shown).
+	PhotoURL          string
+	PhotoURLExpiresAt time.Time
 }
 
 // DriverDirectory is the outbound port that reads a driver's profile from driver-service.

@@ -28,6 +28,11 @@ const (
 	RiderService_GetSavedAddress_FullMethodName    = "/ride.rider.v1.RiderService/GetSavedAddress"
 	RiderService_UpdateSavedAddress_FullMethodName = "/ride.rider.v1.RiderService/UpdateSavedAddress"
 	RiderService_DeleteSavedAddress_FullMethodName = "/ride.rider.v1.RiderService/DeleteSavedAddress"
+	RiderService_GetRiderDetails_FullMethodName    = "/ride.rider.v1.RiderService/GetRiderDetails"
+	RiderService_UpdateRiderDetails_FullMethodName = "/ride.rider.v1.RiderService/UpdateRiderDetails"
+	RiderService_SetRiderPhoto_FullMethodName      = "/ride.rider.v1.RiderService/SetRiderPhoto"
+	RiderService_DeleteRiderPhoto_FullMethodName   = "/ride.rider.v1.RiderService/DeleteRiderPhoto"
+	RiderService_GetRiderPhoto_FullMethodName      = "/ride.rider.v1.RiderService/GetRiderPhoto"
 )
 
 // RiderServiceClient is the client API for RiderService service.
@@ -51,6 +56,19 @@ type RiderServiceClient interface {
 	GetSavedAddress(ctx context.Context, in *GetSavedAddressRequest, opts ...grpc.CallOption) (*SavedAddressResponse, error)
 	UpdateSavedAddress(ctx context.Context, in *UpdateSavedAddressRequest, opts ...grpc.CallOption) (*SavedAddressResponse, error)
 	DeleteSavedAddress(ctx context.Context, in *DeleteSavedAddressRequest, opts ...grpc.CallOption) (*DeleteSavedAddressResponse, error)
+	// Details: gender, date of birth (18 or older) and nationality (ISO 3166
+	// alpha-2), all optional; and whether a photo is set. The caller's own.
+	GetRiderDetails(ctx context.Context, in *GetRiderDetailsRequest, opts ...grpc.CallOption) (*RiderDetailsResponse, error)
+	// UpdateRiderDetails changes only the fields sent; an empty value clears
+	// one.
+	UpdateRiderDetails(ctx context.Context, in *UpdateRiderDetailsRequest, opts ...grpc.CallOption) (*RiderDetailsResponse, error)
+	// SetRiderPhoto uses one of the caller's READY PROFILE_PHOTO uploads as
+	// their picture; the old one is deleted.
+	SetRiderPhoto(ctx context.Context, in *SetRiderPhotoRequest, opts ...grpc.CallOption) (*RiderDetailsResponse, error)
+	DeleteRiderPhoto(ctx context.Context, in *DeleteRiderPhotoRequest, opts ...grpc.CallOption) (*RiderDetailsResponse, error)
+	// GetRiderPhoto: a short-lived link to the picture, for the rider (and for
+	// services). NOT_FOUND without one.
+	GetRiderPhoto(ctx context.Context, in *GetRiderPhotoRequest, opts ...grpc.CallOption) (*PhotoURLResponse, error)
 }
 
 type riderServiceClient struct {
@@ -151,6 +169,56 @@ func (c *riderServiceClient) DeleteSavedAddress(ctx context.Context, in *DeleteS
 	return out, nil
 }
 
+func (c *riderServiceClient) GetRiderDetails(ctx context.Context, in *GetRiderDetailsRequest, opts ...grpc.CallOption) (*RiderDetailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RiderDetailsResponse)
+	err := c.cc.Invoke(ctx, RiderService_GetRiderDetails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *riderServiceClient) UpdateRiderDetails(ctx context.Context, in *UpdateRiderDetailsRequest, opts ...grpc.CallOption) (*RiderDetailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RiderDetailsResponse)
+	err := c.cc.Invoke(ctx, RiderService_UpdateRiderDetails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *riderServiceClient) SetRiderPhoto(ctx context.Context, in *SetRiderPhotoRequest, opts ...grpc.CallOption) (*RiderDetailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RiderDetailsResponse)
+	err := c.cc.Invoke(ctx, RiderService_SetRiderPhoto_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *riderServiceClient) DeleteRiderPhoto(ctx context.Context, in *DeleteRiderPhotoRequest, opts ...grpc.CallOption) (*RiderDetailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RiderDetailsResponse)
+	err := c.cc.Invoke(ctx, RiderService_DeleteRiderPhoto_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *riderServiceClient) GetRiderPhoto(ctx context.Context, in *GetRiderPhotoRequest, opts ...grpc.CallOption) (*PhotoURLResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PhotoURLResponse)
+	err := c.cc.Invoke(ctx, RiderService_GetRiderPhoto_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RiderServiceServer is the server API for RiderService service.
 // All implementations must embed UnimplementedRiderServiceServer
 // for forward compatibility.
@@ -172,6 +240,19 @@ type RiderServiceServer interface {
 	GetSavedAddress(context.Context, *GetSavedAddressRequest) (*SavedAddressResponse, error)
 	UpdateSavedAddress(context.Context, *UpdateSavedAddressRequest) (*SavedAddressResponse, error)
 	DeleteSavedAddress(context.Context, *DeleteSavedAddressRequest) (*DeleteSavedAddressResponse, error)
+	// Details: gender, date of birth (18 or older) and nationality (ISO 3166
+	// alpha-2), all optional; and whether a photo is set. The caller's own.
+	GetRiderDetails(context.Context, *GetRiderDetailsRequest) (*RiderDetailsResponse, error)
+	// UpdateRiderDetails changes only the fields sent; an empty value clears
+	// one.
+	UpdateRiderDetails(context.Context, *UpdateRiderDetailsRequest) (*RiderDetailsResponse, error)
+	// SetRiderPhoto uses one of the caller's READY PROFILE_PHOTO uploads as
+	// their picture; the old one is deleted.
+	SetRiderPhoto(context.Context, *SetRiderPhotoRequest) (*RiderDetailsResponse, error)
+	DeleteRiderPhoto(context.Context, *DeleteRiderPhotoRequest) (*RiderDetailsResponse, error)
+	// GetRiderPhoto: a short-lived link to the picture, for the rider (and for
+	// services). NOT_FOUND without one.
+	GetRiderPhoto(context.Context, *GetRiderPhotoRequest) (*PhotoURLResponse, error)
 	mustEmbedUnimplementedRiderServiceServer()
 }
 
@@ -208,6 +289,21 @@ func (UnimplementedRiderServiceServer) UpdateSavedAddress(context.Context, *Upda
 }
 func (UnimplementedRiderServiceServer) DeleteSavedAddress(context.Context, *DeleteSavedAddressRequest) (*DeleteSavedAddressResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteSavedAddress not implemented")
+}
+func (UnimplementedRiderServiceServer) GetRiderDetails(context.Context, *GetRiderDetailsRequest) (*RiderDetailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRiderDetails not implemented")
+}
+func (UnimplementedRiderServiceServer) UpdateRiderDetails(context.Context, *UpdateRiderDetailsRequest) (*RiderDetailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateRiderDetails not implemented")
+}
+func (UnimplementedRiderServiceServer) SetRiderPhoto(context.Context, *SetRiderPhotoRequest) (*RiderDetailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetRiderPhoto not implemented")
+}
+func (UnimplementedRiderServiceServer) DeleteRiderPhoto(context.Context, *DeleteRiderPhotoRequest) (*RiderDetailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteRiderPhoto not implemented")
+}
+func (UnimplementedRiderServiceServer) GetRiderPhoto(context.Context, *GetRiderPhotoRequest) (*PhotoURLResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRiderPhoto not implemented")
 }
 func (UnimplementedRiderServiceServer) mustEmbedUnimplementedRiderServiceServer() {}
 func (UnimplementedRiderServiceServer) testEmbeddedByValue()                      {}
@@ -392,6 +488,96 @@ func _RiderService_DeleteSavedAddress_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RiderService_GetRiderDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRiderDetailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).GetRiderDetails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderService_GetRiderDetails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).GetRiderDetails(ctx, req.(*GetRiderDetailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RiderService_UpdateRiderDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRiderDetailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).UpdateRiderDetails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderService_UpdateRiderDetails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).UpdateRiderDetails(ctx, req.(*UpdateRiderDetailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RiderService_SetRiderPhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetRiderPhotoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).SetRiderPhoto(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderService_SetRiderPhoto_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).SetRiderPhoto(ctx, req.(*SetRiderPhotoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RiderService_DeleteRiderPhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRiderPhotoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).DeleteRiderPhoto(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderService_DeleteRiderPhoto_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).DeleteRiderPhoto(ctx, req.(*DeleteRiderPhotoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RiderService_GetRiderPhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRiderPhotoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).GetRiderPhoto(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderService_GetRiderPhoto_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).GetRiderPhoto(ctx, req.(*GetRiderPhotoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RiderService_ServiceDesc is the grpc.ServiceDesc for RiderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -434,6 +620,26 @@ var RiderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteSavedAddress",
 			Handler:    _RiderService_DeleteSavedAddress_Handler,
+		},
+		{
+			MethodName: "GetRiderDetails",
+			Handler:    _RiderService_GetRiderDetails_Handler,
+		},
+		{
+			MethodName: "UpdateRiderDetails",
+			Handler:    _RiderService_UpdateRiderDetails_Handler,
+		},
+		{
+			MethodName: "SetRiderPhoto",
+			Handler:    _RiderService_SetRiderPhoto_Handler,
+		},
+		{
+			MethodName: "DeleteRiderPhoto",
+			Handler:    _RiderService_DeleteRiderPhoto_Handler,
+		},
+		{
+			MethodName: "GetRiderPhoto",
+			Handler:    _RiderService_GetRiderPhoto_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -9,6 +9,7 @@ import (
 	driverv1 "github.com/7akoom/ride-platform/gen/go/ride/driver/v1"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/documents"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
+	"github.com/7akoom/ride-platform/services/driver-service/internal/application/profile"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/vehicles"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -21,6 +22,7 @@ type DriverHandler struct {
 	driverService driver.Service
 	documents     *documents.Service
 	vehicles      *vehicles.Service
+	profile       *profile.Service
 	logger        *slog.Logger
 }
 
