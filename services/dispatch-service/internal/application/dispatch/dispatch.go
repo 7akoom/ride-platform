@@ -30,6 +30,13 @@ type TripClient interface {
 type NearbyDriver struct {
 	DriverID       string
 	DistanceMeters float64
+
+	// Latitude and Longitude are the driver's last reported position.
+	Latitude  float64
+	Longitude float64
+
+	// PickupETASeconds is how long by road to the pickup; 0 when not known.
+	PickupETASeconds float64
 }
 
 // LocationClient is Dispatch's view of location-service.
@@ -75,6 +82,10 @@ type Result struct {
 	TripID         string
 	DriverID       string
 	DistanceMeters float64
+
+	// PickupETASeconds is how long by road the driver is from the pickup; 0 when
+	// not known.
+	PickupETASeconds float64
 
 	// Offered is true when the trip was put to DriverID as an offer they have not
 	// answered yet, false when it was assigned to them.

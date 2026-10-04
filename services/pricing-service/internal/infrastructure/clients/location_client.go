@@ -101,3 +101,32 @@ func existence(err error, method string) (bool, error) {
 		return false, fmt.Errorf("call location-service %s: %w", method, err)
 	}
 }
+
+// TravelTimes asks location-service how long by road from each origin to the
+// destination (pricing.TravelTimer).
+func (c *LocationClient) TravelTimes(
+	ctx context.Context,
+	origins []pricing.Point,
+	destination pricing.Point,
+) ([]pricing.TravelTime, error) {
+	request := &locationv1.GetTravelTimesRequest{
+		Origins:     make([]*locationv1.Coordinates, len(origins)),
+		Destination: &locationv1.Coordinates{Latitude: destination.Latitude, Longitude: destination.Longitude},
+	}
+
+	for i, origin := range origins {
+		request.Origins[i] = &locationv1.Coordinates{Latitude: origin.Latitude, Longitude: origin.Longitude}
+	}
+
+	response, err := c.client.GetTravelTimes(ctx, request)
+	if err != nil {
+		return nil, fmt.Errorf("call location-service GetTravelTimes: %w", err)
+	}
+
+	times := make([]pricing.TravelTime, len(response.GetTimes()))
+	for i, t := range response.GetTimes() {
+		times[i] = pricing.TravelTime{Reachable: t.GetReachable(), DurationSeconds: t.GetDurationSeconds()}
+	}
+
+	return times, nil
+}

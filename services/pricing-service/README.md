@@ -28,7 +28,10 @@ for every class at once, cheapest first. Each quote has:
 - the full fare breakdown and its `quote_id`;
 - `expires_at` (`QUOTE_TTL`, 5 minutes by default);
 - whether a free driver of that class is near the pickup and how many
-  minutes away by road the nearest one is (`pickup_eta_minutes`).
+  minutes away by road the fastest one is (`pickup_eta_minutes`): every free
+  driver nearby is timed in one call to location-service's `GetTravelTimes`
+  (the driver dispatch would send). If that call fails, it is the road route
+  of the nearest driver in a straight line.
 
 A trip requested with a `quote_id` (trip-service `RequestTrip`) claims it:
 trip-service calls `ClaimQuote` with the internal token. A quote is claimed

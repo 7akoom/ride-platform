@@ -45,8 +45,43 @@ func (c *LocationClient) FindNearbyDrivers(
 		results[i] = dispatch.NearbyDriver{
 			DriverID:       entity.GetEntityId(),
 			DistanceMeters: entity.GetDistanceMeters(),
+			Latitude:       entity.GetCoordinates().GetLatitude(),
+			Longitude:      entity.GetCoordinates().GetLongitude(),
 		}
 	}
 
 	return results, nil
+}
+
+// TravelTimes asks location-service how long by road from each origin to the
+// destination (dispatch.TravelTimeClient).
+func (c *LocationClient) TravelTimes(
+	ctx context.Context,
+	origins []dispatch.Point,
+	destination dispatch.Point,
+) ([]dispatch.TravelTime, error) {
+	request := &locationv1.GetTravelTimesRequest{
+		Origins:     make([]*locationv1.Coordinates, len(origins)),
+		Destination: &locationv1.Coordinates{Latitude: destination.Latitude, Longitude: destination.Longitude},
+	}
+
+	for i, origin := range origins {
+		request.Origins[i] = &locationv1.Coordinates{Latitude: origin.Latitude, Longitude: origin.Longitude}
+	}
+
+	response, err := c.client.GetTravelTimes(ctx, request)
+	if err != nil {
+		return nil, fmt.Errorf("call location-service GetTravelTimes: %w", err)
+	}
+
+	times := make([]dispatch.TravelTime, len(response.GetTimes()))
+	for i, t := range response.GetTimes() {
+		times[i] = dispatch.TravelTime{
+			Reachable:       t.GetReachable(),
+			DurationSeconds: t.GetDurationSeconds(),
+			DistanceMeters:  t.GetDistanceMeters(),
+		}
+	}
+
+	return times, nil
 }

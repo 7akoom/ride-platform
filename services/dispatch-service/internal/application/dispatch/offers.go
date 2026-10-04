@@ -75,14 +75,16 @@ func (s *service) offerToCandidate(
 			"trip_id", tripID,
 			"driver_id", driver.ID,
 			"distance_meters", candidate.DistanceMeters,
+			"pickup_eta_seconds", candidate.PickupETASeconds,
 			"ttl", s.offerTTL,
 		)
 
 		return Result{
-			TripID:         tripID,
-			DriverID:       driver.ID,
-			DistanceMeters: candidate.DistanceMeters,
-			Offered:        true,
+			TripID:           tripID,
+			DriverID:         driver.ID,
+			DistanceMeters:   candidate.DistanceMeters,
+			PickupETASeconds: candidate.PickupETASeconds,
+			Offered:          true,
 		}, true, nil
 
 	case errors.Is(offerErr, ErrOfferPending):

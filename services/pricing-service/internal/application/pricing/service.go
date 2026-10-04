@@ -112,6 +112,10 @@ type service struct {
 	weatherClient  WeatherClient
 	driverFinder   DriverFinder
 
+	// travelTimer, when set, gives each quote the pickup time of the fastest
+	// driver by road (see WithTravelTimes).
+	travelTimer TravelTimer
+
 	// fareRoundingIncrement, when positive, rounds every fare total to a
 	// multiple of it (see fare_rounding.go). Zero means no rounding.
 	fareRoundingIncrement decimal.Decimal

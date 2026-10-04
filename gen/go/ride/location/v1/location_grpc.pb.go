@@ -22,6 +22,7 @@ const (
 	LocationService_UpdateLocation_FullMethodName   = "/ride.location.v1.LocationService/UpdateLocation"
 	LocationService_GetLocation_FullMethodName      = "/ride.location.v1.LocationService/GetLocation"
 	LocationService_FindNearby_FullMethodName       = "/ride.location.v1.LocationService/FindNearby"
+	LocationService_GetTravelTimes_FullMethodName   = "/ride.location.v1.LocationService/GetTravelTimes"
 	LocationService_CreateZone_FullMethodName       = "/ride.location.v1.LocationService/CreateZone"
 	LocationService_UpdateZone_FullMethodName       = "/ride.location.v1.LocationService/UpdateZone"
 	LocationService_SetZoneActive_FullMethodName    = "/ride.location.v1.LocationService/SetZoneActive"
@@ -58,6 +59,10 @@ type LocationServiceClient interface {
 	// query param (?entity_type=ENTITY_TYPE_DRIVER) instead.
 	GetLocation(ctx context.Context, in *GetLocationRequest, opts ...grpc.CallOption) (*GetLocationResponse, error)
 	FindNearby(ctx context.Context, in *FindNearbyRequest, opts ...grpc.CallOption) (*FindNearbyResponse, error)
+	// GetTravelTimes is how long by road (OSRM's table) it takes from each origin
+	// to one destination, in the order of the origins. Internal: dispatch ranks
+	// nearby drivers by it, and pricing shows the nearest driver's pickup time.
+	GetTravelTimes(ctx context.Context, in *GetTravelTimesRequest, opts ...grpc.CallOption) (*GetTravelTimesResponse, error)
 	// Service zones — the geographic areas the platform actually serves,
 	// down to arbitrary polygons (not just a city name). See
 	// CheckServiceZone for the query every trip request must pass.
@@ -138,6 +143,16 @@ func (c *locationServiceClient) FindNearby(ctx context.Context, in *FindNearbyRe
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindNearbyResponse)
 	err := c.cc.Invoke(ctx, LocationService_FindNearby_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *locationServiceClient) GetTravelTimes(ctx context.Context, in *GetTravelTimesRequest, opts ...grpc.CallOption) (*GetTravelTimesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTravelTimesResponse)
+	err := c.cc.Invoke(ctx, LocationService_GetTravelTimes_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -367,6 +382,10 @@ type LocationServiceServer interface {
 	// query param (?entity_type=ENTITY_TYPE_DRIVER) instead.
 	GetLocation(context.Context, *GetLocationRequest) (*GetLocationResponse, error)
 	FindNearby(context.Context, *FindNearbyRequest) (*FindNearbyResponse, error)
+	// GetTravelTimes is how long by road (OSRM's table) it takes from each origin
+	// to one destination, in the order of the origins. Internal: dispatch ranks
+	// nearby drivers by it, and pricing shows the nearest driver's pickup time.
+	GetTravelTimes(context.Context, *GetTravelTimesRequest) (*GetTravelTimesResponse, error)
 	// Service zones — the geographic areas the platform actually serves,
 	// down to arbitrary polygons (not just a city name). See
 	// CheckServiceZone for the query every trip request must pass.
@@ -431,6 +450,9 @@ func (UnimplementedLocationServiceServer) GetLocation(context.Context, *GetLocat
 }
 func (UnimplementedLocationServiceServer) FindNearby(context.Context, *FindNearbyRequest) (*FindNearbyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method FindNearby not implemented")
+}
+func (UnimplementedLocationServiceServer) GetTravelTimes(context.Context, *GetTravelTimesRequest) (*GetTravelTimesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTravelTimes not implemented")
 }
 func (UnimplementedLocationServiceServer) CreateZone(context.Context, *CreateZoneRequest) (*ZoneResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateZone not implemented")
@@ -566,6 +588,24 @@ func _LocationService_FindNearby_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LocationServiceServer).FindNearby(ctx, req.(*FindNearbyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LocationService_GetTravelTimes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTravelTimesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocationServiceServer).GetTravelTimes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocationService_GetTravelTimes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocationServiceServer).GetTravelTimes(ctx, req.(*GetTravelTimesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -966,6 +1006,10 @@ var LocationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindNearby",
 			Handler:    _LocationService_FindNearby_Handler,
+		},
+		{
+			MethodName: "GetTravelTimes",
+			Handler:    _LocationService_GetTravelTimes_Handler,
 		},
 		{
 			MethodName: "CreateZone",

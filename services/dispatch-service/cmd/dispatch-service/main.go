@@ -130,13 +130,33 @@ func run() int {
 		logger.Info("dispatch assigns drivers directly (DISPATCH_OFFER_TTL is 0)")
 	}
 
-	dispatchService := dispatch.NewService(
-		clients.NewTripClient(tripConn),
-		clients.NewLocationClient(locationConn),
-		clients.NewDriverClient(driverConn),
-		clients.NewWalletClient(walletConn),
+	roadRanking, err := config.ParseRoadRanking(cfg)
+	if err != nil {
+		logger.Error("invalid road ranking configuration", "error", err)
+
+		return 1
+	}
+
+	locationClient := clients.NewLocationClient(locationConn)
+
+	dispatchOptions := []dispatch.Option{
 		dispatch.WithLogger(logger),
 		dispatch.WithOffers(offerTTL),
+	}
+
+	if roadRanking.Enabled {
+		dispatchOptions = append(dispatchOptions, dispatch.WithRoadRanking(locationClient, roadRanking.MaxPickup))
+		logger.Info("dispatch ranks drivers by time to the pickup by road", "max_pickup", roadRanking.MaxPickup)
+	} else {
+		logger.Info("dispatch ranks drivers by straight-line distance (DISPATCH_ROAD_RANKING is false)")
+	}
+
+	dispatchService := dispatch.NewService(
+		clients.NewTripClient(tripConn),
+		locationClient,
+		clients.NewDriverClient(driverConn),
+		clients.NewWalletClient(walletConn),
+		dispatchOptions...,
 	)
 	dispatchHandler := grpcserver.NewDispatchHandler(dispatchService, logger)
 

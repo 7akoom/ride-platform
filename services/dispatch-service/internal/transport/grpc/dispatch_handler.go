@@ -54,9 +54,10 @@ func (h *DispatchHandler) DispatchTrip(
 	}
 
 	return &dispatchv1.DispatchTripResponse{
-		TripId:         result.TripID,
-		DriverId:       result.DriverID,
-		DistanceMeters: result.DistanceMeters,
+		TripId:           result.TripID,
+		DriverId:         result.DriverID,
+		DistanceMeters:   result.DistanceMeters,
+		PickupEtaSeconds: result.PickupETASeconds,
 	}, nil
 }
 

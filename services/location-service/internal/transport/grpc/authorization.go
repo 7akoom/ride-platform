@@ -38,6 +38,7 @@ var methodAccess = map[string]accessLevel{
 	"/ride.location.v1.LocationService/UpdateLocation":   accessOwner,
 	"/ride.location.v1.LocationService/GetLocation":      accessOwner,
 	"/ride.location.v1.LocationService/FindNearby":       accessInternal,
+	"/ride.location.v1.LocationService/GetTravelTimes":   accessInternal,
 	"/ride.location.v1.LocationService/CreateZone":       accessStaff,
 	"/ride.location.v1.LocationService/UpdateZone":       accessStaff,
 	"/ride.location.v1.LocationService/SetZoneActive":    accessStaff,

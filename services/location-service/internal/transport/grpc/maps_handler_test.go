@@ -23,6 +23,8 @@ type mapsFake struct {
 	err    error
 
 	routeInput   maps.RouteInput
+	travelInput  maps.TravelTimesInput
+	times        []maps.TravelTime
 	searchInput  maps.SearchInput
 	reverseInput maps.ReverseInput
 }
@@ -31,6 +33,12 @@ func (f *mapsFake) GetRoute(_ context.Context, input maps.RouteInput) (maps.Rout
 	f.routeInput = input
 
 	return f.route, f.err
+}
+
+func (f *mapsFake) TravelTimes(_ context.Context, input maps.TravelTimesInput) ([]maps.TravelTime, error) {
+	f.travelInput = input
+
+	return f.times, f.err
 }
 
 func (f *mapsFake) SearchPlaces(_ context.Context, input maps.SearchInput) ([]maps.Place, error) {
@@ -239,4 +247,30 @@ func TestWithMapsRequiresAService(t *testing.T) {
 	}()
 
 	newMapsHandler(t, nil).WithMaps(nil)
+}
+
+func TestTravelTimesAreReturnedInTheOriginsOrder(t *testing.T) {
+	fake := &mapsFake{times: []maps.TravelTime{{Reachable: true, DurationSeconds: 300, DistanceMeters: 2100}, {}}}
+
+	response, err := newMapsHandler(t, fake).GetTravelTimes(context.Background(), &locationv1.GetTravelTimesRequest{
+		Origins:     []*locationv1.Coordinates{coords(36.19, 44.01), coords(36.2, 44.02)},
+		Destination: coords(36.23, 43.96),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := response.GetTimes()
+	if len(got) != 2 || !got[0].GetReachable() || got[0].GetDurationSeconds() != 300 || got[1].GetReachable() {
+		t.Fatalf("times %v", got)
+	}
+
+	if len(fake.travelInput.Origins) != 2 || fake.travelInput.Destination.Latitude != 36.23 {
+		t.Fatalf("input %+v", fake.travelInput)
+	}
+
+	fake.err = maps.ErrTooManyOrigins
+	if _, err := newMapsHandler(t, fake).GetTravelTimes(context.Background(), &locationv1.GetTravelTimesRequest{}); status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("too many origins: %v", err)
+	}
 }

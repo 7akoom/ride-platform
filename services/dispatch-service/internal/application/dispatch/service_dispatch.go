@@ -64,7 +64,11 @@ func (s *service) DispatchTrip(
 		skipped = append(skipped, driverID+": "+fmt.Sprintf(format, args...))
 	}
 
-	// Try candidates nearest-first. A candidate is skipped (not a hard
+	nearby := len(candidates)
+	candidates = s.rankByRoad(ctx, trimmedID, Point{Latitude: tripInfo.PickupLat, Longitude: tripInfo.PickupLng}, candidates, skip)
+
+	// Try candidates fastest-first by road (nearest-first without road
+	// ranking). A candidate is skipped (not a hard
 	// failure) if it's no longer eligible or loses a race to be
 	// assigned — the next-nearest candidate is tried instead. Only if
 	// every candidate is exhausted do we report failure.
@@ -136,15 +140,16 @@ func (s *service) DispatchTrip(
 		_ = s.driverClient.MarkBusy(ctx, driverInfo.ID)
 
 		return Result{
-			TripID:         trimmedID,
-			DriverID:       driverInfo.ID,
-			DistanceMeters: candidate.DistanceMeters,
+			TripID:           trimmedID,
+			DriverID:         driverInfo.ID,
+			DistanceMeters:   candidate.DistanceMeters,
+			PickupETASeconds: candidate.PickupETASeconds,
 		}, nil
 	}
 
 	s.log().InfoContext(ctx, "dispatch attempt: nearby drivers found but none could be assigned",
 		"trip_id", trimmedID,
-		"candidates", len(candidates),
+		"candidates", nearby,
 		"skipped", skipped,
 	)
 

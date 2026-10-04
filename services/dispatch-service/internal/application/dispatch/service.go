@@ -29,6 +29,11 @@ type service struct {
 	// offerTTL, when positive, makes dispatch offer a trip to a driver for this long
 	// instead of assigning it (see WithOffers).
 	offerTTL time.Duration
+
+	// travelTimes, when set, ranks candidates by time to the pickup by road (see
+	// WithRoadRanking); maxPickup leaves out those further than it.
+	travelTimes TravelTimeClient
+	maxPickup   time.Duration
 }
 
 // Option customises a service at construction time.

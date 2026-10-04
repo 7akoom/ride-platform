@@ -50,6 +50,11 @@ type Config struct {
 	// How long a driver has to accept a trip dispatch offers them (5s to 60s).
 	// 0 (the default) switches offers off: the trip is assigned at once.
 	DispatchOfferTTL string
+
+	// Ranking nearby drivers by time to the pickup by road (see
+	// config/road_ranking.go).
+	DispatchRoadRanking  string
+	DispatchMaxPickupETA string
 }
 
 func Load() Config {
@@ -81,6 +86,8 @@ func Load() Config {
 		DispatchRetryInterval: getEnv("DISPATCH_RETRY_INTERVAL", "5s"),
 		DispatchSearchTimeout: getEnv("DISPATCH_SEARCH_TIMEOUT", "2m"),
 		DispatchOfferTTL:      getEnv("DISPATCH_OFFER_TTL", "0s"),
+		DispatchRoadRanking:   getEnv("DISPATCH_ROAD_RANKING", "true"),
+		DispatchMaxPickupETA:  getEnv("DISPATCH_MAX_PICKUP_ETA", "20m"),
 	}
 }
 

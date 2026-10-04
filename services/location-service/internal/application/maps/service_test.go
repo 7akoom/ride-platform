@@ -23,6 +23,22 @@ func (f *fakeRouter) Route(_ context.Context, from Coordinates, to Coordinates, 
 	return f.route, f.err
 }
 
+func (f *fakeRouter) TravelTimes(_ context.Context, origins []Coordinates, destination Coordinates) ([]TravelTime, error) {
+	f.calls++
+	f.to = destination
+
+	if f.err != nil {
+		return nil, f.err
+	}
+
+	times := make([]TravelTime, len(origins))
+	for i := range origins {
+		times[i] = TravelTime{Reachable: true, DurationSeconds: float64(60 * (i + 1)), DistanceMeters: float64(500 * (i + 1))}
+	}
+
+	return times, nil
+}
+
 type fakeGeocoder struct {
 	places []Place
 	place  Place
@@ -299,5 +315,53 @@ func TestTheServiceRequiresBothParts(t *testing.T) {
 
 			build()
 		}()
+	}
+}
+
+func TestTravelTimesAreAskedOfTheRouterForValidPoints(t *testing.T) {
+	service, router, _ := newRig()
+
+	times, err := service.TravelTimes(context.Background(), TravelTimesInput{
+		Origins:     []*Coordinates{point(36.19, 44.01), point(36.2, 44.02)},
+		Destination: point(36.23, 43.96),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(times) != 2 || times[1].DurationSeconds != 120 || router.to != *point(36.23, 43.96) {
+		t.Fatalf("times %+v, destination %+v", times, router.to)
+	}
+}
+
+func TestTravelTimesNeedRealPointsAndAtMostFiftyOrigins(t *testing.T) {
+	service, router, _ := newRig()
+	ctx := context.Background()
+
+	many := make([]*Coordinates, MaxTravelOrigins+1)
+	for i := range many {
+		many[i] = point(36.19, 44.01)
+	}
+
+	cases := []struct {
+		name  string
+		input TravelTimesInput
+		want  error
+	}{
+		{"no destination", TravelTimesInput{Origins: []*Coordinates{point(1, 1)}}, ErrPointRequired},
+		{"no origins", TravelTimesInput{Destination: point(1, 1)}, ErrOriginsRequired},
+		{"too many origins", TravelTimesInput{Origins: many, Destination: point(1, 1)}, ErrTooManyOrigins},
+		{"a nil origin", TravelTimesInput{Origins: []*Coordinates{nil}, Destination: point(1, 1)}, ErrPointRequired},
+		{"a bad origin", TravelTimesInput{Origins: []*Coordinates{point(91, 1)}, Destination: point(1, 1)}, ErrInvalidLatitude},
+	}
+
+	for _, c := range cases {
+		if _, err := service.TravelTimes(ctx, c.input); !errors.Is(err, c.want) {
+			t.Errorf("%s: %v, want %v", c.name, err, c.want)
+		}
+	}
+
+	if router.calls != 0 {
+		t.Fatalf("the router was asked %d times", router.calls)
 	}
 }

@@ -196,7 +196,7 @@ Searching is limited to the country set by `MAPS_COUNTRY_CODES` (Iraq by default
 
 | Method | Path | Who | Notes |
 |---|---|---|---|
-| POST | `/v1/fare-quotes` | rider, for their own `riderId` | body `riderId`, `pickup`, `dropoff`, optional `couponCode` and `stops` (up to 2 `{latitude, longitude}` on the way, in order: the route and the price go through them; a trip requested with the quote must have the same stops). `quotes`: one per vehicle class, cheapest first, each with `quoteId`, `vehicleClass`, `fare` (the breakdown), `expiresAt` (5 minutes), `driversAvailable` and `pickupEtaMinutes` (the nearest free driver of that class by road; 0 when none). Request the trip with the `quoteId` to pay exactly that fare |
+| POST | `/v1/fare-quotes` | rider, for their own `riderId` | body `riderId`, `pickup`, `dropoff`, optional `couponCode` and `stops` (up to 2 `{latitude, longitude}` on the way, in order: the route and the price go through them; a trip requested with the quote must have the same stops). `quotes`: one per vehicle class, cheapest first, each with `quoteId`, `vehicleClass`, `fare` (the breakdown), `expiresAt` (5 minutes), `driversAvailable` and `pickupEtaMinutes` (minutes to the pickup by road of the fastest free driver of that class, the one dispatch would send; 0 when none). Request the trip with the `quoteId` to pay exactly that fare |
 | POST | `/v1/fare-estimates` | rider, for their own `riderId` | one class, nothing held; `stops` as for a quote |
 
 A fare breakdown's `surge` has `timeOfDayPercent`, `zonePercent`, `demandPercent`,

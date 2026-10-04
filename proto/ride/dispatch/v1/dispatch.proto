@@ -18,4 +18,7 @@ message DispatchTripResponse {
   string trip_id = 1;
   string driver_id = 2;
   double distance_meters = 3;
+  // How long by road the driver is from the pickup; 0 when it is not known
+  // (the map service did not answer, or ranking by road is off).
+  double pickup_eta_seconds = 4;
 }

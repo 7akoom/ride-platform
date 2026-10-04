@@ -79,8 +79,11 @@ type DispatchTripResponse struct {
 	TripId         string                 `protobuf:"bytes,1,opt,name=trip_id,json=tripId,proto3" json:"trip_id,omitempty"`
 	DriverId       string                 `protobuf:"bytes,2,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
 	DistanceMeters float64                `protobuf:"fixed64,3,opt,name=distance_meters,json=distanceMeters,proto3" json:"distance_meters,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// How long by road the driver is from the pickup; 0 when it is not known
+	// (the map service did not answer, or ranking by road is off).
+	PickupEtaSeconds float64 `protobuf:"fixed64,4,opt,name=pickup_eta_seconds,json=pickupEtaSeconds,proto3" json:"pickup_eta_seconds,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *DispatchTripResponse) Reset() {
@@ -134,6 +137,13 @@ func (x *DispatchTripResponse) GetDistanceMeters() float64 {
 	return 0
 }
 
+func (x *DispatchTripResponse) GetPickupEtaSeconds() float64 {
+	if x != nil {
+		return x.PickupEtaSeconds
+	}
+	return 0
+}
+
 var File_ride_dispatch_v1_dispatch_proto protoreflect.FileDescriptor
 
 const file_ride_dispatch_v1_dispatch_proto_rawDesc = "" +
@@ -141,11 +151,12 @@ const file_ride_dispatch_v1_dispatch_proto_rawDesc = "" +
 	"\x1fride/dispatch/v1/dispatch.proto\x12\x10ride.dispatch.v1\"`\n" +
 	"\x13DispatchTripRequest\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x120\n" +
-	"\x14search_radius_meters\x18\x02 \x01(\x01R\x12searchRadiusMeters\"u\n" +
+	"\x14search_radius_meters\x18\x02 \x01(\x01R\x12searchRadiusMeters\"\xa3\x01\n" +
 	"\x14DispatchTripResponse\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12\x1b\n" +
 	"\tdriver_id\x18\x02 \x01(\tR\bdriverId\x12'\n" +
-	"\x0fdistance_meters\x18\x03 \x01(\x01R\x0edistanceMeters2p\n" +
+	"\x0fdistance_meters\x18\x03 \x01(\x01R\x0edistanceMeters\x12,\n" +
+	"\x12pickup_eta_seconds\x18\x04 \x01(\x01R\x10pickupEtaSeconds2p\n" +
 	"\x0fDispatchService\x12]\n" +
 	"\fDispatchTrip\x12%.ride.dispatch.v1.DispatchTripRequest\x1a&.ride.dispatch.v1.DispatchTripResponseBDZBgithub.com/7akoom/ride-platform/gen/go/ride/dispatch/v1;dispatchv1b\x06proto3"
 

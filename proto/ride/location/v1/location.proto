@@ -25,6 +25,10 @@ service LocationService {
     };
   }
   rpc FindNearby(FindNearbyRequest) returns (FindNearbyResponse);
+  // GetTravelTimes is how long by road (OSRM's table) it takes from each origin
+  // to one destination, in the order of the origins. Internal: dispatch ranks
+  // nearby drivers by it, and pricing shows the nearest driver's pickup time.
+  rpc GetTravelTimes(GetTravelTimesRequest) returns (GetTravelTimesResponse);
 
   // Service zones — the geographic areas the platform actually serves,
   // down to arbitrary polygons (not just a city name). See
@@ -219,6 +223,26 @@ message FindNearbyRequest {
 
 message FindNearbyResponse {
   repeated NearbyEntity entities = 1;
+}
+
+message GetTravelTimesRequest {
+  // 1 to 50 points, for example nearby drivers.
+  repeated Coordinates origins = 1;
+  // For example the pickup.
+  Coordinates destination = 2;
+}
+
+message TravelTime {
+  // False when the road network has no way from this origin, or the origin is
+  // too far from any road to start one (its other fields are then zero).
+  bool reachable = 1;
+  double duration_seconds = 2;
+  double distance_meters = 3;
+}
+
+message GetTravelTimesResponse {
+  // One per origin, in the same order.
+  repeated TravelTime times = 1;
 }
 
 // --- Service zones ---------------------------------------------------

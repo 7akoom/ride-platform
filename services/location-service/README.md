@@ -39,6 +39,16 @@ Staff manage cities and zones with `zones.manage`, curated places with
 `places.manage` (asked of staff-service before every change, and audited).
 Users see only active cities and places.
 
+## Travel times (internal)
+
+`GetTravelTimes` is how long by road (OSRM's table service) from up to 50
+origins to one destination, in one call, in the origins' order. Services only
+(internal token): dispatch ranks nearby drivers by it, and pricing gives each
+quote the fastest driver's pickup time. No snapping radius is sent to OSRM (one
+driver in a field would make it refuse the whole table); instead an origin
+whose nearest road is more than 1 km away is `reachable: false`, and a
+destination that far from a road is refused like a route's (FAILED_PRECONDITION).
+
 ## Running locally
 
 ```bash

@@ -19,7 +19,8 @@ other services rather than just a server.
    bail out if it isn't `requested` (already being handled, or invalid).
 2. Ask Location service for the nearest available drivers to that point
    (`FindNearby`, entity_type=DRIVER).
-3. Walk the candidates **nearest first**. For each one:
+3. Rank them by **time to the pickup by road** (see below), and walk them
+   in that order. For each one:
    - Ask Driver service if it's actually `active` and `available` right
      now (Location only knows recent position, not availability — a
      driver mid-trip still pings their location).
@@ -35,6 +36,31 @@ happening automatically means multiple trips could be racing for the
 same pool of nearby drivers, and a naive "take the first result and fail
 if it doesn't work" implementation would make dispatch unreliable
 exactly when it matters most (busy periods).
+
+## Ranking by road
+
+As the big ride apps do, the driver sent is the one who reaches the pickup
+first, not the one nearest on the map: across a river, a highway or a divided
+road, the nearest in a straight line can be the furthest by road.
+
+- location-service's `GetTravelTimes` (internal) asks OSRM's table service
+  for every candidate's time to the pickup in one call.
+- Candidates with a known time go first, fastest first (equal times keep the
+  straight-line order); those whose time is unknown (no road route, or their
+  position is more than 1 km from a road) are tried after them, nearest first.
+- Drivers further than `DISPATCH_MAX_PICKUP_ETA` (20m) by road are not sent;
+  the trip keeps waiting for a closer driver (auto-dispatch retries) rather
+  than making the rider wait half an hour. `0` keeps them all.
+- If the map service does not answer within 2 s, the straight-line order is
+  used: ranking is about choosing well, not about whether a driver may take
+  the trip. `DISPATCH_ROAD_RANKING=false` switches it off.
+- `DispatchTripResponse.pickup_eta_seconds` is the chosen driver's time (0
+  when not known).
+
+pricing-service uses the same call for each quote's pickup time: the fastest
+free driver of the class by road, the one dispatch would send.
+
+End to end: `bash scripts/e2e/test-road-dispatch.sh`.
 
 ## What's intentionally NOT done yet
 
@@ -52,7 +78,8 @@ Specific to Dispatch:
   Driver — a transient failure in any of them right now just fails that
   one dispatch attempt.
 - **Fixed search radius default (5km)** — no logic yet to expand the
-  search radius if nothing is found nearby.
+  search radius if nothing is found nearby (with road ranking, drivers more
+  than `DISPATCH_MAX_PICKUP_ETA` away by road are left out anyway).
 
 ## Running locally
 

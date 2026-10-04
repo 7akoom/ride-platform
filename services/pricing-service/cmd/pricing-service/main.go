@@ -270,6 +270,7 @@ func run() int {
 		clients.NewDriverFinder(locationClient, driverConn),
 		pricing.WithFareRounding(fareRoundingIncrement),
 		pricing.WithQuoteTTL(quoteTTL),
+		pricing.WithTravelTimes(locationClient),
 	)
 	tariffService := tariffs.NewService(pricingRepository, locationClient)
 	promotionService := promotions.NewService(pricingRepository, locationClient)

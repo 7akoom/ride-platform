@@ -18,6 +18,8 @@ var (
 	ErrInvalidLimit     = errors.New("limit must not be negative")
 	ErrInvalidLanguage  = errors.New("language must be ar, ku or en")
 	ErrTooManyVia       = errors.New("a route passes through at most 5 points")
+	ErrOriginsRequired  = errors.New("at least one origin is required")
+	ErrTooManyOrigins   = errors.New("at most 50 origins at a time")
 
 	// ErrNoRoute means the road network has no way between the two points.
 	ErrNoRoute = errors.New("no route between these points")
@@ -60,6 +62,23 @@ type Route struct {
 	// Polyline is the whole path as a Google encoded polyline with 5 digits of
 	// precision (about a metre), ready to draw on a map.
 	Polyline string
+}
+
+// TravelTime is how long by road from one origin to a destination.
+type TravelTime struct {
+	// Reachable is false when the road network has no way from the origin, or the
+	// origin is too far from any road; the other fields are then zero.
+	Reachable       bool
+	DurationSeconds float64
+	DistanceMeters  float64
+}
+
+// MaxTravelOrigins is how many origins one TravelTimes call takes.
+const MaxTravelOrigins = 50
+
+type TravelTimesInput struct {
+	Origins     []*Coordinates
+	Destination *Coordinates
 }
 
 // Place is somewhere on the map: a named place, a street, an address.
@@ -122,6 +141,10 @@ type CuratedSearcher interface {
 type Router interface {
 	// Route goes from one point to another through via, in order.
 	Route(ctx context.Context, from Coordinates, to Coordinates, via ...Coordinates) (Route, error)
+
+	// TravelTimes is how long by road from each origin to the destination, in the
+	// origins' order.
+	TravelTimes(ctx context.Context, origins []Coordinates, destination Coordinates) ([]TravelTime, error)
 }
 
 // Geocoder is the port to the place search (Nominatim). languages is an ordered,

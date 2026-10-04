@@ -13,6 +13,7 @@ import (
 // mapsService is what the map RPCs need: maps.Service.
 type mapsService interface {
 	GetRoute(ctx context.Context, input maps.RouteInput) (maps.Route, error)
+	TravelTimes(ctx context.Context, input maps.TravelTimesInput) ([]maps.TravelTime, error)
 	SearchPlaces(ctx context.Context, input maps.SearchInput) ([]maps.Place, error)
 	ReverseGeocode(ctx context.Context, input maps.ReverseInput) (maps.Place, error)
 }
@@ -58,6 +59,36 @@ func (h *LocationHandler) GetRoute(
 		DurationSeconds: route.DurationSeconds,
 		Polyline:        route.Polyline,
 	}, nil
+}
+
+// GetTravelTimes is how long by road from each origin to one destination.
+// Internal (dispatch and pricing).
+func (h *LocationHandler) GetTravelTimes(
+	ctx context.Context,
+	request *locationv1.GetTravelTimesRequest,
+) (*locationv1.GetTravelTimesResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	if h.mapService == nil {
+		return nil, status.Error(codes.Unimplemented, "maps are not configured")
+	}
+
+	times, err := h.mapService.TravelTimes(ctx, maps.TravelTimesInput{
+		Origins:     toMapsPoints(request.GetOrigins()),
+		Destination: toMapsPoint(request.GetDestination()),
+	})
+	if err != nil {
+		return nil, h.mapMapsError(err)
+	}
+
+	out := make([]*locationv1.TravelTime, len(times))
+	for i, t := range times {
+		out[i] = &locationv1.TravelTime{Reachable: t.Reachable, DurationSeconds: t.DurationSeconds, DistanceMeters: t.DistanceMeters}
+	}
+
+	return &locationv1.GetTravelTimesResponse{Times: out}, nil
 }
 
 // SearchPlaces finds places by name. Any signed-in user may ask.
@@ -128,7 +159,9 @@ func (h *LocationHandler) mapMapsError(err error) error {
 		errors.Is(err, maps.ErrQueryTooLong),
 		errors.Is(err, maps.ErrInvalidLimit),
 		errors.Is(err, maps.ErrInvalidLanguage),
-		errors.Is(err, maps.ErrTooManyVia):
+		errors.Is(err, maps.ErrTooManyVia),
+		errors.Is(err, maps.ErrOriginsRequired),
+		errors.Is(err, maps.ErrTooManyOrigins):
 		return status.Error(codes.InvalidArgument, err.Error())
 
 	case errors.Is(err, maps.ErrNoRoute), errors.Is(err, maps.ErrPlaceNotFound):

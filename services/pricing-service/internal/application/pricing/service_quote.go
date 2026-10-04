@@ -40,6 +40,7 @@ func (s *service) QuoteTrip(ctx context.Context, input QuoteTripInput) (TripQuot
 	}
 
 	quotes := make([]Quote, 0, len(VehicleClasses()))
+	etas := s.roadETAs(ctx, m)
 
 	for _, class := range VehicleClasses() {
 		priced, err := s.priceClass(ctx, m, class)
@@ -47,7 +48,7 @@ func (s *service) QuoteTrip(ctx context.Context, input QuoteTripInput) (TripQuot
 			return TripQuotes{}, fmt.Errorf("price %s: %w", class, err)
 		}
 
-		available, eta := s.pickupETA(ctx, m, class)
+		available, eta := s.pickupETA(ctx, m, class, etas)
 
 		quotes = append(quotes, Quote{
 			RiderID:          riderID,
@@ -82,9 +83,30 @@ func (s *service) QuoteTrip(ctx context.Context, input QuoteTripInput) (TripQuot
 // pickupETA says whether a free driver of the class is near the pickup and
 // how many minutes away by road the nearest one is (at least 1; 0 when
 // there is none or the drivers could not be looked up).
-func (s *service) pickupETA(ctx context.Context, m market, class string) (bool, int) {
+//
+// With etas (see roadETAs) it is the fastest driver of the class by road; a class
+// whose drivers all have no way by road falls back to the nearest one below.
+func (s *service) pickupETA(ctx context.Context, m market, class string, etas []int) (bool, int) {
 	if !m.driversKnown {
 		return false, 0
+	}
+
+	if etas != nil {
+		best := 0
+
+		for i, driver := range m.drivers {
+			if effectiveClass(driver.VehicleClass) != class || etas[i] < 0 {
+				continue
+			}
+
+			if best == 0 || etas[i] < best {
+				best = etas[i]
+			}
+		}
+
+		if best > 0 {
+			return true, best
+		}
 	}
 
 	for _, driver := range m.drivers {

@@ -911,6 +911,10 @@ services:
 
     environment:
       DISPATCH_OFFER_TTL: ${DISPATCH_OFFER_TTL:-0s}
+      # Rank nearby drivers by time to the pickup by road (OSRM through
+      # location-service); drivers further than the max are not sent.
+      DISPATCH_ROAD_RANKING: ${DISPATCH_ROAD_RANKING:-true}
+      DISPATCH_MAX_PICKUP_ETA: ${DISPATCH_MAX_PICKUP_ETA:-20m}
       GRPC_ADDRESS: ":50056"
       METRICS_ADDRESS: ":9096"
       TRIP_SERVICE_ADDRESS: trip-service:50055

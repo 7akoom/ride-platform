@@ -18,6 +18,7 @@ const (
 
 type Service interface {
 	GetRoute(ctx context.Context, input RouteInput) (Route, error)
+	TravelTimes(ctx context.Context, input TravelTimesInput) ([]TravelTime, error)
 	SearchPlaces(ctx context.Context, input SearchInput) ([]Place, error)
 	ReverseGeocode(ctx context.Context, input ReverseInput) (Place, error)
 }
@@ -91,6 +92,49 @@ func (s *service) GetRoute(ctx context.Context, input RouteInput) (Route, error)
 	}
 
 	return s.router.Route(ctx, *input.Origin, *input.Destination, via...)
+}
+
+// TravelTimes is how long by road from each origin to the destination.
+func (s *service) TravelTimes(ctx context.Context, input TravelTimesInput) ([]TravelTime, error) {
+	if input.Destination == nil {
+		return nil, ErrPointRequired
+	}
+
+	if err := input.Destination.Validate(); err != nil {
+		return nil, err
+	}
+
+	switch {
+	case len(input.Origins) == 0:
+		return nil, ErrOriginsRequired
+	case len(input.Origins) > MaxTravelOrigins:
+		return nil, ErrTooManyOrigins
+	}
+
+	origins := make([]Coordinates, 0, len(input.Origins))
+
+	for _, origin := range input.Origins {
+		if origin == nil {
+			return nil, ErrPointRequired
+		}
+
+		if err := origin.Validate(); err != nil {
+			return nil, err
+		}
+
+		origins = append(origins, *origin)
+	}
+
+	times, err := s.router.TravelTimes(ctx, origins, *input.Destination)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(times) != len(origins) {
+		return nil, ErrUnavailable
+	}
+
+	return times, nil
 }
 
 func (s *service) SearchPlaces(ctx context.Context, input SearchInput) ([]Place, error) {
