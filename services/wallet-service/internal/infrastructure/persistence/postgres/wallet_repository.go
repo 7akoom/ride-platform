@@ -641,6 +641,12 @@ func applyMovementTx(
 		return wallet.Wallet{}, wallet.Transaction{}, fmt.Errorf("update wallet balance: %w", err)
 	}
 
+	if input.SuspensionFloor != nil {
+		if err := standingChangeEvent(ctx, tx, target, updated, *input.SuspensionFloor); err != nil {
+			return wallet.Wallet{}, wallet.Transaction{}, err
+		}
+	}
+
 	var idempotencyKey, tripID, transferID, description *string
 
 	if input.IdempotencyKey != "" {

@@ -136,6 +136,11 @@ func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) err
 		return h.handleDataExportReady(ctx, envelope)
 	case SubjectSupportReplyReceived, SubjectSupportTicketResolved, SubjectSupportLostItemReported:
 		return h.handleSupport(ctx, subject, envelope)
+	case SubjectTipReceived, SubjectToppedUp, SubjectDriverSuspended, SubjectDriverReinstated,
+		SubjectPayoutPaid, SubjectPayoutRejected, SubjectRefundIssued:
+		return h.handleWalletAccount(ctx, subject, envelope)
+	case SubjectScheduleFailed:
+		return h.handleScheduleFailed(ctx, envelope)
 	default:
 		h.logger.WarnContext(ctx, "no notification mapping for subject; skipping", "subject", subject)
 

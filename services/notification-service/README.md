@@ -99,6 +99,29 @@ inbox, to the rider profile, else the driver one), with the export id in the
 data. `ExportPersonalData` (internal) gives the person's inbox and devices for
 their data export.
 
+## Money and bookings
+
+The durable consumer `notification-wallet-account` on `WALLET_EVENTS` tells
+people about their own money, and `notification-trip-schedules` on
+`TRIP_EVENTS` about a ride booked ahead that could not be made. Both start at
+new events the first time they are created (`SubscribeDurableFromNow`): the
+events were published before anyone was told of them, and the streams keep a
+week.
+
+| Event | Who | Template |
+|---|---|---|
+| `wallet.tip_received` | the driver | `wallet.tip_received` (amount) |
+| `wallet.topped_up` (a payment provider's top-up went through, once) | the wallet's owner | `wallet.topped_up` (amount, new balance) |
+| `wallet.driver_suspended` (the balance fell to the limit) | the driver | `driver.suspended` (`amount_due` clears the balance) |
+| `wallet.driver_reinstated` (back above it, by any money) | the driver | `driver.reinstated` |
+| `wallet.payout_paid` | the driver | `wallet.payout_paid` |
+| `wallet.payout_rejected` | the driver | `wallet.payout_rejected` (with the reason staff gave) |
+| `wallet.refund_issued` | the rider | `wallet.refund_issued` |
+| `trip.schedule_failed` | the rider | `trip.schedule_failed` (the internal reason is not shown) |
+
+Templates in migration 00017 (ar/en/ku; the Kurdish needs a native speaker's
+review). End to end: `bash scripts/e2e/test-account-notifications.sh`.
+
 ## Safety detail
 
 `MarkAsRead` scopes every update by recipient, even when explicit IDs

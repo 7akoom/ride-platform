@@ -55,13 +55,43 @@ func SubscribeDurable(
 	handler MessageHandler,
 	logger *slog.Logger,
 ) (*Subscription, error) {
+	return subscribe(ctx, js, streamName, durableName, filterSubjects, jetstream.DeliverAllPolicy, handler, logger)
+}
+
+// SubscribeDurableFromNow is SubscribeDurable for a consumer that, the first
+// time it is created, starts at new messages instead of the stream's history:
+// a notification added for events that were already being published must not
+// send a week of old ones (the streams keep seven days). Once created, the
+// durable resumes where it left off like any other.
+func SubscribeDurableFromNow(
+	ctx context.Context,
+	js jetstream.JetStream,
+	streamName string,
+	durableName string,
+	filterSubjects []string,
+	handler MessageHandler,
+	logger *slog.Logger,
+) (*Subscription, error) {
+	return subscribe(ctx, js, streamName, durableName, filterSubjects, jetstream.DeliverNewPolicy, handler, logger)
+}
+
+func subscribe(
+	ctx context.Context,
+	js jetstream.JetStream,
+	streamName string,
+	durableName string,
+	filterSubjects []string,
+	deliverPolicy jetstream.DeliverPolicy,
+	handler MessageHandler,
+	logger *slog.Logger,
+) (*Subscription, error) {
 	consumer, err := js.CreateOrUpdateConsumer(
 		ctx,
 		streamName,
 		jetstream.ConsumerConfig{
 			Durable:        durableName,
 			AckPolicy:      jetstream.AckExplicitPolicy,
-			DeliverPolicy:  jetstream.DeliverAllPolicy,
+			DeliverPolicy:  deliverPolicy,
 			FilterSubjects: filterSubjects,
 			AckWait:        consumerAckWait,
 		},

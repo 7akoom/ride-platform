@@ -54,6 +54,13 @@ const (
 
 	// identityEventsDurable: a person's data export is ready.
 	identityEventsDurable = "notification-identity-events"
+
+	// walletAccountDurable: tips, provider top-ups, a driver suspended or
+	// reinstated by their balance, payouts paid or rejected, refunds.
+	walletAccountDurable = "notification-wallet-account"
+
+	// tripSchedulesDurable: a ride booked ahead that could not be made.
+	tripSchedulesDurable = "notification-trip-schedules"
 )
 
 func main() {
@@ -377,6 +384,40 @@ func run() int {
 		return 1
 	}
 	defer identitySubscription.Stop()
+
+	// These two start at new events the first time they are created: the
+	// events were published before this service told anyone about them.
+	walletAccountSubscription, err := natsinfra.SubscribeDurableFromNow(
+		ctx,
+		natsConnection.JetStream(),
+		"WALLET_EVENTS",
+		walletAccountDurable,
+		events.WalletAccountSubjects,
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to wallet account events", "error", err)
+
+		return 1
+	}
+	defer walletAccountSubscription.Stop()
+
+	scheduleSubscription, err := natsinfra.SubscribeDurableFromNow(
+		ctx,
+		natsConnection.JetStream(),
+		"TRIP_EVENTS",
+		tripSchedulesDurable,
+		events.TripScheduleSubjects,
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to scheduled trip events", "error", err)
+
+		return 1
+	}
+	defer scheduleSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

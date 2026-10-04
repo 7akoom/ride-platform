@@ -317,6 +317,23 @@ calculated under. Migration `00006` seeds 20% commission / 50,000 IQD
 suspension threshold / 10,000 IQD minimum payout — tune these once you
 see a real cash-to-digital trip mix.
 
+## Events about a person's money
+
+Written in the same transaction as the money they are about, for
+notification-service:
+
+- `wallet.driver_suspended` / `wallet.driver_reinstated`: a driver's wallet
+  crossed the suspension floor (`balance`, `suspension_floor`, and for a
+  suspension `amount_due`, what clears the balance). Every movement goes
+  through one place (`applyMovementTx`), which writes it only when the blocked
+  flag changes.
+- `wallet.payout_paid` and `wallet.payout_rejected` (with the reason).
+- `wallet.refund_issued`: a trip refunded to the rider by staff or support.
+- `wallet.topped_up`: a payment provider's top-up went through, with the new
+  balance; once, however often the provider repeats its notification.
+- (`wallet.tip_received`, `wallet.transfer_completed`, `wallet.money_requested`
+  and `wallet.incentive_paid` as before.)
+
 ## For other services
 
 - `ListFeedTransactions` (internal): an owner's movements newest first before a

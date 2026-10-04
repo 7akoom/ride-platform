@@ -220,6 +220,11 @@ func TestEarningsAreSummedByLocalDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Paid on the 1st, inside the week below, whatever day the test runs.
+	if _, err := pool.Exec(ctx, `UPDATE wallet_transactions SET created_at = $1 WHERE idempotency_key = 'incentive:test'`, early); err != nil {
+		t.Fatal(err)
+	}
+
 	service := earnings.NewService(NewEarningsStore(repo), baghdad)
 
 	day, err := service.Get(ctx, incentiveDriverA, earnings.PeriodDay, "2026-09-30")
@@ -247,14 +252,12 @@ func TestEarningsAreSummedByLocalDay(t *testing.T) {
 		t.Fatalf("days split wrong: %+v", week.Days)
 	}
 
-	today := time.Now().In(baghdad).Format("2006-01-02")
-
-	month, err := service.Get(ctx, incentiveDriverA, earnings.PeriodMonth, today)
+	month, err := service.Get(ctx, incentiveDriverA, earnings.PeriodMonth, "2026-10-15")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if !month.Totals.Incentives.Equal(decimal.NewFromInt(7000)) {
-		t.Fatalf("this month's incentives: %+v", month.Totals)
+		t.Fatalf("October's incentives: %+v", month.Totals)
 	}
 }

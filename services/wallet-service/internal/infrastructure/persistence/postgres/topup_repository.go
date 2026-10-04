@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/shopspring/decimal"
 
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/topup"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/wallet"
@@ -80,15 +81,71 @@ func (r *TopUpRepository) SetProviderTransactionID(ctx context.Context, external
 	)
 }
 
+// MarkSucceeded records the top-up as credited. The first time (not on a
+// provider's repeated notification) it also writes wallet.topped_up, with the
+// wallet's balance, so the person is told the money arrived.
 func (r *TopUpRepository) MarkSucceeded(ctx context.Context, externalReferenceID string) (topup.TopUp, error) {
-	return r.one(
-		ctx, "mark top-up succeeded",
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return topup.TopUp{}, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var before string
+
+	err = tx.QueryRow(ctx,
+		`SELECT status FROM provider_topups WHERE external_reference_id::text = $1 FOR UPDATE`,
+		externalReferenceID,
+	).Scan(&before)
+
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		return topup.TopUp{}, topup.ErrTopUpNotFound
+	case err != nil:
+		return topup.TopUp{}, fmt.Errorf("lock top-up: %w", err)
+	}
+
+	marked, err := scanTopUp(tx.QueryRow(ctx,
 		`UPDATE provider_topups
 		 SET status = 'succeeded', credited_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
 		 WHERE external_reference_id::text = $1
 		 RETURNING `+topUpColumns,
 		externalReferenceID,
-	)
+	))
+	if err != nil {
+		return topup.TopUp{}, fmt.Errorf("mark top-up succeeded: %w", err)
+	}
+
+	if before != string(topup.StatusSucceeded) {
+		var balance decimal.Decimal
+
+		if err := tx.QueryRow(ctx,
+			// The credit (TopUp) comes first, so the wallet exists; COALESCE only
+			// keeps a missing one from failing the record of a credited payment.
+			`SELECT COALESCE((SELECT balance FROM wallets WHERE owner_type = $1 AND owner_id = $2), 0)`,
+			string(marked.OwnerType), marked.OwnerID,
+		).Scan(&balance); err != nil {
+			return topup.TopUp{}, fmt.Errorf("read the balance after the top-up: %w", err)
+		}
+
+		if err := insertOutboxEvent(ctx, tx, "topup", marked.ID, EventToppedUp, map[string]any{
+			"topup_id":      marked.ID,
+			"owner_type":    string(marked.OwnerType),
+			"owner_id":      marked.OwnerID,
+			"provider":      marked.Provider,
+			"amount":        marked.Amount.String(),
+			"balance":       balance.String(),
+			"currency_code": marked.CurrencyCode,
+		}); err != nil {
+			return topup.TopUp{}, err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return topup.TopUp{}, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return marked, nil
 }
 
 func (r *TopUpRepository) MarkFailed(ctx context.Context, externalReferenceID, reason string) (topup.TopUp, error) {

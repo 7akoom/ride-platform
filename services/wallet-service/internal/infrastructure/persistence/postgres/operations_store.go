@@ -249,6 +249,16 @@ func (s *OperationsStore) Refund(ctx context.Context, record operations.RefundRe
 		return operations.Adjustment{}, wallet.Wallet{}, fmt.Errorf("insert refund: %w", err)
 	}
 
+	if err := insertOutboxEvent(ctx, tx, "adjustment", made.ID, EventRefundIssued, map[string]any{
+		"adjustment_id": made.ID,
+		"rider_id":      parties.riderID,
+		"trip_id":       record.TripID,
+		"amount":        record.Amount.String(),
+		"currency_code": parties.currency,
+	}); err != nil {
+		return operations.Adjustment{}, wallet.Wallet{}, err
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return operations.Adjustment{}, wallet.Wallet{}, fmt.Errorf("commit transaction: %w", err)
 	}
@@ -466,6 +476,17 @@ func (s *OperationsStore) SetPayoutStatus(ctx context.Context, id string, to ope
 		return operations.Payout{}, fmt.Errorf("update payout: %w", err)
 	}
 
+	if moved.Status == operations.PayoutPaid {
+		if err := insertOutboxEvent(ctx, tx, "payout", moved.ID, EventPayoutPaid, map[string]any{
+			"payout_id":     moved.ID,
+			"driver_id":     moved.DriverID,
+			"amount":        moved.Amount.String(),
+			"currency_code": moved.CurrencyCode,
+		}); err != nil {
+			return operations.Payout{}, err
+		}
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return operations.Payout{}, fmt.Errorf("commit transaction: %w", err)
 	}
@@ -525,6 +546,16 @@ func (s *OperationsStore) RejectPayout(ctx context.Context, id, by, reason strin
 	))
 	if err != nil {
 		return operations.Payout{}, fmt.Errorf("reject payout: %w", err)
+	}
+
+	if err := insertOutboxEvent(ctx, tx, "payout", rejected.ID, EventPayoutRejected, map[string]any{
+		"payout_id":     rejected.ID,
+		"driver_id":     rejected.DriverID,
+		"amount":        rejected.Amount.String(),
+		"currency_code": rejected.CurrencyCode,
+		"reason":        reason,
+	}); err != nil {
+		return operations.Payout{}, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
