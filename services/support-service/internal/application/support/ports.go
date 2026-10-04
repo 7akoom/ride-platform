@@ -85,6 +85,22 @@ type Repository interface {
 	// MarkReactivated records a suspension lifted, with a message on its
 	// ticket. Every completed suspension of that identity counts as lifted.
 	MarkReactivated(ctx context.Context, identityID string, at time.Time, message *Message) error
+
+	// ListStaleTickets lists tickets in the status since before the time.
+	ListStaleTickets(ctx context.Context, status Status, before time.Time, limit int) ([]string, error)
+	Stats(ctx context.Context, from, to, now time.Time) (Stats, error)
+
+	ListHelpSections(ctx context.Context, includeInactive bool) ([]HelpSection, error)
+	GetHelpSection(ctx context.Context, key string) (HelpSection, error)
+	UpsertHelpSection(ctx context.Context, section HelpSection) (HelpSection, error)
+	ListHelpArticles(ctx context.Context, query ArticleQuery) ([]HelpArticle, error)
+	// GetHelpArticle reads an article (published or not) with the identity's
+	// vote; ErrArticleNotFound when there is none.
+	GetHelpArticle(ctx context.Context, key, identityID string) (HelpArticle, error)
+	UpsertHelpArticle(ctx context.Context, article HelpArticle) (HelpArticle, error)
+	VoteHelpArticle(ctx context.Context, key, identityID string, helpful bool, at time.Time) error
+	ListMacros(ctx context.Context, includeInactive bool) ([]Macro, error)
+	UpsertMacro(ctx context.Context, macro Macro) (Macro, error)
 }
 
 type TripInfo struct {

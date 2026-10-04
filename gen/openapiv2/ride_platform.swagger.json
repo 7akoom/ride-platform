@@ -2045,6 +2045,231 @@
         ]
       }
     },
+    "/v1/admin/support/help/articles": {
+      "get": {
+        "operationId": "SupportService_AdminListHelpArticles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListHelpArticlesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "sectionKey",
+            "description": "Optional: one section.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/help/articles/{article.key}": {
+      "put": {
+        "operationId": "SupportService_UpsertHelpArticle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1HelpArticleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "article.key",
+            "description": "Stable key used in links: lowercase letters, digits and hyphens.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceUpsertHelpArticleBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/help/sections": {
+      "get": {
+        "summary": "Help centre content and canned replies. Needs support.configure.",
+        "operationId": "SupportService_AdminListHelpSections",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListHelpSectionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/help/sections/{section.key}": {
+      "put": {
+        "operationId": "SupportService_UpsertHelpSection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1HelpSectionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "section.key",
+            "description": "Stable key: lowercase letters, digits and underscores.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceUpsertHelpSectionBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/macros": {
+      "get": {
+        "summary": "ListMacros: the active canned replies, for staff answering tickets\n(support.reply).",
+        "operationId": "SupportService_ListMacros",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListMacrosResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "categoryKey",
+            "description": "Optional: the ticket's category, to put its macros first.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/macros/{macro.key}": {
+      "put": {
+        "operationId": "SupportService_UpsertMacro",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MacroResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "macro.key",
+            "description": "Stable key: lowercase letters, digits and underscores.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceUpsertMacroBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/macros:all": {
+      "get": {
+        "operationId": "SupportService_AdminListMacros",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListMacrosResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
     "/v1/admin/support/safety-tickets": {
       "get": {
         "summary": "ListSafetyQueue is the queue of safety tickets. Needs support.safety.",
@@ -2136,6 +2361,46 @@
             "in": "query",
             "required": false,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/admin/support/stats": {
+      "get": {
+        "summary": "GetSupportStats: the desk at a glance (support.read): open tickets by\npriority, open past their first-response time, and for a period the\ntickets opened and resolved, the median first response, how many were\nanswered in time, and the average rating.",
+        "operationId": "SupportService_GetSupportStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSupportStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "from",
+            "description": "The period for opened/resolved/response/rating figures; defaults to the\nlast 7 days, at most 366 days.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
           }
         ],
         "tags": [
@@ -6192,6 +6457,161 @@
         ]
       }
     },
+    "/v1/support/help/articles": {
+      "get": {
+        "operationId": "SupportService_ListHelpArticles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListHelpArticlesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "audience",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "AUDIENCE_UNSPECIFIED",
+              "AUDIENCE_RIDER",
+              "AUDIENCE_DRIVER"
+            ],
+            "default": "AUDIENCE_UNSPECIFIED"
+          },
+          {
+            "name": "sectionKey",
+            "description": "Optional: one section.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query",
+            "description": "Optional: words to find in a title or body, in any language (2-100\ncharacters). Bodies are left out of the list; read an article for it.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/support/help/articles/{key}": {
+      "get": {
+        "operationId": "SupportService_GetHelpArticle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1HelpArticleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/support/help/articles/{key}:rate": {
+      "post": {
+        "operationId": "SupportService_RateHelpArticle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1HelpArticleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceRateHelpArticleBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/support/help/sections": {
+      "get": {
+        "summary": "Help centre. Riders and drivers read published articles for them, by\nsection or by a search over the three languages, and say whether one\nhelped (once per person; a second vote replaces the first). An article\nmay name the category its \"contact us\" button opens a ticket in.",
+        "operationId": "SupportService_ListHelpSections",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListHelpSectionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "audience",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "AUDIENCE_UNSPECIFIED",
+              "AUDIENCE_RIDER",
+              "AUDIENCE_DRIVER"
+            ],
+            "default": "AUDIENCE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
     "/v1/support/tickets": {
       "get": {
         "summary": "ListMyTickets lists the caller's tickets as a rider or driver, newest\nactivity first. A driver also sees lost-item tickets about their trips.",
@@ -6418,6 +6838,45 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/SupportServiceCloseMyTicketBody"
+            }
+          }
+        ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/support/tickets/{ticketId}:rate": {
+      "post": {
+        "summary": "RateTicket: the person who opened a resolved or closed ticket rates the\nhelp they got, 1-5, once, within 7 days.",
+        "operationId": "SupportService_RateTicket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TicketDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupportServiceRateTicketBody"
             }
           }
         ],
@@ -8619,6 +9078,28 @@
     "SupportServiceCloseMyTicketBody": {
       "type": "object"
     },
+    "SupportServiceRateHelpArticleBody": {
+      "type": "object",
+      "properties": {
+        "helpful": {
+          "type": "boolean"
+        }
+      }
+    },
+    "SupportServiceRateTicketBody": {
+      "type": "object",
+      "properties": {
+        "rating": {
+          "type": "integer",
+          "format": "int32",
+          "description": "1 (bad) to 5 (great)."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Optional, up to 1000 characters."
+        }
+      }
+    },
     "SupportServiceRejectTicketActionBody": {
       "type": "object",
       "properties": {
@@ -8693,6 +9174,134 @@
       "properties": {
         "status": {
           "$ref": "#/definitions/v1TicketStatus"
+        }
+      }
+    },
+    "SupportServiceUpsertHelpArticleBody": {
+      "type": "object",
+      "properties": {
+        "article": {
+          "type": "object",
+          "properties": {
+            "sectionKey": {
+              "type": "string"
+            },
+            "audience": {
+              "$ref": "#/definitions/v1CategoryAudience"
+            },
+            "titleEn": {
+              "type": "string"
+            },
+            "titleAr": {
+              "type": "string"
+            },
+            "titleKu": {
+              "type": "string"
+            },
+            "bodyEn": {
+              "type": "string",
+              "description": "Plain text or Markdown, up to 20000 characters each."
+            },
+            "bodyAr": {
+              "type": "string"
+            },
+            "bodyKu": {
+              "type": "string"
+            },
+            "contactCategoryKey": {
+              "type": "string",
+              "description": "The category the article's \"contact us\" opens a ticket in; empty: none."
+            },
+            "sortOrder": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "published": {
+              "type": "boolean"
+            },
+            "helpfulCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "notHelpfulCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "voted": {
+              "type": "boolean",
+              "description": "In a person's view: their own vote, if any."
+            },
+            "votedHelpful": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "SupportServiceUpsertHelpSectionBody": {
+      "type": "object",
+      "properties": {
+        "section": {
+          "type": "object",
+          "properties": {
+            "audience": {
+              "$ref": "#/definitions/v1CategoryAudience"
+            },
+            "nameEn": {
+              "type": "string"
+            },
+            "nameAr": {
+              "type": "string"
+            },
+            "nameKu": {
+              "type": "string"
+            },
+            "sortOrder": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "active": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "SupportServiceUpsertMacroBody": {
+      "type": "object",
+      "properties": {
+        "macro": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "What staff see in the picker."
+            },
+            "bodyEn": {
+              "type": "string"
+            },
+            "bodyAr": {
+              "type": "string"
+            },
+            "bodyKu": {
+              "type": "string"
+            },
+            "categoryKey": {
+              "type": "string",
+              "description": "Optional: offered first for tickets of this category."
+            },
+            "active": {
+              "type": "boolean"
+            },
+            "sortOrder": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
         }
       }
     },
@@ -11048,6 +11657,68 @@
         }
       }
     },
+    "v1GetSupportStatsResponse": {
+      "type": "object",
+      "properties": {
+        "openByPriority": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1PriorityCount"
+          },
+          "description": "Now: tickets not resolved or closed (safety ones included)."
+        },
+        "openUnassigned": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "openLate": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Now: open, no first answer yet, past its first-response time."
+        },
+        "opened": {
+          "type": "integer",
+          "format": "int32",
+          "description": "In the period."
+        },
+        "resolved": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "answered": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Of tickets opened in the period that were answered."
+        },
+        "answeredInTime": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "medianFirstResponseMinutes": {
+          "type": "number",
+          "format": "double",
+          "description": "Median minutes to the first answer."
+        },
+        "ratings": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "averageRating": {
+          "type": "number",
+          "format": "double",
+          "description": "Average of the ratings given in the period, 0 without any."
+        },
+        "from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "to": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "v1GetTopUpResponse": {
       "type": "object",
       "properties": {
@@ -11177,6 +11848,114 @@
       "properties": {
         "wallet": {
           "$ref": "#/definitions/v1Wallet"
+        }
+      }
+    },
+    "v1HelpArticle": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Stable key used in links: lowercase letters, digits and hyphens."
+        },
+        "sectionKey": {
+          "type": "string"
+        },
+        "audience": {
+          "$ref": "#/definitions/v1CategoryAudience"
+        },
+        "titleEn": {
+          "type": "string"
+        },
+        "titleAr": {
+          "type": "string"
+        },
+        "titleKu": {
+          "type": "string"
+        },
+        "bodyEn": {
+          "type": "string",
+          "description": "Plain text or Markdown, up to 20000 characters each."
+        },
+        "bodyAr": {
+          "type": "string"
+        },
+        "bodyKu": {
+          "type": "string"
+        },
+        "contactCategoryKey": {
+          "type": "string",
+          "description": "The category the article's \"contact us\" opens a ticket in; empty: none."
+        },
+        "sortOrder": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "published": {
+          "type": "boolean"
+        },
+        "helpfulCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "notHelpfulCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "voted": {
+          "type": "boolean",
+          "description": "In a person's view: their own vote, if any."
+        },
+        "votedHelpful": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1HelpArticleResponse": {
+      "type": "object",
+      "properties": {
+        "article": {
+          "$ref": "#/definitions/v1HelpArticle"
+        }
+      }
+    },
+    "v1HelpSection": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Stable key: lowercase letters, digits and underscores."
+        },
+        "audience": {
+          "$ref": "#/definitions/v1CategoryAudience"
+        },
+        "nameEn": {
+          "type": "string"
+        },
+        "nameAr": {
+          "type": "string"
+        },
+        "nameKu": {
+          "type": "string"
+        },
+        "sortOrder": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "active": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1HelpSectionResponse": {
+      "type": "object",
+      "properties": {
+        "section": {
+          "$ref": "#/definitions/v1HelpSection"
         }
       }
     },
@@ -11595,6 +12374,30 @@
         }
       }
     },
+    "v1ListHelpArticlesResponse": {
+      "type": "object",
+      "properties": {
+        "articles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1HelpArticle"
+          }
+        }
+      }
+    },
+    "v1ListHelpSectionsResponse": {
+      "type": "object",
+      "properties": {
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1HelpSection"
+          }
+        }
+      }
+    },
     "v1ListIncentiveCampaignsResponse": {
       "type": "object",
       "properties": {
@@ -11622,6 +12425,18 @@
         },
         "nextPageToken": {
           "type": "string"
+        }
+      }
+    },
+    "v1ListMacrosResponse": {
+      "type": "object",
+      "properties": {
+        "macros": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Macro"
+          }
         }
       }
     },
@@ -12022,6 +12837,47 @@
     },
     "v1LogoutResponse": {
       "type": "object"
+    },
+    "v1Macro": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Stable key: lowercase letters, digits and underscores."
+        },
+        "title": {
+          "type": "string",
+          "description": "What staff see in the picker."
+        },
+        "bodyEn": {
+          "type": "string"
+        },
+        "bodyAr": {
+          "type": "string"
+        },
+        "bodyKu": {
+          "type": "string"
+        },
+        "categoryKey": {
+          "type": "string",
+          "description": "Optional: offered first for tickets of this category."
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "sortOrder": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1MacroResponse": {
+      "type": "object",
+      "properties": {
+        "macro": {
+          "$ref": "#/definitions/v1Macro"
+        }
+      }
     },
     "v1MarkAsReadRequest": {
       "type": "object",
@@ -12456,6 +13312,18 @@
         "PLATFORM_WEB"
       ],
       "default": "PLATFORM_UNSPECIFIED"
+    },
+    "v1PriorityCount": {
+      "type": "object",
+      "properties": {
+        "priority": {
+          "$ref": "#/definitions/v1TicketPriority"
+        },
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
     },
     "v1ProcessZainCashWebhookRequest": {
       "type": "object",
@@ -13892,6 +14760,26 @@
         "role": {
           "$ref": "#/definitions/v1TicketRole",
           "description": "For the caller's own view."
+        },
+        "firstResponseDueAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When staff should have answered first, from the priority (SLA), and\nwhether the first answer came (or is still missing) after it."
+        },
+        "firstResponseLate": {
+          "type": "boolean"
+        },
+        "rating": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The requester's rating of the help, once given."
+        },
+        "ratingComment": {
+          "type": "string"
+        },
+        "ratedAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

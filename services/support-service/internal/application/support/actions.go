@@ -407,8 +407,8 @@ func (s *Service) LiftDueSuspensions(ctx context.Context, limit int) int {
 	return len(actions)
 }
 
-// RunWorkers retries processing actions and lifts due suspensions until ctx
-// ends.
+// RunWorkers retries processing actions, lifts due suspensions and moves
+// stale tickets on until ctx ends.
 func (s *Service) RunWorkers(ctx context.Context, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -420,6 +420,7 @@ func (s *Service) RunWorkers(ctx context.Context, interval time.Duration) {
 		case <-ticker.C:
 			s.RetryProcessing(ctx, 20)
 			s.LiftDueSuspensions(ctx, 20)
+			s.AutoResolveAndClose(ctx)
 		}
 	}
 }

@@ -76,7 +76,9 @@ func (s *Service) OpenSOSTicket(ctx context.Context, alert SOSAlert) error {
 		CreatedAt:            now,
 		UpdatedAt:            now,
 		LastMessageAt:        now,
+		StatusChangedAt:      now,
 	}
+	ticket.FirstResponseDueAt = s.firstResponseDue(now, ticket.Priority)
 
 	message := s.systemMessage(ticket.ID, fmt.Sprintf(
 		"SOS pressed by the %s during trip %s (trip status %s) at %s,%s",

@@ -48,7 +48,8 @@ func testPool(t *testing.T) *pgxpool.Pool {
 	}
 
 	dropAll := func() {
-		psql(`DROP TABLE IF EXISTS support_actions, support_attachments, support_messages, support_tickets,
+		psql(`DROP TABLE IF EXISTS support_help_votes, support_help_articles, support_help_sections, support_macros,
+			support_actions, support_attachments, support_messages, support_tickets,
 			support_categories, outbox_events CASCADE; DROP SEQUENCE IF EXISTS support_ticket_number_seq;`)
 	}
 
@@ -275,9 +276,12 @@ func newWorld(t *testing.T) *world {
 		IDs:        ids{},
 		Clock:      w.clock,
 	}, support.Config{
-		RefundLimit:    decimal.NewFromInt(10000),
-		MaxOpenTickets: 3,
-		TripMaxAge:     30 * 24 * time.Hour,
+		RefundLimit:      decimal.NewFromInt(10000),
+		MaxOpenTickets:   3,
+		TripMaxAge:       30 * 24 * time.Hour,
+		FirstResponse:    map[support.Priority]time.Duration{support.PriorityNormal: 2 * time.Hour},
+		AutoResolveAfter: 72 * time.Hour,
+		AutoCloseAfter:   7 * 24 * time.Hour,
 	}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	return w

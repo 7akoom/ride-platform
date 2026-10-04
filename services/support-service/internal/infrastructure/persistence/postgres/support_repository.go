@@ -56,6 +56,14 @@ func nullable(value string) any {
 	return value
 }
 
+func ratingArg(rating int) any {
+	if rating == 0 {
+		return nil
+	}
+
+	return rating
+}
+
 func textOf(value *string) string {
 	if value == nil {
 		return ""
@@ -147,7 +155,8 @@ const ticketColumns = `id, number, requester_identity_id, audience, requester_pr
 	category_key, subject, status, priority, safety, source,
 	trip_id::text, transaction_id::text, counterpart_profile_id::text,
 	participant_driver_id::text, sos_alert_id::text, assigned_staff_id::text,
-	created_at, updated_at, last_message_at, first_response_at, resolved_at, closed_at`
+	created_at, updated_at, last_message_at, first_response_at, resolved_at, closed_at,
+	first_response_due_at, status_changed_at, COALESCE(rating, 0), rating_comment, rated_at`
 
 func scanTicket(row pgx.Row) (support.Ticket, error) {
 	var t support.Ticket
@@ -157,7 +166,8 @@ func scanTicket(row pgx.Row) (support.Ticket, error) {
 	err := row.Scan(&t.ID, &t.Number, &t.RequesterIdentityID, &audience, &t.RequesterProfileID,
 		&t.CategoryKey, &t.Subject, &status, &priority, &t.Safety, &t.Source,
 		&tripID, &transactionID, &counterpartID, &participantID, &sosID, &assignedID,
-		&t.CreatedAt, &t.UpdatedAt, &t.LastMessageAt, &t.FirstResponseAt, &t.ResolvedAt, &t.ClosedAt)
+		&t.CreatedAt, &t.UpdatedAt, &t.LastMessageAt, &t.FirstResponseAt, &t.ResolvedAt, &t.ClosedAt,
+		&t.FirstResponseDueAt, &t.StatusChangedAt, &t.Rating, &t.RatingComment, &t.RatedAt)
 
 	t.Audience = support.Audience(audience)
 	t.Status = support.Status(status)
@@ -212,13 +222,14 @@ func (r *SupportRepository) CreateTicket(ctx context.Context, input support.NewT
 		    (id, number, requester_identity_id, audience, requester_profile_id,
 		     category_key, subject, status, priority, safety, source,
 		     trip_id, transaction_id, counterpart_profile_id, participant_driver_id,
-		     sos_alert_id, assigned_staff_id, created_at, updated_at, last_message_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+		     sos_alert_id, assigned_staff_id, created_at, updated_at, last_message_at,
+		     first_response_due_at, status_changed_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
 		t.ID, t.Number, t.RequesterIdentityID, string(t.Audience), t.RequesterProfileID,
 		t.CategoryKey, t.Subject, string(t.Status), string(t.Priority), t.Safety, t.Source,
 		nullable(t.TripID), nullable(t.TransactionID), nullable(t.CounterpartProfileID),
 		nullable(t.ParticipantDriverID), nullable(t.SOSAlertID), nullable(t.AssignedStaffID),
-		t.CreatedAt, t.UpdatedAt, t.LastMessageAt)
+		t.CreatedAt, t.UpdatedAt, t.LastMessageAt, t.FirstResponseDueAt, t.StatusChangedAt)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "support_tickets_sos_alert_id_key" {
@@ -589,10 +600,12 @@ func (r *SupportRepository) UpdateTicket(
 	if _, err := tx.Exec(ctx,
 		`UPDATE support_tickets SET
 		    status = $2, priority = $3, assigned_staff_id = $4, updated_at = $5,
-		    last_message_at = $6, first_response_at = $7, resolved_at = $8, closed_at = $9
+		    last_message_at = $6, first_response_at = $7, resolved_at = $8, closed_at = $9,
+		    first_response_due_at = $10, status_changed_at = $11, rating = $12, rating_comment = $13, rated_at = $14
 		 WHERE id = $1`,
 		t.ID, string(t.Status), string(t.Priority), nullable(t.AssignedStaffID), t.UpdatedAt,
-		t.LastMessageAt, t.FirstResponseAt, t.ResolvedAt, t.ClosedAt); err != nil {
+		t.LastMessageAt, t.FirstResponseAt, t.ResolvedAt, t.ClosedAt,
+		t.FirstResponseDueAt, t.StatusChangedAt, ratingArg(t.Rating), t.RatingComment, t.RatedAt); err != nil {
 		return support.Ticket{}, fmt.Errorf("update ticket: %w", err)
 	}
 

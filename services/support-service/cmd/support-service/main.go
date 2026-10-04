@@ -187,9 +187,12 @@ func run() int {
 			Clock:      clockinfra.NewSystemClock(),
 		},
 		support.Config{
-			RefundLimit:    desk.RefundLimit,
-			MaxOpenTickets: desk.MaxOpenTickets,
-			TripMaxAge:     desk.TripMaxAge,
+			RefundLimit:      desk.RefundLimit,
+			MaxOpenTickets:   desk.MaxOpenTickets,
+			TripMaxAge:       desk.TripMaxAge,
+			FirstResponse:    firstResponseTargets(desk.FirstResponse),
+			AutoResolveAfter: desk.AutoResolveAfter,
+			AutoCloseAfter:   desk.AutoCloseAfter,
 		},
 		logger,
 	)
@@ -296,4 +299,13 @@ func run() int {
 	<-workersDone
 
 	return 0
+}
+
+func firstResponseTargets(byName map[string]time.Duration) map[support.Priority]time.Duration {
+	out := make(map[support.Priority]time.Duration, len(byName))
+	for name, d := range byName {
+		out[support.Priority(name)] = d
+	}
+
+	return out
 }

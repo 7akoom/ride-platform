@@ -122,11 +122,12 @@ func (s *Service) ClaimTicket(ctx context.Context, staff Staff, ticketID, method
 			return Change{}, ErrAlreadyAssigned
 		}
 
+		now := s.clock.Now()
 		t.AssignedStaffID = staff.StaffID
-		t.UpdatedAt = s.clock.Now()
+		t.UpdatedAt = now
 
 		if t.Status == StatusOpen {
-			t.Status = StatusInProgress
+			s.moveTo(t, StatusInProgress, now)
 		}
 
 		return Change{Messages: []Message{s.systemMessage(t.ID, "Claimed by staff "+staff.StaffID)}}, nil
@@ -157,8 +158,9 @@ func (s *Service) AssignTicket(ctx context.Context, staff Staff, ticketID, assig
 			return Change{}, nil
 		}
 
+		now := s.clock.Now()
 		t.AssignedStaffID = assigneeStaffID
-		t.UpdatedAt = s.clock.Now()
+		t.UpdatedAt = now
 
 		note := "Assigned to staff " + assigneeStaffID + " by " + staff.StaffID
 
@@ -166,10 +168,10 @@ func (s *Service) AssignTicket(ctx context.Context, staff Staff, ticketID, assig
 		case assigneeStaffID == "":
 			note = "Returned to the queue by staff " + staff.StaffID
 			if t.Status == StatusInProgress {
-				t.Status = StatusOpen
+				s.moveTo(t, StatusOpen, now)
 			}
 		case t.Status == StatusOpen:
-			t.Status = StatusInProgress
+			s.moveTo(t, StatusInProgress, now)
 		}
 
 		return Change{Messages: []Message{s.systemMessage(t.ID, note)}}, nil
@@ -295,6 +297,7 @@ func (s *Service) moveTo(t *Ticket, next Status, now time.Time) {
 	}
 
 	t.Status = next
+	t.StatusChangedAt = now
 
 	switch next {
 	case StatusResolved:
@@ -368,6 +371,7 @@ func (s *Service) SetPriority(ctx context.Context, staff Staff, ticketID string,
 		}
 
 		t.Priority = priority
+		t.FirstResponseDueAt = s.firstResponseDue(t.CreatedAt, priority)
 		t.UpdatedAt = s.clock.Now()
 
 		return Change{Messages: []Message{s.systemMessage(t.ID, fmt.Sprintf("Priority set to %s by staff %s", priority, staff.StaffID))}}, nil

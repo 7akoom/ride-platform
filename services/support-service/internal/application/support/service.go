@@ -33,6 +33,28 @@ type Config struct {
 	MaxOpenTickets int
 	// How old a trip may be for a ticket about it.
 	TripMaxAge time.Duration
+	// First-response targets by priority (SLA). Missing ones use the defaults.
+	FirstResponse map[Priority]time.Duration
+	// A ticket waiting for the person this long is resolved; a resolved one
+	// this long is closed. Zero: never.
+	AutoResolveAfter time.Duration
+	AutoCloseAfter   time.Duration
+}
+
+// DefaultFirstResponse are the first-response targets unless configured.
+var DefaultFirstResponse = map[Priority]time.Duration{
+	PriorityUrgent: 15 * time.Minute,
+	PriorityHigh:   time.Hour,
+	PriorityNormal: 4 * time.Hour,
+	PriorityLow:    24 * time.Hour,
+}
+
+func (s *Service) firstResponseDue(created time.Time, priority Priority) time.Time {
+	if d, ok := s.config.FirstResponse[priority]; ok && d > 0 {
+		return created.Add(d)
+	}
+
+	return created.Add(DefaultFirstResponse[priority])
 }
 
 type Service struct {

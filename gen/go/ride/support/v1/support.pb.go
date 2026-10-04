@@ -865,7 +865,15 @@ type Ticket struct {
 	ResolvedAt    *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty"`
 	ClosedAt      *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=closed_at,json=closedAt,proto3" json:"closed_at,omitempty"`
 	// For the caller's own view.
-	Role          TicketRole `protobuf:"varint,17,opt,name=role,proto3,enum=ride.support.v1.TicketRole" json:"role,omitempty"`
+	Role TicketRole `protobuf:"varint,17,opt,name=role,proto3,enum=ride.support.v1.TicketRole" json:"role,omitempty"`
+	// When staff should have answered first, from the priority (SLA), and
+	// whether the first answer came (or is still missing) after it.
+	FirstResponseDueAt *timestamppb.Timestamp `protobuf:"bytes,18,opt,name=first_response_due_at,json=firstResponseDueAt,proto3" json:"first_response_due_at,omitempty"`
+	FirstResponseLate  bool                   `protobuf:"varint,19,opt,name=first_response_late,json=firstResponseLate,proto3" json:"first_response_late,omitempty"`
+	// The requester's rating of the help, once given.
+	Rating        int32                  `protobuf:"varint,20,opt,name=rating,proto3" json:"rating,omitempty"`
+	RatingComment string                 `protobuf:"bytes,21,opt,name=rating_comment,json=ratingComment,proto3" json:"rating_comment,omitempty"`
+	RatedAt       *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=rated_at,json=ratedAt,proto3" json:"rated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1017,6 +1025,41 @@ func (x *Ticket) GetRole() TicketRole {
 		return x.Role
 	}
 	return TicketRole_TICKET_ROLE_UNSPECIFIED
+}
+
+func (x *Ticket) GetFirstResponseDueAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FirstResponseDueAt
+	}
+	return nil
+}
+
+func (x *Ticket) GetFirstResponseLate() bool {
+	if x != nil {
+		return x.FirstResponseLate
+	}
+	return false
+}
+
+func (x *Ticket) GetRating() int32 {
+	if x != nil {
+		return x.Rating
+	}
+	return 0
+}
+
+func (x *Ticket) GetRatingComment() string {
+	if x != nil {
+		return x.RatingComment
+	}
+	return ""
+}
+
+func (x *Ticket) GetRatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RatedAt
+	}
+	return nil
 }
 
 // StaffTicket is a ticket with what only staff see.
@@ -2978,6 +3021,1445 @@ func (x *SupportCategoryResponse) GetCategory() *SupportCategory {
 	return nil
 }
 
+type HelpSection struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Stable key: lowercase letters, digits and underscores.
+	Key           string           `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Audience      CategoryAudience `protobuf:"varint,2,opt,name=audience,proto3,enum=ride.support.v1.CategoryAudience" json:"audience,omitempty"`
+	NameEn        string           `protobuf:"bytes,3,opt,name=name_en,json=nameEn,proto3" json:"name_en,omitempty"`
+	NameAr        string           `protobuf:"bytes,4,opt,name=name_ar,json=nameAr,proto3" json:"name_ar,omitempty"`
+	NameKu        string           `protobuf:"bytes,5,opt,name=name_ku,json=nameKu,proto3" json:"name_ku,omitempty"`
+	SortOrder     int32            `protobuf:"varint,6,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	Active        bool             `protobuf:"varint,7,opt,name=active,proto3" json:"active,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HelpSection) Reset() {
+	*x = HelpSection{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HelpSection) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HelpSection) ProtoMessage() {}
+
+func (x *HelpSection) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HelpSection.ProtoReflect.Descriptor instead.
+func (*HelpSection) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *HelpSection) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *HelpSection) GetAudience() CategoryAudience {
+	if x != nil {
+		return x.Audience
+	}
+	return CategoryAudience_CATEGORY_AUDIENCE_UNSPECIFIED
+}
+
+func (x *HelpSection) GetNameEn() string {
+	if x != nil {
+		return x.NameEn
+	}
+	return ""
+}
+
+func (x *HelpSection) GetNameAr() string {
+	if x != nil {
+		return x.NameAr
+	}
+	return ""
+}
+
+func (x *HelpSection) GetNameKu() string {
+	if x != nil {
+		return x.NameKu
+	}
+	return ""
+}
+
+func (x *HelpSection) GetSortOrder() int32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+func (x *HelpSection) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
+type HelpArticle struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Stable key used in links: lowercase letters, digits and hyphens.
+	Key        string           `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	SectionKey string           `protobuf:"bytes,2,opt,name=section_key,json=sectionKey,proto3" json:"section_key,omitempty"`
+	Audience   CategoryAudience `protobuf:"varint,3,opt,name=audience,proto3,enum=ride.support.v1.CategoryAudience" json:"audience,omitempty"`
+	TitleEn    string           `protobuf:"bytes,4,opt,name=title_en,json=titleEn,proto3" json:"title_en,omitempty"`
+	TitleAr    string           `protobuf:"bytes,5,opt,name=title_ar,json=titleAr,proto3" json:"title_ar,omitempty"`
+	TitleKu    string           `protobuf:"bytes,6,opt,name=title_ku,json=titleKu,proto3" json:"title_ku,omitempty"`
+	// Plain text or Markdown, up to 20000 characters each.
+	BodyEn string `protobuf:"bytes,7,opt,name=body_en,json=bodyEn,proto3" json:"body_en,omitempty"`
+	BodyAr string `protobuf:"bytes,8,opt,name=body_ar,json=bodyAr,proto3" json:"body_ar,omitempty"`
+	BodyKu string `protobuf:"bytes,9,opt,name=body_ku,json=bodyKu,proto3" json:"body_ku,omitempty"`
+	// The category the article's "contact us" opens a ticket in; empty: none.
+	ContactCategoryKey string                 `protobuf:"bytes,10,opt,name=contact_category_key,json=contactCategoryKey,proto3" json:"contact_category_key,omitempty"`
+	SortOrder          int32                  `protobuf:"varint,11,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	Published          bool                   `protobuf:"varint,12,opt,name=published,proto3" json:"published,omitempty"`
+	HelpfulCount       int32                  `protobuf:"varint,13,opt,name=helpful_count,json=helpfulCount,proto3" json:"helpful_count,omitempty"`
+	NotHelpfulCount    int32                  `protobuf:"varint,14,opt,name=not_helpful_count,json=notHelpfulCount,proto3" json:"not_helpful_count,omitempty"`
+	UpdatedAt          *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	// In a person's view: their own vote, if any.
+	Voted         bool `protobuf:"varint,16,opt,name=voted,proto3" json:"voted,omitempty"`
+	VotedHelpful  bool `protobuf:"varint,17,opt,name=voted_helpful,json=votedHelpful,proto3" json:"voted_helpful,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HelpArticle) Reset() {
+	*x = HelpArticle{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HelpArticle) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HelpArticle) ProtoMessage() {}
+
+func (x *HelpArticle) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HelpArticle.ProtoReflect.Descriptor instead.
+func (*HelpArticle) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *HelpArticle) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *HelpArticle) GetSectionKey() string {
+	if x != nil {
+		return x.SectionKey
+	}
+	return ""
+}
+
+func (x *HelpArticle) GetAudience() CategoryAudience {
+	if x != nil {
+		return x.Audience
+	}
+	return CategoryAudience_CATEGORY_AUDIENCE_UNSPECIFIED
+}
+
+func (x *HelpArticle) GetTitleEn() string {
+	if x != nil {
+		return x.TitleEn
+	}
+	return ""
+}
+
+func (x *HelpArticle) GetTitleAr() string {
+	if x != nil {
+		return x.TitleAr
+	}
+	return ""
+}
+
+func (x *HelpArticle) GetTitleKu() string {
+	if x != nil {
+		return x.TitleKu
+	}
+	return ""
+}
+
+func (x *HelpArticle) GetBodyEn() string {
+	if x != nil {
+		return x.BodyEn
+	}
+	return ""
+}
+
+func (x *HelpArticle) GetBodyAr() string {
+	if x != nil {
+		return x.BodyAr
+	}
+	return ""
+}
+
+func (x *HelpArticle) GetBodyKu() string {
+	if x != nil {
+		return x.BodyKu
+	}
+	return ""
+}
+
+func (x *HelpArticle) GetContactCategoryKey() string {
+	if x != nil {
+		return x.ContactCategoryKey
+	}
+	return ""
+}
+
+func (x *HelpArticle) GetSortOrder() int32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+func (x *HelpArticle) GetPublished() bool {
+	if x != nil {
+		return x.Published
+	}
+	return false
+}
+
+func (x *HelpArticle) GetHelpfulCount() int32 {
+	if x != nil {
+		return x.HelpfulCount
+	}
+	return 0
+}
+
+func (x *HelpArticle) GetNotHelpfulCount() int32 {
+	if x != nil {
+		return x.NotHelpfulCount
+	}
+	return 0
+}
+
+func (x *HelpArticle) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+func (x *HelpArticle) GetVoted() bool {
+	if x != nil {
+		return x.Voted
+	}
+	return false
+}
+
+func (x *HelpArticle) GetVotedHelpful() bool {
+	if x != nil {
+		return x.VotedHelpful
+	}
+	return false
+}
+
+type ListHelpSectionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Audience      Audience               `protobuf:"varint,1,opt,name=audience,proto3,enum=ride.support.v1.Audience" json:"audience,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListHelpSectionsRequest) Reset() {
+	*x = ListHelpSectionsRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListHelpSectionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListHelpSectionsRequest) ProtoMessage() {}
+
+func (x *ListHelpSectionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListHelpSectionsRequest.ProtoReflect.Descriptor instead.
+func (*ListHelpSectionsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *ListHelpSectionsRequest) GetAudience() Audience {
+	if x != nil {
+		return x.Audience
+	}
+	return Audience_AUDIENCE_UNSPECIFIED
+}
+
+type ListHelpSectionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Sections      []*HelpSection         `protobuf:"bytes,1,rep,name=sections,proto3" json:"sections,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListHelpSectionsResponse) Reset() {
+	*x = ListHelpSectionsResponse{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListHelpSectionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListHelpSectionsResponse) ProtoMessage() {}
+
+func (x *ListHelpSectionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListHelpSectionsResponse.ProtoReflect.Descriptor instead.
+func (*ListHelpSectionsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *ListHelpSectionsResponse) GetSections() []*HelpSection {
+	if x != nil {
+		return x.Sections
+	}
+	return nil
+}
+
+type ListHelpArticlesRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Audience Audience               `protobuf:"varint,1,opt,name=audience,proto3,enum=ride.support.v1.Audience" json:"audience,omitempty"`
+	// Optional: one section.
+	SectionKey string `protobuf:"bytes,2,opt,name=section_key,json=sectionKey,proto3" json:"section_key,omitempty"`
+	// Optional: words to find in a title or body, in any language (2-100
+	// characters). Bodies are left out of the list; read an article for it.
+	Query         string `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListHelpArticlesRequest) Reset() {
+	*x = ListHelpArticlesRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListHelpArticlesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListHelpArticlesRequest) ProtoMessage() {}
+
+func (x *ListHelpArticlesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListHelpArticlesRequest.ProtoReflect.Descriptor instead.
+func (*ListHelpArticlesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *ListHelpArticlesRequest) GetAudience() Audience {
+	if x != nil {
+		return x.Audience
+	}
+	return Audience_AUDIENCE_UNSPECIFIED
+}
+
+func (x *ListHelpArticlesRequest) GetSectionKey() string {
+	if x != nil {
+		return x.SectionKey
+	}
+	return ""
+}
+
+func (x *ListHelpArticlesRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+type ListHelpArticlesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Articles      []*HelpArticle         `protobuf:"bytes,1,rep,name=articles,proto3" json:"articles,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListHelpArticlesResponse) Reset() {
+	*x = ListHelpArticlesResponse{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListHelpArticlesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListHelpArticlesResponse) ProtoMessage() {}
+
+func (x *ListHelpArticlesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListHelpArticlesResponse.ProtoReflect.Descriptor instead.
+func (*ListHelpArticlesResponse) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *ListHelpArticlesResponse) GetArticles() []*HelpArticle {
+	if x != nil {
+		return x.Articles
+	}
+	return nil
+}
+
+type GetHelpArticleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetHelpArticleRequest) Reset() {
+	*x = GetHelpArticleRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetHelpArticleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetHelpArticleRequest) ProtoMessage() {}
+
+func (x *GetHelpArticleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetHelpArticleRequest.ProtoReflect.Descriptor instead.
+func (*GetHelpArticleRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *GetHelpArticleRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+type HelpArticleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Article       *HelpArticle           `protobuf:"bytes,1,opt,name=article,proto3" json:"article,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HelpArticleResponse) Reset() {
+	*x = HelpArticleResponse{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HelpArticleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HelpArticleResponse) ProtoMessage() {}
+
+func (x *HelpArticleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HelpArticleResponse.ProtoReflect.Descriptor instead.
+func (*HelpArticleResponse) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *HelpArticleResponse) GetArticle() *HelpArticle {
+	if x != nil {
+		return x.Article
+	}
+	return nil
+}
+
+type RateHelpArticleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Helpful       bool                   `protobuf:"varint,2,opt,name=helpful,proto3" json:"helpful,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RateHelpArticleRequest) Reset() {
+	*x = RateHelpArticleRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RateHelpArticleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RateHelpArticleRequest) ProtoMessage() {}
+
+func (x *RateHelpArticleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RateHelpArticleRequest.ProtoReflect.Descriptor instead.
+func (*RateHelpArticleRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *RateHelpArticleRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *RateHelpArticleRequest) GetHelpful() bool {
+	if x != nil {
+		return x.Helpful
+	}
+	return false
+}
+
+type RateTicketRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	TicketId string                 `protobuf:"bytes,1,opt,name=ticket_id,json=ticketId,proto3" json:"ticket_id,omitempty"`
+	// 1 (bad) to 5 (great).
+	Rating int32 `protobuf:"varint,2,opt,name=rating,proto3" json:"rating,omitempty"`
+	// Optional, up to 1000 characters.
+	Comment       string `protobuf:"bytes,3,opt,name=comment,proto3" json:"comment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RateTicketRequest) Reset() {
+	*x = RateTicketRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RateTicketRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RateTicketRequest) ProtoMessage() {}
+
+func (x *RateTicketRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RateTicketRequest.ProtoReflect.Descriptor instead.
+func (*RateTicketRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *RateTicketRequest) GetTicketId() string {
+	if x != nil {
+		return x.TicketId
+	}
+	return ""
+}
+
+func (x *RateTicketRequest) GetRating() int32 {
+	if x != nil {
+		return x.Rating
+	}
+	return 0
+}
+
+func (x *RateTicketRequest) GetComment() string {
+	if x != nil {
+		return x.Comment
+	}
+	return ""
+}
+
+type AdminListHelpSectionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminListHelpSectionsRequest) Reset() {
+	*x = AdminListHelpSectionsRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminListHelpSectionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminListHelpSectionsRequest) ProtoMessage() {}
+
+func (x *AdminListHelpSectionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminListHelpSectionsRequest.ProtoReflect.Descriptor instead.
+func (*AdminListHelpSectionsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{46}
+}
+
+type UpsertHelpSectionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Section       *HelpSection           `protobuf:"bytes,1,opt,name=section,proto3" json:"section,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertHelpSectionRequest) Reset() {
+	*x = UpsertHelpSectionRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertHelpSectionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertHelpSectionRequest) ProtoMessage() {}
+
+func (x *UpsertHelpSectionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertHelpSectionRequest.ProtoReflect.Descriptor instead.
+func (*UpsertHelpSectionRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *UpsertHelpSectionRequest) GetSection() *HelpSection {
+	if x != nil {
+		return x.Section
+	}
+	return nil
+}
+
+type HelpSectionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Section       *HelpSection           `protobuf:"bytes,1,opt,name=section,proto3" json:"section,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HelpSectionResponse) Reset() {
+	*x = HelpSectionResponse{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HelpSectionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HelpSectionResponse) ProtoMessage() {}
+
+func (x *HelpSectionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HelpSectionResponse.ProtoReflect.Descriptor instead.
+func (*HelpSectionResponse) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *HelpSectionResponse) GetSection() *HelpSection {
+	if x != nil {
+		return x.Section
+	}
+	return nil
+}
+
+type AdminListHelpArticlesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional: one section.
+	SectionKey    string `protobuf:"bytes,1,opt,name=section_key,json=sectionKey,proto3" json:"section_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminListHelpArticlesRequest) Reset() {
+	*x = AdminListHelpArticlesRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminListHelpArticlesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminListHelpArticlesRequest) ProtoMessage() {}
+
+func (x *AdminListHelpArticlesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminListHelpArticlesRequest.ProtoReflect.Descriptor instead.
+func (*AdminListHelpArticlesRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *AdminListHelpArticlesRequest) GetSectionKey() string {
+	if x != nil {
+		return x.SectionKey
+	}
+	return ""
+}
+
+type UpsertHelpArticleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Article       *HelpArticle           `protobuf:"bytes,1,opt,name=article,proto3" json:"article,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertHelpArticleRequest) Reset() {
+	*x = UpsertHelpArticleRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertHelpArticleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertHelpArticleRequest) ProtoMessage() {}
+
+func (x *UpsertHelpArticleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertHelpArticleRequest.ProtoReflect.Descriptor instead.
+func (*UpsertHelpArticleRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *UpsertHelpArticleRequest) GetArticle() *HelpArticle {
+	if x != nil {
+		return x.Article
+	}
+	return nil
+}
+
+type Macro struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Stable key: lowercase letters, digits and underscores.
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// What staff see in the picker.
+	Title  string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	BodyEn string `protobuf:"bytes,3,opt,name=body_en,json=bodyEn,proto3" json:"body_en,omitempty"`
+	BodyAr string `protobuf:"bytes,4,opt,name=body_ar,json=bodyAr,proto3" json:"body_ar,omitempty"`
+	BodyKu string `protobuf:"bytes,5,opt,name=body_ku,json=bodyKu,proto3" json:"body_ku,omitempty"`
+	// Optional: offered first for tickets of this category.
+	CategoryKey   string `protobuf:"bytes,6,opt,name=category_key,json=categoryKey,proto3" json:"category_key,omitempty"`
+	Active        bool   `protobuf:"varint,7,opt,name=active,proto3" json:"active,omitempty"`
+	SortOrder     int32  `protobuf:"varint,8,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Macro) Reset() {
+	*x = Macro{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Macro) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Macro) ProtoMessage() {}
+
+func (x *Macro) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Macro.ProtoReflect.Descriptor instead.
+func (*Macro) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *Macro) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *Macro) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Macro) GetBodyEn() string {
+	if x != nil {
+		return x.BodyEn
+	}
+	return ""
+}
+
+func (x *Macro) GetBodyAr() string {
+	if x != nil {
+		return x.BodyAr
+	}
+	return ""
+}
+
+func (x *Macro) GetBodyKu() string {
+	if x != nil {
+		return x.BodyKu
+	}
+	return ""
+}
+
+func (x *Macro) GetCategoryKey() string {
+	if x != nil {
+		return x.CategoryKey
+	}
+	return ""
+}
+
+func (x *Macro) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
+func (x *Macro) GetSortOrder() int32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+type ListMacrosRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional: the ticket's category, to put its macros first.
+	CategoryKey   string `protobuf:"bytes,1,opt,name=category_key,json=categoryKey,proto3" json:"category_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMacrosRequest) Reset() {
+	*x = ListMacrosRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMacrosRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMacrosRequest) ProtoMessage() {}
+
+func (x *ListMacrosRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMacrosRequest.ProtoReflect.Descriptor instead.
+func (*ListMacrosRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *ListMacrosRequest) GetCategoryKey() string {
+	if x != nil {
+		return x.CategoryKey
+	}
+	return ""
+}
+
+type ListMacrosResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Macros        []*Macro               `protobuf:"bytes,1,rep,name=macros,proto3" json:"macros,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMacrosResponse) Reset() {
+	*x = ListMacrosResponse{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMacrosResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMacrosResponse) ProtoMessage() {}
+
+func (x *ListMacrosResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMacrosResponse.ProtoReflect.Descriptor instead.
+func (*ListMacrosResponse) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{53}
+}
+
+func (x *ListMacrosResponse) GetMacros() []*Macro {
+	if x != nil {
+		return x.Macros
+	}
+	return nil
+}
+
+type AdminListMacrosRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminListMacrosRequest) Reset() {
+	*x = AdminListMacrosRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminListMacrosRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminListMacrosRequest) ProtoMessage() {}
+
+func (x *AdminListMacrosRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminListMacrosRequest.ProtoReflect.Descriptor instead.
+func (*AdminListMacrosRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{54}
+}
+
+type UpsertMacroRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Macro         *Macro                 `protobuf:"bytes,1,opt,name=macro,proto3" json:"macro,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertMacroRequest) Reset() {
+	*x = UpsertMacroRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertMacroRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertMacroRequest) ProtoMessage() {}
+
+func (x *UpsertMacroRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertMacroRequest.ProtoReflect.Descriptor instead.
+func (*UpsertMacroRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *UpsertMacroRequest) GetMacro() *Macro {
+	if x != nil {
+		return x.Macro
+	}
+	return nil
+}
+
+type MacroResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Macro         *Macro                 `protobuf:"bytes,1,opt,name=macro,proto3" json:"macro,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MacroResponse) Reset() {
+	*x = MacroResponse{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MacroResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MacroResponse) ProtoMessage() {}
+
+func (x *MacroResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MacroResponse.ProtoReflect.Descriptor instead.
+func (*MacroResponse) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *MacroResponse) GetMacro() *Macro {
+	if x != nil {
+		return x.Macro
+	}
+	return nil
+}
+
+type GetSupportStatsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The period for opened/resolved/response/rating figures; defaults to the
+	// last 7 days, at most 366 days.
+	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSupportStatsRequest) Reset() {
+	*x = GetSupportStatsRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSupportStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSupportStatsRequest) ProtoMessage() {}
+
+func (x *GetSupportStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSupportStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetSupportStatsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *GetSupportStatsRequest) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *GetSupportStatsRequest) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+type PriorityCount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Priority      TicketPriority         `protobuf:"varint,1,opt,name=priority,proto3,enum=ride.support.v1.TicketPriority" json:"priority,omitempty"`
+	Count         int32                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PriorityCount) Reset() {
+	*x = PriorityCount{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PriorityCount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PriorityCount) ProtoMessage() {}
+
+func (x *PriorityCount) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PriorityCount.ProtoReflect.Descriptor instead.
+func (*PriorityCount) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *PriorityCount) GetPriority() TicketPriority {
+	if x != nil {
+		return x.Priority
+	}
+	return TicketPriority_TICKET_PRIORITY_UNSPECIFIED
+}
+
+func (x *PriorityCount) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type GetSupportStatsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Now: tickets not resolved or closed (safety ones included).
+	OpenByPriority []*PriorityCount `protobuf:"bytes,1,rep,name=open_by_priority,json=openByPriority,proto3" json:"open_by_priority,omitempty"`
+	OpenUnassigned int32            `protobuf:"varint,2,opt,name=open_unassigned,json=openUnassigned,proto3" json:"open_unassigned,omitempty"`
+	// Now: open, no first answer yet, past its first-response time.
+	OpenLate int32 `protobuf:"varint,3,opt,name=open_late,json=openLate,proto3" json:"open_late,omitempty"`
+	// In the period.
+	Opened   int32 `protobuf:"varint,4,opt,name=opened,proto3" json:"opened,omitempty"`
+	Resolved int32 `protobuf:"varint,5,opt,name=resolved,proto3" json:"resolved,omitempty"`
+	// Of tickets opened in the period that were answered.
+	Answered       int32 `protobuf:"varint,6,opt,name=answered,proto3" json:"answered,omitempty"`
+	AnsweredInTime int32 `protobuf:"varint,7,opt,name=answered_in_time,json=answeredInTime,proto3" json:"answered_in_time,omitempty"`
+	// Median minutes to the first answer.
+	MedianFirstResponseMinutes float64 `protobuf:"fixed64,8,opt,name=median_first_response_minutes,json=medianFirstResponseMinutes,proto3" json:"median_first_response_minutes,omitempty"`
+	Ratings                    int32   `protobuf:"varint,9,opt,name=ratings,proto3" json:"ratings,omitempty"`
+	// Average of the ratings given in the period, 0 without any.
+	AverageRating float64                `protobuf:"fixed64,10,opt,name=average_rating,json=averageRating,proto3" json:"average_rating,omitempty"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=to,proto3" json:"to,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSupportStatsResponse) Reset() {
+	*x = GetSupportStatsResponse{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSupportStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSupportStatsResponse) ProtoMessage() {}
+
+func (x *GetSupportStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSupportStatsResponse.ProtoReflect.Descriptor instead.
+func (*GetSupportStatsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *GetSupportStatsResponse) GetOpenByPriority() []*PriorityCount {
+	if x != nil {
+		return x.OpenByPriority
+	}
+	return nil
+}
+
+func (x *GetSupportStatsResponse) GetOpenUnassigned() int32 {
+	if x != nil {
+		return x.OpenUnassigned
+	}
+	return 0
+}
+
+func (x *GetSupportStatsResponse) GetOpenLate() int32 {
+	if x != nil {
+		return x.OpenLate
+	}
+	return 0
+}
+
+func (x *GetSupportStatsResponse) GetOpened() int32 {
+	if x != nil {
+		return x.Opened
+	}
+	return 0
+}
+
+func (x *GetSupportStatsResponse) GetResolved() int32 {
+	if x != nil {
+		return x.Resolved
+	}
+	return 0
+}
+
+func (x *GetSupportStatsResponse) GetAnswered() int32 {
+	if x != nil {
+		return x.Answered
+	}
+	return 0
+}
+
+func (x *GetSupportStatsResponse) GetAnsweredInTime() int32 {
+	if x != nil {
+		return x.AnsweredInTime
+	}
+	return 0
+}
+
+func (x *GetSupportStatsResponse) GetMedianFirstResponseMinutes() float64 {
+	if x != nil {
+		return x.MedianFirstResponseMinutes
+	}
+	return 0
+}
+
+func (x *GetSupportStatsResponse) GetRatings() int32 {
+	if x != nil {
+		return x.Ratings
+	}
+	return 0
+}
+
+func (x *GetSupportStatsResponse) GetAverageRating() float64 {
+	if x != nil {
+		return x.AverageRating
+	}
+	return 0
+}
+
+func (x *GetSupportStatsResponse) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *GetSupportStatsResponse) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
 var File_ride_support_v1_support_proto protoreflect.FileDescriptor
 
 const file_ride_support_v1_support_proto_rawDesc = "" +
@@ -3010,7 +4492,7 @@ const file_ride_support_v1_support_proto_rawDesc = "" +
 	"\binternal\x18\x05 \x01(\bR\binternal\x120\n" +
 	"\x14attachment_media_ids\x18\x06 \x03(\tR\x12attachmentMediaIds\x129\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x88\x06\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xfd\a\n" +
 	"\x06Ticket\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06number\x18\x02 \x01(\tR\x06number\x125\n" +
@@ -3032,7 +4514,12 @@ const file_ride_support_v1_support_proto_rawDesc = "" +
 	"\vresolved_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"resolvedAt\x127\n" +
 	"\tclosed_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\bclosedAt\x12/\n" +
-	"\x04role\x18\x11 \x01(\x0e2\x1b.ride.support.v1.TicketRoleR\x04role\"\xa4\x03\n" +
+	"\x04role\x18\x11 \x01(\x0e2\x1b.ride.support.v1.TicketRoleR\x04role\x12M\n" +
+	"\x15first_response_due_at\x18\x12 \x01(\v2\x1a.google.protobuf.TimestampR\x12firstResponseDueAt\x12.\n" +
+	"\x13first_response_late\x18\x13 \x01(\bR\x11firstResponseLate\x12\x16\n" +
+	"\x06rating\x18\x14 \x01(\x05R\x06rating\x12%\n" +
+	"\x0erating_comment\x18\x15 \x01(\tR\rratingComment\x125\n" +
+	"\brated_at\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampR\aratedAt\"\xa4\x03\n" +
 	"\vStaffTicket\x12/\n" +
 	"\x06ticket\x18\x01 \x01(\v2\x17.ride.support.v1.TicketR\x06ticket\x122\n" +
 	"\x15requester_identity_id\x18\x02 \x01(\tR\x13requesterIdentityId\x120\n" +
@@ -3173,7 +4660,109 @@ const file_ride_support_v1_support_proto_rawDesc = "" +
 	"\x1cUpsertSupportCategoryRequest\x12<\n" +
 	"\bcategory\x18\x01 \x01(\v2 .ride.support.v1.SupportCategoryR\bcategory\"W\n" +
 	"\x17SupportCategoryResponse\x12<\n" +
-	"\bcategory\x18\x01 \x01(\v2 .ride.support.v1.SupportCategoryR\bcategory*M\n" +
+	"\bcategory\x18\x01 \x01(\v2 .ride.support.v1.SupportCategoryR\bcategory\"\xe0\x01\n" +
+	"\vHelpSection\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12=\n" +
+	"\baudience\x18\x02 \x01(\x0e2!.ride.support.v1.CategoryAudienceR\baudience\x12\x17\n" +
+	"\aname_en\x18\x03 \x01(\tR\x06nameEn\x12\x17\n" +
+	"\aname_ar\x18\x04 \x01(\tR\x06nameAr\x12\x17\n" +
+	"\aname_ku\x18\x05 \x01(\tR\x06nameKu\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\x06 \x01(\x05R\tsortOrder\x12\x16\n" +
+	"\x06active\x18\a \x01(\bR\x06active\"\xd1\x04\n" +
+	"\vHelpArticle\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x1f\n" +
+	"\vsection_key\x18\x02 \x01(\tR\n" +
+	"sectionKey\x12=\n" +
+	"\baudience\x18\x03 \x01(\x0e2!.ride.support.v1.CategoryAudienceR\baudience\x12\x19\n" +
+	"\btitle_en\x18\x04 \x01(\tR\atitleEn\x12\x19\n" +
+	"\btitle_ar\x18\x05 \x01(\tR\atitleAr\x12\x19\n" +
+	"\btitle_ku\x18\x06 \x01(\tR\atitleKu\x12\x17\n" +
+	"\abody_en\x18\a \x01(\tR\x06bodyEn\x12\x17\n" +
+	"\abody_ar\x18\b \x01(\tR\x06bodyAr\x12\x17\n" +
+	"\abody_ku\x18\t \x01(\tR\x06bodyKu\x120\n" +
+	"\x14contact_category_key\x18\n" +
+	" \x01(\tR\x12contactCategoryKey\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\v \x01(\x05R\tsortOrder\x12\x1c\n" +
+	"\tpublished\x18\f \x01(\bR\tpublished\x12#\n" +
+	"\rhelpful_count\x18\r \x01(\x05R\fhelpfulCount\x12*\n" +
+	"\x11not_helpful_count\x18\x0e \x01(\x05R\x0fnotHelpfulCount\x129\n" +
+	"\n" +
+	"updated_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x14\n" +
+	"\x05voted\x18\x10 \x01(\bR\x05voted\x12#\n" +
+	"\rvoted_helpful\x18\x11 \x01(\bR\fvotedHelpful\"P\n" +
+	"\x17ListHelpSectionsRequest\x125\n" +
+	"\baudience\x18\x01 \x01(\x0e2\x19.ride.support.v1.AudienceR\baudience\"T\n" +
+	"\x18ListHelpSectionsResponse\x128\n" +
+	"\bsections\x18\x01 \x03(\v2\x1c.ride.support.v1.HelpSectionR\bsections\"\x87\x01\n" +
+	"\x17ListHelpArticlesRequest\x125\n" +
+	"\baudience\x18\x01 \x01(\x0e2\x19.ride.support.v1.AudienceR\baudience\x12\x1f\n" +
+	"\vsection_key\x18\x02 \x01(\tR\n" +
+	"sectionKey\x12\x14\n" +
+	"\x05query\x18\x03 \x01(\tR\x05query\"T\n" +
+	"\x18ListHelpArticlesResponse\x128\n" +
+	"\barticles\x18\x01 \x03(\v2\x1c.ride.support.v1.HelpArticleR\barticles\")\n" +
+	"\x15GetHelpArticleRequest\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\"M\n" +
+	"\x13HelpArticleResponse\x126\n" +
+	"\aarticle\x18\x01 \x01(\v2\x1c.ride.support.v1.HelpArticleR\aarticle\"D\n" +
+	"\x16RateHelpArticleRequest\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x18\n" +
+	"\ahelpful\x18\x02 \x01(\bR\ahelpful\"b\n" +
+	"\x11RateTicketRequest\x12\x1b\n" +
+	"\tticket_id\x18\x01 \x01(\tR\bticketId\x12\x16\n" +
+	"\x06rating\x18\x02 \x01(\x05R\x06rating\x12\x18\n" +
+	"\acomment\x18\x03 \x01(\tR\acomment\"\x1e\n" +
+	"\x1cAdminListHelpSectionsRequest\"R\n" +
+	"\x18UpsertHelpSectionRequest\x126\n" +
+	"\asection\x18\x01 \x01(\v2\x1c.ride.support.v1.HelpSectionR\asection\"M\n" +
+	"\x13HelpSectionResponse\x126\n" +
+	"\asection\x18\x01 \x01(\v2\x1c.ride.support.v1.HelpSectionR\asection\"?\n" +
+	"\x1cAdminListHelpArticlesRequest\x12\x1f\n" +
+	"\vsection_key\x18\x01 \x01(\tR\n" +
+	"sectionKey\"R\n" +
+	"\x18UpsertHelpArticleRequest\x126\n" +
+	"\aarticle\x18\x01 \x01(\v2\x1c.ride.support.v1.HelpArticleR\aarticle\"\xd4\x01\n" +
+	"\x05Macro\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x17\n" +
+	"\abody_en\x18\x03 \x01(\tR\x06bodyEn\x12\x17\n" +
+	"\abody_ar\x18\x04 \x01(\tR\x06bodyAr\x12\x17\n" +
+	"\abody_ku\x18\x05 \x01(\tR\x06bodyKu\x12!\n" +
+	"\fcategory_key\x18\x06 \x01(\tR\vcategoryKey\x12\x16\n" +
+	"\x06active\x18\a \x01(\bR\x06active\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\b \x01(\x05R\tsortOrder\"6\n" +
+	"\x11ListMacrosRequest\x12!\n" +
+	"\fcategory_key\x18\x01 \x01(\tR\vcategoryKey\"D\n" +
+	"\x12ListMacrosResponse\x12.\n" +
+	"\x06macros\x18\x01 \x03(\v2\x16.ride.support.v1.MacroR\x06macros\"\x18\n" +
+	"\x16AdminListMacrosRequest\"B\n" +
+	"\x12UpsertMacroRequest\x12,\n" +
+	"\x05macro\x18\x01 \x01(\v2\x16.ride.support.v1.MacroR\x05macro\"=\n" +
+	"\rMacroResponse\x12,\n" +
+	"\x05macro\x18\x01 \x01(\v2\x16.ride.support.v1.MacroR\x05macro\"t\n" +
+	"\x16GetSupportStatsRequest\x12.\n" +
+	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\"b\n" +
+	"\rPriorityCount\x12;\n" +
+	"\bpriority\x18\x01 \x01(\x0e2\x1f.ride.support.v1.TicketPriorityR\bpriority\x12\x14\n" +
+	"\x05count\x18\x02 \x01(\x05R\x05count\"\x83\x04\n" +
+	"\x17GetSupportStatsResponse\x12H\n" +
+	"\x10open_by_priority\x18\x01 \x03(\v2\x1e.ride.support.v1.PriorityCountR\x0eopenByPriority\x12'\n" +
+	"\x0fopen_unassigned\x18\x02 \x01(\x05R\x0eopenUnassigned\x12\x1b\n" +
+	"\topen_late\x18\x03 \x01(\x05R\bopenLate\x12\x16\n" +
+	"\x06opened\x18\x04 \x01(\x05R\x06opened\x12\x1a\n" +
+	"\bresolved\x18\x05 \x01(\x05R\bresolved\x12\x1a\n" +
+	"\banswered\x18\x06 \x01(\x05R\banswered\x12(\n" +
+	"\x10answered_in_time\x18\a \x01(\x05R\x0eansweredInTime\x12A\n" +
+	"\x1dmedian_first_response_minutes\x18\b \x01(\x01R\x1amedianFirstResponseMinutes\x12\x18\n" +
+	"\aratings\x18\t \x01(\x05R\aratings\x12%\n" +
+	"\x0eaverage_rating\x18\n" +
+	" \x01(\x01R\raverageRating\x12.\n" +
+	"\x04from\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\x02to*M\n" +
 	"\bAudience\x12\x18\n" +
 	"\x14AUDIENCE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eAUDIENCE_RIDER\x10\x01\x12\x13\n" +
@@ -3229,7 +4818,7 @@ const file_ride_support_v1_support_proto_rawDesc = "" +
 	"\fActionTarget\x12\x1d\n" +
 	"\x19ACTION_TARGET_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17ACTION_TARGET_REQUESTER\x10\x01\x12\x1d\n" +
-	"\x19ACTION_TARGET_COUNTERPART\x10\x022\xca\x19\n" +
+	"\x19ACTION_TARGET_COUNTERPART\x10\x022\x98(\n" +
 	"\x0eSupportService\x12\x96\x01\n" +
 	"\x15ListSupportCategories\x12-.ride.support.v1.ListSupportCategoriesRequest\x1a..ride.support.v1.ListSupportCategoriesResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/support/categories\x12{\n" +
 	"\fCreateTicket\x12$.ride.support.v1.CreateTicketRequest\x1a%.ride.support.v1.CreateTicketResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/support/tickets\x12{\n" +
@@ -3251,7 +4840,22 @@ const file_ride_support_v1_support_proto_rawDesc = "" +
 	"\x13ApproveTicketAction\x12+.ride.support.v1.ApproveTicketActionRequest\x1a%.ride.support.v1.TicketActionResponse\"8\x82\xd3\xe4\x93\x022:\x01*\"-/v1/admin/support/actions/{action_id}:approve\x12\xa0\x01\n" +
 	"\x12RejectTicketAction\x12*.ride.support.v1.RejectTicketActionRequest\x1a%.ride.support.v1.TicketActionResponse\"7\x82\xd3\xe4\x93\x021:\x01*\",/v1/admin/support/actions/{action_id}:reject\x12\xa6\x01\n" +
 	"\x1aAdminListSupportCategories\x122.ride.support.v1.AdminListSupportCategoriesRequest\x1a..ride.support.v1.ListSupportCategoriesResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/v1/admin/support/categories\x12\xa8\x01\n" +
-	"\x15UpsertSupportCategory\x12-.ride.support.v1.UpsertSupportCategoryRequest\x1a(.ride.support.v1.SupportCategoryResponse\"6\x82\xd3\xe4\x93\x020:\x01*\x1a+/v1/admin/support/categories/{category.key}BBZ@github.com/7akoom/ride-platform/gen/go/ride/support/v1;supportv1b\x06proto3"
+	"\x15UpsertSupportCategory\x12-.ride.support.v1.UpsertSupportCategoryRequest\x1a(.ride.support.v1.SupportCategoryResponse\"6\x82\xd3\xe4\x93\x020:\x01*\x1a+/v1/admin/support/categories/{category.key}\x12\x8a\x01\n" +
+	"\x10ListHelpSections\x12(.ride.support.v1.ListHelpSectionsRequest\x1a).ride.support.v1.ListHelpSectionsResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/support/help/sections\x12\x8a\x01\n" +
+	"\x10ListHelpArticles\x12(.ride.support.v1.ListHelpArticlesRequest\x1a).ride.support.v1.ListHelpArticlesResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/support/help/articles\x12\x87\x01\n" +
+	"\x0eGetHelpArticle\x12&.ride.support.v1.GetHelpArticleRequest\x1a$.ride.support.v1.HelpArticleResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/support/help/articles/{key}\x12\x91\x01\n" +
+	"\x0fRateHelpArticle\x12'.ride.support.v1.RateHelpArticleRequest\x1a$.ride.support.v1.HelpArticleResponse\"/\x82\xd3\xe4\x93\x02):\x01*\"$/v1/support/help/articles/{key}:rate\x12\x88\x01\n" +
+	"\n" +
+	"RateTicket\x12\".ride.support.v1.RateTicketRequest\x1a%.ride.support.v1.TicketDetailResponse\"/\x82\xd3\xe4\x93\x02):\x01*\"$/v1/support/tickets/{ticket_id}:rate\x12\x9a\x01\n" +
+	"\x15AdminListHelpSections\x12-.ride.support.v1.AdminListHelpSectionsRequest\x1a).ride.support.v1.ListHelpSectionsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/admin/support/help/sections\x12\x9e\x01\n" +
+	"\x11UpsertHelpSection\x12).ride.support.v1.UpsertHelpSectionRequest\x1a$.ride.support.v1.HelpSectionResponse\"8\x82\xd3\xe4\x93\x022:\x01*\x1a-/v1/admin/support/help/sections/{section.key}\x12\x9a\x01\n" +
+	"\x15AdminListHelpArticles\x12-.ride.support.v1.AdminListHelpArticlesRequest\x1a).ride.support.v1.ListHelpArticlesResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/admin/support/help/articles\x12\x9e\x01\n" +
+	"\x11UpsertHelpArticle\x12).ride.support.v1.UpsertHelpArticleRequest\x1a$.ride.support.v1.HelpArticleResponse\"8\x82\xd3\xe4\x93\x022:\x01*\x1a-/v1/admin/support/help/articles/{article.key}\x12w\n" +
+	"\n" +
+	"ListMacros\x12\".ride.support.v1.ListMacrosRequest\x1a#.ride.support.v1.ListMacrosResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/admin/support/macros\x12\x85\x01\n" +
+	"\x0fAdminListMacros\x12'.ride.support.v1.AdminListMacrosRequest\x1a#.ride.support.v1.ListMacrosResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/v1/admin/support/macros:all\x12\x83\x01\n" +
+	"\vUpsertMacro\x12#.ride.support.v1.UpsertMacroRequest\x1a\x1e.ride.support.v1.MacroResponse\"/\x82\xd3\xe4\x93\x02):\x01*\x1a$/v1/admin/support/macros/{macro.key}\x12\x85\x01\n" +
+	"\x0fGetSupportStats\x12'.ride.support.v1.GetSupportStatsRequest\x1a(.ride.support.v1.GetSupportStatsResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/admin/support/statsBBZ@github.com/7akoom/ride-platform/gen/go/ride/support/v1;supportv1b\x06proto3"
 
 var (
 	file_ride_support_v1_support_proto_rawDescOnce sync.Once
@@ -3266,7 +4870,7 @@ func file_ride_support_v1_support_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_support_v1_support_proto_enumTypes = make([]protoimpl.EnumInfo, 10)
-var file_ride_support_v1_support_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
+var file_ride_support_v1_support_proto_msgTypes = make([]protoimpl.MessageInfo, 60)
 var file_ride_support_v1_support_proto_goTypes = []any{
 	(Audience)(0),                             // 0: ride.support.v1.Audience
 	(CategoryAudience)(0),                     // 1: ride.support.v1.CategoryAudience
@@ -3314,106 +4918,178 @@ var file_ride_support_v1_support_proto_goTypes = []any{
 	(*AdminListSupportCategoriesRequest)(nil), // 43: ride.support.v1.AdminListSupportCategoriesRequest
 	(*UpsertSupportCategoryRequest)(nil),      // 44: ride.support.v1.UpsertSupportCategoryRequest
 	(*SupportCategoryResponse)(nil),           // 45: ride.support.v1.SupportCategoryResponse
-	(*timestamppb.Timestamp)(nil),             // 46: google.protobuf.Timestamp
+	(*HelpSection)(nil),                       // 46: ride.support.v1.HelpSection
+	(*HelpArticle)(nil),                       // 47: ride.support.v1.HelpArticle
+	(*ListHelpSectionsRequest)(nil),           // 48: ride.support.v1.ListHelpSectionsRequest
+	(*ListHelpSectionsResponse)(nil),          // 49: ride.support.v1.ListHelpSectionsResponse
+	(*ListHelpArticlesRequest)(nil),           // 50: ride.support.v1.ListHelpArticlesRequest
+	(*ListHelpArticlesResponse)(nil),          // 51: ride.support.v1.ListHelpArticlesResponse
+	(*GetHelpArticleRequest)(nil),             // 52: ride.support.v1.GetHelpArticleRequest
+	(*HelpArticleResponse)(nil),               // 53: ride.support.v1.HelpArticleResponse
+	(*RateHelpArticleRequest)(nil),            // 54: ride.support.v1.RateHelpArticleRequest
+	(*RateTicketRequest)(nil),                 // 55: ride.support.v1.RateTicketRequest
+	(*AdminListHelpSectionsRequest)(nil),      // 56: ride.support.v1.AdminListHelpSectionsRequest
+	(*UpsertHelpSectionRequest)(nil),          // 57: ride.support.v1.UpsertHelpSectionRequest
+	(*HelpSectionResponse)(nil),               // 58: ride.support.v1.HelpSectionResponse
+	(*AdminListHelpArticlesRequest)(nil),      // 59: ride.support.v1.AdminListHelpArticlesRequest
+	(*UpsertHelpArticleRequest)(nil),          // 60: ride.support.v1.UpsertHelpArticleRequest
+	(*Macro)(nil),                             // 61: ride.support.v1.Macro
+	(*ListMacrosRequest)(nil),                 // 62: ride.support.v1.ListMacrosRequest
+	(*ListMacrosResponse)(nil),                // 63: ride.support.v1.ListMacrosResponse
+	(*AdminListMacrosRequest)(nil),            // 64: ride.support.v1.AdminListMacrosRequest
+	(*UpsertMacroRequest)(nil),                // 65: ride.support.v1.UpsertMacroRequest
+	(*MacroResponse)(nil),                     // 66: ride.support.v1.MacroResponse
+	(*GetSupportStatsRequest)(nil),            // 67: ride.support.v1.GetSupportStatsRequest
+	(*PriorityCount)(nil),                     // 68: ride.support.v1.PriorityCount
+	(*GetSupportStatsResponse)(nil),           // 69: ride.support.v1.GetSupportStatsResponse
+	(*timestamppb.Timestamp)(nil),             // 70: google.protobuf.Timestamp
 }
 var file_ride_support_v1_support_proto_depIdxs = []int32{
-	1,  // 0: ride.support.v1.SupportCategory.audience:type_name -> ride.support.v1.CategoryAudience
-	3,  // 1: ride.support.v1.SupportCategory.default_priority:type_name -> ride.support.v1.TicketPriority
-	6,  // 2: ride.support.v1.TicketMessage.author:type_name -> ride.support.v1.MessageAuthor
-	46, // 3: ride.support.v1.TicketMessage.created_at:type_name -> google.protobuf.Timestamp
-	0,  // 4: ride.support.v1.Ticket.audience:type_name -> ride.support.v1.Audience
-	2,  // 5: ride.support.v1.Ticket.status:type_name -> ride.support.v1.TicketStatus
-	3,  // 6: ride.support.v1.Ticket.priority:type_name -> ride.support.v1.TicketPriority
-	4,  // 7: ride.support.v1.Ticket.source:type_name -> ride.support.v1.TicketSource
-	46, // 8: ride.support.v1.Ticket.created_at:type_name -> google.protobuf.Timestamp
-	46, // 9: ride.support.v1.Ticket.updated_at:type_name -> google.protobuf.Timestamp
-	46, // 10: ride.support.v1.Ticket.last_message_at:type_name -> google.protobuf.Timestamp
-	46, // 11: ride.support.v1.Ticket.resolved_at:type_name -> google.protobuf.Timestamp
-	46, // 12: ride.support.v1.Ticket.closed_at:type_name -> google.protobuf.Timestamp
-	5,  // 13: ride.support.v1.Ticket.role:type_name -> ride.support.v1.TicketRole
-	13, // 14: ride.support.v1.StaffTicket.ticket:type_name -> ride.support.v1.Ticket
-	46, // 15: ride.support.v1.StaffTicket.first_response_at:type_name -> google.protobuf.Timestamp
-	7,  // 16: ride.support.v1.TicketAction.kind:type_name -> ride.support.v1.ActionKind
-	8,  // 17: ride.support.v1.TicketAction.status:type_name -> ride.support.v1.ActionStatus
-	9,  // 18: ride.support.v1.TicketAction.target:type_name -> ride.support.v1.ActionTarget
-	46, // 19: ride.support.v1.TicketAction.suspend_until:type_name -> google.protobuf.Timestamp
-	46, // 20: ride.support.v1.TicketAction.created_at:type_name -> google.protobuf.Timestamp
-	46, // 21: ride.support.v1.TicketAction.decided_at:type_name -> google.protobuf.Timestamp
-	46, // 22: ride.support.v1.TicketAction.completed_at:type_name -> google.protobuf.Timestamp
-	0,  // 23: ride.support.v1.ListSupportCategoriesRequest.audience:type_name -> ride.support.v1.Audience
-	10, // 24: ride.support.v1.ListSupportCategoriesResponse.categories:type_name -> ride.support.v1.SupportCategory
-	0,  // 25: ride.support.v1.CreateTicketRequest.audience:type_name -> ride.support.v1.Audience
-	13, // 26: ride.support.v1.CreateTicketResponse.ticket:type_name -> ride.support.v1.Ticket
-	12, // 27: ride.support.v1.CreateTicketResponse.messages:type_name -> ride.support.v1.TicketMessage
-	0,  // 28: ride.support.v1.ListMyTicketsRequest.audience:type_name -> ride.support.v1.Audience
-	13, // 29: ride.support.v1.ListMyTicketsResponse.tickets:type_name -> ride.support.v1.Ticket
-	13, // 30: ride.support.v1.TicketDetailResponse.ticket:type_name -> ride.support.v1.Ticket
-	12, // 31: ride.support.v1.TicketDetailResponse.messages:type_name -> ride.support.v1.TicketMessage
-	46, // 32: ride.support.v1.GetAttachmentURLResponse.expires_at:type_name -> google.protobuf.Timestamp
-	2,  // 33: ride.support.v1.ListSupportQueueRequest.status:type_name -> ride.support.v1.TicketStatus
-	3,  // 34: ride.support.v1.ListSupportQueueRequest.priority:type_name -> ride.support.v1.TicketPriority
-	0,  // 35: ride.support.v1.ListSupportQueueRequest.audience:type_name -> ride.support.v1.Audience
-	14, // 36: ride.support.v1.ListSupportQueueResponse.tickets:type_name -> ride.support.v1.StaffTicket
-	14, // 37: ride.support.v1.StaffTicketDetailResponse.ticket:type_name -> ride.support.v1.StaffTicket
-	12, // 38: ride.support.v1.StaffTicketDetailResponse.messages:type_name -> ride.support.v1.TicketMessage
-	15, // 39: ride.support.v1.StaffTicketDetailResponse.actions:type_name -> ride.support.v1.TicketAction
-	2,  // 40: ride.support.v1.ReplyToTicketRequest.set_status:type_name -> ride.support.v1.TicketStatus
-	2,  // 41: ride.support.v1.SetTicketStatusRequest.status:type_name -> ride.support.v1.TicketStatus
-	3,  // 42: ride.support.v1.SetTicketPriorityRequest.priority:type_name -> ride.support.v1.TicketPriority
-	7,  // 43: ride.support.v1.RequestTicketActionRequest.kind:type_name -> ride.support.v1.ActionKind
-	9,  // 44: ride.support.v1.RequestTicketActionRequest.target:type_name -> ride.support.v1.ActionTarget
-	46, // 45: ride.support.v1.RequestTicketActionRequest.suspend_until:type_name -> google.protobuf.Timestamp
-	15, // 46: ride.support.v1.TicketActionResponse.action:type_name -> ride.support.v1.TicketAction
-	15, // 47: ride.support.v1.ListPendingTicketActionsResponse.actions:type_name -> ride.support.v1.TicketAction
-	10, // 48: ride.support.v1.UpsertSupportCategoryRequest.category:type_name -> ride.support.v1.SupportCategory
-	10, // 49: ride.support.v1.SupportCategoryResponse.category:type_name -> ride.support.v1.SupportCategory
-	16, // 50: ride.support.v1.SupportService.ListSupportCategories:input_type -> ride.support.v1.ListSupportCategoriesRequest
-	18, // 51: ride.support.v1.SupportService.CreateTicket:input_type -> ride.support.v1.CreateTicketRequest
-	20, // 52: ride.support.v1.SupportService.ListMyTickets:input_type -> ride.support.v1.ListMyTicketsRequest
-	22, // 53: ride.support.v1.SupportService.GetMyTicket:input_type -> ride.support.v1.GetMyTicketRequest
-	24, // 54: ride.support.v1.SupportService.AddTicketMessage:input_type -> ride.support.v1.AddTicketMessageRequest
-	25, // 55: ride.support.v1.SupportService.CloseMyTicket:input_type -> ride.support.v1.CloseMyTicketRequest
-	26, // 56: ride.support.v1.SupportService.GetAttachmentURL:input_type -> ride.support.v1.GetAttachmentURLRequest
-	28, // 57: ride.support.v1.SupportService.ListSupportQueue:input_type -> ride.support.v1.ListSupportQueueRequest
-	28, // 58: ride.support.v1.SupportService.ListSafetyQueue:input_type -> ride.support.v1.ListSupportQueueRequest
-	30, // 59: ride.support.v1.SupportService.GetTicketForStaff:input_type -> ride.support.v1.GetTicketForStaffRequest
-	32, // 60: ride.support.v1.SupportService.ClaimTicket:input_type -> ride.support.v1.ClaimTicketRequest
-	33, // 61: ride.support.v1.SupportService.AssignTicket:input_type -> ride.support.v1.AssignTicketRequest
-	34, // 62: ride.support.v1.SupportService.ReplyToTicket:input_type -> ride.support.v1.ReplyToTicketRequest
-	35, // 63: ride.support.v1.SupportService.SetTicketStatus:input_type -> ride.support.v1.SetTicketStatusRequest
-	36, // 64: ride.support.v1.SupportService.SetTicketPriority:input_type -> ride.support.v1.SetTicketPriorityRequest
-	37, // 65: ride.support.v1.SupportService.RequestTicketAction:input_type -> ride.support.v1.RequestTicketActionRequest
-	39, // 66: ride.support.v1.SupportService.ListPendingTicketActions:input_type -> ride.support.v1.ListPendingTicketActionsRequest
-	41, // 67: ride.support.v1.SupportService.ApproveTicketAction:input_type -> ride.support.v1.ApproveTicketActionRequest
-	42, // 68: ride.support.v1.SupportService.RejectTicketAction:input_type -> ride.support.v1.RejectTicketActionRequest
-	43, // 69: ride.support.v1.SupportService.AdminListSupportCategories:input_type -> ride.support.v1.AdminListSupportCategoriesRequest
-	44, // 70: ride.support.v1.SupportService.UpsertSupportCategory:input_type -> ride.support.v1.UpsertSupportCategoryRequest
-	17, // 71: ride.support.v1.SupportService.ListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
-	19, // 72: ride.support.v1.SupportService.CreateTicket:output_type -> ride.support.v1.CreateTicketResponse
-	21, // 73: ride.support.v1.SupportService.ListMyTickets:output_type -> ride.support.v1.ListMyTicketsResponse
-	23, // 74: ride.support.v1.SupportService.GetMyTicket:output_type -> ride.support.v1.TicketDetailResponse
-	23, // 75: ride.support.v1.SupportService.AddTicketMessage:output_type -> ride.support.v1.TicketDetailResponse
-	23, // 76: ride.support.v1.SupportService.CloseMyTicket:output_type -> ride.support.v1.TicketDetailResponse
-	27, // 77: ride.support.v1.SupportService.GetAttachmentURL:output_type -> ride.support.v1.GetAttachmentURLResponse
-	29, // 78: ride.support.v1.SupportService.ListSupportQueue:output_type -> ride.support.v1.ListSupportQueueResponse
-	29, // 79: ride.support.v1.SupportService.ListSafetyQueue:output_type -> ride.support.v1.ListSupportQueueResponse
-	31, // 80: ride.support.v1.SupportService.GetTicketForStaff:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31, // 81: ride.support.v1.SupportService.ClaimTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31, // 82: ride.support.v1.SupportService.AssignTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31, // 83: ride.support.v1.SupportService.ReplyToTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31, // 84: ride.support.v1.SupportService.SetTicketStatus:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31, // 85: ride.support.v1.SupportService.SetTicketPriority:output_type -> ride.support.v1.StaffTicketDetailResponse
-	38, // 86: ride.support.v1.SupportService.RequestTicketAction:output_type -> ride.support.v1.TicketActionResponse
-	40, // 87: ride.support.v1.SupportService.ListPendingTicketActions:output_type -> ride.support.v1.ListPendingTicketActionsResponse
-	38, // 88: ride.support.v1.SupportService.ApproveTicketAction:output_type -> ride.support.v1.TicketActionResponse
-	38, // 89: ride.support.v1.SupportService.RejectTicketAction:output_type -> ride.support.v1.TicketActionResponse
-	17, // 90: ride.support.v1.SupportService.AdminListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
-	45, // 91: ride.support.v1.SupportService.UpsertSupportCategory:output_type -> ride.support.v1.SupportCategoryResponse
-	71, // [71:92] is the sub-list for method output_type
-	50, // [50:71] is the sub-list for method input_type
-	50, // [50:50] is the sub-list for extension type_name
-	50, // [50:50] is the sub-list for extension extendee
-	0,  // [0:50] is the sub-list for field type_name
+	1,   // 0: ride.support.v1.SupportCategory.audience:type_name -> ride.support.v1.CategoryAudience
+	3,   // 1: ride.support.v1.SupportCategory.default_priority:type_name -> ride.support.v1.TicketPriority
+	6,   // 2: ride.support.v1.TicketMessage.author:type_name -> ride.support.v1.MessageAuthor
+	70,  // 3: ride.support.v1.TicketMessage.created_at:type_name -> google.protobuf.Timestamp
+	0,   // 4: ride.support.v1.Ticket.audience:type_name -> ride.support.v1.Audience
+	2,   // 5: ride.support.v1.Ticket.status:type_name -> ride.support.v1.TicketStatus
+	3,   // 6: ride.support.v1.Ticket.priority:type_name -> ride.support.v1.TicketPriority
+	4,   // 7: ride.support.v1.Ticket.source:type_name -> ride.support.v1.TicketSource
+	70,  // 8: ride.support.v1.Ticket.created_at:type_name -> google.protobuf.Timestamp
+	70,  // 9: ride.support.v1.Ticket.updated_at:type_name -> google.protobuf.Timestamp
+	70,  // 10: ride.support.v1.Ticket.last_message_at:type_name -> google.protobuf.Timestamp
+	70,  // 11: ride.support.v1.Ticket.resolved_at:type_name -> google.protobuf.Timestamp
+	70,  // 12: ride.support.v1.Ticket.closed_at:type_name -> google.protobuf.Timestamp
+	5,   // 13: ride.support.v1.Ticket.role:type_name -> ride.support.v1.TicketRole
+	70,  // 14: ride.support.v1.Ticket.first_response_due_at:type_name -> google.protobuf.Timestamp
+	70,  // 15: ride.support.v1.Ticket.rated_at:type_name -> google.protobuf.Timestamp
+	13,  // 16: ride.support.v1.StaffTicket.ticket:type_name -> ride.support.v1.Ticket
+	70,  // 17: ride.support.v1.StaffTicket.first_response_at:type_name -> google.protobuf.Timestamp
+	7,   // 18: ride.support.v1.TicketAction.kind:type_name -> ride.support.v1.ActionKind
+	8,   // 19: ride.support.v1.TicketAction.status:type_name -> ride.support.v1.ActionStatus
+	9,   // 20: ride.support.v1.TicketAction.target:type_name -> ride.support.v1.ActionTarget
+	70,  // 21: ride.support.v1.TicketAction.suspend_until:type_name -> google.protobuf.Timestamp
+	70,  // 22: ride.support.v1.TicketAction.created_at:type_name -> google.protobuf.Timestamp
+	70,  // 23: ride.support.v1.TicketAction.decided_at:type_name -> google.protobuf.Timestamp
+	70,  // 24: ride.support.v1.TicketAction.completed_at:type_name -> google.protobuf.Timestamp
+	0,   // 25: ride.support.v1.ListSupportCategoriesRequest.audience:type_name -> ride.support.v1.Audience
+	10,  // 26: ride.support.v1.ListSupportCategoriesResponse.categories:type_name -> ride.support.v1.SupportCategory
+	0,   // 27: ride.support.v1.CreateTicketRequest.audience:type_name -> ride.support.v1.Audience
+	13,  // 28: ride.support.v1.CreateTicketResponse.ticket:type_name -> ride.support.v1.Ticket
+	12,  // 29: ride.support.v1.CreateTicketResponse.messages:type_name -> ride.support.v1.TicketMessage
+	0,   // 30: ride.support.v1.ListMyTicketsRequest.audience:type_name -> ride.support.v1.Audience
+	13,  // 31: ride.support.v1.ListMyTicketsResponse.tickets:type_name -> ride.support.v1.Ticket
+	13,  // 32: ride.support.v1.TicketDetailResponse.ticket:type_name -> ride.support.v1.Ticket
+	12,  // 33: ride.support.v1.TicketDetailResponse.messages:type_name -> ride.support.v1.TicketMessage
+	70,  // 34: ride.support.v1.GetAttachmentURLResponse.expires_at:type_name -> google.protobuf.Timestamp
+	2,   // 35: ride.support.v1.ListSupportQueueRequest.status:type_name -> ride.support.v1.TicketStatus
+	3,   // 36: ride.support.v1.ListSupportQueueRequest.priority:type_name -> ride.support.v1.TicketPriority
+	0,   // 37: ride.support.v1.ListSupportQueueRequest.audience:type_name -> ride.support.v1.Audience
+	14,  // 38: ride.support.v1.ListSupportQueueResponse.tickets:type_name -> ride.support.v1.StaffTicket
+	14,  // 39: ride.support.v1.StaffTicketDetailResponse.ticket:type_name -> ride.support.v1.StaffTicket
+	12,  // 40: ride.support.v1.StaffTicketDetailResponse.messages:type_name -> ride.support.v1.TicketMessage
+	15,  // 41: ride.support.v1.StaffTicketDetailResponse.actions:type_name -> ride.support.v1.TicketAction
+	2,   // 42: ride.support.v1.ReplyToTicketRequest.set_status:type_name -> ride.support.v1.TicketStatus
+	2,   // 43: ride.support.v1.SetTicketStatusRequest.status:type_name -> ride.support.v1.TicketStatus
+	3,   // 44: ride.support.v1.SetTicketPriorityRequest.priority:type_name -> ride.support.v1.TicketPriority
+	7,   // 45: ride.support.v1.RequestTicketActionRequest.kind:type_name -> ride.support.v1.ActionKind
+	9,   // 46: ride.support.v1.RequestTicketActionRequest.target:type_name -> ride.support.v1.ActionTarget
+	70,  // 47: ride.support.v1.RequestTicketActionRequest.suspend_until:type_name -> google.protobuf.Timestamp
+	15,  // 48: ride.support.v1.TicketActionResponse.action:type_name -> ride.support.v1.TicketAction
+	15,  // 49: ride.support.v1.ListPendingTicketActionsResponse.actions:type_name -> ride.support.v1.TicketAction
+	10,  // 50: ride.support.v1.UpsertSupportCategoryRequest.category:type_name -> ride.support.v1.SupportCategory
+	10,  // 51: ride.support.v1.SupportCategoryResponse.category:type_name -> ride.support.v1.SupportCategory
+	1,   // 52: ride.support.v1.HelpSection.audience:type_name -> ride.support.v1.CategoryAudience
+	1,   // 53: ride.support.v1.HelpArticle.audience:type_name -> ride.support.v1.CategoryAudience
+	70,  // 54: ride.support.v1.HelpArticle.updated_at:type_name -> google.protobuf.Timestamp
+	0,   // 55: ride.support.v1.ListHelpSectionsRequest.audience:type_name -> ride.support.v1.Audience
+	46,  // 56: ride.support.v1.ListHelpSectionsResponse.sections:type_name -> ride.support.v1.HelpSection
+	0,   // 57: ride.support.v1.ListHelpArticlesRequest.audience:type_name -> ride.support.v1.Audience
+	47,  // 58: ride.support.v1.ListHelpArticlesResponse.articles:type_name -> ride.support.v1.HelpArticle
+	47,  // 59: ride.support.v1.HelpArticleResponse.article:type_name -> ride.support.v1.HelpArticle
+	46,  // 60: ride.support.v1.UpsertHelpSectionRequest.section:type_name -> ride.support.v1.HelpSection
+	46,  // 61: ride.support.v1.HelpSectionResponse.section:type_name -> ride.support.v1.HelpSection
+	47,  // 62: ride.support.v1.UpsertHelpArticleRequest.article:type_name -> ride.support.v1.HelpArticle
+	61,  // 63: ride.support.v1.ListMacrosResponse.macros:type_name -> ride.support.v1.Macro
+	61,  // 64: ride.support.v1.UpsertMacroRequest.macro:type_name -> ride.support.v1.Macro
+	61,  // 65: ride.support.v1.MacroResponse.macro:type_name -> ride.support.v1.Macro
+	70,  // 66: ride.support.v1.GetSupportStatsRequest.from:type_name -> google.protobuf.Timestamp
+	70,  // 67: ride.support.v1.GetSupportStatsRequest.to:type_name -> google.protobuf.Timestamp
+	3,   // 68: ride.support.v1.PriorityCount.priority:type_name -> ride.support.v1.TicketPriority
+	68,  // 69: ride.support.v1.GetSupportStatsResponse.open_by_priority:type_name -> ride.support.v1.PriorityCount
+	70,  // 70: ride.support.v1.GetSupportStatsResponse.from:type_name -> google.protobuf.Timestamp
+	70,  // 71: ride.support.v1.GetSupportStatsResponse.to:type_name -> google.protobuf.Timestamp
+	16,  // 72: ride.support.v1.SupportService.ListSupportCategories:input_type -> ride.support.v1.ListSupportCategoriesRequest
+	18,  // 73: ride.support.v1.SupportService.CreateTicket:input_type -> ride.support.v1.CreateTicketRequest
+	20,  // 74: ride.support.v1.SupportService.ListMyTickets:input_type -> ride.support.v1.ListMyTicketsRequest
+	22,  // 75: ride.support.v1.SupportService.GetMyTicket:input_type -> ride.support.v1.GetMyTicketRequest
+	24,  // 76: ride.support.v1.SupportService.AddTicketMessage:input_type -> ride.support.v1.AddTicketMessageRequest
+	25,  // 77: ride.support.v1.SupportService.CloseMyTicket:input_type -> ride.support.v1.CloseMyTicketRequest
+	26,  // 78: ride.support.v1.SupportService.GetAttachmentURL:input_type -> ride.support.v1.GetAttachmentURLRequest
+	28,  // 79: ride.support.v1.SupportService.ListSupportQueue:input_type -> ride.support.v1.ListSupportQueueRequest
+	28,  // 80: ride.support.v1.SupportService.ListSafetyQueue:input_type -> ride.support.v1.ListSupportQueueRequest
+	30,  // 81: ride.support.v1.SupportService.GetTicketForStaff:input_type -> ride.support.v1.GetTicketForStaffRequest
+	32,  // 82: ride.support.v1.SupportService.ClaimTicket:input_type -> ride.support.v1.ClaimTicketRequest
+	33,  // 83: ride.support.v1.SupportService.AssignTicket:input_type -> ride.support.v1.AssignTicketRequest
+	34,  // 84: ride.support.v1.SupportService.ReplyToTicket:input_type -> ride.support.v1.ReplyToTicketRequest
+	35,  // 85: ride.support.v1.SupportService.SetTicketStatus:input_type -> ride.support.v1.SetTicketStatusRequest
+	36,  // 86: ride.support.v1.SupportService.SetTicketPriority:input_type -> ride.support.v1.SetTicketPriorityRequest
+	37,  // 87: ride.support.v1.SupportService.RequestTicketAction:input_type -> ride.support.v1.RequestTicketActionRequest
+	39,  // 88: ride.support.v1.SupportService.ListPendingTicketActions:input_type -> ride.support.v1.ListPendingTicketActionsRequest
+	41,  // 89: ride.support.v1.SupportService.ApproveTicketAction:input_type -> ride.support.v1.ApproveTicketActionRequest
+	42,  // 90: ride.support.v1.SupportService.RejectTicketAction:input_type -> ride.support.v1.RejectTicketActionRequest
+	43,  // 91: ride.support.v1.SupportService.AdminListSupportCategories:input_type -> ride.support.v1.AdminListSupportCategoriesRequest
+	44,  // 92: ride.support.v1.SupportService.UpsertSupportCategory:input_type -> ride.support.v1.UpsertSupportCategoryRequest
+	48,  // 93: ride.support.v1.SupportService.ListHelpSections:input_type -> ride.support.v1.ListHelpSectionsRequest
+	50,  // 94: ride.support.v1.SupportService.ListHelpArticles:input_type -> ride.support.v1.ListHelpArticlesRequest
+	52,  // 95: ride.support.v1.SupportService.GetHelpArticle:input_type -> ride.support.v1.GetHelpArticleRequest
+	54,  // 96: ride.support.v1.SupportService.RateHelpArticle:input_type -> ride.support.v1.RateHelpArticleRequest
+	55,  // 97: ride.support.v1.SupportService.RateTicket:input_type -> ride.support.v1.RateTicketRequest
+	56,  // 98: ride.support.v1.SupportService.AdminListHelpSections:input_type -> ride.support.v1.AdminListHelpSectionsRequest
+	57,  // 99: ride.support.v1.SupportService.UpsertHelpSection:input_type -> ride.support.v1.UpsertHelpSectionRequest
+	59,  // 100: ride.support.v1.SupportService.AdminListHelpArticles:input_type -> ride.support.v1.AdminListHelpArticlesRequest
+	60,  // 101: ride.support.v1.SupportService.UpsertHelpArticle:input_type -> ride.support.v1.UpsertHelpArticleRequest
+	62,  // 102: ride.support.v1.SupportService.ListMacros:input_type -> ride.support.v1.ListMacrosRequest
+	64,  // 103: ride.support.v1.SupportService.AdminListMacros:input_type -> ride.support.v1.AdminListMacrosRequest
+	65,  // 104: ride.support.v1.SupportService.UpsertMacro:input_type -> ride.support.v1.UpsertMacroRequest
+	67,  // 105: ride.support.v1.SupportService.GetSupportStats:input_type -> ride.support.v1.GetSupportStatsRequest
+	17,  // 106: ride.support.v1.SupportService.ListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
+	19,  // 107: ride.support.v1.SupportService.CreateTicket:output_type -> ride.support.v1.CreateTicketResponse
+	21,  // 108: ride.support.v1.SupportService.ListMyTickets:output_type -> ride.support.v1.ListMyTicketsResponse
+	23,  // 109: ride.support.v1.SupportService.GetMyTicket:output_type -> ride.support.v1.TicketDetailResponse
+	23,  // 110: ride.support.v1.SupportService.AddTicketMessage:output_type -> ride.support.v1.TicketDetailResponse
+	23,  // 111: ride.support.v1.SupportService.CloseMyTicket:output_type -> ride.support.v1.TicketDetailResponse
+	27,  // 112: ride.support.v1.SupportService.GetAttachmentURL:output_type -> ride.support.v1.GetAttachmentURLResponse
+	29,  // 113: ride.support.v1.SupportService.ListSupportQueue:output_type -> ride.support.v1.ListSupportQueueResponse
+	29,  // 114: ride.support.v1.SupportService.ListSafetyQueue:output_type -> ride.support.v1.ListSupportQueueResponse
+	31,  // 115: ride.support.v1.SupportService.GetTicketForStaff:output_type -> ride.support.v1.StaffTicketDetailResponse
+	31,  // 116: ride.support.v1.SupportService.ClaimTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
+	31,  // 117: ride.support.v1.SupportService.AssignTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
+	31,  // 118: ride.support.v1.SupportService.ReplyToTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
+	31,  // 119: ride.support.v1.SupportService.SetTicketStatus:output_type -> ride.support.v1.StaffTicketDetailResponse
+	31,  // 120: ride.support.v1.SupportService.SetTicketPriority:output_type -> ride.support.v1.StaffTicketDetailResponse
+	38,  // 121: ride.support.v1.SupportService.RequestTicketAction:output_type -> ride.support.v1.TicketActionResponse
+	40,  // 122: ride.support.v1.SupportService.ListPendingTicketActions:output_type -> ride.support.v1.ListPendingTicketActionsResponse
+	38,  // 123: ride.support.v1.SupportService.ApproveTicketAction:output_type -> ride.support.v1.TicketActionResponse
+	38,  // 124: ride.support.v1.SupportService.RejectTicketAction:output_type -> ride.support.v1.TicketActionResponse
+	17,  // 125: ride.support.v1.SupportService.AdminListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
+	45,  // 126: ride.support.v1.SupportService.UpsertSupportCategory:output_type -> ride.support.v1.SupportCategoryResponse
+	49,  // 127: ride.support.v1.SupportService.ListHelpSections:output_type -> ride.support.v1.ListHelpSectionsResponse
+	51,  // 128: ride.support.v1.SupportService.ListHelpArticles:output_type -> ride.support.v1.ListHelpArticlesResponse
+	53,  // 129: ride.support.v1.SupportService.GetHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
+	53,  // 130: ride.support.v1.SupportService.RateHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
+	23,  // 131: ride.support.v1.SupportService.RateTicket:output_type -> ride.support.v1.TicketDetailResponse
+	49,  // 132: ride.support.v1.SupportService.AdminListHelpSections:output_type -> ride.support.v1.ListHelpSectionsResponse
+	58,  // 133: ride.support.v1.SupportService.UpsertHelpSection:output_type -> ride.support.v1.HelpSectionResponse
+	51,  // 134: ride.support.v1.SupportService.AdminListHelpArticles:output_type -> ride.support.v1.ListHelpArticlesResponse
+	53,  // 135: ride.support.v1.SupportService.UpsertHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
+	63,  // 136: ride.support.v1.SupportService.ListMacros:output_type -> ride.support.v1.ListMacrosResponse
+	63,  // 137: ride.support.v1.SupportService.AdminListMacros:output_type -> ride.support.v1.ListMacrosResponse
+	66,  // 138: ride.support.v1.SupportService.UpsertMacro:output_type -> ride.support.v1.MacroResponse
+	69,  // 139: ride.support.v1.SupportService.GetSupportStats:output_type -> ride.support.v1.GetSupportStatsResponse
+	106, // [106:140] is the sub-list for method output_type
+	72,  // [72:106] is the sub-list for method input_type
+	72,  // [72:72] is the sub-list for extension type_name
+	72,  // [72:72] is the sub-list for extension extendee
+	0,   // [0:72] is the sub-list for field type_name
 }
 
 func init() { file_ride_support_v1_support_proto_init() }
@@ -3427,7 +5103,7 @@ func file_ride_support_v1_support_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_support_v1_support_proto_rawDesc), len(file_ride_support_v1_support_proto_rawDesc)),
 			NumEnums:      10,
-			NumMessages:   36,
+			NumMessages:   60,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -198,6 +198,12 @@ func ticketToProto(t support.Ticket, role support.Role) *supportv1.Ticket {
 		LastMessageAt: timestamppb.New(t.LastMessageAt),
 		ResolvedAt:    timestamp(t.ResolvedAt),
 		ClosedAt:      timestamp(t.ClosedAt),
+
+		FirstResponseDueAt: timestamppb.New(t.FirstResponseDueAt),
+		FirstResponseLate:  t.FirstResponseLate(time.Now()),
+		Rating:             int32(t.Rating),
+		RatingComment:      t.RatingComment,
+		RatedAt:            timestamp(t.RatedAt),
 	}
 
 	switch role {
@@ -303,4 +309,78 @@ func userDetail(view support.TicketView) *supportv1.TicketDetailResponse {
 		Ticket:   ticketToProto(view.Ticket, view.Role),
 		Messages: messagesToProto(view.Messages, false),
 	}
+}
+
+func sectionToProto(s support.HelpSection) *supportv1.HelpSection {
+	return &supportv1.HelpSection{
+		Key:       s.Key,
+		Audience:  categoryAudiences[s.Audience],
+		NameEn:    s.NameEn,
+		NameAr:    s.NameAr,
+		NameKu:    s.NameKu,
+		SortOrder: int32(s.SortOrder),
+		Active:    s.Active,
+	}
+}
+
+func sectionsToProto(sections []support.HelpSection) []*supportv1.HelpSection {
+	out := make([]*supportv1.HelpSection, 0, len(sections))
+	for _, s := range sections {
+		out = append(out, sectionToProto(s))
+	}
+
+	return out
+}
+
+func articleToProto(a support.HelpArticle) *supportv1.HelpArticle {
+	return &supportv1.HelpArticle{
+		Key:                a.Key,
+		SectionKey:         a.SectionKey,
+		Audience:           categoryAudiences[a.Audience],
+		TitleEn:            a.TitleEn,
+		TitleAr:            a.TitleAr,
+		TitleKu:            a.TitleKu,
+		BodyEn:             a.BodyEn,
+		BodyAr:             a.BodyAr,
+		BodyKu:             a.BodyKu,
+		ContactCategoryKey: a.ContactCategoryKey,
+		SortOrder:          int32(a.SortOrder),
+		Published:          a.Published,
+		HelpfulCount:       int32(a.HelpfulCount),
+		NotHelpfulCount:    int32(a.NotHelpfulCount),
+		UpdatedAt:          timestamppb.New(a.UpdatedAt),
+		Voted:              a.Voted,
+		VotedHelpful:       a.VotedHelpful,
+	}
+}
+
+func articlesToProto(articles []support.HelpArticle) []*supportv1.HelpArticle {
+	out := make([]*supportv1.HelpArticle, 0, len(articles))
+	for _, a := range articles {
+		out = append(out, articleToProto(a))
+	}
+
+	return out
+}
+
+func macroToProto(m support.Macro) *supportv1.Macro {
+	return &supportv1.Macro{
+		Key:         m.Key,
+		Title:       m.Title,
+		BodyEn:      m.BodyEn,
+		BodyAr:      m.BodyAr,
+		BodyKu:      m.BodyKu,
+		CategoryKey: m.CategoryKey,
+		Active:      m.Active,
+		SortOrder:   int32(m.SortOrder),
+	}
+}
+
+func macrosToProto(macros []support.Macro) []*supportv1.Macro {
+	out := make([]*supportv1.Macro, 0, len(macros))
+	for _, m := range macros {
+		out = append(out, macroToProto(m))
+	}
+
+	return out
 }

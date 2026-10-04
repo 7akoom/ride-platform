@@ -51,9 +51,15 @@ type Config struct {
 	MaxOpenTickets string
 	// How old a trip may be for a ticket about it.
 	TripMaxAge string
-	// How often actions left processing are retried and due suspensions
-	// lifted.
+	// How often actions left processing are retried, due suspensions lifted
+	// and stale tickets moved on.
 	WorkerInterval string
+	// First-response targets: "urgent=15m,high=1h,normal=4h,low=24h".
+	FirstResponseTargets string
+	// A ticket waiting for the person is resolved after this; a resolved one
+	// is closed after this. 0: never.
+	AutoResolveAfter string
+	AutoCloseAfter   string
 
 	InternalServiceToken string
 
@@ -99,6 +105,10 @@ func Load() Config {
 		TripMaxAge:     getEnv("SUPPORT_TRIP_MAX_AGE", "720h"),
 		WorkerInterval: getEnv("SUPPORT_WORKER_INTERVAL", "15s"),
 
+		FirstResponseTargets: getEnv("SUPPORT_FIRST_RESPONSE", "urgent=15m,high=1h,normal=4h,low=24h"),
+		AutoResolveAfter:     getEnv("SUPPORT_AUTO_RESOLVE_AFTER", "72h"),
+		AutoCloseAfter:       getEnv("SUPPORT_AUTO_CLOSE_AFTER", "168h"),
+
 		InternalServiceToken: getEnv("INTERNAL_SERVICE_TOKEN", "dev-internal-service-token-change-me"),
 
 		RateLimitRequestsPerSecond: getEnv("RATE_LIMIT_REQUESTS_PER_SECOND", "20"),
@@ -112,6 +122,10 @@ type Desk struct {
 	MaxOpenTickets int
 	TripMaxAge     time.Duration
 	WorkerInterval time.Duration
+
+	FirstResponse    map[string]time.Duration
+	AutoResolveAfter time.Duration
+	AutoCloseAfter   time.Duration
 }
 
 func ParseDesk(cfg Config) (Desk, error) {
@@ -135,7 +149,60 @@ func ParseDesk(cfg Config) (Desk, error) {
 		return Desk{}, err
 	}
 
-	return Desk{RefundLimit: limit, MaxOpenTickets: maxOpen, TripMaxAge: tripMaxAge, WorkerInterval: interval}, nil
+	targets := map[string]time.Duration{}
+
+	for _, part := range strings.Split(cfg.FirstResponseTargets, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		name, value, ok := strings.Cut(part, "=")
+		name = strings.TrimSpace(name)
+
+		switch name {
+		case "urgent", "high", "normal", "low":
+		default:
+			ok = false
+		}
+
+		d, err := time.ParseDuration(strings.TrimSpace(value))
+		if !ok || err != nil || d <= 0 || d > 30*24*time.Hour {
+			return Desk{}, fmt.Errorf("SUPPORT_FIRST_RESPONSE is priority=duration pairs (urgent, high, normal, low), got %q", part)
+		}
+
+		targets[name] = d
+	}
+
+	autoResolve, err := parseOptionalDuration("SUPPORT_AUTO_RESOLVE_AFTER", cfg.AutoResolveAfter)
+	if err != nil {
+		return Desk{}, err
+	}
+
+	autoClose, err := parseOptionalDuration("SUPPORT_AUTO_CLOSE_AFTER", cfg.AutoCloseAfter)
+	if err != nil {
+		return Desk{}, err
+	}
+
+	return Desk{
+		RefundLimit:      limit,
+		MaxOpenTickets:   maxOpen,
+		TripMaxAge:       tripMaxAge,
+		WorkerInterval:   interval,
+		FirstResponse:    targets,
+		AutoResolveAfter: autoResolve,
+		AutoCloseAfter:   autoClose,
+	}, nil
+}
+
+// parseOptionalDuration: 0 switches the feature off.
+func parseOptionalDuration(name, value string) (time.Duration, error) {
+	d, err := time.ParseDuration(strings.TrimSpace(value))
+	if err != nil || d < 0 {
+		return 0, fmt.Errorf("%s must be a duration (0 to switch it off), got %q", name, value)
+	}
+
+	return d, nil
 }
 
 func getEnv(key, fallback string) string {

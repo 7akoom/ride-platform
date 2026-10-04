@@ -145,6 +145,9 @@ func (s *Service) CreateTicket(ctx context.Context, caller Caller, input CreateT
 		ticket.Priority = PriorityUrgent
 	}
 
+	ticket.FirstResponseDueAt = s.firstResponseDue(now, ticket.Priority)
+	ticket.StatusChangedAt = now
+
 	if tripID != "" {
 		ticket.CounterpartProfileID = counterpartOf(input.Audience, trip)
 	}
@@ -359,12 +362,12 @@ func (s *Service) addMessage(ctx context.Context, caller Caller, ticket Ticket, 
 
 		switch t.Status {
 		case StatusResolved, StatusWaitingUser:
-			t.Status = StatusOpen
+			next := StatusOpen
 			if t.AssignedStaffID != "" {
-				t.Status = StatusInProgress
+				next = StatusInProgress
 			}
 
-			t.ResolvedAt = nil
+			s.moveTo(t, next, now)
 		}
 
 		t.LastMessageAt = now
@@ -420,8 +423,7 @@ func (s *Service) CloseMyTicket(ctx context.Context, caller Caller, ticketID str
 		}
 
 		now := s.clock.Now()
-		t.Status = StatusClosed
-		t.ClosedAt = &now
+		s.moveTo(t, StatusClosed, now)
 		t.UpdatedAt = now
 
 		return Change{Messages: []Message{s.systemMessage(t.ID, "Closed by the requester")}}, nil

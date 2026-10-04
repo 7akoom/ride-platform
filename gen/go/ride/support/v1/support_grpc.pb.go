@@ -40,6 +40,19 @@ const (
 	SupportService_RejectTicketAction_FullMethodName         = "/ride.support.v1.SupportService/RejectTicketAction"
 	SupportService_AdminListSupportCategories_FullMethodName = "/ride.support.v1.SupportService/AdminListSupportCategories"
 	SupportService_UpsertSupportCategory_FullMethodName      = "/ride.support.v1.SupportService/UpsertSupportCategory"
+	SupportService_ListHelpSections_FullMethodName           = "/ride.support.v1.SupportService/ListHelpSections"
+	SupportService_ListHelpArticles_FullMethodName           = "/ride.support.v1.SupportService/ListHelpArticles"
+	SupportService_GetHelpArticle_FullMethodName             = "/ride.support.v1.SupportService/GetHelpArticle"
+	SupportService_RateHelpArticle_FullMethodName            = "/ride.support.v1.SupportService/RateHelpArticle"
+	SupportService_RateTicket_FullMethodName                 = "/ride.support.v1.SupportService/RateTicket"
+	SupportService_AdminListHelpSections_FullMethodName      = "/ride.support.v1.SupportService/AdminListHelpSections"
+	SupportService_UpsertHelpSection_FullMethodName          = "/ride.support.v1.SupportService/UpsertHelpSection"
+	SupportService_AdminListHelpArticles_FullMethodName      = "/ride.support.v1.SupportService/AdminListHelpArticles"
+	SupportService_UpsertHelpArticle_FullMethodName          = "/ride.support.v1.SupportService/UpsertHelpArticle"
+	SupportService_ListMacros_FullMethodName                 = "/ride.support.v1.SupportService/ListMacros"
+	SupportService_AdminListMacros_FullMethodName            = "/ride.support.v1.SupportService/AdminListMacros"
+	SupportService_UpsertMacro_FullMethodName                = "/ride.support.v1.SupportService/UpsertMacro"
+	SupportService_GetSupportStats_FullMethodName            = "/ride.support.v1.SupportService/GetSupportStats"
 )
 
 // SupportServiceClient is the client API for SupportService service.
@@ -122,6 +135,32 @@ type SupportServiceClient interface {
 	// Categories. Needs support.configure.
 	AdminListSupportCategories(ctx context.Context, in *AdminListSupportCategoriesRequest, opts ...grpc.CallOption) (*ListSupportCategoriesResponse, error)
 	UpsertSupportCategory(ctx context.Context, in *UpsertSupportCategoryRequest, opts ...grpc.CallOption) (*SupportCategoryResponse, error)
+	// Help centre. Riders and drivers read published articles for them, by
+	// section or by a search over the three languages, and say whether one
+	// helped (once per person; a second vote replaces the first). An article
+	// may name the category its "contact us" button opens a ticket in.
+	ListHelpSections(ctx context.Context, in *ListHelpSectionsRequest, opts ...grpc.CallOption) (*ListHelpSectionsResponse, error)
+	ListHelpArticles(ctx context.Context, in *ListHelpArticlesRequest, opts ...grpc.CallOption) (*ListHelpArticlesResponse, error)
+	GetHelpArticle(ctx context.Context, in *GetHelpArticleRequest, opts ...grpc.CallOption) (*HelpArticleResponse, error)
+	RateHelpArticle(ctx context.Context, in *RateHelpArticleRequest, opts ...grpc.CallOption) (*HelpArticleResponse, error)
+	// RateTicket: the person who opened a resolved or closed ticket rates the
+	// help they got, 1-5, once, within 7 days.
+	RateTicket(ctx context.Context, in *RateTicketRequest, opts ...grpc.CallOption) (*TicketDetailResponse, error)
+	// Help centre content and canned replies. Needs support.configure.
+	AdminListHelpSections(ctx context.Context, in *AdminListHelpSectionsRequest, opts ...grpc.CallOption) (*ListHelpSectionsResponse, error)
+	UpsertHelpSection(ctx context.Context, in *UpsertHelpSectionRequest, opts ...grpc.CallOption) (*HelpSectionResponse, error)
+	AdminListHelpArticles(ctx context.Context, in *AdminListHelpArticlesRequest, opts ...grpc.CallOption) (*ListHelpArticlesResponse, error)
+	UpsertHelpArticle(ctx context.Context, in *UpsertHelpArticleRequest, opts ...grpc.CallOption) (*HelpArticleResponse, error)
+	// ListMacros: the active canned replies, for staff answering tickets
+	// (support.reply).
+	ListMacros(ctx context.Context, in *ListMacrosRequest, opts ...grpc.CallOption) (*ListMacrosResponse, error)
+	AdminListMacros(ctx context.Context, in *AdminListMacrosRequest, opts ...grpc.CallOption) (*ListMacrosResponse, error)
+	UpsertMacro(ctx context.Context, in *UpsertMacroRequest, opts ...grpc.CallOption) (*MacroResponse, error)
+	// GetSupportStats: the desk at a glance (support.read): open tickets by
+	// priority, open past their first-response time, and for a period the
+	// tickets opened and resolved, the median first response, how many were
+	// answered in time, and the average rating.
+	GetSupportStats(ctx context.Context, in *GetSupportStatsRequest, opts ...grpc.CallOption) (*GetSupportStatsResponse, error)
 }
 
 type supportServiceClient struct {
@@ -342,6 +381,136 @@ func (c *supportServiceClient) UpsertSupportCategory(ctx context.Context, in *Up
 	return out, nil
 }
 
+func (c *supportServiceClient) ListHelpSections(ctx context.Context, in *ListHelpSectionsRequest, opts ...grpc.CallOption) (*ListHelpSectionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListHelpSectionsResponse)
+	err := c.cc.Invoke(ctx, SupportService_ListHelpSections_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) ListHelpArticles(ctx context.Context, in *ListHelpArticlesRequest, opts ...grpc.CallOption) (*ListHelpArticlesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListHelpArticlesResponse)
+	err := c.cc.Invoke(ctx, SupportService_ListHelpArticles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) GetHelpArticle(ctx context.Context, in *GetHelpArticleRequest, opts ...grpc.CallOption) (*HelpArticleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HelpArticleResponse)
+	err := c.cc.Invoke(ctx, SupportService_GetHelpArticle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) RateHelpArticle(ctx context.Context, in *RateHelpArticleRequest, opts ...grpc.CallOption) (*HelpArticleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HelpArticleResponse)
+	err := c.cc.Invoke(ctx, SupportService_RateHelpArticle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) RateTicket(ctx context.Context, in *RateTicketRequest, opts ...grpc.CallOption) (*TicketDetailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TicketDetailResponse)
+	err := c.cc.Invoke(ctx, SupportService_RateTicket_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) AdminListHelpSections(ctx context.Context, in *AdminListHelpSectionsRequest, opts ...grpc.CallOption) (*ListHelpSectionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListHelpSectionsResponse)
+	err := c.cc.Invoke(ctx, SupportService_AdminListHelpSections_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) UpsertHelpSection(ctx context.Context, in *UpsertHelpSectionRequest, opts ...grpc.CallOption) (*HelpSectionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HelpSectionResponse)
+	err := c.cc.Invoke(ctx, SupportService_UpsertHelpSection_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) AdminListHelpArticles(ctx context.Context, in *AdminListHelpArticlesRequest, opts ...grpc.CallOption) (*ListHelpArticlesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListHelpArticlesResponse)
+	err := c.cc.Invoke(ctx, SupportService_AdminListHelpArticles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) UpsertHelpArticle(ctx context.Context, in *UpsertHelpArticleRequest, opts ...grpc.CallOption) (*HelpArticleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HelpArticleResponse)
+	err := c.cc.Invoke(ctx, SupportService_UpsertHelpArticle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) ListMacros(ctx context.Context, in *ListMacrosRequest, opts ...grpc.CallOption) (*ListMacrosResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMacrosResponse)
+	err := c.cc.Invoke(ctx, SupportService_ListMacros_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) AdminListMacros(ctx context.Context, in *AdminListMacrosRequest, opts ...grpc.CallOption) (*ListMacrosResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMacrosResponse)
+	err := c.cc.Invoke(ctx, SupportService_AdminListMacros_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) UpsertMacro(ctx context.Context, in *UpsertMacroRequest, opts ...grpc.CallOption) (*MacroResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MacroResponse)
+	err := c.cc.Invoke(ctx, SupportService_UpsertMacro_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) GetSupportStats(ctx context.Context, in *GetSupportStatsRequest, opts ...grpc.CallOption) (*GetSupportStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSupportStatsResponse)
+	err := c.cc.Invoke(ctx, SupportService_GetSupportStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SupportServiceServer is the server API for SupportService service.
 // All implementations must embed UnimplementedSupportServiceServer
 // for forward compatibility.
@@ -422,6 +591,32 @@ type SupportServiceServer interface {
 	// Categories. Needs support.configure.
 	AdminListSupportCategories(context.Context, *AdminListSupportCategoriesRequest) (*ListSupportCategoriesResponse, error)
 	UpsertSupportCategory(context.Context, *UpsertSupportCategoryRequest) (*SupportCategoryResponse, error)
+	// Help centre. Riders and drivers read published articles for them, by
+	// section or by a search over the three languages, and say whether one
+	// helped (once per person; a second vote replaces the first). An article
+	// may name the category its "contact us" button opens a ticket in.
+	ListHelpSections(context.Context, *ListHelpSectionsRequest) (*ListHelpSectionsResponse, error)
+	ListHelpArticles(context.Context, *ListHelpArticlesRequest) (*ListHelpArticlesResponse, error)
+	GetHelpArticle(context.Context, *GetHelpArticleRequest) (*HelpArticleResponse, error)
+	RateHelpArticle(context.Context, *RateHelpArticleRequest) (*HelpArticleResponse, error)
+	// RateTicket: the person who opened a resolved or closed ticket rates the
+	// help they got, 1-5, once, within 7 days.
+	RateTicket(context.Context, *RateTicketRequest) (*TicketDetailResponse, error)
+	// Help centre content and canned replies. Needs support.configure.
+	AdminListHelpSections(context.Context, *AdminListHelpSectionsRequest) (*ListHelpSectionsResponse, error)
+	UpsertHelpSection(context.Context, *UpsertHelpSectionRequest) (*HelpSectionResponse, error)
+	AdminListHelpArticles(context.Context, *AdminListHelpArticlesRequest) (*ListHelpArticlesResponse, error)
+	UpsertHelpArticle(context.Context, *UpsertHelpArticleRequest) (*HelpArticleResponse, error)
+	// ListMacros: the active canned replies, for staff answering tickets
+	// (support.reply).
+	ListMacros(context.Context, *ListMacrosRequest) (*ListMacrosResponse, error)
+	AdminListMacros(context.Context, *AdminListMacrosRequest) (*ListMacrosResponse, error)
+	UpsertMacro(context.Context, *UpsertMacroRequest) (*MacroResponse, error)
+	// GetSupportStats: the desk at a glance (support.read): open tickets by
+	// priority, open past their first-response time, and for a period the
+	// tickets opened and resolved, the median first response, how many were
+	// answered in time, and the average rating.
+	GetSupportStats(context.Context, *GetSupportStatsRequest) (*GetSupportStatsResponse, error)
 	mustEmbedUnimplementedSupportServiceServer()
 }
 
@@ -494,6 +689,45 @@ func (UnimplementedSupportServiceServer) AdminListSupportCategories(context.Cont
 }
 func (UnimplementedSupportServiceServer) UpsertSupportCategory(context.Context, *UpsertSupportCategoryRequest) (*SupportCategoryResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpsertSupportCategory not implemented")
+}
+func (UnimplementedSupportServiceServer) ListHelpSections(context.Context, *ListHelpSectionsRequest) (*ListHelpSectionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListHelpSections not implemented")
+}
+func (UnimplementedSupportServiceServer) ListHelpArticles(context.Context, *ListHelpArticlesRequest) (*ListHelpArticlesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListHelpArticles not implemented")
+}
+func (UnimplementedSupportServiceServer) GetHelpArticle(context.Context, *GetHelpArticleRequest) (*HelpArticleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetHelpArticle not implemented")
+}
+func (UnimplementedSupportServiceServer) RateHelpArticle(context.Context, *RateHelpArticleRequest) (*HelpArticleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RateHelpArticle not implemented")
+}
+func (UnimplementedSupportServiceServer) RateTicket(context.Context, *RateTicketRequest) (*TicketDetailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RateTicket not implemented")
+}
+func (UnimplementedSupportServiceServer) AdminListHelpSections(context.Context, *AdminListHelpSectionsRequest) (*ListHelpSectionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminListHelpSections not implemented")
+}
+func (UnimplementedSupportServiceServer) UpsertHelpSection(context.Context, *UpsertHelpSectionRequest) (*HelpSectionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertHelpSection not implemented")
+}
+func (UnimplementedSupportServiceServer) AdminListHelpArticles(context.Context, *AdminListHelpArticlesRequest) (*ListHelpArticlesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminListHelpArticles not implemented")
+}
+func (UnimplementedSupportServiceServer) UpsertHelpArticle(context.Context, *UpsertHelpArticleRequest) (*HelpArticleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertHelpArticle not implemented")
+}
+func (UnimplementedSupportServiceServer) ListMacros(context.Context, *ListMacrosRequest) (*ListMacrosResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMacros not implemented")
+}
+func (UnimplementedSupportServiceServer) AdminListMacros(context.Context, *AdminListMacrosRequest) (*ListMacrosResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminListMacros not implemented")
+}
+func (UnimplementedSupportServiceServer) UpsertMacro(context.Context, *UpsertMacroRequest) (*MacroResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertMacro not implemented")
+}
+func (UnimplementedSupportServiceServer) GetSupportStats(context.Context, *GetSupportStatsRequest) (*GetSupportStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSupportStats not implemented")
 }
 func (UnimplementedSupportServiceServer) mustEmbedUnimplementedSupportServiceServer() {}
 func (UnimplementedSupportServiceServer) testEmbeddedByValue()                        {}
@@ -894,6 +1128,240 @@ func _SupportService_UpsertSupportCategory_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SupportService_ListHelpSections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListHelpSectionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).ListHelpSections(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_ListHelpSections_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).ListHelpSections(ctx, req.(*ListHelpSectionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_ListHelpArticles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListHelpArticlesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).ListHelpArticles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_ListHelpArticles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).ListHelpArticles(ctx, req.(*ListHelpArticlesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_GetHelpArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetHelpArticleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).GetHelpArticle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_GetHelpArticle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).GetHelpArticle(ctx, req.(*GetHelpArticleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_RateHelpArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RateHelpArticleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).RateHelpArticle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_RateHelpArticle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).RateHelpArticle(ctx, req.(*RateHelpArticleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_RateTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RateTicketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).RateTicket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_RateTicket_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).RateTicket(ctx, req.(*RateTicketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_AdminListHelpSections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminListHelpSectionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).AdminListHelpSections(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_AdminListHelpSections_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).AdminListHelpSections(ctx, req.(*AdminListHelpSectionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_UpsertHelpSection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertHelpSectionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).UpsertHelpSection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_UpsertHelpSection_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).UpsertHelpSection(ctx, req.(*UpsertHelpSectionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_AdminListHelpArticles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminListHelpArticlesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).AdminListHelpArticles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_AdminListHelpArticles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).AdminListHelpArticles(ctx, req.(*AdminListHelpArticlesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_UpsertHelpArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertHelpArticleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).UpsertHelpArticle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_UpsertHelpArticle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).UpsertHelpArticle(ctx, req.(*UpsertHelpArticleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_ListMacros_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMacrosRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).ListMacros(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_ListMacros_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).ListMacros(ctx, req.(*ListMacrosRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_AdminListMacros_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminListMacrosRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).AdminListMacros(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_AdminListMacros_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).AdminListMacros(ctx, req.(*AdminListMacrosRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_UpsertMacro_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertMacroRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).UpsertMacro(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_UpsertMacro_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).UpsertMacro(ctx, req.(*UpsertMacroRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_GetSupportStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSupportStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).GetSupportStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_GetSupportStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).GetSupportStats(ctx, req.(*GetSupportStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SupportService_ServiceDesc is the grpc.ServiceDesc for SupportService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -984,6 +1452,58 @@ var SupportService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpsertSupportCategory",
 			Handler:    _SupportService_UpsertSupportCategory_Handler,
+		},
+		{
+			MethodName: "ListHelpSections",
+			Handler:    _SupportService_ListHelpSections_Handler,
+		},
+		{
+			MethodName: "ListHelpArticles",
+			Handler:    _SupportService_ListHelpArticles_Handler,
+		},
+		{
+			MethodName: "GetHelpArticle",
+			Handler:    _SupportService_GetHelpArticle_Handler,
+		},
+		{
+			MethodName: "RateHelpArticle",
+			Handler:    _SupportService_RateHelpArticle_Handler,
+		},
+		{
+			MethodName: "RateTicket",
+			Handler:    _SupportService_RateTicket_Handler,
+		},
+		{
+			MethodName: "AdminListHelpSections",
+			Handler:    _SupportService_AdminListHelpSections_Handler,
+		},
+		{
+			MethodName: "UpsertHelpSection",
+			Handler:    _SupportService_UpsertHelpSection_Handler,
+		},
+		{
+			MethodName: "AdminListHelpArticles",
+			Handler:    _SupportService_AdminListHelpArticles_Handler,
+		},
+		{
+			MethodName: "UpsertHelpArticle",
+			Handler:    _SupportService_UpsertHelpArticle_Handler,
+		},
+		{
+			MethodName: "ListMacros",
+			Handler:    _SupportService_ListMacros_Handler,
+		},
+		{
+			MethodName: "AdminListMacros",
+			Handler:    _SupportService_AdminListMacros_Handler,
+		},
+		{
+			MethodName: "UpsertMacro",
+			Handler:    _SupportService_UpsertMacro_Handler,
+		},
+		{
+			MethodName: "GetSupportStats",
+			Handler:    _SupportService_GetSupportStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

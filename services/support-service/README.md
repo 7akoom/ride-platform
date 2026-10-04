@@ -22,6 +22,39 @@ reply waits for the person) → `resolved` → `closed`. A message from the pers
 reopens a resolved or waiting ticket. The person can close their ticket; a
 closed ticket is final.
 
+A ticket waiting for the person for `SUPPORT_AUTO_RESOLVE_AFTER` (72h) is
+resolved automatically, and they are told; one resolved for
+`SUPPORT_AUTO_CLOSE_AFTER` (7 days) is closed. The worker does it every
+`SUPPORT_WORKER_INTERVAL`.
+
+## First-response times (SLA) and ratings
+
+Every ticket gets a first-response time from its priority
+(`SUPPORT_FIRST_RESPONSE`, default urgent 15m, high 1h, normal 4h, low 24h),
+recomputed from its creation when the priority changes. Tickets show it and
+whether the first answer was (or is) late; internal notes do not count as an
+answer.
+
+The person who opened a resolved or closed ticket rates it 1-5, with an
+optional comment, once, within 7 days. `GET /v1/admin/support/stats`
+(`support.read`) gives open tickets by priority, open and unassigned, open and
+late, and for a period (default 7 days) opened, resolved, answered, answered
+in time, the median first response and the average rating.
+
+## Help centre and canned replies
+
+Sections and articles in English, Arabic and Kurdish, for riders, drivers or
+both (`/v1/support/help/...`). People see published articles of active
+sections, search titles and bodies in any language, and say whether an article
+helped (one vote each). An article can name the category its "contact us"
+button opens a ticket in. Staff with `support.configure` write them
+(`/v1/admin/support/help/...`); drafts stay hidden until published. Migration
+00003 seeds a starting set (the Kurdish needs a native review).
+
+Canned replies (macros) in the three languages: `GET /v1/admin/support/macros`
+lists the active ones for staff answering (`support.reply`), the ticket's
+category first; `support.configure` manages them.
+
 ## Special tickets
 
 - **Lost items** (`lost_item`): needs a completed trip with a driver. The

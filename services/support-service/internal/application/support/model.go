@@ -144,6 +144,20 @@ type Ticket struct {
 	FirstResponseAt      *time.Time
 	ResolvedAt           *time.Time
 	ClosedAt             *time.Time
+	FirstResponseDueAt   time.Time
+	StatusChangedAt      time.Time
+	Rating               int
+	RatingComment        string
+	RatedAt              *time.Time
+}
+
+// FirstResponseLate: answered after the target, or not answered and past it.
+func (t Ticket) FirstResponseLate(now time.Time) bool {
+	if t.FirstResponseAt != nil {
+		return t.FirstResponseAt.After(t.FirstResponseDueAt)
+	}
+
+	return t.Status.Active() && now.After(t.FirstResponseDueAt)
 }
 
 type Message struct {
@@ -264,4 +278,6 @@ var (
 	ErrOwnApproval         = errors.New("an action is approved by someone other than who asked for it")
 	ErrPermissionDenied    = errors.New("permission denied")
 	ErrUpstreamUnavailable = errors.New("a service the support desk needs did not answer")
+	ErrArticleNotFound     = errors.New("help article not found")
+	ErrNotRatable          = errors.New("only a resolved or closed ticket is rated, once, within 7 days")
 )

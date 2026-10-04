@@ -24,6 +24,11 @@ var userMethods = map[string]struct{}{
 	supportRPCPrefix + "AddTicketMessage":      {},
 	supportRPCPrefix + "CloseMyTicket":         {},
 	supportRPCPrefix + "GetAttachmentURL":      {},
+	supportRPCPrefix + "ListHelpSections":      {},
+	supportRPCPrefix + "ListHelpArticles":      {},
+	supportRPCPrefix + "GetHelpArticle":        {},
+	supportRPCPrefix + "RateHelpArticle":       {},
+	supportRPCPrefix + "RateTicket":            {},
 }
 
 // staffMethods need the permission from staff-service before they run.
@@ -42,6 +47,14 @@ var staffMethods = map[string]string{
 	supportRPCPrefix + "RejectTicketAction":         support.PermissionApprove,
 	supportRPCPrefix + "AdminListSupportCategories": support.PermissionConfigure,
 	supportRPCPrefix + "UpsertSupportCategory":      support.PermissionConfigure,
+	supportRPCPrefix + "AdminListHelpSections":      support.PermissionConfigure,
+	supportRPCPrefix + "UpsertHelpSection":          support.PermissionConfigure,
+	supportRPCPrefix + "AdminListHelpArticles":      support.PermissionConfigure,
+	supportRPCPrefix + "UpsertHelpArticle":          support.PermissionConfigure,
+	supportRPCPrefix + "ListMacros":                 support.PermissionReply,
+	supportRPCPrefix + "AdminListMacros":            support.PermissionConfigure,
+	supportRPCPrefix + "UpsertMacro":                support.PermissionConfigure,
+	supportRPCPrefix + "GetSupportStats":            support.PermissionRead,
 }
 
 // StaffAuthorizer asks staff-service whether a staff member may use a
@@ -141,6 +154,12 @@ func staffTargetOf(request any) string {
 		return r.GetActionId()
 	case *supportv1.UpsertSupportCategoryRequest:
 		return r.GetCategory().GetKey()
+	case *supportv1.UpsertHelpSectionRequest:
+		return r.GetSection().GetKey()
+	case *supportv1.UpsertHelpArticleRequest:
+		return r.GetArticle().GetKey()
+	case *supportv1.UpsertMacroRequest:
+		return r.GetMacro().GetKey()
 	default:
 		return ""
 	}
