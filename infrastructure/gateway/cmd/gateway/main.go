@@ -171,6 +171,13 @@ func run() int {
 		return 1
 	}
 
+	// Deleting one's own account (/v1/me/deletion).
+	if err := identityv1.RegisterAccountDeletionServiceHandler(ctx, mux, identityConn); err != nil {
+		logger.Error("failed to register the account deletion gateway handler", "error", err)
+
+		return 1
+	}
+
 	staffConn, err := dialBackend(cfg.StaffServiceAddress)
 	if err != nil {
 		logger.Error("failed to connect to staff-service", "error", err)

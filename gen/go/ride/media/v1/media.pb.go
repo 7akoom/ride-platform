@@ -840,6 +840,95 @@ func (x *ReleaseMediaRequest) GetMediaId() string {
 	return ""
 }
 
+type DeleteOwnerMediaRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	OwnerIdentityId string                 `protobuf:"bytes,1,opt,name=owner_identity_id,json=ownerIdentityId,proto3" json:"owner_identity_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *DeleteOwnerMediaRequest) Reset() {
+	*x = DeleteOwnerMediaRequest{}
+	mi := &file_ride_media_v1_media_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteOwnerMediaRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteOwnerMediaRequest) ProtoMessage() {}
+
+func (x *DeleteOwnerMediaRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_media_v1_media_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteOwnerMediaRequest.ProtoReflect.Descriptor instead.
+func (*DeleteOwnerMediaRequest) Descriptor() ([]byte, []int) {
+	return file_ride_media_v1_media_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *DeleteOwnerMediaRequest) GetOwnerIdentityId() string {
+	if x != nil {
+		return x.OwnerIdentityId
+	}
+	return ""
+}
+
+type DeleteOwnerMediaResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// How many files were deleted by this call (0 when nothing was left).
+	DeletedCount  int32 `protobuf:"varint,1,opt,name=deleted_count,json=deletedCount,proto3" json:"deleted_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteOwnerMediaResponse) Reset() {
+	*x = DeleteOwnerMediaResponse{}
+	mi := &file_ride_media_v1_media_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteOwnerMediaResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteOwnerMediaResponse) ProtoMessage() {}
+
+func (x *DeleteOwnerMediaResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_media_v1_media_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteOwnerMediaResponse.ProtoReflect.Descriptor instead.
+func (*DeleteOwnerMediaResponse) Descriptor() ([]byte, []int) {
+	return file_ride_media_v1_media_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *DeleteOwnerMediaResponse) GetDeletedCount() int32 {
+	if x != nil {
+		return x.DeletedCount
+	}
+	return 0
+}
+
 var File_ride_media_v1_media_proto protoreflect.FileDescriptor
 
 const file_ride_media_v1_media_proto_rawDesc = "" +
@@ -898,7 +987,11 @@ const file_ride_media_v1_media_proto_rawDesc = "" +
 	"\x11owner_identity_id\x18\x02 \x01(\tR\x0fownerIdentityId\x125\n" +
 	"\apurpose\x18\x03 \x01(\x0e2\x1b.ride.media.v1.MediaPurposeR\apurpose\"0\n" +
 	"\x13ReleaseMediaRequest\x12\x19\n" +
-	"\bmedia_id\x18\x01 \x01(\tR\amediaId*\xb8\x01\n" +
+	"\bmedia_id\x18\x01 \x01(\tR\amediaId\"E\n" +
+	"\x17DeleteOwnerMediaRequest\x12*\n" +
+	"\x11owner_identity_id\x18\x01 \x01(\tR\x0fownerIdentityId\"?\n" +
+	"\x18DeleteOwnerMediaResponse\x12#\n" +
+	"\rdeleted_count\x18\x01 \x01(\x05R\fdeletedCount*\xb8\x01\n" +
 	"\fMediaPurpose\x12\x1d\n" +
 	"\x19MEDIA_PURPOSE_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dMEDIA_PURPOSE_DRIVER_DOCUMENT\x10\x01\x12\x1f\n" +
@@ -911,7 +1004,7 @@ const file_ride_media_v1_media_proto_rawDesc = "" +
 	"\x12MEDIA_STATUS_READY\x10\x02\x12\x19\n" +
 	"\x15MEDIA_STATUS_REJECTED\x10\x03\x12\x18\n" +
 	"\x14MEDIA_STATUS_DELETED\x10\x04\x12\x18\n" +
-	"\x14MEDIA_STATUS_EXPIRED\x10\x052\x85\x06\n" +
+	"\x14MEDIA_STATUS_EXPIRED\x10\x052\xea\x06\n" +
 	"\fMediaService\x12t\n" +
 	"\fCreateUpload\x12\".ride.media.v1.CreateUploadRequest\x1a#.ride.media.v1.CreateUploadResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/v1/media:upload\x12~\n" +
 	"\x0eCompleteUpload\x12$.ride.media.v1.CompleteUploadRequest\x1a\x1c.ride.media.v1.MediaResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/media/{media_id}:complete\x12f\n" +
@@ -919,7 +1012,8 @@ const file_ride_media_v1_media_proto_rawDesc = "" +
 	"\x0eGetDownloadURL\x12$.ride.media.v1.GetDownloadURLRequest\x1a%.ride.media.v1.GetDownloadURLResponse\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/v1/media/{media_id}:download\x12r\n" +
 	"\vDeleteMedia\x12!.ride.media.v1.DeleteMediaRequest\x1a\".ride.media.v1.DeleteMediaResponse\"\x1c\x82\xd3\xe4\x93\x02\x16*\x14/v1/media/{media_id}\x12J\n" +
 	"\tHoldMedia\x12\x1f.ride.media.v1.HoldMediaRequest\x1a\x1c.ride.media.v1.MediaResponse\x12P\n" +
-	"\fReleaseMedia\x12\".ride.media.v1.ReleaseMediaRequest\x1a\x1c.ride.media.v1.MediaResponseB>Z<github.com/7akoom/ride-platform/gen/go/ride/media/v1;mediav1b\x06proto3"
+	"\fReleaseMedia\x12\".ride.media.v1.ReleaseMediaRequest\x1a\x1c.ride.media.v1.MediaResponse\x12c\n" +
+	"\x10DeleteOwnerMedia\x12&.ride.media.v1.DeleteOwnerMediaRequest\x1a'.ride.media.v1.DeleteOwnerMediaResponseB>Z<github.com/7akoom/ride-platform/gen/go/ride/media/v1;mediav1b\x06proto3"
 
 var (
 	file_ride_media_v1_media_proto_rawDescOnce sync.Once
@@ -934,36 +1028,38 @@ func file_ride_media_v1_media_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_media_v1_media_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_ride_media_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_ride_media_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_ride_media_v1_media_proto_goTypes = []any{
-	(MediaPurpose)(0),              // 0: ride.media.v1.MediaPurpose
-	(MediaStatus)(0),               // 1: ride.media.v1.MediaStatus
-	(*Media)(nil),                  // 2: ride.media.v1.Media
-	(*CreateUploadRequest)(nil),    // 3: ride.media.v1.CreateUploadRequest
-	(*CreateUploadResponse)(nil),   // 4: ride.media.v1.CreateUploadResponse
-	(*CompleteUploadRequest)(nil),  // 5: ride.media.v1.CompleteUploadRequest
-	(*MediaResponse)(nil),          // 6: ride.media.v1.MediaResponse
-	(*GetMediaRequest)(nil),        // 7: ride.media.v1.GetMediaRequest
-	(*GetDownloadURLRequest)(nil),  // 8: ride.media.v1.GetDownloadURLRequest
-	(*GetDownloadURLResponse)(nil), // 9: ride.media.v1.GetDownloadURLResponse
-	(*DeleteMediaRequest)(nil),     // 10: ride.media.v1.DeleteMediaRequest
-	(*DeleteMediaResponse)(nil),    // 11: ride.media.v1.DeleteMediaResponse
-	(*HoldMediaRequest)(nil),       // 12: ride.media.v1.HoldMediaRequest
-	(*ReleaseMediaRequest)(nil),    // 13: ride.media.v1.ReleaseMediaRequest
-	nil,                            // 14: ride.media.v1.CreateUploadResponse.UploadHeadersEntry
-	(*timestamppb.Timestamp)(nil),  // 15: google.protobuf.Timestamp
+	(MediaPurpose)(0),                // 0: ride.media.v1.MediaPurpose
+	(MediaStatus)(0),                 // 1: ride.media.v1.MediaStatus
+	(*Media)(nil),                    // 2: ride.media.v1.Media
+	(*CreateUploadRequest)(nil),      // 3: ride.media.v1.CreateUploadRequest
+	(*CreateUploadResponse)(nil),     // 4: ride.media.v1.CreateUploadResponse
+	(*CompleteUploadRequest)(nil),    // 5: ride.media.v1.CompleteUploadRequest
+	(*MediaResponse)(nil),            // 6: ride.media.v1.MediaResponse
+	(*GetMediaRequest)(nil),          // 7: ride.media.v1.GetMediaRequest
+	(*GetDownloadURLRequest)(nil),    // 8: ride.media.v1.GetDownloadURLRequest
+	(*GetDownloadURLResponse)(nil),   // 9: ride.media.v1.GetDownloadURLResponse
+	(*DeleteMediaRequest)(nil),       // 10: ride.media.v1.DeleteMediaRequest
+	(*DeleteMediaResponse)(nil),      // 11: ride.media.v1.DeleteMediaResponse
+	(*HoldMediaRequest)(nil),         // 12: ride.media.v1.HoldMediaRequest
+	(*ReleaseMediaRequest)(nil),      // 13: ride.media.v1.ReleaseMediaRequest
+	(*DeleteOwnerMediaRequest)(nil),  // 14: ride.media.v1.DeleteOwnerMediaRequest
+	(*DeleteOwnerMediaResponse)(nil), // 15: ride.media.v1.DeleteOwnerMediaResponse
+	nil,                              // 16: ride.media.v1.CreateUploadResponse.UploadHeadersEntry
+	(*timestamppb.Timestamp)(nil),    // 17: google.protobuf.Timestamp
 }
 var file_ride_media_v1_media_proto_depIdxs = []int32{
 	0,  // 0: ride.media.v1.Media.purpose:type_name -> ride.media.v1.MediaPurpose
 	1,  // 1: ride.media.v1.Media.status:type_name -> ride.media.v1.MediaStatus
-	15, // 2: ride.media.v1.Media.created_at:type_name -> google.protobuf.Timestamp
-	15, // 3: ride.media.v1.Media.completed_at:type_name -> google.protobuf.Timestamp
+	17, // 2: ride.media.v1.Media.created_at:type_name -> google.protobuf.Timestamp
+	17, // 3: ride.media.v1.Media.completed_at:type_name -> google.protobuf.Timestamp
 	0,  // 4: ride.media.v1.CreateUploadRequest.purpose:type_name -> ride.media.v1.MediaPurpose
 	2,  // 5: ride.media.v1.CreateUploadResponse.media:type_name -> ride.media.v1.Media
-	14, // 6: ride.media.v1.CreateUploadResponse.upload_headers:type_name -> ride.media.v1.CreateUploadResponse.UploadHeadersEntry
-	15, // 7: ride.media.v1.CreateUploadResponse.expires_at:type_name -> google.protobuf.Timestamp
+	16, // 6: ride.media.v1.CreateUploadResponse.upload_headers:type_name -> ride.media.v1.CreateUploadResponse.UploadHeadersEntry
+	17, // 7: ride.media.v1.CreateUploadResponse.expires_at:type_name -> google.protobuf.Timestamp
 	2,  // 8: ride.media.v1.MediaResponse.media:type_name -> ride.media.v1.Media
-	15, // 9: ride.media.v1.GetDownloadURLResponse.expires_at:type_name -> google.protobuf.Timestamp
+	17, // 9: ride.media.v1.GetDownloadURLResponse.expires_at:type_name -> google.protobuf.Timestamp
 	0,  // 10: ride.media.v1.HoldMediaRequest.purpose:type_name -> ride.media.v1.MediaPurpose
 	3,  // 11: ride.media.v1.MediaService.CreateUpload:input_type -> ride.media.v1.CreateUploadRequest
 	5,  // 12: ride.media.v1.MediaService.CompleteUpload:input_type -> ride.media.v1.CompleteUploadRequest
@@ -972,15 +1068,17 @@ var file_ride_media_v1_media_proto_depIdxs = []int32{
 	10, // 15: ride.media.v1.MediaService.DeleteMedia:input_type -> ride.media.v1.DeleteMediaRequest
 	12, // 16: ride.media.v1.MediaService.HoldMedia:input_type -> ride.media.v1.HoldMediaRequest
 	13, // 17: ride.media.v1.MediaService.ReleaseMedia:input_type -> ride.media.v1.ReleaseMediaRequest
-	4,  // 18: ride.media.v1.MediaService.CreateUpload:output_type -> ride.media.v1.CreateUploadResponse
-	6,  // 19: ride.media.v1.MediaService.CompleteUpload:output_type -> ride.media.v1.MediaResponse
-	6,  // 20: ride.media.v1.MediaService.GetMedia:output_type -> ride.media.v1.MediaResponse
-	9,  // 21: ride.media.v1.MediaService.GetDownloadURL:output_type -> ride.media.v1.GetDownloadURLResponse
-	11, // 22: ride.media.v1.MediaService.DeleteMedia:output_type -> ride.media.v1.DeleteMediaResponse
-	6,  // 23: ride.media.v1.MediaService.HoldMedia:output_type -> ride.media.v1.MediaResponse
-	6,  // 24: ride.media.v1.MediaService.ReleaseMedia:output_type -> ride.media.v1.MediaResponse
-	18, // [18:25] is the sub-list for method output_type
-	11, // [11:18] is the sub-list for method input_type
+	14, // 18: ride.media.v1.MediaService.DeleteOwnerMedia:input_type -> ride.media.v1.DeleteOwnerMediaRequest
+	4,  // 19: ride.media.v1.MediaService.CreateUpload:output_type -> ride.media.v1.CreateUploadResponse
+	6,  // 20: ride.media.v1.MediaService.CompleteUpload:output_type -> ride.media.v1.MediaResponse
+	6,  // 21: ride.media.v1.MediaService.GetMedia:output_type -> ride.media.v1.MediaResponse
+	9,  // 22: ride.media.v1.MediaService.GetDownloadURL:output_type -> ride.media.v1.GetDownloadURLResponse
+	11, // 23: ride.media.v1.MediaService.DeleteMedia:output_type -> ride.media.v1.DeleteMediaResponse
+	6,  // 24: ride.media.v1.MediaService.HoldMedia:output_type -> ride.media.v1.MediaResponse
+	6,  // 25: ride.media.v1.MediaService.ReleaseMedia:output_type -> ride.media.v1.MediaResponse
+	15, // 26: ride.media.v1.MediaService.DeleteOwnerMedia:output_type -> ride.media.v1.DeleteOwnerMediaResponse
+	19, // [19:27] is the sub-list for method output_type
+	11, // [11:19] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
 	11, // [11:11] is the sub-list for extension extendee
 	0,  // [0:11] is the sub-list for field type_name
@@ -997,7 +1095,7 @@ func file_ride_media_v1_media_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_media_v1_media_proto_rawDesc), len(file_ride_media_v1_media_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   13,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

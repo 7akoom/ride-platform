@@ -9,6 +9,7 @@ import (
 	"time"
 
 	earningsapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/earnings"
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/erasure"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/events"
 	incentivesapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/incentives"
 	operationsapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/operations"
@@ -346,6 +347,20 @@ func run() int {
 		return 1
 	}
 	defer fareSubscription.Stop()
+
+	// Deleted accounts: identity-service tells this service to erase its data.
+	erasureSubscription, err := subscribeAccountErasure(
+		ctx,
+		natsConnection.JetStream(),
+		erasure.NewHandler(postgresrepo.NewErasureStore(walletRepository), logger),
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to account deletions", "error", err)
+
+		return 1
+	}
+	defer erasureSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

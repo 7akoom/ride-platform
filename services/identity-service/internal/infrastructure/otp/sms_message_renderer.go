@@ -98,6 +98,13 @@ func (r *DefaultSMSMessageRenderer) renderEnglishSMS(
 			code,
 		), nil
 
+	case auth.OTPPurposeDeleteAccount:
+		return fmt.Sprintf(
+			"%s code to DELETE your account: %s. If you did not ask for this, ignore it and do not share the code.",
+			r.brandName,
+			code,
+		), nil
+
 	default:
 		return "", auth.ErrInvalidOTPPurpose
 	}
@@ -129,6 +136,13 @@ func (r *DefaultSMSMessageRenderer) renderArabicSMS(
 			code,
 		), nil
 
+	case auth.OTPPurposeDeleteAccount:
+		return fmt.Sprintf(
+			"رمز %s لحذف حسابك هو %s. إذا لم تطلب ذلك فتجاهل هذه الرسالة ولا تشارك الرمز مع أي شخص.",
+			r.brandName,
+			code,
+		), nil
+
 	default:
 		return "", auth.ErrInvalidOTPPurpose
 	}
@@ -156,6 +170,13 @@ func (r *DefaultSMSMessageRenderer) renderKurdishSMS(
 	case auth.OTPPurposeUnlinkIdentifier:
 		return fmt.Sprintf(
 			"کۆدی %s بۆ سڕینەوەی شێوازی چوونەژوورەوە: %s. ئەم کۆدە لەگەڵ کەسێک هاوبەش مەکە.",
+			r.brandName,
+			code,
+		), nil
+
+	case auth.OTPPurposeDeleteAccount:
+		return fmt.Sprintf(
+			"کۆدی %s بۆ سڕینەوەی هەژمارەکەت: %s. ئەگەر داوات نەکردووە، گوێی پێ مەدە و کۆدەکە لەگەڵ کەس هاوبەش مەکە.",
 			r.brandName,
 			code,
 		), nil

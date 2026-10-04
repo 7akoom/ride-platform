@@ -298,6 +298,46 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+const deleteOwnerBatch = 100
+
+// DeleteOwner deletes every file of an identity, held or not: its account is
+// being erased, so nothing may keep a file of it. It works through them in
+// batches and returns how many it deleted; a failure leaves the rest for the
+// next call (the caller retries until it succeeds).
+func (s *Service) DeleteOwner(ctx context.Context, ownerIdentityID string) (int, error) {
+	owner := strings.ToLower(strings.TrimSpace(ownerIdentityID))
+	if !uuidShape.MatchString(owner) {
+		return 0, ErrOwnerRequired
+	}
+
+	deleted := 0
+
+	for {
+		batch, err := s.repository.ListLiveByOwner(ctx, owner, deleteOwnerBatch)
+		if err != nil {
+			return deleted, fmt.Errorf("list the owner's files: %w", err)
+		}
+
+		if len(batch) == 0 {
+			return deleted, nil
+		}
+
+		for _, record := range batch {
+			if record.Held {
+				if _, err := s.repository.SetHeld(ctx, record.ID, false); err != nil && !errors.Is(err, ErrInvalidState) {
+					return deleted, fmt.Errorf("release %s: %w", record.ID, err)
+				}
+			}
+
+			if err := s.Delete(ctx, record.ID); err != nil {
+				return deleted, fmt.Errorf("delete %s: %w", record.ID, err)
+			}
+
+			deleted++
+		}
+	}
+}
+
 // deletedOrHeld explains a lost race in Delete: a concurrent Hold wins with
 // ErrHeld, a concurrent Delete or expiry is success.
 func (s *Service) deletedOrHeld(ctx context.Context, id string) error {

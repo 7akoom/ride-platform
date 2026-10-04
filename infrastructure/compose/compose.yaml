@@ -692,7 +692,16 @@ services:
       METRICS_ADDRESS: ":9090"
       DATABASE_URL: postgres://${IDENTITY_DB_USER}:${IDENTITY_DB_PASSWORD}@identity-postgres:5432/${IDENTITY_DB_NAME}?sslmode=disable
       VALKEY_ADDRESS: identity-valkey:6379
+      # identity events (identity.deleted...) go out through NATS like every
+      # other service's; without this the outbox kept retrying localhost.
+      NATS_URL: nats://nats:4222
       TRUSTED_PROXY_CIDRS: 172.16.0.0/12,10.0.0.0/8,192.168.0.0/16,127.0.0.0/8
+      # Account deletion asks these what stands in the way, and erases the files.
+      RIDER_SERVICE_ADDRESS: rider-service:50052
+      DRIVER_SERVICE_ADDRESS: driver-service:50053
+      TRIP_SERVICE_ADDRESS: trip-service:50055
+      WALLET_SERVICE_ADDRESS: wallet-service:50058
+      MEDIA_SERVICE_ADDRESS: media-service:50062
 
     volumes:
       - ../../services/identity-service/.local/keys:/app/.local/keys:ro
@@ -701,6 +710,8 @@ services:
       identity-postgres:
         condition: service_healthy
       identity-valkey:
+        condition: service_healthy
+      nats:
         condition: service_healthy
 
     ports:

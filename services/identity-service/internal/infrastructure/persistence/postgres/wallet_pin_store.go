@@ -190,7 +190,10 @@ func (s *WalletPinStore) FindActiveByPhone(ctx context.Context, phoneNumber stri
 		`SELECT i.id::text
 		 FROM identity_identifiers ii
 		 JOIN identities i ON i.id = ii.identity_id
-		 WHERE ii.identifier_type = 'phone' AND ii.normalized_value = $1 AND i.status = 'active'`,
+		 WHERE ii.identifier_type = 'phone' AND ii.normalized_value = $1 AND i.status = 'active'
+		   AND NOT EXISTS (
+		       SELECT 1 FROM account_deletions d WHERE d.identity_id = i.id AND d.status = 'pending'
+		   )`,
 		phoneNumber,
 	).Scan(&identityID)
 

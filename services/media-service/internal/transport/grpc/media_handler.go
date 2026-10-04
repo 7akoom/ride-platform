@@ -142,6 +142,18 @@ func (h *MediaHandler) ReleaseMedia(
 	return &mediav1.MediaResponse{Media: toProtoMedia(released)}, nil
 }
 
+func (h *MediaHandler) DeleteOwnerMedia(
+	ctx context.Context,
+	request *mediav1.DeleteOwnerMediaRequest,
+) (*mediav1.DeleteOwnerMediaResponse, error) {
+	deleted, err := h.service.DeleteOwner(ctx, request.GetOwnerIdentityId())
+	if err != nil {
+		return nil, h.mapError(err)
+	}
+
+	return &mediav1.DeleteOwnerMediaResponse{DeletedCount: int32(deleted)}, nil
+}
+
 func (h *MediaHandler) mapError(err error) error {
 	switch {
 	case errors.Is(err, media.ErrInvalidPurpose),

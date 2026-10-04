@@ -13,6 +13,7 @@ import (
 
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/documents"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/driver"
+	"github.com/7akoom/ride-platform/services/driver-service/internal/application/erasure"
 	outboxapp "github.com/7akoom/ride-platform/services/driver-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/profile"
 	"github.com/7akoom/ride-platform/services/driver-service/internal/application/ratings"
@@ -218,6 +219,20 @@ func run() int {
 		return 1
 	}
 	defer ratingSubscription.Stop()
+
+	// Deleted accounts: identity-service tells this service to erase its data.
+	erasureSubscription, err := subscribeAccountErasure(
+		ctx,
+		natsConnection.JetStream(),
+		erasure.NewHandler(postgresrepo.NewErasureStore(pool), logger),
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to account deletions", "error", err)
+
+		return 1
+	}
+	defer erasureSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

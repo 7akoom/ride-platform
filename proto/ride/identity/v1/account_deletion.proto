@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package ride.identity.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "ride/identity/v1/identity.proto";
+
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1";
+
+// AccountDeletionService deletes the caller's account, as the big ride apps
+// do: the person confirms with a fresh code, every session ends at once, and
+// after a grace period (ACCOUNT_DELETION_GRACE_PERIOD, 30 days) the personal
+// data is erased everywhere while trips, money movements and tickets stay
+// without pointing at anyone. Signing in again during the grace period cancels
+// the deletion. The same phone signing in after it gets a new, empty account.
+service AccountDeletionService {
+  // What deleting would do now: whether it is pending, and what stands in the
+  // way (an active trip, a booking, unpaid fees, a negative balance, an open
+  // payout) or must be accepted (a positive balance that is lost).
+  rpc GetAccountDeletion(GetAccountDeletionRequest) returns (AccountDeletionResponse) {
+    option (google.api.http) = {
+      get: "/v1/me/deletion"
+    };
+  }
+
+  // Sends the code that confirms the deletion to one of the account's own
+  // sign-in methods. Refused (FAILED_PRECONDITION) while something stands in
+  // the way.
+  rpc RequestAccountDeletionOTP(RequestAccountDeletionOTPRequest) returns (RequestAccountDeletionOTPResponse) {
+    option (google.api.http) = {
+      post: "/v1/me/deletion:request-otp"
+      body: "*"
+    };
+  }
+
+  // Confirms with the code. The account stops at once (every session ends)
+  // and is erased after the grace period.
+  rpc ConfirmAccountDeletion(ConfirmAccountDeletionRequest) returns (AccountDeletionResponse) {
+    option (google.api.http) = {
+      post: "/v1/me/deletion:confirm"
+      body: "*"
+    };
+  }
+}
+
+enum AccountDeletionStatus {
+  ACCOUNT_DELETION_STATUS_UNSPECIFIED = 0;
+  // No deletion asked (or the last one was cancelled by signing in).
+  ACCOUNT_DELETION_STATUS_NONE = 1;
+  // Asked: erased at purge_after unless the person signs in before.
+  ACCOUNT_DELETION_STATUS_PENDING = 2;
+}
+
+enum AccountDeletionBlocker {
+  ACCOUNT_DELETION_BLOCKER_UNSPECIFIED = 0;
+  // A trip requested, accepted or under way, as rider or as driver.
+  ACCOUNT_DELETION_BLOCKER_ACTIVE_TRIP = 1;
+  // An upcoming booked trip: cancel it first.
+  ACCOUNT_DELETION_BLOCKER_SCHEDULED_TRIP = 2;
+  // Cancellation or no-show fees not paid yet.
+  ACCOUNT_DELETION_BLOCKER_UNPAID_FEES = 3;
+  // A driver's wallet below zero (commission owed).
+  ACCOUNT_DELETION_BLOCKER_NEGATIVE_BALANCE = 4;
+  // A driver's payout request not paid or rejected yet.
+  ACCOUNT_DELETION_BLOCKER_OPEN_PAYOUT = 5;
+}
+
+// ForfeitedBalance is money in one of the person's wallets that is lost with
+// the account (a driver should ask for a payout first).
+message ForfeitedBalance {
+  // rider or driver.
+  string owner_type = 1;
+  // Decimal string.
+  string amount = 2;
+  string currency_code = 3;
+}
+
+message AccountDeletion {
+  AccountDeletionStatus status = 1;
+  // Set while pending.
+  google.protobuf.Timestamp requested_at = 2;
+  google.protobuf.Timestamp purge_after = 3;
+  // What stands in the way now; deleting is possible when empty.
+  repeated AccountDeletionBlocker blockers = 4;
+  // Positive balances lost with the account: confirming needs
+  // accept_balance_loss when there is any.
+  repeated ForfeitedBalance forfeited_balances = 5;
+  // How long the grace period is, in days.
+  int32 grace_period_days = 6;
+}
+
+message GetAccountDeletionRequest {}
+
+message AccountDeletionResponse {
+  AccountDeletion deletion = 1;
+}
+
+message RequestAccountDeletionOTPRequest {
+  OTPDeliveryChannel delivery_channel = 1;
+}
+
+message RequestAccountDeletionOTPResponse {
+  string challenge_id = 1;
+  int32 expires_in_seconds = 2;
+}
+
+message ConfirmAccountDeletionRequest {
+  string challenge_id = 1;
+  string code = 2;
+  // Required when there are forfeited_balances.
+  bool accept_balance_loss = 3;
+}

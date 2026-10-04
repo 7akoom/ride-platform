@@ -27,6 +27,15 @@ const (
 	IdentityDomainEventDisabled IdentityDomainEventType = "identity.disabled"
 
 	IdentityDomainEventReactivated IdentityDomainEventType = "identity.reactivated"
+
+	// Account deletion: asked (sessions ended, grace period running), cancelled
+	// by signing in again, and done (personal data erased; the other services
+	// erase theirs on this event).
+	IdentityDomainEventDeletionRequested IdentityDomainEventType = "identity.deletion_requested"
+
+	IdentityDomainEventDeletionCancelled IdentityDomainEventType = "identity.deletion_cancelled"
+
+	IdentityDomainEventDeleted IdentityDomainEventType = "identity.deleted"
 )
 
 const IdentityDomainEventSchemaVersion int16 = 1

@@ -50,6 +50,7 @@ waiting.
 | `CompleteUpload`, `DeleteMedia` | `POST /v1/media/{id}:complete`, `DELETE /v1/media/{id}` | the owner |
 | `GetMedia`, `GetDownloadURL` | `GET /v1/media/{id}`, `GET /v1/media/{id}:download` | the owner, or staff with `media.read` (audited) |
 | `HoldMedia`, `ReleaseMedia` | none | services only (internal token) |
+| `DeleteOwnerMedia` | none | services only: identity-service erasing a deleted account deletes every file of the identity, held or not |
 
 A file that does not exist answers like someone else's file (`403`), so ids
 cannot be probed.

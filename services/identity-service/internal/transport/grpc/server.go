@@ -98,6 +98,15 @@ func (s *Server) RegisterAccountStatusService(handler *AccountStatusHandler) {
 	identityv1.RegisterIdentityAccountServiceServer(s.grpcServer, handler)
 }
 
+// RegisterAccountDeletionService registers /v1/me/deletion.
+func (s *Server) RegisterAccountDeletionService(handler *AccountDeletionHandler) {
+	if handler == nil {
+		panic("account deletion handler is required")
+	}
+
+	identityv1.RegisterAccountDeletionServiceServer(s.grpcServer, handler)
+}
+
 func (s *Server) Run() error {
 	listener, err := net.Listen("tcp", s.address)
 	if err != nil {

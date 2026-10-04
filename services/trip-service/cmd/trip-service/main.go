@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/activity"
+	"github.com/7akoom/ride-platform/services/trip-service/internal/application/erasure"
 	outboxapp "github.com/7akoom/ride-platform/services/trip-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/schedule"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/share"
@@ -311,6 +312,20 @@ func run() int {
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterTripService(tripHandler)
+
+	// Deleted accounts: identity-service tells this service to erase its data.
+	erasureSubscription, err := subscribeAccountErasure(
+		ctx,
+		natsConnection.JetStream(),
+		erasure.NewHandler(postgresrepo.NewErasureStore(pool), logger),
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to account deletions", "error", err)
+
+		return 1
+	}
+	defer erasureSubscription.Stop()
 
 	outboxDone := make(chan struct{})
 

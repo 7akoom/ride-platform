@@ -264,6 +264,16 @@ func (s *SessionStore) Create(
 			auth.ErrIdentityInactive
 	}
 
+	// Signing in again during an account deletion's grace period cancels it,
+	// in the same transaction as the new session.
+	if err := cancelPendingAccountDeletionInTransaction(
+		ctx,
+		tx,
+		input.IdentityID,
+	); err != nil {
+		return IssuedSession{}, err
+	}
+
 	const sessionQuery = `
 		INSERT INTO auth_sessions (
 			id,

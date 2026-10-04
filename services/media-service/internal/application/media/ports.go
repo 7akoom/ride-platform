@@ -32,6 +32,10 @@ type Repository interface {
 	ListUploadsToClear(ctx context.Context, cutoff time.Time, limit int) ([]Media, error)
 	// MarkUploadCleared records that a record's incoming object is gone.
 	MarkUploadCleared(ctx context.Context, id string) error
+
+	// ListLiveByOwner returns an owner's records that are not deleted or
+	// expired yet, oldest first.
+	ListLiveByOwner(ctx context.Context, ownerIdentityID string, limit int) ([]Media, error)
 }
 
 // ObjectStore holds the bytes. Stat and Read return ErrNotUploaded for an

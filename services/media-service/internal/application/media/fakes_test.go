@@ -144,6 +144,13 @@ func (r *memoryRepository) ListUploadsToClear(_ context.Context, cutoff time.Tim
 	}, limit), nil
 }
 
+func (r *memoryRepository) ListLiveByOwner(_ context.Context, owner string, limit int) ([]Media, error) {
+	return r.list(func(m Media) bool {
+		return m.OwnerIdentityID == owner &&
+			(m.Status == StatusPending || m.Status == StatusReady || m.Status == StatusRejected)
+	}, limit), nil
+}
+
 func (r *memoryRepository) MarkUploadCleared(_ context.Context, id string) error {
 	_, err := r.move(id, func(Media) bool { return true }, func(m *Media) { m.UploadCleared = true })
 

@@ -15,11 +15,15 @@
       "name": "DriverService"
     },
     {
-      "name": "IdentityAccountService",
-      "description": "IdentityAccountService suspends and reactivates people (internal only:\nsupport-service, with the internal service token, after a staff member with\nsupport.suspend asked; no route from outside). Suspending revokes every\nsession at once and refuses sign-in until reactivated."
+      "name": "IdentityService"
     },
     {
-      "name": "IdentityService"
+      "name": "AccountDeletionService",
+      "description": "AccountDeletionService deletes the caller's account, as the big ride apps\ndo: the person confirms with a fresh code, every session ends at once, and\nafter a grace period (ACCOUNT_DELETION_GRACE_PERIOD, 30 days) the personal\ndata is erased everywhere while trips, money movements and tickets stay\nwithout pointing at anyone. Signing in again during the grace period cancels\nthe deletion. The same phone signing in after it gets a new, empty account."
+    },
+    {
+      "name": "IdentityAccountService",
+      "description": "IdentityAccountService suspends and reactivates people (internal only:\nsupport-service, with the internal service token, after a staff member with\nsupport.suspend asked; no route from outside). Suspending revokes every\nsession at once and refuses sign-in until reactivated."
     },
     {
       "name": "WalletPinService",
@@ -5438,6 +5442,95 @@
         ]
       }
     },
+    "/v1/me/deletion": {
+      "get": {
+        "summary": "What deleting would do now: whether it is pending, and what stands in the\nway (an active trip, a booking, unpaid fees, a negative balance, an open\npayout) or must be accepted (a positive balance that is lost).",
+        "operationId": "AccountDeletionService_GetAccountDeletion",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AccountDeletionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "AccountDeletionService"
+        ]
+      }
+    },
+    "/v1/me/deletion:confirm": {
+      "post": {
+        "summary": "Confirms with the code. The account stops at once (every session ends)\nand is erased after the grace period.",
+        "operationId": "AccountDeletionService_ConfirmAccountDeletion",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AccountDeletionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ConfirmAccountDeletionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AccountDeletionService"
+        ]
+      }
+    },
+    "/v1/me/deletion:request-otp": {
+      "post": {
+        "summary": "Sends the code that confirms the deletion to one of the account's own\nsign-in methods. Refused (FAILED_PRECONDITION) while something stands in\nthe way.",
+        "operationId": "AccountDeletionService_RequestAccountDeletionOTP",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RequestAccountDeletionOTPResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RequestAccountDeletionOTPRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AccountDeletionService"
+        ]
+      }
+    },
     "/v1/me/identifiers/link": {
       "post": {
         "summary": "VerifyIdentifierLinkOTP completes linking with the code.",
@@ -10353,6 +10446,74 @@
         }
       }
     },
+    "v1AccountDeletion": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v1AccountDeletionStatus"
+        },
+        "requestedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Set while pending."
+        },
+        "purgeAfter": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1AccountDeletionBlocker"
+          },
+          "description": "What stands in the way now; deleting is possible when empty."
+        },
+        "forfeitedBalances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ForfeitedBalance"
+          },
+          "description": "Positive balances lost with the account: confirming needs\naccept_balance_loss when there is any."
+        },
+        "gracePeriodDays": {
+          "type": "integer",
+          "format": "int32",
+          "description": "How long the grace period is, in days."
+        }
+      }
+    },
+    "v1AccountDeletionBlocker": {
+      "type": "string",
+      "enum": [
+        "ACCOUNT_DELETION_BLOCKER_UNSPECIFIED",
+        "ACCOUNT_DELETION_BLOCKER_ACTIVE_TRIP",
+        "ACCOUNT_DELETION_BLOCKER_SCHEDULED_TRIP",
+        "ACCOUNT_DELETION_BLOCKER_UNPAID_FEES",
+        "ACCOUNT_DELETION_BLOCKER_NEGATIVE_BALANCE",
+        "ACCOUNT_DELETION_BLOCKER_OPEN_PAYOUT"
+      ],
+      "default": "ACCOUNT_DELETION_BLOCKER_UNSPECIFIED",
+      "description": " - ACCOUNT_DELETION_BLOCKER_ACTIVE_TRIP: A trip requested, accepted or under way, as rider or as driver.\n - ACCOUNT_DELETION_BLOCKER_SCHEDULED_TRIP: An upcoming booked trip: cancel it first.\n - ACCOUNT_DELETION_BLOCKER_UNPAID_FEES: Cancellation or no-show fees not paid yet.\n - ACCOUNT_DELETION_BLOCKER_NEGATIVE_BALANCE: A driver's wallet below zero (commission owed).\n - ACCOUNT_DELETION_BLOCKER_OPEN_PAYOUT: A driver's payout request not paid or rejected yet."
+    },
+    "v1AccountDeletionResponse": {
+      "type": "object",
+      "properties": {
+        "deletion": {
+          "$ref": "#/definitions/v1AccountDeletion"
+        }
+      }
+    },
+    "v1AccountDeletionStatus": {
+      "type": "string",
+      "enum": [
+        "ACCOUNT_DELETION_STATUS_UNSPECIFIED",
+        "ACCOUNT_DELETION_STATUS_NONE",
+        "ACCOUNT_DELETION_STATUS_PENDING"
+      ],
+      "default": "ACCOUNT_DELETION_STATUS_UNSPECIFIED",
+      "description": " - ACCOUNT_DELETION_STATUS_NONE: No deletion asked (or the last one was cancelled by signing in).\n - ACCOUNT_DELETION_STATUS_PENDING: Asked: erased at purge_after unless the person signs in before."
+    },
     "v1ActionKind": {
       "type": "string",
       "enum": [
@@ -10670,6 +10831,21 @@
       "properties": {
         "trip": {
           "$ref": "#/definitions/v1Trip"
+        }
+      }
+    },
+    "v1ConfirmAccountDeletionRequest": {
+      "type": "object",
+      "properties": {
+        "challengeId": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "acceptBalanceLoss": {
+          "type": "boolean",
+          "description": "Required when there are forfeited_balances."
         }
       }
     },
@@ -11950,6 +12126,23 @@
         }
       },
       "description": "Money fields are decimal strings (e.g. \"2451.6\"), never double —\nfloat64 in protobuf would reintroduce exactly the precision problem\nthe underlying NUMERIC columns exist to avoid (same convention as\nwallet.proto). distance_km/duration_minutes stay double: physical\nmeasurements from OSRM, not currency."
+    },
+    "v1ForfeitedBalance": {
+      "type": "object",
+      "properties": {
+        "ownerType": {
+          "type": "string",
+          "description": "rider or driver."
+        },
+        "amount": {
+          "type": "string",
+          "description": "Decimal string."
+        },
+        "currencyCode": {
+          "type": "string"
+        }
+      },
+      "description": "ForfeitedBalance is money in one of the person's wallets that is lost with\nthe account (a driver should ask for a payout first)."
     },
     "v1FunnelDayPoint": {
       "type": "object",
@@ -14359,6 +14552,26 @@
     },
     "v1RejectOfferResponse": {
       "type": "object"
+    },
+    "v1RequestAccountDeletionOTPRequest": {
+      "type": "object",
+      "properties": {
+        "deliveryChannel": {
+          "$ref": "#/definitions/v1OTPDeliveryChannel"
+        }
+      }
+    },
+    "v1RequestAccountDeletionOTPResponse": {
+      "type": "object",
+      "properties": {
+        "challengeId": {
+          "type": "string"
+        },
+        "expiresInSeconds": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
     },
     "v1RequestIdentifierLinkOTPRequest": {
       "type": "object",

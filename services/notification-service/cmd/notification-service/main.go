@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/7akoom/ride-platform/services/notification-service/internal/application/erasure"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/application/events"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/application/notification"
 	"github.com/7akoom/ride-platform/services/notification-service/internal/config"
@@ -244,6 +245,20 @@ func run() int {
 		return 1
 	}
 	defer arrivalSubscription.Stop()
+
+	// Deleted accounts: identity-service tells this service to erase its data.
+	erasureSubscription, err := subscribeAccountErasure(
+		ctx,
+		natsConnection.JetStream(),
+		erasure.NewHandler(postgresrepo.NewErasureStore(pool), logger),
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to account deletions", "error", err)
+
+		return 1
+	}
+	defer erasureSubscription.Stop()
 
 	pricingSubscription, err := natsinfra.SubscribeDurable(
 		ctx,

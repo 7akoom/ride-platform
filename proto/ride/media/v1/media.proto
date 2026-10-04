@@ -58,6 +58,9 @@ service MediaService {
   rpc HoldMedia(HoldMediaRequest) returns (MediaResponse);
   // ReleaseMedia lets the owner delete a held file again. Internal only.
   rpc ReleaseMedia(ReleaseMediaRequest) returns (MediaResponse);
+  // DeleteOwnerMedia deletes every file of one identity, held or not: called
+  // by identity-service when an account is erased. Internal only.
+  rpc DeleteOwnerMedia(DeleteOwnerMediaRequest) returns (DeleteOwnerMediaResponse);
 }
 
 enum MediaPurpose {
@@ -158,4 +161,13 @@ message HoldMediaRequest {
 
 message ReleaseMediaRequest {
   string media_id = 1;
+}
+
+message DeleteOwnerMediaRequest {
+  string owner_identity_id = 1;
+}
+
+message DeleteOwnerMediaResponse {
+  // How many files were deleted by this call (0 when nothing was left).
+  int32 deleted_count = 1;
 }

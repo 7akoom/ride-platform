@@ -191,6 +191,18 @@ func (r *MediaRepository) ListStalePending(ctx context.Context, cutoff time.Time
 	)
 }
 
+func (r *MediaRepository) ListLiveByOwner(ctx context.Context, ownerIdentityID string, limit int) ([]media.Media, error) {
+	return r.list(
+		ctx,
+		`SELECT `+mediaColumns+` FROM media_objects
+		 WHERE owner_identity_id = $1 AND status IN ('pending', 'ready', 'rejected')
+		 ORDER BY created_at, id
+		 LIMIT $2`,
+		ownerIdentityID,
+		limit,
+	)
+}
+
 func (r *MediaRepository) list(ctx context.Context, query string, args ...any) ([]media.Media, error) {
 	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {

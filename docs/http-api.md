@@ -43,6 +43,9 @@ ClaimQuote, dispatch, analytics, AuthorizeStaffAction...).
 | POST | `/v1/me/identifiers/link` | the user | finish linking with the code |
 | POST | `/v1/me/identifiers/unlink-otp` | the user | start unlinking |
 | POST | `/v1/me/identifiers/unlink` | the user | finish unlinking with the code |
+| GET | `/v1/me/deletion` | the user | `deletion`: `status` (`ACCOUNT_DELETION_STATUS_NONE`/`_PENDING`, with `requestedAt` and `purgeAfter`), `blockers` (`ACCOUNT_DELETION_BLOCKER_ACTIVE_TRIP`, `_SCHEDULED_TRIP`, `_UNPAID_FEES`, `_NEGATIVE_BALANCE`, `_OPEN_PAYOUT`), `forfeitedBalances` (`ownerType`, `amount`, `currencyCode`) and `gracePeriodDays`. 503 when a service could not be asked |
+| POST | `/v1/me/deletion:request-otp` | the user | `deliveryChannel` (optional): sends a code to the account's own phone (or email). 400 `FAILED_PRECONDITION` while something stands in the way or a deletion is pending; 429 as for sign-in codes |
+| POST | `/v1/me/deletion:confirm` | the user | `challengeId`, `code`, `acceptBalanceLoss` (required when there are forfeited balances). Every session ends at once (the token stops working); the account is erased after the grace period unless the person signs in again (which cancels it). 400 for a wrong code or a balance not accepted |
 | GET | `/v1/me/wallet-pin` | the user | `isSet`, `setAt`, `attemptsLeft`, and `lockedUntil` while wrong PINs keep it locked |
 | PUT | `/v1/me/wallet-pin` | the user | `newPin` (4 or 6 digits, not all the same, not a run like 1234 or 654321); to change it also `currentPin` (a wrong one counts: 403). Forgotten PIN: sign in again with a code, then within 10 minutes of signing in `newPin` alone works and lifts a lock. 400 `FAILED_PRECONDITION` when `currentPin` is needed or the PIN is locked |
 

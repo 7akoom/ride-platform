@@ -12,9 +12,11 @@ import (
 	"time"
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
+	"github.com/7akoom/ride-platform/services/identity-service/internal/application/deletion"
 	outboxapp "github.com/7akoom/ride-platform/services/identity-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/walletpin"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/config"
+	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/accounts"
 	cleanupinfra "github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/cleanup"
 	clockinfra "github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/clock"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/database"
@@ -27,6 +29,7 @@ import (
 	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/token"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/observability"
 	grpcserver "github.com/7akoom/ride-platform/services/identity-service/internal/transport/grpc"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -644,6 +647,66 @@ func run() int {
 
 	server.RegisterAccountStatusService(grpcserver.NewAccountStatusHandler(authService, logger))
 
+	// Account deletion asks rider, driver, trip and wallet services what
+	// stands in the way, and media-service erases the files.
+	deletionConfig, err := config.LoadAccountDeletion()
+	if err != nil {
+		logger.Error("invalid account deletion configuration", "error", err)
+
+		return 1
+	}
+
+	deletionConns := make(map[string]*grpc.ClientConn, 5)
+
+	for name, address := range map[string]string{
+		"rider":  deletionConfig.RiderServiceAddress,
+		"driver": deletionConfig.DriverServiceAddress,
+		"trip":   deletionConfig.TripServiceAddress,
+		"wallet": deletionConfig.WalletServiceAddress,
+		"media":  deletionConfig.MediaServiceAddress,
+	} {
+		conn, err := accounts.Dial(address, cfg.InternalServiceToken)
+		if err != nil {
+			logger.Error("failed to configure a connection for account deletion", "service", name, "error", err)
+
+			return 1
+		}
+
+		defer conn.Close()
+
+		deletionConns[name] = conn
+	}
+
+	deletionService := deletion.NewService(
+		postgresrepo.NewAccountDeletionStore(databasePool),
+		identityReader,
+		accounts.NewStanding(deletionConns["rider"], deletionConns["driver"], deletionConns["trip"], deletionConns["wallet"]),
+		accounts.NewMedia(deletionConns["media"]),
+		deletion.OTP{
+			Generator:   otp.NewGenerator(),
+			Hasher:      otpHasher,
+			Delivery:    otpDelivery,
+			RateLimiter: otpRateLimiter,
+			RateLimit: auth.OTPRequestRateLimitPolicy{
+				Cooldown:    otpRequestRateLimit.Cooldown,
+				Window:      otpRequestRateLimit.Window,
+				MaxRequests: otpRequestRateLimit.MaxRequests,
+				Abuse: auth.OTPRequestAbuseLimitPolicy{
+					Window:      otpRequestRateLimit.SourceWindow,
+					MaxRequests: otpRequestRateLimit.SourceMaxRequests,
+				},
+			},
+			ChallengeIDs: identifier.NewChallengeIDGenerator(),
+			Challenges:   challengeRepository,
+			TTL:          durations.OTPChallengeTTL,
+		},
+		deletion.Settings{GracePeriod: deletionConfig.GracePeriod, RetryAfter: deletionConfig.RetryAfter},
+		systemClock,
+		logger,
+	)
+
+	server.RegisterAccountDeletionService(grpcserver.NewAccountDeletionHandler(deletionService, logger))
+
 	logger.Info(
 		"identity service starting",
 		"grpc_address", cfg.GRPCAddress,
@@ -656,6 +719,14 @@ func run() int {
 		syscall.SIGTERM,
 	)
 	defer stopSignals()
+
+	eraserDone := make(chan struct{})
+
+	go func() {
+		defer close(eraserDone)
+
+		deletionService.RunEraser(shutdownContext, deletionConfig.CheckInterval)
+	}()
 
 	cleanupDone := make(chan struct{})
 
@@ -892,6 +963,7 @@ func run() int {
 
 	<-outboxDone
 	<-cleanupDone
+	<-eraserDone
 
 	return exitCode
 }

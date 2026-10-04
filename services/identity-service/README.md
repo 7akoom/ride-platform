@@ -88,6 +88,47 @@ keeps it; wallet-service asks.
   at a time (the row is locked while one is checked), so parallel guesses
   cannot slip past the limit. A wrong current PIN when changing it counts too.
 
+## Deleting an account
+
+As the big ride apps do (`AccountDeletionService`, `/v1/me/deletion`):
+
+- `GET /v1/me/deletion` says whether a deletion is pending and what deleting
+  would meet now. identity-service asks rider- and driver-service for the
+  person's profiles, trip-service for an active trip or an upcoming booking,
+  and wallet-service for unpaid fees, a driver's negative balance or open
+  payout (each blocks), and positive balances (lost with the account, so
+  confirming needs `acceptBalanceLoss`). A service that does not answer makes
+  the check fail (503), never pass.
+- `POST /v1/me/deletion:request-otp` sends a code (OTP purpose
+  `delete_account`) to one of the account's own sign-in methods, once nothing
+  stands in the way; `POST /v1/me/deletion:confirm {challengeId, code,
+  acceptBalanceLoss}` checks it (wrong codes count, as for signing in) and
+  starts the deletion: every session ends in the same transaction, and
+  `identity.deletion_requested` tells the others (a driver goes offline, push
+  devices go).
+- Signing in again during the grace period (`ACCOUNT_DELETION_GRACE_PERIOD`,
+  30 days, at least one) cancels it, in the same transaction as the new
+  session (`identity.deletion_cancelled`). While pending, the person cannot be
+  found by phone for transfers.
+- The eraser (`ACCOUNT_DELETION_CHECK_INTERVAL`) takes due deletions, checks
+  again that nothing stands in the way, has media-service delete every file of
+  the identity, then erases sign-in methods, the codes sent to them, sessions
+  and the PIN, disables the identity and writes `identity.deleted`
+  `{identity_id, rider_id, driver_id}`. Anything in the way (or a service not
+  answering) postpones it by `ACCOUNT_DELETION_RETRY_AFTER`. The identities
+  row stays as the anonymous id other records point at.
+- On `identity.deleted` each service erases its part (durable consumers
+  `*-account-erasure` on `IDENTITY_EVENTS`): rider and driver profiles are
+  renamed "Deleted account" and suspended, with their details, saved
+  addresses, documents and name changes deleted and plates replaced;
+  trip-service clears passenger and pickup details and rating comments and
+  revokes share links; wallet-service records the forfeited balance on the
+  ledger, blocks the wallets and clears phones and payout destinations;
+  notification-service deletes the inbox. Trips, ledgers and tickets stay.
+- The same phone signing in afterwards gets a new, empty account.
+
+End to end: `bash scripts/e2e/test-account-deletion.sh`.
+
 ## Internal methods
 
 Called by other services only, with the shared `INTERNAL_SERVICE_TOKEN` (the

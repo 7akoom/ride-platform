@@ -39,6 +39,9 @@ var methodAccess = map[string]accessLevel{
 	// their own file would defeat the point.
 	mediaRPCPrefix + "HoldMedia":    accessInternal,
 	mediaRPCPrefix + "ReleaseMedia": accessInternal,
+
+	// Erasing a deleted account (identity-service).
+	mediaRPCPrefix + "DeleteOwnerMedia": accessInternal,
 }
 
 // staffPermissions lets staff read files that are not theirs. Staff can never

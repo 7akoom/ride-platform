@@ -149,6 +149,18 @@ func (r *DefaultEmailMessageRenderer) renderEnglishEmail(
 			),
 			nil
 
+	case auth.OTPPurposeDeleteAccount:
+		return fmt.Sprintf(
+				"Delete your %s account",
+				r.brandName,
+			),
+			fmt.Sprintf(
+				"Use code %s to confirm deleting your %s account. If you did not ask for this, ignore this email and do not share the code.",
+				code,
+				r.brandName,
+			),
+			nil
+
 	default:
 		return "", "", auth.ErrInvalidOTPPurpose
 	}
@@ -195,6 +207,18 @@ func (r *DefaultEmailMessageRenderer) renderArabicEmail(
 			),
 			nil
 
+	case auth.OTPPurposeDeleteAccount:
+		return fmt.Sprintf(
+				"حذف حسابك في %s",
+				r.brandName,
+			),
+			fmt.Sprintf(
+				"استخدم الرمز %s لتأكيد حذف حسابك في %s. إذا لم تطلب ذلك فتجاهل هذه الرسالة ولا تشارك الرمز مع أي شخص.",
+				code,
+				r.brandName,
+			),
+			nil
+
 	default:
 		return "", "", auth.ErrInvalidOTPPurpose
 	}
@@ -236,6 +260,18 @@ func (r *DefaultEmailMessageRenderer) renderKurdishEmail(
 			),
 			fmt.Sprintf(
 				"کۆدی %s بەکاربهێنە بۆ لابردنی شێوازی چوونەژوورەوەی %s. ئەم کۆدە لەگەڵ هیچ کەسێک هاوبەش مەکە.",
+				code,
+				r.brandName,
+			),
+			nil
+
+	case auth.OTPPurposeDeleteAccount:
+		return fmt.Sprintf(
+				"سڕینەوەی هەژمارەکەت لە %s",
+				r.brandName,
+			),
+			fmt.Sprintf(
+				"کۆدی %s بەکاربهێنە بۆ پشتڕاستکردنەوەی سڕینەوەی هەژمارەکەت لە %s. ئەگەر داوات نەکردووە، گوێی پێ مەدە و کۆدەکە لەگەڵ کەس هاوبەش مەکە.",
 				code,
 				r.brandName,
 			),

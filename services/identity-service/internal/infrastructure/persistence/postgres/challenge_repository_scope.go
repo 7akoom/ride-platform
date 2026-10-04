@@ -22,10 +22,13 @@ func normalizeChallengeTargetIdentityID(
 
 		return nil, nil
 
-	case auth.OTPPurposeLinkIdentifier:
+	case auth.OTPPurposeLinkIdentifier,
+		auth.OTPPurposeUnlinkIdentifier,
+		auth.OTPPurposeDeleteAccount:
 		if targetIdentityID == nil {
-			return nil, errors.New(
-				"link identifier OTP challenge requires target identity",
+			return nil, fmt.Errorf(
+				"%s OTP challenge requires target identity",
+				purpose,
 			)
 		}
 

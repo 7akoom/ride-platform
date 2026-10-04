@@ -19,13 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MediaService_CreateUpload_FullMethodName   = "/ride.media.v1.MediaService/CreateUpload"
-	MediaService_CompleteUpload_FullMethodName = "/ride.media.v1.MediaService/CompleteUpload"
-	MediaService_GetMedia_FullMethodName       = "/ride.media.v1.MediaService/GetMedia"
-	MediaService_GetDownloadURL_FullMethodName = "/ride.media.v1.MediaService/GetDownloadURL"
-	MediaService_DeleteMedia_FullMethodName    = "/ride.media.v1.MediaService/DeleteMedia"
-	MediaService_HoldMedia_FullMethodName      = "/ride.media.v1.MediaService/HoldMedia"
-	MediaService_ReleaseMedia_FullMethodName   = "/ride.media.v1.MediaService/ReleaseMedia"
+	MediaService_CreateUpload_FullMethodName     = "/ride.media.v1.MediaService/CreateUpload"
+	MediaService_CompleteUpload_FullMethodName   = "/ride.media.v1.MediaService/CompleteUpload"
+	MediaService_GetMedia_FullMethodName         = "/ride.media.v1.MediaService/GetMedia"
+	MediaService_GetDownloadURL_FullMethodName   = "/ride.media.v1.MediaService/GetDownloadURL"
+	MediaService_DeleteMedia_FullMethodName      = "/ride.media.v1.MediaService/DeleteMedia"
+	MediaService_HoldMedia_FullMethodName        = "/ride.media.v1.MediaService/HoldMedia"
+	MediaService_ReleaseMedia_FullMethodName     = "/ride.media.v1.MediaService/ReleaseMedia"
+	MediaService_DeleteOwnerMedia_FullMethodName = "/ride.media.v1.MediaService/DeleteOwnerMedia"
 )
 
 // MediaServiceClient is the client API for MediaService service.
@@ -61,6 +62,9 @@ type MediaServiceClient interface {
 	HoldMedia(ctx context.Context, in *HoldMediaRequest, opts ...grpc.CallOption) (*MediaResponse, error)
 	// ReleaseMedia lets the owner delete a held file again. Internal only.
 	ReleaseMedia(ctx context.Context, in *ReleaseMediaRequest, opts ...grpc.CallOption) (*MediaResponse, error)
+	// DeleteOwnerMedia deletes every file of one identity, held or not: called
+	// by identity-service when an account is erased. Internal only.
+	DeleteOwnerMedia(ctx context.Context, in *DeleteOwnerMediaRequest, opts ...grpc.CallOption) (*DeleteOwnerMediaResponse, error)
 }
 
 type mediaServiceClient struct {
@@ -141,6 +145,16 @@ func (c *mediaServiceClient) ReleaseMedia(ctx context.Context, in *ReleaseMediaR
 	return out, nil
 }
 
+func (c *mediaServiceClient) DeleteOwnerMedia(ctx context.Context, in *DeleteOwnerMediaRequest, opts ...grpc.CallOption) (*DeleteOwnerMediaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteOwnerMediaResponse)
+	err := c.cc.Invoke(ctx, MediaService_DeleteOwnerMedia_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MediaServiceServer is the server API for MediaService service.
 // All implementations must embed UnimplementedMediaServiceServer
 // for forward compatibility.
@@ -174,6 +188,9 @@ type MediaServiceServer interface {
 	HoldMedia(context.Context, *HoldMediaRequest) (*MediaResponse, error)
 	// ReleaseMedia lets the owner delete a held file again. Internal only.
 	ReleaseMedia(context.Context, *ReleaseMediaRequest) (*MediaResponse, error)
+	// DeleteOwnerMedia deletes every file of one identity, held or not: called
+	// by identity-service when an account is erased. Internal only.
+	DeleteOwnerMedia(context.Context, *DeleteOwnerMediaRequest) (*DeleteOwnerMediaResponse, error)
 	mustEmbedUnimplementedMediaServiceServer()
 }
 
@@ -204,6 +221,9 @@ func (UnimplementedMediaServiceServer) HoldMedia(context.Context, *HoldMediaRequ
 }
 func (UnimplementedMediaServiceServer) ReleaseMedia(context.Context, *ReleaseMediaRequest) (*MediaResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReleaseMedia not implemented")
+}
+func (UnimplementedMediaServiceServer) DeleteOwnerMedia(context.Context, *DeleteOwnerMediaRequest) (*DeleteOwnerMediaResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteOwnerMedia not implemented")
 }
 func (UnimplementedMediaServiceServer) mustEmbedUnimplementedMediaServiceServer() {}
 func (UnimplementedMediaServiceServer) testEmbeddedByValue()                      {}
@@ -352,6 +372,24 @@ func _MediaService_ReleaseMedia_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MediaService_DeleteOwnerMedia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteOwnerMediaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MediaServiceServer).DeleteOwnerMedia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MediaService_DeleteOwnerMedia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MediaServiceServer).DeleteOwnerMedia(ctx, req.(*DeleteOwnerMediaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MediaService_ServiceDesc is the grpc.ServiceDesc for MediaService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -386,6 +424,10 @@ var MediaService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReleaseMedia",
 			Handler:    _MediaService_ReleaseMedia_Handler,
+		},
+		{
+			MethodName: "DeleteOwnerMedia",
+			Handler:    _MediaService_DeleteOwnerMedia_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

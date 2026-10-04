@@ -36,6 +36,7 @@ const (
 	OTPMetricPurposeLogin            OTPMetricPurpose = "login"
 	OTPMetricPurposeIdentifierLink   OTPMetricPurpose = "link_identifier"
 	OTPMetricPurposeIdentifierUnlink OTPMetricPurpose = "unlink_identifier"
+	OTPMetricPurposeDeleteAccount    OTPMetricPurpose = "delete_account"
 )
 
 type OTPMetricChannel string
