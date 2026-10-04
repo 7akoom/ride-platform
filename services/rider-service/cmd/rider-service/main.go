@@ -184,6 +184,7 @@ func run() int {
 	)
 
 	riderHandler := grpcserver.NewRiderHandler(riderService, logger).
+		WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export).
 		WithAddresses(addressService).
 		WithProfile(profileService)
 

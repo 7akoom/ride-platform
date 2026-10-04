@@ -27,6 +27,7 @@ const (
 	MediaService_HoldMedia_FullMethodName        = "/ride.media.v1.MediaService/HoldMedia"
 	MediaService_ReleaseMedia_FullMethodName     = "/ride.media.v1.MediaService/ReleaseMedia"
 	MediaService_DeleteOwnerMedia_FullMethodName = "/ride.media.v1.MediaService/DeleteOwnerMedia"
+	MediaService_StoreFile_FullMethodName        = "/ride.media.v1.MediaService/StoreFile"
 )
 
 // MediaServiceClient is the client API for MediaService service.
@@ -65,6 +66,9 @@ type MediaServiceClient interface {
 	// DeleteOwnerMedia deletes every file of one identity, held or not: called
 	// by identity-service when an account is erased. Internal only.
 	DeleteOwnerMedia(ctx context.Context, in *DeleteOwnerMediaRequest, opts ...grpc.CallOption) (*DeleteOwnerMediaResponse, error)
+	// StoreFile stores a file a service made for a person (their data export),
+	// READY at once and owned by them. Internal only.
+	StoreFile(ctx context.Context, in *StoreFileRequest, opts ...grpc.CallOption) (*MediaResponse, error)
 }
 
 type mediaServiceClient struct {
@@ -155,6 +159,16 @@ func (c *mediaServiceClient) DeleteOwnerMedia(ctx context.Context, in *DeleteOwn
 	return out, nil
 }
 
+func (c *mediaServiceClient) StoreFile(ctx context.Context, in *StoreFileRequest, opts ...grpc.CallOption) (*MediaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MediaResponse)
+	err := c.cc.Invoke(ctx, MediaService_StoreFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MediaServiceServer is the server API for MediaService service.
 // All implementations must embed UnimplementedMediaServiceServer
 // for forward compatibility.
@@ -191,6 +205,9 @@ type MediaServiceServer interface {
 	// DeleteOwnerMedia deletes every file of one identity, held or not: called
 	// by identity-service when an account is erased. Internal only.
 	DeleteOwnerMedia(context.Context, *DeleteOwnerMediaRequest) (*DeleteOwnerMediaResponse, error)
+	// StoreFile stores a file a service made for a person (their data export),
+	// READY at once and owned by them. Internal only.
+	StoreFile(context.Context, *StoreFileRequest) (*MediaResponse, error)
 	mustEmbedUnimplementedMediaServiceServer()
 }
 
@@ -224,6 +241,9 @@ func (UnimplementedMediaServiceServer) ReleaseMedia(context.Context, *ReleaseMed
 }
 func (UnimplementedMediaServiceServer) DeleteOwnerMedia(context.Context, *DeleteOwnerMediaRequest) (*DeleteOwnerMediaResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteOwnerMedia not implemented")
+}
+func (UnimplementedMediaServiceServer) StoreFile(context.Context, *StoreFileRequest) (*MediaResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StoreFile not implemented")
 }
 func (UnimplementedMediaServiceServer) mustEmbedUnimplementedMediaServiceServer() {}
 func (UnimplementedMediaServiceServer) testEmbeddedByValue()                      {}
@@ -390,6 +410,24 @@ func _MediaService_DeleteOwnerMedia_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MediaService_StoreFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StoreFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MediaServiceServer).StoreFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MediaService_StoreFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MediaServiceServer).StoreFile(ctx, req.(*StoreFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MediaService_ServiceDesc is the grpc.ServiceDesc for MediaService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -428,6 +466,10 @@ var MediaService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteOwnerMedia",
 			Handler:    _MediaService_DeleteOwnerMedia_Handler,
+		},
+		{
+			MethodName: "StoreFile",
+			Handler:    _MediaService_StoreFile_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

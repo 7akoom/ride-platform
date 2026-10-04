@@ -225,7 +225,8 @@ func run() int {
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 		grpcserver.NewAuthorizationUnaryInterceptor(staffAuthorizer),
 	)
-	server.RegisterSupportService(grpcserver.NewSupportHandler(supportService, logger))
+	server.RegisterSupportService(grpcserver.NewSupportHandler(supportService, logger).
+		WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export))
 
 	outboxDone := make(chan struct{})
 

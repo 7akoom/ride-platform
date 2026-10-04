@@ -32,13 +32,14 @@ var exemptMethods = map[string]struct{}{
 // notified and what the templates say. An end user manages only their own
 // devices and their own notification inbox.
 var methodAccess = map[string]accessLevel{
-	"/ride.notification.v1.NotificationService/Send":              accessInternal,
-	"/ride.notification.v1.NotificationService/UpsertTemplate":    accessInternal,
-	"/ride.notification.v1.NotificationService/RegisterDevice":    accessOwner,
-	"/ride.notification.v1.NotificationService/UnregisterDevice":  accessOwner,
-	"/ride.notification.v1.NotificationService/ListNotifications": accessOwner,
-	"/ride.notification.v1.NotificationService/MarkAsRead":        accessOwner,
-	"/ride.notification.v1.NotificationService/GetUnreadCount":    accessOwner,
+	"/ride.notification.v1.NotificationService/Send":               accessInternal,
+	"/ride.notification.v1.NotificationService/ExportPersonalData": accessInternal,
+	"/ride.notification.v1.NotificationService/UpsertTemplate":     accessInternal,
+	"/ride.notification.v1.NotificationService/RegisterDevice":     accessOwner,
+	"/ride.notification.v1.NotificationService/UnregisterDevice":   accessOwner,
+	"/ride.notification.v1.NotificationService/ListNotifications":  accessOwner,
+	"/ride.notification.v1.NotificationService/MarkAsRead":         accessOwner,
+	"/ride.notification.v1.NotificationService/GetUnreadCount":     accessOwner,
 }
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver, devices DeviceOwnerReader) googlegrpc.UnaryServerInterceptor {

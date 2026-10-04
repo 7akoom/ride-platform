@@ -117,6 +117,18 @@ type Transaction struct {
 	CreatedAt   time.Time
 }
 
+// FeedQuery asks for a wallet's movements older than (Before, BeforeID) in
+// (created_at, id) order, newest first (the activity page). Before nil: the
+// newest. ExcludeTrips leaves out movements tied to a trip.
+type FeedQuery struct {
+	OwnerType    OwnerType
+	OwnerID      string
+	Before       *time.Time
+	BeforeID     string
+	Limit        int
+	ExcludeTrips bool
+}
+
 // Config is the active commission/limits card for this deployment.
 type Config struct {
 	ID                  string

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/7akoom/ride-platform/services/trip-service/internal/application/feed"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
 )
 
@@ -146,4 +147,51 @@ func (r *TripRepository) RecentDestinations(
 	}
 
 	return out, nil
+}
+
+// ListTripsBefore lists a profile's trips older than before (nil: the newest)
+// by (requested_at, id), newest first, for the activity page. The id compares
+// in byte order (COLLATE "C"), the order the page merges in. See feed.Trips.
+func (r *TripRepository) ListTripsBefore(
+	ctx context.Context,
+	owner feed.Owner,
+	ownerID string,
+	before *feed.Cursor,
+	limit int,
+) ([]trip.Trip, error) {
+	column := "rider_id"
+	if owner == feed.OwnerDriver {
+		column = "driver_id"
+	}
+
+	query := `SELECT ` + historyColumns + ` FROM trips WHERE ` + column + ` = $1`
+	args := []any{ownerID}
+
+	if before != nil {
+		args = append(args, before.At, before.ID)
+		query += ` AND (requested_at < $2 OR (requested_at = $2 AND id::text COLLATE "C" < $3))`
+	}
+
+	args = append(args, limit)
+	query += fmt.Sprintf(` ORDER BY requested_at DESC, id::text COLLATE "C" DESC LIMIT $%d`, len(args))
+
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query trips for the activity page: %w", err)
+	}
+	defer rows.Close()
+
+	trips := []trip.Trip{}
+
+	for rows.Next() {
+		var found trip.Trip
+
+		if err := scanTrip(rows, &found); err != nil {
+			return nil, fmt.Errorf("scan trip: %w", err)
+		}
+
+		trips = append(trips, found)
+	}
+
+	return trips, rows.Err()
 }

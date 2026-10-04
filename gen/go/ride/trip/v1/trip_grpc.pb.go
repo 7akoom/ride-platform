@@ -8,6 +8,7 @@ package tripv1
 
 import (
 	context "context"
+	v1 "github.com/7akoom/ride-platform/gen/go/ride/dataexport/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	TripService_ExportPersonalData_FullMethodName     = "/ride.trip.v1.TripService/ExportPersonalData"
 	TripService_RequestTrip_FullMethodName            = "/ride.trip.v1.TripService/RequestTrip"
 	TripService_AcceptTrip_FullMethodName             = "/ride.trip.v1.TripService/AcceptTrip"
 	TripService_MarkDriverArrived_FullMethodName      = "/ride.trip.v1.TripService/MarkDriverArrived"
@@ -34,6 +36,7 @@ const (
 	TripService_GetTripDriver_FullMethodName          = "/ride.trip.v1.TripService/GetTripDriver"
 	TripService_GetActiveTrip_FullMethodName          = "/ride.trip.v1.TripService/GetActiveTrip"
 	TripService_ListTrips_FullMethodName              = "/ride.trip.v1.TripService/ListTrips"
+	TripService_ListActivityFeed_FullMethodName       = "/ride.trip.v1.TripService/ListActivityFeed"
 	TripService_OfferTrip_FullMethodName              = "/ride.trip.v1.TripService/OfferTrip"
 	TripService_GetPendingOffer_FullMethodName        = "/ride.trip.v1.TripService/GetPendingOffer"
 	TripService_AcceptOffer_FullMethodName            = "/ride.trip.v1.TripService/AcceptOffer"
@@ -55,6 +58,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TripServiceClient interface {
+	// ExportPersonalData returns what this service keeps about one person,
+	// for their "Download your data" file. Internal only (identity-service).
+	ExportPersonalData(ctx context.Context, in *v1.ExportPersonalDataRequest, opts ...grpc.CallOption) (*v1.ExportPersonalDataResponse, error)
 	RequestTrip(ctx context.Context, in *RequestTripRequest, opts ...grpc.CallOption) (*RequestTripResponse, error)
 	AcceptTrip(ctx context.Context, in *AcceptTripRequest, opts ...grpc.CallOption) (*AcceptTripResponse, error)
 	// MarkDriverArrived is the driver telling the rider they are at the
@@ -117,6 +123,11 @@ type TripServiceClient interface {
 	// Pass the previous page's next_page_token to get the following page; an empty
 	// next_page_token means that was the last one.
 	ListTrips(ctx context.Context, in *ListTripsRequest, opts ...grpc.CallOption) (*ListTripsResponse, error)
+	// ListActivityFeed is the activity page: the caller's trips and the wallet
+	// movements that are not part of a trip (top-ups, transfers, refunds,
+	// vouchers, payouts...), newest first, in one list. Exactly one of rider_id
+	// and driver_id, the caller's own.
+	ListActivityFeed(ctx context.Context, in *ListActivityFeedRequest, opts ...grpc.CallOption) (*ListActivityFeedResponse, error)
 	// OfferTrip puts a trip to one driver for a short time: ttl_seconds (default 15,
 	// clamped to 5-60). Internal: only dispatch calls it. A driver is offered a trip
 	// at most once, so dispatch needs no memory of who it already asked. The refusals
@@ -192,6 +203,16 @@ type tripServiceClient struct {
 
 func NewTripServiceClient(cc grpc.ClientConnInterface) TripServiceClient {
 	return &tripServiceClient{cc}
+}
+
+func (c *tripServiceClient) ExportPersonalData(ctx context.Context, in *v1.ExportPersonalDataRequest, opts ...grpc.CallOption) (*v1.ExportPersonalDataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ExportPersonalDataResponse)
+	err := c.cc.Invoke(ctx, TripService_ExportPersonalData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *tripServiceClient) RequestTrip(ctx context.Context, in *RequestTripRequest, opts ...grpc.CallOption) (*RequestTripResponse, error) {
@@ -338,6 +359,16 @@ func (c *tripServiceClient) ListTrips(ctx context.Context, in *ListTripsRequest,
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListTripsResponse)
 	err := c.cc.Invoke(ctx, TripService_ListTrips_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) ListActivityFeed(ctx context.Context, in *ListActivityFeedRequest, opts ...grpc.CallOption) (*ListActivityFeedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListActivityFeedResponse)
+	err := c.cc.Invoke(ctx, TripService_ListActivityFeed_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -498,6 +529,9 @@ func (c *tripServiceClient) ListDriverActivity(ctx context.Context, in *ListDriv
 // All implementations must embed UnimplementedTripServiceServer
 // for forward compatibility.
 type TripServiceServer interface {
+	// ExportPersonalData returns what this service keeps about one person,
+	// for their "Download your data" file. Internal only (identity-service).
+	ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error)
 	RequestTrip(context.Context, *RequestTripRequest) (*RequestTripResponse, error)
 	AcceptTrip(context.Context, *AcceptTripRequest) (*AcceptTripResponse, error)
 	// MarkDriverArrived is the driver telling the rider they are at the
@@ -560,6 +594,11 @@ type TripServiceServer interface {
 	// Pass the previous page's next_page_token to get the following page; an empty
 	// next_page_token means that was the last one.
 	ListTrips(context.Context, *ListTripsRequest) (*ListTripsResponse, error)
+	// ListActivityFeed is the activity page: the caller's trips and the wallet
+	// movements that are not part of a trip (top-ups, transfers, refunds,
+	// vouchers, payouts...), newest first, in one list. Exactly one of rider_id
+	// and driver_id, the caller's own.
+	ListActivityFeed(context.Context, *ListActivityFeedRequest) (*ListActivityFeedResponse, error)
 	// OfferTrip puts a trip to one driver for a short time: ttl_seconds (default 15,
 	// clamped to 5-60). Internal: only dispatch calls it. A driver is offered a trip
 	// at most once, so dispatch needs no memory of who it already asked. The refusals
@@ -637,6 +676,9 @@ type TripServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedTripServiceServer struct{}
 
+func (UnimplementedTripServiceServer) ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExportPersonalData not implemented")
+}
 func (UnimplementedTripServiceServer) RequestTrip(context.Context, *RequestTripRequest) (*RequestTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RequestTrip not implemented")
 }
@@ -681,6 +723,9 @@ func (UnimplementedTripServiceServer) GetActiveTrip(context.Context, *GetActiveT
 }
 func (UnimplementedTripServiceServer) ListTrips(context.Context, *ListTripsRequest) (*ListTripsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTrips not implemented")
+}
+func (UnimplementedTripServiceServer) ListActivityFeed(context.Context, *ListActivityFeedRequest) (*ListActivityFeedResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListActivityFeed not implemented")
 }
 func (UnimplementedTripServiceServer) OfferTrip(context.Context, *OfferTripRequest) (*OfferTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method OfferTrip not implemented")
@@ -746,6 +791,24 @@ func RegisterTripServiceServer(s grpc.ServiceRegistrar, srv TripServiceServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&TripService_ServiceDesc, srv)
+}
+
+func _TripService_ExportPersonalData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ExportPersonalDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).ExportPersonalData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_ExportPersonalData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).ExportPersonalData(ctx, req.(*v1.ExportPersonalDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _TripService_RequestTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1014,6 +1077,24 @@ func _TripService_ListTrips_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TripServiceServer).ListTrips(ctx, req.(*ListTripsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_ListActivityFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListActivityFeedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).ListActivityFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_ListActivityFeed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).ListActivityFeed(ctx, req.(*ListActivityFeedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1296,6 +1377,10 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*TripServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "ExportPersonalData",
+			Handler:    _TripService_ExportPersonalData_Handler,
+		},
+		{
 			MethodName: "RequestTrip",
 			Handler:    _TripService_RequestTrip_Handler,
 		},
@@ -1354,6 +1439,10 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTrips",
 			Handler:    _TripService_ListTrips_Handler,
+		},
+		{
+			MethodName: "ListActivityFeed",
+			Handler:    _TripService_ListActivityFeed_Handler,
 		},
 		{
 			MethodName: "OfferTrip",

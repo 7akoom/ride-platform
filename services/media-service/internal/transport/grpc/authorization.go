@@ -42,6 +42,8 @@ var methodAccess = map[string]accessLevel{
 
 	// Erasing a deleted account (identity-service).
 	mediaRPCPrefix + "DeleteOwnerMedia": accessInternal,
+	// identity-service storing a person's data export.
+	mediaRPCPrefix + "StoreFile": accessInternal,
 }
 
 // staffPermissions lets staff read files that are not theirs. Staff can never

@@ -8,6 +8,7 @@ package riderv1
 
 import (
 	context "context"
+	v1 "github.com/7akoom/ride-platform/gen/go/ride/dataexport/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	RiderService_ExportPersonalData_FullMethodName = "/ride.rider.v1.RiderService/ExportPersonalData"
 	RiderService_CreateRider_FullMethodName        = "/ride.rider.v1.RiderService/CreateRider"
 	RiderService_GetRider_FullMethodName           = "/ride.rider.v1.RiderService/GetRider"
 	RiderService_GetRiderByIdentity_FullMethodName = "/ride.rider.v1.RiderService/GetRiderByIdentity"
@@ -39,6 +41,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RiderServiceClient interface {
+	// ExportPersonalData returns what this service keeps about one person,
+	// for their "Download your data" file. Internal only (identity-service).
+	ExportPersonalData(ctx context.Context, in *v1.ExportPersonalDataRequest, opts ...grpc.CallOption) (*v1.ExportPersonalDataResponse, error)
 	// CreateRider creates the caller's own rider profile: identity_id must be the caller's identity.
 	CreateRider(ctx context.Context, in *CreateRiderRequest, opts ...grpc.CallOption) (*CreateRiderResponse, error)
 	// GetRider returns the caller's own rider profile.
@@ -77,6 +82,16 @@ type riderServiceClient struct {
 
 func NewRiderServiceClient(cc grpc.ClientConnInterface) RiderServiceClient {
 	return &riderServiceClient{cc}
+}
+
+func (c *riderServiceClient) ExportPersonalData(ctx context.Context, in *v1.ExportPersonalDataRequest, opts ...grpc.CallOption) (*v1.ExportPersonalDataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ExportPersonalDataResponse)
+	err := c.cc.Invoke(ctx, RiderService_ExportPersonalData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *riderServiceClient) CreateRider(ctx context.Context, in *CreateRiderRequest, opts ...grpc.CallOption) (*CreateRiderResponse, error) {
@@ -223,6 +238,9 @@ func (c *riderServiceClient) GetRiderPhoto(ctx context.Context, in *GetRiderPhot
 // All implementations must embed UnimplementedRiderServiceServer
 // for forward compatibility.
 type RiderServiceServer interface {
+	// ExportPersonalData returns what this service keeps about one person,
+	// for their "Download your data" file. Internal only (identity-service).
+	ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error)
 	// CreateRider creates the caller's own rider profile: identity_id must be the caller's identity.
 	CreateRider(context.Context, *CreateRiderRequest) (*CreateRiderResponse, error)
 	// GetRider returns the caller's own rider profile.
@@ -263,6 +281,9 @@ type RiderServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRiderServiceServer struct{}
 
+func (UnimplementedRiderServiceServer) ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExportPersonalData not implemented")
+}
 func (UnimplementedRiderServiceServer) CreateRider(context.Context, *CreateRiderRequest) (*CreateRiderResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateRider not implemented")
 }
@@ -324,6 +345,24 @@ func RegisterRiderServiceServer(s grpc.ServiceRegistrar, srv RiderServiceServer)
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&RiderService_ServiceDesc, srv)
+}
+
+func _RiderService_ExportPersonalData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ExportPersonalDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderServiceServer).ExportPersonalData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderService_ExportPersonalData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderServiceServer).ExportPersonalData(ctx, req.(*v1.ExportPersonalDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _RiderService_CreateRider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -585,6 +624,10 @@ var RiderService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ride.rider.v1.RiderService",
 	HandlerType: (*RiderServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ExportPersonalData",
+			Handler:    _RiderService_ExportPersonalData_Handler,
+		},
 		{
 			MethodName: "CreateRider",
 			Handler:    _RiderService_CreateRider_Handler,

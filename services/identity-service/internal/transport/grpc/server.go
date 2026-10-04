@@ -107,6 +107,15 @@ func (s *Server) RegisterAccountDeletionService(handler *AccountDeletionHandler)
 	identityv1.RegisterAccountDeletionServiceServer(s.grpcServer, handler)
 }
 
+// RegisterDataExportService registers /v1/me/data-exports.
+func (s *Server) RegisterDataExportService(handler *DataExportHandler) {
+	if handler == nil {
+		panic("data export handler is required")
+	}
+
+	identityv1.RegisterDataExportServiceServer(s.grpcServer, handler)
+}
+
 func (s *Server) Run() error {
 	listener, err := net.Listen("tcp", s.address)
 	if err != nil {

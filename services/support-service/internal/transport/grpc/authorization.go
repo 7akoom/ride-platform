@@ -31,6 +31,12 @@ var userMethods = map[string]struct{}{
 	supportRPCPrefix + "RateTicket":            {},
 }
 
+// internalMethods take only the internal service token (identity-service
+// gathering a person's data export); nothing else may call them.
+var internalMethods = map[string]struct{}{
+	supportRPCPrefix + "ExportPersonalData": {},
+}
+
 // staffMethods need the permission from staff-service before they run.
 var staffMethods = map[string]string{
 	supportRPCPrefix + "ListSupportQueue":           support.PermissionRead,
@@ -82,9 +88,8 @@ func staffPermissionFor(method string, request any) string {
 	return staffMethods[method]
 }
 
-// NewAuthorizationUnaryInterceptor fails closed: a method in neither table,
-// and every call with the internal token (this service has no internal
-// methods), is denied.
+// NewAuthorizationUnaryInterceptor fails closed: a method in no table is
+// denied, and the internal token reaches internalMethods only.
 func NewAuthorizationUnaryInterceptor(staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {
 	if staff == nil {
 		panic("staff authorizer is required")
@@ -109,7 +114,17 @@ func NewAuthorizationUnaryInterceptor(staff StaffAuthorizer) googlegrpc.UnarySer
 			return nil, status.Error(codes.Unauthenticated, "valid access token is required")
 		}
 
+		_, internal := internalMethods[info.FullMethod]
+
 		if principal.IdentityID == internalServicePrincipalID {
+			if internal {
+				return handler(ctx, request)
+			}
+
+			return nil, status.Error(codes.PermissionDenied, "permission denied")
+		}
+
+		if internal {
 			return nil, status.Error(codes.PermissionDenied, "permission denied")
 		}
 

@@ -161,6 +161,15 @@ wallet-service cannot be reached the request goes through (a warning is
 logged): the fee is still collected later. wallet-service also calls this
 service, so the connection is lazy and compose does not order them.
 
+## Activity page
+
+`ListActivityFeed` (`GET /v1/activity`) is one list of a rider's or driver's
+trips and the wallet movements that are not a trip's, newest first. It is put
+together when asked, not kept: trips from this service and movements from
+wallet-service (`ListFeedTransactions`, internal token, `exclude_trips`), each
+read up to the page size before the cursor and merged. The page token is the
+time and id of the last item, so new activity does not shift the pages.
+
 ## What's intentionally NOT done yet
 
 Same list as the other services (observability, auth interceptor, tests,

@@ -51,6 +51,9 @@ const (
 	// supportEventsDurable: replies, resolved tickets and lost-item reports
 	// from support-service.
 	supportEventsDurable = "notification-support-events"
+
+	// identityEventsDurable: a person's data export is ready.
+	identityEventsDurable = "notification-identity-events"
 )
 
 func main() {
@@ -175,7 +178,8 @@ func run() int {
 		// the deployment has one.
 		channels.NewNoopSMSSender(),
 	)
-	notificationHandler := grpcserver.NewNotificationHandler(notificationService, logger)
+	notificationHandler := grpcserver.NewNotificationHandler(notificationService, logger).
+		WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export)
 
 	sosAlerter, err := alerts.New(sosConfig, logger)
 	if err != nil {
@@ -355,6 +359,24 @@ func run() int {
 		return 1
 	}
 	defer supportSubscription.Stop()
+
+	// "Download your data" is ready (identity-service). The stream exists:
+	// the account erasure subscription above waited for it.
+	identitySubscription, err := natsinfra.SubscribeDurable(
+		ctx,
+		natsConnection.JetStream(),
+		"IDENTITY_EVENTS",
+		identityEventsDurable,
+		events.IdentitySubjects,
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to identity events", "error", err)
+
+		return 1
+	}
+	defer identitySubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

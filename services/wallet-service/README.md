@@ -317,6 +317,13 @@ calculated under. Migration `00006` seeds 20% commission / 50,000 IQD
 suspension threshold / 10,000 IQD minimum payout — tune these once you
 see a real cash-to-digital trip mix.
 
+## For other services
+
+- `ListFeedTransactions` (internal): an owner's movements newest first before a
+  time and id, optionally without trip ones; trip-service's activity page.
+- `ExportPersonalData` (internal): the person's wallets, movements, transfers,
+  money requests and payouts for "Download your data".
+
 ## What's intentionally NOT done yet
 
 Beyond the shared deferred list (observability, auth, tests, NATS

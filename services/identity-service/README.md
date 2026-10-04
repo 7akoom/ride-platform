@@ -129,6 +129,25 @@ As the big ride apps do (`AccountDeletionService`, `/v1/me/deletion`):
 
 End to end: `bash scripts/e2e/test-account-deletion.sh`.
 
+## Download your data
+
+As the big ride apps have it (`DataExportService`, `/v1/me/data-exports`): the
+person asks (once a day, `DATA_EXPORT_MIN_INTERVAL`), and the maker
+(`DATA_EXPORT_CHECK_INTERVAL`) finds their rider and driver profiles and asks
+each service for its part (`ExportPersonalData`, internal token: rider,
+driver, trip, wallet, support and notification), adds identity's own (account,
+sign-in methods, sessions, whether a wallet PIN is set — never the PIN), and
+builds a ZIP of JSON files with a README in English and Arabic. media-service
+keeps it as the person's file (`StoreFile`, purpose `data_export`, at most
+64 MB), `identity.data_export_ready` tells notification-service to tell them,
+and `GetDataExportDownload` gives a short-lived link. A service not answering
+retries the export a minute later, five times, then it fails (and does not
+count against the day). After `DATA_EXPORT_KEEP_FOR` (a week) the file is
+deleted; deleting the account deletes the exports too. Internal notes, staff
+names and other people's details are left out.
+
+End to end: `bash scripts/e2e/test-activity-and-export.sh`.
+
 ## Internal methods
 
 Called by other services only, with the shared `INTERNAL_SERVICE_TOKEN` (the

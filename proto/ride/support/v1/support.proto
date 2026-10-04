@@ -4,6 +4,7 @@ package ride.support.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "ride/dataexport/v1/data_export.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/support/v1;supportv1";
 
 // SupportService: riders and drivers ask for help in tickets, and support
@@ -27,6 +28,10 @@ option go_package = "github.com/7akoom/ride-platform/gen/go/ride/support/v1;supp
 // (support.suspend). Money above SUPPORT_REFUND_LIMIT for one ticket waits
 // for another staff member with support.approve.
 service SupportService {
+  // ExportPersonalData returns what this service keeps about one person,
+  // for their "Download your data" file. Internal only (identity-service).
+  rpc ExportPersonalData(ride.dataexport.v1.ExportPersonalDataRequest) returns (ride.dataexport.v1.ExportPersonalDataResponse);
+
   // ListSupportCategories lists the active categories for riders or drivers,
   // in their display order.
   rpc ListSupportCategories(ListSupportCategoriesRequest) returns (ListSupportCategoriesResponse) {

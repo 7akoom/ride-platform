@@ -293,7 +293,9 @@ func TestProtoMappingsCoverEveryValue(t *testing.T) {
 			t.Errorf("%s does not round-trip", purpose)
 		}
 
-		if _, hasPolicy := media.PolicyFor(domain); !hasPolicy {
+		// A data export is never uploaded (StoreFile only), so it has no
+		// upload policy.
+		if _, hasPolicy := media.PolicyFor(domain); !hasPolicy && domain != media.PurposeDataExport {
 			t.Errorf("%s has no policy", purpose)
 		}
 	}

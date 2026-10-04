@@ -91,6 +91,14 @@ an opaque `page_token` / `next_page_token` (created_at, then id: a new
 notification does not shift the pages). `MarkAsRead` without ids marks
 everything read.
 
+## Account events
+
+The durable consumer `notification-identity-events` on `IDENTITY_EVENTS`
+turns `identity.data_export_ready` into `account.data_export_ready` (push and
+inbox, to the rider profile, else the driver one), with the export id in the
+data. `ExportPersonalData` (internal) gives the person's inbox and devices for
+their data export.
+
 ## Safety detail
 
 `MarkAsRead` scopes every update by recipient, even when explicit IDs

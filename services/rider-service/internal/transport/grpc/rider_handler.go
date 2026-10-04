@@ -17,6 +17,9 @@ import (
 type RiderHandler struct {
 	riderv1.UnimplementedRiderServiceServer
 
+	// personalData answers ExportPersonalData; nil until WithPersonalData.
+	personalData PersonalDataFunc
+
 	riderService rider.Service
 	logger       *slog.Logger
 

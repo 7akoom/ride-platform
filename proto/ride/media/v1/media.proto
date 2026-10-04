@@ -61,6 +61,9 @@ service MediaService {
   // DeleteOwnerMedia deletes every file of one identity, held or not: called
   // by identity-service when an account is erased. Internal only.
   rpc DeleteOwnerMedia(DeleteOwnerMediaRequest) returns (DeleteOwnerMediaResponse);
+  // StoreFile stores a file a service made for a person (their data export),
+  // READY at once and owned by them. Internal only.
+  rpc StoreFile(StoreFileRequest) returns (MediaResponse);
 }
 
 enum MediaPurpose {
@@ -73,6 +76,9 @@ enum MediaPurpose {
   MEDIA_PURPOSE_ADDRESS_PHOTO = 3;
   // Attached to a support ticket: JPEG, PNG, WebP or PDF, up to 10 MB.
   MEDIA_PURPOSE_SUPPORT_ATTACHMENT = 4;
+  // A person's "Download your data" ZIP, made by identity-service (StoreFile
+  // only, never an upload), up to 64 MB.
+  MEDIA_PURPOSE_DATA_EXPORT = 5;
 }
 
 enum MediaStatus {
@@ -170,4 +176,13 @@ message DeleteOwnerMediaRequest {
 message DeleteOwnerMediaResponse {
   // How many files were deleted by this call (0 when nothing was left).
   int32 deleted_count = 1;
+}
+
+message StoreFileRequest {
+  string owner_identity_id = 1;
+  // Only MEDIA_PURPOSE_DATA_EXPORT.
+  MediaPurpose purpose = 2;
+  // application/zip.
+  string content_type = 3;
+  bytes content = 4;
 }

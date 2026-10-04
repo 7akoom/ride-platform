@@ -8,6 +8,7 @@ package walletv1
 
 import (
 	context "context"
+	v1 "github.com/7akoom/ride-platform/gen/go/ride/dataexport/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,6 +20,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	WalletService_ExportPersonalData_FullMethodName      = "/ride.wallet.v1.WalletService/ExportPersonalData"
+	WalletService_ListFeedTransactions_FullMethodName    = "/ride.wallet.v1.WalletService/ListFeedTransactions"
 	WalletService_GetWallet_FullMethodName               = "/ride.wallet.v1.WalletService/GetWallet"
 	WalletService_TopUp_FullMethodName                   = "/ride.wallet.v1.WalletService/TopUp"
 	WalletService_SettleTrip_FullMethodName              = "/ride.wallet.v1.WalletService/SettleTrip"
@@ -72,6 +75,12 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WalletServiceClient interface {
+	// ExportPersonalData returns what this service keeps about one person,
+	// for their "Download your data" file. Internal only (identity-service).
+	ExportPersonalData(ctx context.Context, in *v1.ExportPersonalDataRequest, opts ...grpc.CallOption) (*v1.ExportPersonalDataResponse, error)
+	// ListFeedTransactions is a wallet's movements older than a point, newest
+	// first, for the activity page (trip-service). Internal only.
+	ListFeedTransactions(ctx context.Context, in *ListFeedTransactionsRequest, opts ...grpc.CallOption) (*ListFeedTransactionsResponse, error)
 	// GetWallet returns the caller's own wallet: ?owner_type=OWNER_TYPE_RIDER or OWNER_TYPE_DRIVER.
 	GetWallet(ctx context.Context, in *GetWalletRequest, opts ...grpc.CallOption) (*GetWalletResponse, error)
 	TopUp(ctx context.Context, in *TopUpRequest, opts ...grpc.CallOption) (*TopUpResponse, error)
@@ -233,6 +242,26 @@ type walletServiceClient struct {
 
 func NewWalletServiceClient(cc grpc.ClientConnInterface) WalletServiceClient {
 	return &walletServiceClient{cc}
+}
+
+func (c *walletServiceClient) ExportPersonalData(ctx context.Context, in *v1.ExportPersonalDataRequest, opts ...grpc.CallOption) (*v1.ExportPersonalDataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ExportPersonalDataResponse)
+	err := c.cc.Invoke(ctx, WalletService_ExportPersonalData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListFeedTransactions(ctx context.Context, in *ListFeedTransactionsRequest, opts ...grpc.CallOption) (*ListFeedTransactionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListFeedTransactionsResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListFeedTransactions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *walletServiceClient) GetWallet(ctx context.Context, in *GetWalletRequest, opts ...grpc.CallOption) (*GetWalletResponse, error) {
@@ -709,6 +738,12 @@ func (c *walletServiceClient) ListIncentivePayouts(ctx context.Context, in *List
 // All implementations must embed UnimplementedWalletServiceServer
 // for forward compatibility.
 type WalletServiceServer interface {
+	// ExportPersonalData returns what this service keeps about one person,
+	// for their "Download your data" file. Internal only (identity-service).
+	ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error)
+	// ListFeedTransactions is a wallet's movements older than a point, newest
+	// first, for the activity page (trip-service). Internal only.
+	ListFeedTransactions(context.Context, *ListFeedTransactionsRequest) (*ListFeedTransactionsResponse, error)
 	// GetWallet returns the caller's own wallet: ?owner_type=OWNER_TYPE_RIDER or OWNER_TYPE_DRIVER.
 	GetWallet(context.Context, *GetWalletRequest) (*GetWalletResponse, error)
 	TopUp(context.Context, *TopUpRequest) (*TopUpResponse, error)
@@ -872,6 +907,12 @@ type WalletServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedWalletServiceServer struct{}
 
+func (UnimplementedWalletServiceServer) ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExportPersonalData not implemented")
+}
+func (UnimplementedWalletServiceServer) ListFeedTransactions(context.Context, *ListFeedTransactionsRequest) (*ListFeedTransactionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListFeedTransactions not implemented")
+}
 func (UnimplementedWalletServiceServer) GetWallet(context.Context, *GetWalletRequest) (*GetWalletResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetWallet not implemented")
 }
@@ -1032,6 +1073,42 @@ func RegisterWalletServiceServer(s grpc.ServiceRegistrar, srv WalletServiceServe
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&WalletService_ServiceDesc, srv)
+}
+
+func _WalletService_ExportPersonalData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ExportPersonalDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ExportPersonalData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ExportPersonalData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ExportPersonalData(ctx, req.(*v1.ExportPersonalDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListFeedTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFeedTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListFeedTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListFeedTransactions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListFeedTransactions(ctx, req.(*ListFeedTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _WalletService_GetWallet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1887,6 +1964,14 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ride.wallet.v1.WalletService",
 	HandlerType: (*WalletServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ExportPersonalData",
+			Handler:    _WalletService_ExportPersonalData_Handler,
+		},
+		{
+			MethodName: "ListFeedTransactions",
+			Handler:    _WalletService_ListFeedTransactions_Handler,
+		},
 		{
 			MethodName: "GetWallet",
 			Handler:    _WalletService_GetWallet_Handler,

@@ -843,3 +843,68 @@ func scanWallet(row pgx.Row) (wallet.Wallet, error) {
 // Compile-time proof that this repository satisfies the port. Catches
 // signature drift at build time rather than at wiring time.
 var _ wallet.Repository = (*WalletRepository)(nil)
+
+// ListFeedTransactions lists a wallet's movements for the activity page, and
+// the wallet's currency (empty when it has no wallet yet). See wallet.FeedQuery.
+func (r *WalletRepository) ListFeedTransactions(ctx context.Context, query wallet.FeedQuery) ([]wallet.Transaction, string, error) {
+	sql := `SELECT t.id, t.wallet_id, t.type, t.amount, t.balance_after,
+	               COALESCE(t.trip_id::text, ''), COALESCE(t.transfer_id::text, ''),
+	               COALESCE(t.description, ''), t.created_at, w.currency_code
+	        FROM wallet_transactions t
+	        JOIN wallets w ON w.id = t.wallet_id
+	        WHERE w.owner_type = $1 AND w.owner_id = $2`
+	args := []any{string(query.OwnerType), query.OwnerID}
+
+	if query.ExcludeTrips {
+		sql += ` AND t.trip_id IS NULL`
+	}
+
+	if query.Before != nil {
+		args = append(args, *query.Before, query.BeforeID)
+		// Byte order for the id (COLLATE "C"), the order trip-service merges in.
+		sql += fmt.Sprintf(` AND (t.created_at < $%[1]d OR (t.created_at = $%[1]d AND t.id::text COLLATE "C" < $%[2]d))`,
+			len(args)-1, len(args))
+	}
+
+	args = append(args, query.Limit)
+	sql += fmt.Sprintf(` ORDER BY t.created_at DESC, t.id::text COLLATE "C" DESC LIMIT $%d`, len(args))
+
+	rows, err := r.pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, "", fmt.Errorf("select feed transactions: %w", err)
+	}
+	defer rows.Close()
+
+	var (
+		out      []wallet.Transaction
+		currency string
+	)
+
+	for rows.Next() {
+		var (
+			t       wallet.Transaction
+			txType  string
+			walletC string
+		)
+
+		if err := rows.Scan(&t.ID, &t.WalletID, &txType, &t.Amount, &t.BalanceAfter,
+			&t.TripID, &t.TransferID, &t.Description, &t.CreatedAt, &walletC); err != nil {
+			return nil, "", fmt.Errorf("scan feed transaction: %w", err)
+		}
+
+		t.Type = wallet.TransactionType(txType)
+		currency = walletC
+		out = append(out, t)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, "", fmt.Errorf("read feed transactions: %w", err)
+	}
+
+	if currency == "" {
+		_ = r.pool.QueryRow(ctx, `SELECT currency_code FROM wallets WHERE owner_type = $1 AND owner_id = $2`,
+			string(query.OwnerType), query.OwnerID).Scan(&currency)
+	}
+
+	return out, currency, nil
+}

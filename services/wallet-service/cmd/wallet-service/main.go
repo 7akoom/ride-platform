@@ -305,6 +305,8 @@ func run() int {
 	)
 
 	walletHandler := grpcserver.NewWalletHandler(walletService, topupService, logger).
+		WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export).
+		WithFeed(walletRepository).
 		WithTransfers(
 			transferapp.NewService(
 				transferStore,

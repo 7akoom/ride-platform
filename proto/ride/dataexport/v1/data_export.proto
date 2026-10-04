@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package ride.dataexport.v1;
+
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/dataexport/v1;dataexportv1";
+
+// The messages every service's ExportPersonalData uses ("Download your
+// data"): identity-service asks each service, with the internal service
+// token, for what it keeps about one person, and puts the sections in a ZIP.
+
+message ExportPersonalDataRequest {
+  string identity_id = 1;
+  // The person's profiles; empty when they have none.
+  string rider_id = 2;
+  string driver_id = 3;
+}
+
+message ExportPersonalDataResponse {
+  repeated DataSection sections = 1;
+}
+
+// DataSection is one file of the export.
+message DataSection {
+  // Its path in the ZIP, e.g. "rider/profile.json".
+  string name = 1;
+  // JSON, readable by people and machines.
+  bytes content = 2;
+}

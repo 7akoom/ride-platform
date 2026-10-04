@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/auth"
+	"github.com/7akoom/ride-platform/services/identity-service/internal/application/dataexport"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/deletion"
 	outboxapp "github.com/7akoom/ride-platform/services/identity-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/identity-service/internal/application/walletpin"
@@ -707,6 +708,51 @@ func run() int {
 
 	server.RegisterAccountDeletionService(grpcserver.NewAccountDeletionHandler(deletionService, logger))
 
+	// "Download your data": every service's part, gathered into a ZIP that
+	// media-service keeps for the person.
+	exportConfig, err := config.LoadDataExport()
+	if err != nil {
+		logger.Error("invalid data export configuration", "error", err)
+
+		return 1
+	}
+
+	for name, address := range map[string]string{
+		"support":      exportConfig.SupportServiceAddress,
+		"notification": exportConfig.NotificationServiceAddress,
+	} {
+		conn, err := accounts.Dial(address, cfg.InternalServiceToken)
+		if err != nil {
+			logger.Error("failed to configure a connection for data exports", "service", name, "error", err)
+
+			return 1
+		}
+
+		defer conn.Close()
+
+		deletionConns[name] = conn
+	}
+
+	exportStore := postgresrepo.NewDataExportStore(databasePool)
+	exportSources := append([]dataexport.Source{{Name: "identity-service", Export: exportStore.Sections}},
+		accounts.Sources(accounts.ExportConns{
+			Rider: deletionConns["rider"], Driver: deletionConns["driver"], Trip: deletionConns["trip"],
+			Wallet: deletionConns["wallet"], Support: deletionConns["support"], Notification: deletionConns["notification"],
+		})...)
+
+	exportService := dataexport.NewService(
+		exportStore,
+		accounts.NewStanding(deletionConns["rider"], deletionConns["driver"], deletionConns["trip"], deletionConns["wallet"]),
+		exportSources,
+		accounts.NewMedia(deletionConns["media"]),
+		identifier.NewUUIDGenerator(),
+		systemClock,
+		dataexport.Settings{MinInterval: exportConfig.MinInterval, KeepFor: exportConfig.KeepFor, MaxAttempts: 5, RetryAfter: time.Minute},
+		logger,
+	)
+
+	server.RegisterDataExportService(grpcserver.NewDataExportHandler(exportService, logger))
+
 	logger.Info(
 		"identity service starting",
 		"grpc_address", cfg.GRPCAddress,
@@ -719,6 +765,14 @@ func run() int {
 		syscall.SIGTERM,
 	)
 	defer stopSignals()
+
+	exportMakerDone := make(chan struct{})
+
+	go func() {
+		defer close(exportMakerDone)
+
+		exportService.RunMaker(shutdownContext, exportConfig.CheckInterval)
+	}()
 
 	eraserDone := make(chan struct{})
 
@@ -964,6 +1018,7 @@ func run() int {
 	<-outboxDone
 	<-cleanupDone
 	<-eraserDone
+	<-exportMakerDone
 
 	return exitCode
 }

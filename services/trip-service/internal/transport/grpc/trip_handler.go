@@ -8,6 +8,7 @@ import (
 
 	tripv1 "github.com/7akoom/ride-platform/gen/go/ride/trip/v1"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/activity"
+	"github.com/7akoom/ride-platform/services/trip-service/internal/application/feed"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/schedule"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/share"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
@@ -19,6 +20,9 @@ import (
 type TripHandler struct {
 	tripv1.UnimplementedTripServiceServer
 
+	// personalData answers ExportPersonalData; nil until WithPersonalData.
+	personalData PersonalDataFunc
+
 	tripService trip.Service
 	logger      *slog.Logger
 
@@ -29,6 +33,7 @@ type TripHandler struct {
 	schedules *schedule.Service
 	shares    *share.Service
 	activity  *activity.Service
+	feed      *feed.Service
 }
 
 // HandlerOption customises a TripHandler.

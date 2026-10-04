@@ -26,6 +26,10 @@
       "description": "IdentityAccountService suspends and reactivates people (internal only:\nsupport-service, with the internal service token, after a staff member with\nsupport.suspend asked; no route from outside). Suspending revokes every\nsession at once and refuses sign-in until reactivated."
     },
     {
+      "name": "DataExportService",
+      "description": "DataExportService is \"Download your data\", as the big ride apps have it:\nthe person asks, identity-service gathers what every service keeps about\nthem into a ZIP of JSON files (one per section), tells them when it is\nready, and keeps it for DATA_EXPORT_KEEP_FOR (7 days). One request a day\n(DATA_EXPORT_MIN_INTERVAL)."
+    },
+    {
       "name": "WalletPinService",
       "description": "WalletPinService: the PIN a person confirms money leaving their wallet\nwith (a transfer, paying a request). It is theirs, like the phone they log\nin with, so identity keeps it. Wrong PINs lock it for a while: 5 in a row\nlock it for 15 minutes, and each lock after that for twice as long (at\nmost a day). A correct PIN clears the count."
     },
@@ -71,6 +75,57 @@
     "application/json"
   ],
   "paths": {
+    "/v1/activity": {
+      "get": {
+        "summary": "ListActivityFeed is the activity page: the caller's trips and the wallet\nmovements that are not part of a trip (top-ups, transfers, refunds,\nvouchers, payouts...), newest first, in one list. Exactly one of rider_id\nand driver_id, the caller's own.",
+        "operationId": "TripService_ListActivityFeed",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListActivityFeedResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "driverId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "description": "1 to 50, default 20.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/admin/audit": {
       "get": {
         "summary": "ListAuditEntries lists what staff did, newest first. Needs audit.read.",
@@ -5442,6 +5497,90 @@
         ]
       }
     },
+    "/v1/me/data-exports": {
+      "get": {
+        "summary": "The caller's latest exports, newest first.",
+        "operationId": "DataExportService_ListDataExports",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListDataExportsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "DataExportService"
+        ]
+      },
+      "post": {
+        "operationId": "DataExportService_RequestDataExport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DataExportResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RequestDataExportRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DataExportService"
+        ]
+      }
+    },
+    "/v1/me/data-exports/{exportId}/download": {
+      "get": {
+        "summary": "A short-lived link to a READY export's ZIP.",
+        "operationId": "DataExportService_GetDataExportDownload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DataExportDownloadResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DataExportService"
+        ]
+      }
+    },
     "/v1/me/deletion": {
       "get": {
         "summary": "What deleting would do now: whether it is pending, and what stands in the\nway (an active trip, a booking, unpaid fees, a negative balance, an open\npayout) or must be accepted (a positive balance that is lost).",
@@ -10550,6 +10689,40 @@
       "default": "ACTION_TARGET_UNSPECIFIED",
       "description": "Whose account a suspend or reactivate is about.\n\n - ACTION_TARGET_REQUESTER: The person who opened the ticket.\n - ACTION_TARGET_COUNTERPART: The other side of the ticket's trip."
     },
+    "v1ActivityItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The trip id or the transaction id."
+        },
+        "kind": {
+          "$ref": "#/definitions/v1ActivityItemKind"
+        },
+        "occurredAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the trip was requested, or the money moved."
+        },
+        "trip": {
+          "$ref": "#/definitions/v1Trip",
+          "description": "Set for ACTIVITY_ITEM_KIND_TRIP."
+        },
+        "wallet": {
+          "$ref": "#/definitions/v1WalletActivity",
+          "description": "Set for ACTIVITY_ITEM_KIND_WALLET."
+        }
+      }
+    },
+    "v1ActivityItemKind": {
+      "type": "string",
+      "enum": [
+        "ACTIVITY_ITEM_KIND_UNSPECIFIED",
+        "ACTIVITY_ITEM_KIND_TRIP",
+        "ACTIVITY_ITEM_KIND_WALLET"
+      ],
+      "default": "ACTIVITY_ITEM_KIND_UNSPECIFIED"
+    },
     "v1Adjustment": {
       "type": "object",
       "properties": {
@@ -11474,6 +11647,66 @@
           "$ref": "#/definitions/v1CuratedPlace"
         }
       }
+    },
+    "v1DataExport": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1DataExportStatus"
+        },
+        "requestedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "readyAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sizeBytes": {
+          "type": "string",
+          "format": "int64",
+          "description": "The ZIP's size, once ready."
+        }
+      }
+    },
+    "v1DataExportDownloadResponse": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "urlExpiresAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1DataExportResponse": {
+      "type": "object",
+      "properties": {
+        "export": {
+          "$ref": "#/definitions/v1DataExport"
+        }
+      }
+    },
+    "v1DataExportStatus": {
+      "type": "string",
+      "enum": [
+        "DATA_EXPORT_STATUS_UNSPECIFIED",
+        "DATA_EXPORT_STATUS_PENDING",
+        "DATA_EXPORT_STATUS_READY",
+        "DATA_EXPORT_STATUS_FAILED",
+        "DATA_EXPORT_STATUS_EXPIRED"
+      ],
+      "default": "DATA_EXPORT_STATUS_UNSPECIFIED",
+      "description": " - DATA_EXPORT_STATUS_PENDING: Being gathered.\n - DATA_EXPORT_STATUS_READY: Ready to download until expires_at.\n - DATA_EXPORT_STATUS_FAILED: Could not be made; the person may ask again.\n - DATA_EXPORT_STATUS_EXPIRED: Past expires_at: the file is deleted."
     },
     "v1DateRange": {
       "type": "object",
@@ -13065,6 +13298,22 @@
         }
       }
     },
+    "v1ListActivityFeedResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ActivityItem"
+          }
+        },
+        "nextPageToken": {
+          "type": "string",
+          "description": "Empty on the last page."
+        }
+      }
+    },
     "v1ListAuditEntriesResponse": {
       "type": "object",
       "properties": {
@@ -13119,6 +13368,23 @@
         },
         "nextPageToken": {
           "type": "string"
+        }
+      }
+    },
+    "v1ListDataExportsResponse": {
+      "type": "object",
+      "properties": {
+        "exports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DataExport"
+          }
+        },
+        "nextRequestAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the person may ask again (unset: now)."
         }
       }
     },
@@ -13805,10 +14071,11 @@
         "MEDIA_PURPOSE_DRIVER_DOCUMENT",
         "MEDIA_PURPOSE_PROFILE_PHOTO",
         "MEDIA_PURPOSE_ADDRESS_PHOTO",
-        "MEDIA_PURPOSE_SUPPORT_ATTACHMENT"
+        "MEDIA_PURPOSE_SUPPORT_ATTACHMENT",
+        "MEDIA_PURPOSE_DATA_EXPORT"
       ],
       "default": "MEDIA_PURPOSE_UNSPECIFIED",
-      "description": " - MEDIA_PURPOSE_DRIVER_DOCUMENT: Licence, vehicle papers, ID: JPEG, PNG, WebP or PDF, up to 10 MB.\n - MEDIA_PURPOSE_PROFILE_PHOTO: A rider's or driver's picture: JPEG, PNG or WebP, up to 5 MB.\n - MEDIA_PURPOSE_ADDRESS_PHOTO: A photo that helps the captain find a saved address: up to 8 MB.\n - MEDIA_PURPOSE_SUPPORT_ATTACHMENT: Attached to a support ticket: JPEG, PNG, WebP or PDF, up to 10 MB."
+      "description": " - MEDIA_PURPOSE_DRIVER_DOCUMENT: Licence, vehicle papers, ID: JPEG, PNG, WebP or PDF, up to 10 MB.\n - MEDIA_PURPOSE_PROFILE_PHOTO: A rider's or driver's picture: JPEG, PNG or WebP, up to 5 MB.\n - MEDIA_PURPOSE_ADDRESS_PHOTO: A photo that helps the captain find a saved address: up to 8 MB.\n - MEDIA_PURPOSE_SUPPORT_ATTACHMENT: Attached to a support ticket: JPEG, PNG, WebP or PDF, up to 10 MB.\n - MEDIA_PURPOSE_DATA_EXPORT: A person's \"Download your data\" ZIP, made by identity-service (StoreFile\nonly, never an upload), up to 64 MB."
     },
     "v1MediaResponse": {
       "type": "object",
@@ -14572,6 +14839,9 @@
           "format": "int32"
         }
       }
+    },
+    "v1RequestDataExportRequest": {
+      "type": "object"
     },
     "v1RequestIdentifierLinkOTPRequest": {
       "type": "object",
@@ -16658,6 +16928,35 @@
           "format": "date-time"
         }
       }
+    },
+    "v1WalletActivity": {
+      "type": "object",
+      "properties": {
+        "transactionId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "description": "The wallet transaction type: top_up, transfer_in, transfer_out, refund,\nvoucher, payout_hold, incentive, adjustment..."
+        },
+        "amount": {
+          "type": "string",
+          "description": "Signed decimal string: negative means money left the wallet."
+        },
+        "balanceAfter": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "transferId": {
+          "type": "string"
+        }
+      },
+      "description": "WalletActivity is a wallet movement not tied to a trip."
     },
     "v1WalletPinStatusResponse": {
       "type": "object",

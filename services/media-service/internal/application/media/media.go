@@ -12,6 +12,9 @@ const (
 	PurposeProfilePhoto      Purpose = "profile_photo"
 	PurposeAddressPhoto      Purpose = "address_photo"
 	PurposeSupportAttachment Purpose = "support_attachment"
+	// PurposeDataExport is a person's data export ZIP. It is never uploaded:
+	// only StoreFile (identity-service) makes one, so it has no upload policy.
+	PurposeDataExport Purpose = "data_export"
 )
 
 type Status string
@@ -29,7 +32,11 @@ const (
 	TypePNG  = "image/png"
 	TypeWebP = "image/webp"
 	TypePDF  = "application/pdf"
+	TypeZIP  = "application/zip"
 )
+
+// MaxStoredFileBytes is the largest file StoreFile keeps.
+const MaxStoredFileBytes = 64 << 20
 
 const megabyte = 1 << 20
 

@@ -8,6 +8,7 @@ package supportv1
 
 import (
 	context "context"
+	v1 "github.com/7akoom/ride-platform/gen/go/ride/dataexport/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	SupportService_ExportPersonalData_FullMethodName         = "/ride.support.v1.SupportService/ExportPersonalData"
 	SupportService_ListSupportCategories_FullMethodName      = "/ride.support.v1.SupportService/ListSupportCategories"
 	SupportService_CreateTicket_FullMethodName               = "/ride.support.v1.SupportService/CreateTicket"
 	SupportService_ListMyTickets_FullMethodName              = "/ride.support.v1.SupportService/ListMyTickets"
@@ -80,6 +82,9 @@ const (
 // (support.suspend). Money above SUPPORT_REFUND_LIMIT for one ticket waits
 // for another staff member with support.approve.
 type SupportServiceClient interface {
+	// ExportPersonalData returns what this service keeps about one person,
+	// for their "Download your data" file. Internal only (identity-service).
+	ExportPersonalData(ctx context.Context, in *v1.ExportPersonalDataRequest, opts ...grpc.CallOption) (*v1.ExportPersonalDataResponse, error)
 	// ListSupportCategories lists the active categories for riders or drivers,
 	// in their display order.
 	ListSupportCategories(ctx context.Context, in *ListSupportCategoriesRequest, opts ...grpc.CallOption) (*ListSupportCategoriesResponse, error)
@@ -169,6 +174,16 @@ type supportServiceClient struct {
 
 func NewSupportServiceClient(cc grpc.ClientConnInterface) SupportServiceClient {
 	return &supportServiceClient{cc}
+}
+
+func (c *supportServiceClient) ExportPersonalData(ctx context.Context, in *v1.ExportPersonalDataRequest, opts ...grpc.CallOption) (*v1.ExportPersonalDataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ExportPersonalDataResponse)
+	err := c.cc.Invoke(ctx, SupportService_ExportPersonalData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *supportServiceClient) ListSupportCategories(ctx context.Context, in *ListSupportCategoriesRequest, opts ...grpc.CallOption) (*ListSupportCategoriesResponse, error) {
@@ -536,6 +551,9 @@ func (c *supportServiceClient) GetSupportStats(ctx context.Context, in *GetSuppo
 // (support.suspend). Money above SUPPORT_REFUND_LIMIT for one ticket waits
 // for another staff member with support.approve.
 type SupportServiceServer interface {
+	// ExportPersonalData returns what this service keeps about one person,
+	// for their "Download your data" file. Internal only (identity-service).
+	ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error)
 	// ListSupportCategories lists the active categories for riders or drivers,
 	// in their display order.
 	ListSupportCategories(context.Context, *ListSupportCategoriesRequest) (*ListSupportCategoriesResponse, error)
@@ -627,6 +645,9 @@ type SupportServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSupportServiceServer struct{}
 
+func (UnimplementedSupportServiceServer) ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExportPersonalData not implemented")
+}
 func (UnimplementedSupportServiceServer) ListSupportCategories(context.Context, *ListSupportCategoriesRequest) (*ListSupportCategoriesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListSupportCategories not implemented")
 }
@@ -748,6 +769,24 @@ func RegisterSupportServiceServer(s grpc.ServiceRegistrar, srv SupportServiceSer
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&SupportService_ServiceDesc, srv)
+}
+
+func _SupportService_ExportPersonalData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ExportPersonalDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).ExportPersonalData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_ExportPersonalData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).ExportPersonalData(ctx, req.(*v1.ExportPersonalDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _SupportService_ListSupportCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1369,6 +1408,10 @@ var SupportService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ride.support.v1.SupportService",
 	HandlerType: (*SupportServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ExportPersonalData",
+			Handler:    _SupportService_ExportPersonalData_Handler,
+		},
 		{
 			MethodName: "ListSupportCategories",
 			Handler:    _SupportService_ListSupportCategories_Handler,

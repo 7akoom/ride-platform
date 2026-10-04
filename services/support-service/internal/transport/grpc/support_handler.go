@@ -16,6 +16,9 @@ import (
 type SupportHandler struct {
 	supportv1.UnimplementedSupportServiceServer
 
+	// personalData answers ExportPersonalData; nil until WithPersonalData.
+	personalData PersonalDataFunc
+
 	service *support.Service
 	logger  *slog.Logger
 }

@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package ride.identity.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/7akoom/ride-platform/gen/go/ride/identity/v1;identityv1";
+
+// DataExportService is "Download your data", as the big ride apps have it:
+// the person asks, identity-service gathers what every service keeps about
+// them into a ZIP of JSON files (one per section), tells them when it is
+// ready, and keeps it for DATA_EXPORT_KEEP_FOR (7 days). One request a day
+// (DATA_EXPORT_MIN_INTERVAL).
+service DataExportService {
+  rpc RequestDataExport(RequestDataExportRequest) returns (DataExportResponse) {
+    option (google.api.http) = {
+      post: "/v1/me/data-exports"
+      body: "*"
+    };
+  }
+
+  // The caller's latest exports, newest first.
+  rpc ListDataExports(ListDataExportsRequest) returns (ListDataExportsResponse) {
+    option (google.api.http) = {
+      get: "/v1/me/data-exports"
+    };
+  }
+
+  // A short-lived link to a READY export's ZIP.
+  rpc GetDataExportDownload(GetDataExportDownloadRequest) returns (DataExportDownloadResponse) {
+    option (google.api.http) = {
+      get: "/v1/me/data-exports/{export_id}/download"
+    };
+  }
+}
+
+enum DataExportStatus {
+  DATA_EXPORT_STATUS_UNSPECIFIED = 0;
+  // Being gathered.
+  DATA_EXPORT_STATUS_PENDING = 1;
+  // Ready to download until expires_at.
+  DATA_EXPORT_STATUS_READY = 2;
+  // Could not be made; the person may ask again.
+  DATA_EXPORT_STATUS_FAILED = 3;
+  // Past expires_at: the file is deleted.
+  DATA_EXPORT_STATUS_EXPIRED = 4;
+}
+
+message DataExport {
+  string id = 1;
+  DataExportStatus status = 2;
+  google.protobuf.Timestamp requested_at = 3;
+  google.protobuf.Timestamp ready_at = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  // The ZIP's size, once ready.
+  int64 size_bytes = 6;
+}
+
+message RequestDataExportRequest {}
+
+message DataExportResponse {
+  DataExport export = 1;
+}
+
+message ListDataExportsRequest {}
+
+message ListDataExportsResponse {
+  repeated DataExport exports = 1;
+  // When the person may ask again (unset: now).
+  google.protobuf.Timestamp next_request_at = 2;
+}
+
+message GetDataExportDownloadRequest {
+  string export_id = 1;
+}
+
+message DataExportDownloadResponse {
+  string url = 1;
+  google.protobuf.Timestamp url_expires_at = 2;
+}

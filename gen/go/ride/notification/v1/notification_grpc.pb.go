@@ -8,6 +8,7 @@ package notificationv1
 
 import (
 	context "context"
+	v1 "github.com/7akoom/ride-platform/gen/go/ride/dataexport/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,19 +20,23 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NotificationService_Send_FullMethodName              = "/ride.notification.v1.NotificationService/Send"
-	NotificationService_RegisterDevice_FullMethodName    = "/ride.notification.v1.NotificationService/RegisterDevice"
-	NotificationService_UnregisterDevice_FullMethodName  = "/ride.notification.v1.NotificationService/UnregisterDevice"
-	NotificationService_ListNotifications_FullMethodName = "/ride.notification.v1.NotificationService/ListNotifications"
-	NotificationService_MarkAsRead_FullMethodName        = "/ride.notification.v1.NotificationService/MarkAsRead"
-	NotificationService_GetUnreadCount_FullMethodName    = "/ride.notification.v1.NotificationService/GetUnreadCount"
-	NotificationService_UpsertTemplate_FullMethodName    = "/ride.notification.v1.NotificationService/UpsertTemplate"
+	NotificationService_ExportPersonalData_FullMethodName = "/ride.notification.v1.NotificationService/ExportPersonalData"
+	NotificationService_Send_FullMethodName               = "/ride.notification.v1.NotificationService/Send"
+	NotificationService_RegisterDevice_FullMethodName     = "/ride.notification.v1.NotificationService/RegisterDevice"
+	NotificationService_UnregisterDevice_FullMethodName   = "/ride.notification.v1.NotificationService/UnregisterDevice"
+	NotificationService_ListNotifications_FullMethodName  = "/ride.notification.v1.NotificationService/ListNotifications"
+	NotificationService_MarkAsRead_FullMethodName         = "/ride.notification.v1.NotificationService/MarkAsRead"
+	NotificationService_GetUnreadCount_FullMethodName     = "/ride.notification.v1.NotificationService/GetUnreadCount"
+	NotificationService_UpsertTemplate_FullMethodName     = "/ride.notification.v1.NotificationService/UpsertTemplate"
 )
 
 // NotificationServiceClient is the client API for NotificationService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NotificationServiceClient interface {
+	// ExportPersonalData returns what this service keeps about one person,
+	// for their "Download your data" file. Internal only (identity-service).
+	ExportPersonalData(ctx context.Context, in *v1.ExportPersonalDataRequest, opts ...grpc.CallOption) (*v1.ExportPersonalDataResponse, error)
 	Send(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error)
 	// RegisterDevice registers a push token for the caller's own rider or driver profile.
 	RegisterDevice(ctx context.Context, in *RegisterDeviceRequest, opts ...grpc.CallOption) (*RegisterDeviceResponse, error)
@@ -52,6 +57,16 @@ type notificationServiceClient struct {
 
 func NewNotificationServiceClient(cc grpc.ClientConnInterface) NotificationServiceClient {
 	return &notificationServiceClient{cc}
+}
+
+func (c *notificationServiceClient) ExportPersonalData(ctx context.Context, in *v1.ExportPersonalDataRequest, opts ...grpc.CallOption) (*v1.ExportPersonalDataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ExportPersonalDataResponse)
+	err := c.cc.Invoke(ctx, NotificationService_ExportPersonalData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *notificationServiceClient) Send(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error) {
@@ -128,6 +143,9 @@ func (c *notificationServiceClient) UpsertTemplate(ctx context.Context, in *Upse
 // All implementations must embed UnimplementedNotificationServiceServer
 // for forward compatibility.
 type NotificationServiceServer interface {
+	// ExportPersonalData returns what this service keeps about one person,
+	// for their "Download your data" file. Internal only (identity-service).
+	ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error)
 	Send(context.Context, *SendRequest) (*SendResponse, error)
 	// RegisterDevice registers a push token for the caller's own rider or driver profile.
 	RegisterDevice(context.Context, *RegisterDeviceRequest) (*RegisterDeviceResponse, error)
@@ -150,6 +168,9 @@ type NotificationServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedNotificationServiceServer struct{}
 
+func (UnimplementedNotificationServiceServer) ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExportPersonalData not implemented")
+}
 func (UnimplementedNotificationServiceServer) Send(context.Context, *SendRequest) (*SendResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Send not implemented")
 }
@@ -190,6 +211,24 @@ func RegisterNotificationServiceServer(s grpc.ServiceRegistrar, srv Notification
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&NotificationService_ServiceDesc, srv)
+}
+
+func _NotificationService_ExportPersonalData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ExportPersonalDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).ExportPersonalData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NotificationService_ExportPersonalData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).ExportPersonalData(ctx, req.(*v1.ExportPersonalDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _NotificationService_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -325,6 +364,10 @@ var NotificationService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ride.notification.v1.NotificationService",
 	HandlerType: (*NotificationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ExportPersonalData",
+			Handler:    _NotificationService_ExportPersonalData_Handler,
+		},
 		{
 			MethodName: "Send",
 			Handler:    _NotificationService_Send_Handler,

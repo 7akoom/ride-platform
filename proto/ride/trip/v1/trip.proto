@@ -3,10 +3,15 @@ syntax = "proto3";
 package ride.trip.v1;
 
 import "google/protobuf/timestamp.proto";
+import "ride/dataexport/v1/data_export.proto";
 import "google/api/annotations.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/trip/v1;tripv1";
 
 service TripService {
+  // ExportPersonalData returns what this service keeps about one person,
+  // for their "Download your data" file. Internal only (identity-service).
+  rpc ExportPersonalData(ride.dataexport.v1.ExportPersonalDataRequest) returns (ride.dataexport.v1.ExportPersonalDataResponse);
+
   rpc RequestTrip(RequestTripRequest) returns (RequestTripResponse) {
     option (google.api.http) = {
       post: "/v1/trips"
@@ -141,6 +146,16 @@ service TripService {
   rpc ListTrips(ListTripsRequest) returns (ListTripsResponse) {
     option (google.api.http) = {
       get: "/v1/trips"
+    };
+  }
+
+  // ListActivityFeed is the activity page: the caller's trips and the wallet
+  // movements that are not part of a trip (top-ups, transfers, refunds,
+  // vouchers, payouts...), newest first, in one list. Exactly one of rider_id
+  // and driver_id, the caller's own.
+  rpc ListActivityFeed(ListActivityFeedRequest) returns (ListActivityFeedResponse) {
+    option (google.api.http) = {
+      get: "/v1/activity"
     };
   }
 
@@ -835,5 +850,53 @@ message ListDriverActivityRequest {
 
 message ListDriverActivityResponse {
   repeated DriverActivity drivers = 1;
+  string next_page_token = 2;
+}
+
+// --- The activity page: trips and wallet movements in one list ----------
+
+message ListActivityFeedRequest {
+  string rider_id = 1;
+  string driver_id = 2;
+  // 1 to 50, default 20.
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+enum ActivityItemKind {
+  ACTIVITY_ITEM_KIND_UNSPECIFIED = 0;
+  ACTIVITY_ITEM_KIND_TRIP = 1;
+  ACTIVITY_ITEM_KIND_WALLET = 2;
+}
+
+// WalletActivity is a wallet movement not tied to a trip.
+message WalletActivity {
+  string transaction_id = 1;
+  // The wallet transaction type: top_up, transfer_in, transfer_out, refund,
+  // voucher, payout_hold, incentive, adjustment...
+  string type = 2;
+  // Signed decimal string: negative means money left the wallet.
+  string amount = 3;
+  string balance_after = 4;
+  string currency_code = 5;
+  string description = 6;
+  string transfer_id = 7;
+}
+
+message ActivityItem {
+  // The trip id or the transaction id.
+  string id = 1;
+  ActivityItemKind kind = 2;
+  // When the trip was requested, or the money moved.
+  google.protobuf.Timestamp occurred_at = 3;
+  // Set for ACTIVITY_ITEM_KIND_TRIP.
+  Trip trip = 4;
+  // Set for ACTIVITY_ITEM_KIND_WALLET.
+  WalletActivity wallet = 5;
+}
+
+message ListActivityFeedResponse {
+  repeated ActivityItem items = 1;
+  // Empty on the last page.
   string next_page_token = 2;
 }

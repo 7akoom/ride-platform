@@ -132,6 +132,8 @@ func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) err
 		return h.handleDriverVehicle(ctx, envelope)
 	case SubjectDriverNameChange:
 		return h.handleDriverNameChange(ctx, envelope)
+	case SubjectDataExportReady:
+		return h.handleDataExportReady(ctx, envelope)
 	case SubjectSupportReplyReceived, SubjectSupportTicketResolved, SubjectSupportLostItemReported:
 		return h.handleSupport(ctx, subject, envelope)
 	default:

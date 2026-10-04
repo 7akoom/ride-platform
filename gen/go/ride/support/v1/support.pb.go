@@ -7,6 +7,7 @@
 package supportv1
 
 import (
+	v1 "github.com/7akoom/ride-platform/gen/go/ride/dataexport/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -4464,7 +4465,7 @@ var File_ride_support_v1_support_proto protoreflect.FileDescriptor
 
 const file_ride_support_v1_support_proto_rawDesc = "" +
 	"\n" +
-	"\x1dride/support/v1/support.proto\x12\x0fride.support.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8a\x03\n" +
+	"\x1dride/support/v1/support.proto\x12\x0fride.support.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a$ride/dataexport/v1/data_export.proto\"\x8a\x03\n" +
 	"\x0fSupportCategory\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12=\n" +
 	"\baudience\x18\x02 \x01(\x0e2!.ride.support.v1.CategoryAudienceR\baudience\x12\x17\n" +
@@ -4818,8 +4819,9 @@ const file_ride_support_v1_support_proto_rawDesc = "" +
 	"\fActionTarget\x12\x1d\n" +
 	"\x19ACTION_TARGET_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17ACTION_TARGET_REQUESTER\x10\x01\x12\x1d\n" +
-	"\x19ACTION_TARGET_COUNTERPART\x10\x022\x98(\n" +
-	"\x0eSupportService\x12\x96\x01\n" +
+	"\x19ACTION_TARGET_COUNTERPART\x10\x022\x8d)\n" +
+	"\x0eSupportService\x12s\n" +
+	"\x12ExportPersonalData\x12-.ride.dataexport.v1.ExportPersonalDataRequest\x1a..ride.dataexport.v1.ExportPersonalDataResponse\x12\x96\x01\n" +
 	"\x15ListSupportCategories\x12-.ride.support.v1.ListSupportCategoriesRequest\x1a..ride.support.v1.ListSupportCategoriesResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/support/categories\x12{\n" +
 	"\fCreateTicket\x12$.ride.support.v1.CreateTicketRequest\x1a%.ride.support.v1.CreateTicketResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/support/tickets\x12{\n" +
 	"\rListMyTickets\x12%.ride.support.v1.ListMyTicketsRequest\x1a&.ride.support.v1.ListMyTicketsResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/support/tickets\x12\x82\x01\n" +
@@ -4943,6 +4945,8 @@ var file_ride_support_v1_support_proto_goTypes = []any{
 	(*PriorityCount)(nil),                     // 68: ride.support.v1.PriorityCount
 	(*GetSupportStatsResponse)(nil),           // 69: ride.support.v1.GetSupportStatsResponse
 	(*timestamppb.Timestamp)(nil),             // 70: google.protobuf.Timestamp
+	(*v1.ExportPersonalDataRequest)(nil),      // 71: ride.dataexport.v1.ExportPersonalDataRequest
+	(*v1.ExportPersonalDataResponse)(nil),     // 72: ride.dataexport.v1.ExportPersonalDataResponse
 }
 var file_ride_support_v1_support_proto_depIdxs = []int32{
 	1,   // 0: ride.support.v1.SupportCategory.audience:type_name -> ride.support.v1.CategoryAudience
@@ -5017,76 +5021,78 @@ var file_ride_support_v1_support_proto_depIdxs = []int32{
 	68,  // 69: ride.support.v1.GetSupportStatsResponse.open_by_priority:type_name -> ride.support.v1.PriorityCount
 	70,  // 70: ride.support.v1.GetSupportStatsResponse.from:type_name -> google.protobuf.Timestamp
 	70,  // 71: ride.support.v1.GetSupportStatsResponse.to:type_name -> google.protobuf.Timestamp
-	16,  // 72: ride.support.v1.SupportService.ListSupportCategories:input_type -> ride.support.v1.ListSupportCategoriesRequest
-	18,  // 73: ride.support.v1.SupportService.CreateTicket:input_type -> ride.support.v1.CreateTicketRequest
-	20,  // 74: ride.support.v1.SupportService.ListMyTickets:input_type -> ride.support.v1.ListMyTicketsRequest
-	22,  // 75: ride.support.v1.SupportService.GetMyTicket:input_type -> ride.support.v1.GetMyTicketRequest
-	24,  // 76: ride.support.v1.SupportService.AddTicketMessage:input_type -> ride.support.v1.AddTicketMessageRequest
-	25,  // 77: ride.support.v1.SupportService.CloseMyTicket:input_type -> ride.support.v1.CloseMyTicketRequest
-	26,  // 78: ride.support.v1.SupportService.GetAttachmentURL:input_type -> ride.support.v1.GetAttachmentURLRequest
-	28,  // 79: ride.support.v1.SupportService.ListSupportQueue:input_type -> ride.support.v1.ListSupportQueueRequest
-	28,  // 80: ride.support.v1.SupportService.ListSafetyQueue:input_type -> ride.support.v1.ListSupportQueueRequest
-	30,  // 81: ride.support.v1.SupportService.GetTicketForStaff:input_type -> ride.support.v1.GetTicketForStaffRequest
-	32,  // 82: ride.support.v1.SupportService.ClaimTicket:input_type -> ride.support.v1.ClaimTicketRequest
-	33,  // 83: ride.support.v1.SupportService.AssignTicket:input_type -> ride.support.v1.AssignTicketRequest
-	34,  // 84: ride.support.v1.SupportService.ReplyToTicket:input_type -> ride.support.v1.ReplyToTicketRequest
-	35,  // 85: ride.support.v1.SupportService.SetTicketStatus:input_type -> ride.support.v1.SetTicketStatusRequest
-	36,  // 86: ride.support.v1.SupportService.SetTicketPriority:input_type -> ride.support.v1.SetTicketPriorityRequest
-	37,  // 87: ride.support.v1.SupportService.RequestTicketAction:input_type -> ride.support.v1.RequestTicketActionRequest
-	39,  // 88: ride.support.v1.SupportService.ListPendingTicketActions:input_type -> ride.support.v1.ListPendingTicketActionsRequest
-	41,  // 89: ride.support.v1.SupportService.ApproveTicketAction:input_type -> ride.support.v1.ApproveTicketActionRequest
-	42,  // 90: ride.support.v1.SupportService.RejectTicketAction:input_type -> ride.support.v1.RejectTicketActionRequest
-	43,  // 91: ride.support.v1.SupportService.AdminListSupportCategories:input_type -> ride.support.v1.AdminListSupportCategoriesRequest
-	44,  // 92: ride.support.v1.SupportService.UpsertSupportCategory:input_type -> ride.support.v1.UpsertSupportCategoryRequest
-	48,  // 93: ride.support.v1.SupportService.ListHelpSections:input_type -> ride.support.v1.ListHelpSectionsRequest
-	50,  // 94: ride.support.v1.SupportService.ListHelpArticles:input_type -> ride.support.v1.ListHelpArticlesRequest
-	52,  // 95: ride.support.v1.SupportService.GetHelpArticle:input_type -> ride.support.v1.GetHelpArticleRequest
-	54,  // 96: ride.support.v1.SupportService.RateHelpArticle:input_type -> ride.support.v1.RateHelpArticleRequest
-	55,  // 97: ride.support.v1.SupportService.RateTicket:input_type -> ride.support.v1.RateTicketRequest
-	56,  // 98: ride.support.v1.SupportService.AdminListHelpSections:input_type -> ride.support.v1.AdminListHelpSectionsRequest
-	57,  // 99: ride.support.v1.SupportService.UpsertHelpSection:input_type -> ride.support.v1.UpsertHelpSectionRequest
-	59,  // 100: ride.support.v1.SupportService.AdminListHelpArticles:input_type -> ride.support.v1.AdminListHelpArticlesRequest
-	60,  // 101: ride.support.v1.SupportService.UpsertHelpArticle:input_type -> ride.support.v1.UpsertHelpArticleRequest
-	62,  // 102: ride.support.v1.SupportService.ListMacros:input_type -> ride.support.v1.ListMacrosRequest
-	64,  // 103: ride.support.v1.SupportService.AdminListMacros:input_type -> ride.support.v1.AdminListMacrosRequest
-	65,  // 104: ride.support.v1.SupportService.UpsertMacro:input_type -> ride.support.v1.UpsertMacroRequest
-	67,  // 105: ride.support.v1.SupportService.GetSupportStats:input_type -> ride.support.v1.GetSupportStatsRequest
-	17,  // 106: ride.support.v1.SupportService.ListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
-	19,  // 107: ride.support.v1.SupportService.CreateTicket:output_type -> ride.support.v1.CreateTicketResponse
-	21,  // 108: ride.support.v1.SupportService.ListMyTickets:output_type -> ride.support.v1.ListMyTicketsResponse
-	23,  // 109: ride.support.v1.SupportService.GetMyTicket:output_type -> ride.support.v1.TicketDetailResponse
-	23,  // 110: ride.support.v1.SupportService.AddTicketMessage:output_type -> ride.support.v1.TicketDetailResponse
-	23,  // 111: ride.support.v1.SupportService.CloseMyTicket:output_type -> ride.support.v1.TicketDetailResponse
-	27,  // 112: ride.support.v1.SupportService.GetAttachmentURL:output_type -> ride.support.v1.GetAttachmentURLResponse
-	29,  // 113: ride.support.v1.SupportService.ListSupportQueue:output_type -> ride.support.v1.ListSupportQueueResponse
-	29,  // 114: ride.support.v1.SupportService.ListSafetyQueue:output_type -> ride.support.v1.ListSupportQueueResponse
-	31,  // 115: ride.support.v1.SupportService.GetTicketForStaff:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31,  // 116: ride.support.v1.SupportService.ClaimTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31,  // 117: ride.support.v1.SupportService.AssignTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31,  // 118: ride.support.v1.SupportService.ReplyToTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31,  // 119: ride.support.v1.SupportService.SetTicketStatus:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31,  // 120: ride.support.v1.SupportService.SetTicketPriority:output_type -> ride.support.v1.StaffTicketDetailResponse
-	38,  // 121: ride.support.v1.SupportService.RequestTicketAction:output_type -> ride.support.v1.TicketActionResponse
-	40,  // 122: ride.support.v1.SupportService.ListPendingTicketActions:output_type -> ride.support.v1.ListPendingTicketActionsResponse
-	38,  // 123: ride.support.v1.SupportService.ApproveTicketAction:output_type -> ride.support.v1.TicketActionResponse
-	38,  // 124: ride.support.v1.SupportService.RejectTicketAction:output_type -> ride.support.v1.TicketActionResponse
-	17,  // 125: ride.support.v1.SupportService.AdminListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
-	45,  // 126: ride.support.v1.SupportService.UpsertSupportCategory:output_type -> ride.support.v1.SupportCategoryResponse
-	49,  // 127: ride.support.v1.SupportService.ListHelpSections:output_type -> ride.support.v1.ListHelpSectionsResponse
-	51,  // 128: ride.support.v1.SupportService.ListHelpArticles:output_type -> ride.support.v1.ListHelpArticlesResponse
-	53,  // 129: ride.support.v1.SupportService.GetHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
-	53,  // 130: ride.support.v1.SupportService.RateHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
-	23,  // 131: ride.support.v1.SupportService.RateTicket:output_type -> ride.support.v1.TicketDetailResponse
-	49,  // 132: ride.support.v1.SupportService.AdminListHelpSections:output_type -> ride.support.v1.ListHelpSectionsResponse
-	58,  // 133: ride.support.v1.SupportService.UpsertHelpSection:output_type -> ride.support.v1.HelpSectionResponse
-	51,  // 134: ride.support.v1.SupportService.AdminListHelpArticles:output_type -> ride.support.v1.ListHelpArticlesResponse
-	53,  // 135: ride.support.v1.SupportService.UpsertHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
-	63,  // 136: ride.support.v1.SupportService.ListMacros:output_type -> ride.support.v1.ListMacrosResponse
-	63,  // 137: ride.support.v1.SupportService.AdminListMacros:output_type -> ride.support.v1.ListMacrosResponse
-	66,  // 138: ride.support.v1.SupportService.UpsertMacro:output_type -> ride.support.v1.MacroResponse
-	69,  // 139: ride.support.v1.SupportService.GetSupportStats:output_type -> ride.support.v1.GetSupportStatsResponse
-	106, // [106:140] is the sub-list for method output_type
-	72,  // [72:106] is the sub-list for method input_type
+	71,  // 72: ride.support.v1.SupportService.ExportPersonalData:input_type -> ride.dataexport.v1.ExportPersonalDataRequest
+	16,  // 73: ride.support.v1.SupportService.ListSupportCategories:input_type -> ride.support.v1.ListSupportCategoriesRequest
+	18,  // 74: ride.support.v1.SupportService.CreateTicket:input_type -> ride.support.v1.CreateTicketRequest
+	20,  // 75: ride.support.v1.SupportService.ListMyTickets:input_type -> ride.support.v1.ListMyTicketsRequest
+	22,  // 76: ride.support.v1.SupportService.GetMyTicket:input_type -> ride.support.v1.GetMyTicketRequest
+	24,  // 77: ride.support.v1.SupportService.AddTicketMessage:input_type -> ride.support.v1.AddTicketMessageRequest
+	25,  // 78: ride.support.v1.SupportService.CloseMyTicket:input_type -> ride.support.v1.CloseMyTicketRequest
+	26,  // 79: ride.support.v1.SupportService.GetAttachmentURL:input_type -> ride.support.v1.GetAttachmentURLRequest
+	28,  // 80: ride.support.v1.SupportService.ListSupportQueue:input_type -> ride.support.v1.ListSupportQueueRequest
+	28,  // 81: ride.support.v1.SupportService.ListSafetyQueue:input_type -> ride.support.v1.ListSupportQueueRequest
+	30,  // 82: ride.support.v1.SupportService.GetTicketForStaff:input_type -> ride.support.v1.GetTicketForStaffRequest
+	32,  // 83: ride.support.v1.SupportService.ClaimTicket:input_type -> ride.support.v1.ClaimTicketRequest
+	33,  // 84: ride.support.v1.SupportService.AssignTicket:input_type -> ride.support.v1.AssignTicketRequest
+	34,  // 85: ride.support.v1.SupportService.ReplyToTicket:input_type -> ride.support.v1.ReplyToTicketRequest
+	35,  // 86: ride.support.v1.SupportService.SetTicketStatus:input_type -> ride.support.v1.SetTicketStatusRequest
+	36,  // 87: ride.support.v1.SupportService.SetTicketPriority:input_type -> ride.support.v1.SetTicketPriorityRequest
+	37,  // 88: ride.support.v1.SupportService.RequestTicketAction:input_type -> ride.support.v1.RequestTicketActionRequest
+	39,  // 89: ride.support.v1.SupportService.ListPendingTicketActions:input_type -> ride.support.v1.ListPendingTicketActionsRequest
+	41,  // 90: ride.support.v1.SupportService.ApproveTicketAction:input_type -> ride.support.v1.ApproveTicketActionRequest
+	42,  // 91: ride.support.v1.SupportService.RejectTicketAction:input_type -> ride.support.v1.RejectTicketActionRequest
+	43,  // 92: ride.support.v1.SupportService.AdminListSupportCategories:input_type -> ride.support.v1.AdminListSupportCategoriesRequest
+	44,  // 93: ride.support.v1.SupportService.UpsertSupportCategory:input_type -> ride.support.v1.UpsertSupportCategoryRequest
+	48,  // 94: ride.support.v1.SupportService.ListHelpSections:input_type -> ride.support.v1.ListHelpSectionsRequest
+	50,  // 95: ride.support.v1.SupportService.ListHelpArticles:input_type -> ride.support.v1.ListHelpArticlesRequest
+	52,  // 96: ride.support.v1.SupportService.GetHelpArticle:input_type -> ride.support.v1.GetHelpArticleRequest
+	54,  // 97: ride.support.v1.SupportService.RateHelpArticle:input_type -> ride.support.v1.RateHelpArticleRequest
+	55,  // 98: ride.support.v1.SupportService.RateTicket:input_type -> ride.support.v1.RateTicketRequest
+	56,  // 99: ride.support.v1.SupportService.AdminListHelpSections:input_type -> ride.support.v1.AdminListHelpSectionsRequest
+	57,  // 100: ride.support.v1.SupportService.UpsertHelpSection:input_type -> ride.support.v1.UpsertHelpSectionRequest
+	59,  // 101: ride.support.v1.SupportService.AdminListHelpArticles:input_type -> ride.support.v1.AdminListHelpArticlesRequest
+	60,  // 102: ride.support.v1.SupportService.UpsertHelpArticle:input_type -> ride.support.v1.UpsertHelpArticleRequest
+	62,  // 103: ride.support.v1.SupportService.ListMacros:input_type -> ride.support.v1.ListMacrosRequest
+	64,  // 104: ride.support.v1.SupportService.AdminListMacros:input_type -> ride.support.v1.AdminListMacrosRequest
+	65,  // 105: ride.support.v1.SupportService.UpsertMacro:input_type -> ride.support.v1.UpsertMacroRequest
+	67,  // 106: ride.support.v1.SupportService.GetSupportStats:input_type -> ride.support.v1.GetSupportStatsRequest
+	72,  // 107: ride.support.v1.SupportService.ExportPersonalData:output_type -> ride.dataexport.v1.ExportPersonalDataResponse
+	17,  // 108: ride.support.v1.SupportService.ListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
+	19,  // 109: ride.support.v1.SupportService.CreateTicket:output_type -> ride.support.v1.CreateTicketResponse
+	21,  // 110: ride.support.v1.SupportService.ListMyTickets:output_type -> ride.support.v1.ListMyTicketsResponse
+	23,  // 111: ride.support.v1.SupportService.GetMyTicket:output_type -> ride.support.v1.TicketDetailResponse
+	23,  // 112: ride.support.v1.SupportService.AddTicketMessage:output_type -> ride.support.v1.TicketDetailResponse
+	23,  // 113: ride.support.v1.SupportService.CloseMyTicket:output_type -> ride.support.v1.TicketDetailResponse
+	27,  // 114: ride.support.v1.SupportService.GetAttachmentURL:output_type -> ride.support.v1.GetAttachmentURLResponse
+	29,  // 115: ride.support.v1.SupportService.ListSupportQueue:output_type -> ride.support.v1.ListSupportQueueResponse
+	29,  // 116: ride.support.v1.SupportService.ListSafetyQueue:output_type -> ride.support.v1.ListSupportQueueResponse
+	31,  // 117: ride.support.v1.SupportService.GetTicketForStaff:output_type -> ride.support.v1.StaffTicketDetailResponse
+	31,  // 118: ride.support.v1.SupportService.ClaimTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
+	31,  // 119: ride.support.v1.SupportService.AssignTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
+	31,  // 120: ride.support.v1.SupportService.ReplyToTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
+	31,  // 121: ride.support.v1.SupportService.SetTicketStatus:output_type -> ride.support.v1.StaffTicketDetailResponse
+	31,  // 122: ride.support.v1.SupportService.SetTicketPriority:output_type -> ride.support.v1.StaffTicketDetailResponse
+	38,  // 123: ride.support.v1.SupportService.RequestTicketAction:output_type -> ride.support.v1.TicketActionResponse
+	40,  // 124: ride.support.v1.SupportService.ListPendingTicketActions:output_type -> ride.support.v1.ListPendingTicketActionsResponse
+	38,  // 125: ride.support.v1.SupportService.ApproveTicketAction:output_type -> ride.support.v1.TicketActionResponse
+	38,  // 126: ride.support.v1.SupportService.RejectTicketAction:output_type -> ride.support.v1.TicketActionResponse
+	17,  // 127: ride.support.v1.SupportService.AdminListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
+	45,  // 128: ride.support.v1.SupportService.UpsertSupportCategory:output_type -> ride.support.v1.SupportCategoryResponse
+	49,  // 129: ride.support.v1.SupportService.ListHelpSections:output_type -> ride.support.v1.ListHelpSectionsResponse
+	51,  // 130: ride.support.v1.SupportService.ListHelpArticles:output_type -> ride.support.v1.ListHelpArticlesResponse
+	53,  // 131: ride.support.v1.SupportService.GetHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
+	53,  // 132: ride.support.v1.SupportService.RateHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
+	23,  // 133: ride.support.v1.SupportService.RateTicket:output_type -> ride.support.v1.TicketDetailResponse
+	49,  // 134: ride.support.v1.SupportService.AdminListHelpSections:output_type -> ride.support.v1.ListHelpSectionsResponse
+	58,  // 135: ride.support.v1.SupportService.UpsertHelpSection:output_type -> ride.support.v1.HelpSectionResponse
+	51,  // 136: ride.support.v1.SupportService.AdminListHelpArticles:output_type -> ride.support.v1.ListHelpArticlesResponse
+	53,  // 137: ride.support.v1.SupportService.UpsertHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
+	63,  // 138: ride.support.v1.SupportService.ListMacros:output_type -> ride.support.v1.ListMacrosResponse
+	63,  // 139: ride.support.v1.SupportService.AdminListMacros:output_type -> ride.support.v1.ListMacrosResponse
+	66,  // 140: ride.support.v1.SupportService.UpsertMacro:output_type -> ride.support.v1.MacroResponse
+	69,  // 141: ride.support.v1.SupportService.GetSupportStats:output_type -> ride.support.v1.GetSupportStatsResponse
+	107, // [107:142] is the sub-list for method output_type
+	72,  // [72:107] is the sub-list for method input_type
 	72,  // [72:72] is the sub-list for extension type_name
 	72,  // [72:72] is the sub-list for extension extendee
 	0,   // [0:72] is the sub-list for field type_name

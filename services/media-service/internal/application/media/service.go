@@ -2,6 +2,8 @@ package media
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -299,6 +301,67 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 }
 
 const deleteOwnerBatch = 100
+
+// StoreFile keeps a file a service made for a person (their data export):
+// READY at once and theirs, so they may read and delete it like an upload.
+func (s *Service) StoreFile(ctx context.Context, ownerIdentityID string, purpose Purpose, contentType string, data []byte) (Media, error) {
+	owner := strings.ToLower(strings.TrimSpace(ownerIdentityID))
+	contentType = strings.ToLower(strings.TrimSpace(contentType))
+
+	switch {
+	case !uuidShape.MatchString(owner):
+		return Media{}, ErrOwnerRequired
+	case purpose != PurposeDataExport:
+		return Media{}, ErrInvalidPurpose
+	case contentType != TypeZIP:
+		return Media{}, ErrTypeNotAllowed
+	case len(data) == 0 || len(data) > MaxStoredFileBytes:
+		return Media{}, ErrInvalidSize
+	}
+
+	now := s.clock.Now().UTC()
+	id := s.idGenerator.NewID()
+
+	created := Media{
+		ID:                  id,
+		OwnerIdentityID:     owner,
+		Purpose:             purpose,
+		Status:              StatusPending,
+		DeclaredContentType: contentType,
+		DeclaredSize:        int64(len(data)),
+		ObjectKey:           fmt.Sprintf("%s/%s/%s", purpose, now.Format("2006/01"), id),
+		CreatedAt:           now,
+	}
+
+	if err := s.repository.Create(ctx, created); err != nil {
+		return Media{}, fmt.Errorf("record the stored file: %w", err)
+	}
+
+	if err := s.store.Put(ctx, created.ObjectKey, contentType, data); err != nil {
+		return Media{}, fmt.Errorf("store the file: %w", err)
+	}
+
+	sum := sha256.Sum256(data)
+
+	ready, err := s.repository.MarkReady(ctx, id, ReadyInput{
+		ContentType: contentType,
+		SizeBytes:   int64(len(data)),
+		SHA256:      hex.EncodeToString(sum[:]),
+		At:          now,
+	})
+	if err != nil {
+		return Media{}, fmt.Errorf("mark the stored file ready: %w", err)
+	}
+
+	// Nothing was uploaded, so there is no incoming copy to clear later.
+	if err := s.repository.MarkUploadCleared(ctx, id); err != nil {
+		return Media{}, fmt.Errorf("mark the stored file cleared: %w", err)
+	}
+
+	ready.UploadCleared = true
+
+	return ready, nil
+}
 
 // DeleteOwner deletes every file of an identity, held or not: its account is
 // being erased, so nothing may keep a file of it. It works through them in

@@ -15,6 +15,9 @@ import (
 type NotificationHandler struct {
 	notificationv1.UnimplementedNotificationServiceServer
 
+	// personalData answers ExportPersonalData; nil until WithPersonalData.
+	personalData PersonalDataFunc
+
 	notificationService notification.Service
 	logger              *slog.Logger
 }

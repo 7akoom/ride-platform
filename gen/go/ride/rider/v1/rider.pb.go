@@ -7,6 +7,7 @@
 package riderv1
 
 import (
+	v1 "github.com/7akoom/ride-platform/gen/go/ride/dataexport/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -1715,7 +1716,7 @@ var File_ride_rider_v1_rider_proto protoreflect.FileDescriptor
 
 const file_ride_rider_v1_rider_proto_rawDesc = "" +
 	"\n" +
-	"\x19ride/rider/v1/rider.proto\x12\rride.rider.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xcf\x02\n" +
+	"\x19ride/rider/v1/rider.proto\x12\rride.rider.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a$ride/dataexport/v1/data_export.proto\"\xcf\x02\n" +
 	"\x05Rider\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\videntity_id\x18\x02 \x01(\tR\n" +
@@ -1844,8 +1845,9 @@ const file_ride_rider_v1_rider_proto_rawDesc = "" +
 	"\x06Gender\x12\x16\n" +
 	"\x12GENDER_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vGENDER_MALE\x10\x01\x12\x11\n" +
-	"\rGENDER_FEMALE\x10\x022\x9f\x0f\n" +
-	"\fRiderService\x12k\n" +
+	"\rGENDER_FEMALE\x10\x022\x94\x10\n" +
+	"\fRiderService\x12s\n" +
+	"\x12ExportPersonalData\x12-.ride.dataexport.v1.ExportPersonalDataRequest\x1a..ride.dataexport.v1.ExportPersonalDataResponse\x12k\n" +
 	"\vCreateRider\x12!.ride.rider.v1.CreateRiderRequest\x1a\".ride.rider.v1.CreateRiderResponse\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\"\n" +
 	"/v1/riders\x12j\n" +
 	"\bGetRider\x12\x1e.ride.rider.v1.GetRiderRequest\x1a\x1f.ride.rider.v1.GetRiderResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/v1/riders/{rider_id}\x12\x8b\x01\n" +
@@ -1877,36 +1879,38 @@ func file_ride_rider_v1_rider_proto_rawDescGZIP() []byte {
 var file_ride_rider_v1_rider_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_ride_rider_v1_rider_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_ride_rider_v1_rider_proto_goTypes = []any{
-	(RiderStatus)(0),                   // 0: ride.rider.v1.RiderStatus
-	(SavedAddressKind)(0),              // 1: ride.rider.v1.SavedAddressKind
-	(Gender)(0),                        // 2: ride.rider.v1.Gender
-	(*Rider)(nil),                      // 3: ride.rider.v1.Rider
-	(*CreateRiderRequest)(nil),         // 4: ride.rider.v1.CreateRiderRequest
-	(*CreateRiderResponse)(nil),        // 5: ride.rider.v1.CreateRiderResponse
-	(*GetRiderRequest)(nil),            // 6: ride.rider.v1.GetRiderRequest
-	(*GetRiderByIdentityRequest)(nil),  // 7: ride.rider.v1.GetRiderByIdentityRequest
-	(*GetRiderResponse)(nil),           // 8: ride.rider.v1.GetRiderResponse
-	(*UpdateRiderProfileRequest)(nil),  // 9: ride.rider.v1.UpdateRiderProfileRequest
-	(*UpdateRiderProfileResponse)(nil), // 10: ride.rider.v1.UpdateRiderProfileResponse
-	(*Coordinates)(nil),                // 11: ride.rider.v1.Coordinates
-	(*SavedAddress)(nil),               // 12: ride.rider.v1.SavedAddress
-	(*CreateSavedAddressRequest)(nil),  // 13: ride.rider.v1.CreateSavedAddressRequest
-	(*ListSavedAddressesRequest)(nil),  // 14: ride.rider.v1.ListSavedAddressesRequest
-	(*ListSavedAddressesResponse)(nil), // 15: ride.rider.v1.ListSavedAddressesResponse
-	(*GetSavedAddressRequest)(nil),     // 16: ride.rider.v1.GetSavedAddressRequest
-	(*SavedAddressResponse)(nil),       // 17: ride.rider.v1.SavedAddressResponse
-	(*UpdateSavedAddressRequest)(nil),  // 18: ride.rider.v1.UpdateSavedAddressRequest
-	(*DeleteSavedAddressRequest)(nil),  // 19: ride.rider.v1.DeleteSavedAddressRequest
-	(*DeleteSavedAddressResponse)(nil), // 20: ride.rider.v1.DeleteSavedAddressResponse
-	(*RiderDetails)(nil),               // 21: ride.rider.v1.RiderDetails
-	(*GetRiderDetailsRequest)(nil),     // 22: ride.rider.v1.GetRiderDetailsRequest
-	(*RiderDetailsResponse)(nil),       // 23: ride.rider.v1.RiderDetailsResponse
-	(*UpdateRiderDetailsRequest)(nil),  // 24: ride.rider.v1.UpdateRiderDetailsRequest
-	(*SetRiderPhotoRequest)(nil),       // 25: ride.rider.v1.SetRiderPhotoRequest
-	(*DeleteRiderPhotoRequest)(nil),    // 26: ride.rider.v1.DeleteRiderPhotoRequest
-	(*GetRiderPhotoRequest)(nil),       // 27: ride.rider.v1.GetRiderPhotoRequest
-	(*PhotoURLResponse)(nil),           // 28: ride.rider.v1.PhotoURLResponse
-	(*timestamppb.Timestamp)(nil),      // 29: google.protobuf.Timestamp
+	(RiderStatus)(0),                      // 0: ride.rider.v1.RiderStatus
+	(SavedAddressKind)(0),                 // 1: ride.rider.v1.SavedAddressKind
+	(Gender)(0),                           // 2: ride.rider.v1.Gender
+	(*Rider)(nil),                         // 3: ride.rider.v1.Rider
+	(*CreateRiderRequest)(nil),            // 4: ride.rider.v1.CreateRiderRequest
+	(*CreateRiderResponse)(nil),           // 5: ride.rider.v1.CreateRiderResponse
+	(*GetRiderRequest)(nil),               // 6: ride.rider.v1.GetRiderRequest
+	(*GetRiderByIdentityRequest)(nil),     // 7: ride.rider.v1.GetRiderByIdentityRequest
+	(*GetRiderResponse)(nil),              // 8: ride.rider.v1.GetRiderResponse
+	(*UpdateRiderProfileRequest)(nil),     // 9: ride.rider.v1.UpdateRiderProfileRequest
+	(*UpdateRiderProfileResponse)(nil),    // 10: ride.rider.v1.UpdateRiderProfileResponse
+	(*Coordinates)(nil),                   // 11: ride.rider.v1.Coordinates
+	(*SavedAddress)(nil),                  // 12: ride.rider.v1.SavedAddress
+	(*CreateSavedAddressRequest)(nil),     // 13: ride.rider.v1.CreateSavedAddressRequest
+	(*ListSavedAddressesRequest)(nil),     // 14: ride.rider.v1.ListSavedAddressesRequest
+	(*ListSavedAddressesResponse)(nil),    // 15: ride.rider.v1.ListSavedAddressesResponse
+	(*GetSavedAddressRequest)(nil),        // 16: ride.rider.v1.GetSavedAddressRequest
+	(*SavedAddressResponse)(nil),          // 17: ride.rider.v1.SavedAddressResponse
+	(*UpdateSavedAddressRequest)(nil),     // 18: ride.rider.v1.UpdateSavedAddressRequest
+	(*DeleteSavedAddressRequest)(nil),     // 19: ride.rider.v1.DeleteSavedAddressRequest
+	(*DeleteSavedAddressResponse)(nil),    // 20: ride.rider.v1.DeleteSavedAddressResponse
+	(*RiderDetails)(nil),                  // 21: ride.rider.v1.RiderDetails
+	(*GetRiderDetailsRequest)(nil),        // 22: ride.rider.v1.GetRiderDetailsRequest
+	(*RiderDetailsResponse)(nil),          // 23: ride.rider.v1.RiderDetailsResponse
+	(*UpdateRiderDetailsRequest)(nil),     // 24: ride.rider.v1.UpdateRiderDetailsRequest
+	(*SetRiderPhotoRequest)(nil),          // 25: ride.rider.v1.SetRiderPhotoRequest
+	(*DeleteRiderPhotoRequest)(nil),       // 26: ride.rider.v1.DeleteRiderPhotoRequest
+	(*GetRiderPhotoRequest)(nil),          // 27: ride.rider.v1.GetRiderPhotoRequest
+	(*PhotoURLResponse)(nil),              // 28: ride.rider.v1.PhotoURLResponse
+	(*timestamppb.Timestamp)(nil),         // 29: google.protobuf.Timestamp
+	(*v1.ExportPersonalDataRequest)(nil),  // 30: ride.dataexport.v1.ExportPersonalDataRequest
+	(*v1.ExportPersonalDataResponse)(nil), // 31: ride.dataexport.v1.ExportPersonalDataResponse
 }
 var file_ride_rider_v1_rider_proto_depIdxs = []int32{
 	0,  // 0: ride.rider.v1.Rider.status:type_name -> ride.rider.v1.RiderStatus
@@ -1930,36 +1934,38 @@ var file_ride_rider_v1_rider_proto_depIdxs = []int32{
 	21, // 18: ride.rider.v1.RiderDetailsResponse.details:type_name -> ride.rider.v1.RiderDetails
 	2,  // 19: ride.rider.v1.UpdateRiderDetailsRequest.gender:type_name -> ride.rider.v1.Gender
 	29, // 20: ride.rider.v1.PhotoURLResponse.expires_at:type_name -> google.protobuf.Timestamp
-	4,  // 21: ride.rider.v1.RiderService.CreateRider:input_type -> ride.rider.v1.CreateRiderRequest
-	6,  // 22: ride.rider.v1.RiderService.GetRider:input_type -> ride.rider.v1.GetRiderRequest
-	7,  // 23: ride.rider.v1.RiderService.GetRiderByIdentity:input_type -> ride.rider.v1.GetRiderByIdentityRequest
-	9,  // 24: ride.rider.v1.RiderService.UpdateRiderProfile:input_type -> ride.rider.v1.UpdateRiderProfileRequest
-	13, // 25: ride.rider.v1.RiderService.CreateSavedAddress:input_type -> ride.rider.v1.CreateSavedAddressRequest
-	14, // 26: ride.rider.v1.RiderService.ListSavedAddresses:input_type -> ride.rider.v1.ListSavedAddressesRequest
-	16, // 27: ride.rider.v1.RiderService.GetSavedAddress:input_type -> ride.rider.v1.GetSavedAddressRequest
-	18, // 28: ride.rider.v1.RiderService.UpdateSavedAddress:input_type -> ride.rider.v1.UpdateSavedAddressRequest
-	19, // 29: ride.rider.v1.RiderService.DeleteSavedAddress:input_type -> ride.rider.v1.DeleteSavedAddressRequest
-	22, // 30: ride.rider.v1.RiderService.GetRiderDetails:input_type -> ride.rider.v1.GetRiderDetailsRequest
-	24, // 31: ride.rider.v1.RiderService.UpdateRiderDetails:input_type -> ride.rider.v1.UpdateRiderDetailsRequest
-	25, // 32: ride.rider.v1.RiderService.SetRiderPhoto:input_type -> ride.rider.v1.SetRiderPhotoRequest
-	26, // 33: ride.rider.v1.RiderService.DeleteRiderPhoto:input_type -> ride.rider.v1.DeleteRiderPhotoRequest
-	27, // 34: ride.rider.v1.RiderService.GetRiderPhoto:input_type -> ride.rider.v1.GetRiderPhotoRequest
-	5,  // 35: ride.rider.v1.RiderService.CreateRider:output_type -> ride.rider.v1.CreateRiderResponse
-	8,  // 36: ride.rider.v1.RiderService.GetRider:output_type -> ride.rider.v1.GetRiderResponse
-	8,  // 37: ride.rider.v1.RiderService.GetRiderByIdentity:output_type -> ride.rider.v1.GetRiderResponse
-	10, // 38: ride.rider.v1.RiderService.UpdateRiderProfile:output_type -> ride.rider.v1.UpdateRiderProfileResponse
-	17, // 39: ride.rider.v1.RiderService.CreateSavedAddress:output_type -> ride.rider.v1.SavedAddressResponse
-	15, // 40: ride.rider.v1.RiderService.ListSavedAddresses:output_type -> ride.rider.v1.ListSavedAddressesResponse
-	17, // 41: ride.rider.v1.RiderService.GetSavedAddress:output_type -> ride.rider.v1.SavedAddressResponse
-	17, // 42: ride.rider.v1.RiderService.UpdateSavedAddress:output_type -> ride.rider.v1.SavedAddressResponse
-	20, // 43: ride.rider.v1.RiderService.DeleteSavedAddress:output_type -> ride.rider.v1.DeleteSavedAddressResponse
-	23, // 44: ride.rider.v1.RiderService.GetRiderDetails:output_type -> ride.rider.v1.RiderDetailsResponse
-	23, // 45: ride.rider.v1.RiderService.UpdateRiderDetails:output_type -> ride.rider.v1.RiderDetailsResponse
-	23, // 46: ride.rider.v1.RiderService.SetRiderPhoto:output_type -> ride.rider.v1.RiderDetailsResponse
-	23, // 47: ride.rider.v1.RiderService.DeleteRiderPhoto:output_type -> ride.rider.v1.RiderDetailsResponse
-	28, // 48: ride.rider.v1.RiderService.GetRiderPhoto:output_type -> ride.rider.v1.PhotoURLResponse
-	35, // [35:49] is the sub-list for method output_type
-	21, // [21:35] is the sub-list for method input_type
+	30, // 21: ride.rider.v1.RiderService.ExportPersonalData:input_type -> ride.dataexport.v1.ExportPersonalDataRequest
+	4,  // 22: ride.rider.v1.RiderService.CreateRider:input_type -> ride.rider.v1.CreateRiderRequest
+	6,  // 23: ride.rider.v1.RiderService.GetRider:input_type -> ride.rider.v1.GetRiderRequest
+	7,  // 24: ride.rider.v1.RiderService.GetRiderByIdentity:input_type -> ride.rider.v1.GetRiderByIdentityRequest
+	9,  // 25: ride.rider.v1.RiderService.UpdateRiderProfile:input_type -> ride.rider.v1.UpdateRiderProfileRequest
+	13, // 26: ride.rider.v1.RiderService.CreateSavedAddress:input_type -> ride.rider.v1.CreateSavedAddressRequest
+	14, // 27: ride.rider.v1.RiderService.ListSavedAddresses:input_type -> ride.rider.v1.ListSavedAddressesRequest
+	16, // 28: ride.rider.v1.RiderService.GetSavedAddress:input_type -> ride.rider.v1.GetSavedAddressRequest
+	18, // 29: ride.rider.v1.RiderService.UpdateSavedAddress:input_type -> ride.rider.v1.UpdateSavedAddressRequest
+	19, // 30: ride.rider.v1.RiderService.DeleteSavedAddress:input_type -> ride.rider.v1.DeleteSavedAddressRequest
+	22, // 31: ride.rider.v1.RiderService.GetRiderDetails:input_type -> ride.rider.v1.GetRiderDetailsRequest
+	24, // 32: ride.rider.v1.RiderService.UpdateRiderDetails:input_type -> ride.rider.v1.UpdateRiderDetailsRequest
+	25, // 33: ride.rider.v1.RiderService.SetRiderPhoto:input_type -> ride.rider.v1.SetRiderPhotoRequest
+	26, // 34: ride.rider.v1.RiderService.DeleteRiderPhoto:input_type -> ride.rider.v1.DeleteRiderPhotoRequest
+	27, // 35: ride.rider.v1.RiderService.GetRiderPhoto:input_type -> ride.rider.v1.GetRiderPhotoRequest
+	31, // 36: ride.rider.v1.RiderService.ExportPersonalData:output_type -> ride.dataexport.v1.ExportPersonalDataResponse
+	5,  // 37: ride.rider.v1.RiderService.CreateRider:output_type -> ride.rider.v1.CreateRiderResponse
+	8,  // 38: ride.rider.v1.RiderService.GetRider:output_type -> ride.rider.v1.GetRiderResponse
+	8,  // 39: ride.rider.v1.RiderService.GetRiderByIdentity:output_type -> ride.rider.v1.GetRiderResponse
+	10, // 40: ride.rider.v1.RiderService.UpdateRiderProfile:output_type -> ride.rider.v1.UpdateRiderProfileResponse
+	17, // 41: ride.rider.v1.RiderService.CreateSavedAddress:output_type -> ride.rider.v1.SavedAddressResponse
+	15, // 42: ride.rider.v1.RiderService.ListSavedAddresses:output_type -> ride.rider.v1.ListSavedAddressesResponse
+	17, // 43: ride.rider.v1.RiderService.GetSavedAddress:output_type -> ride.rider.v1.SavedAddressResponse
+	17, // 44: ride.rider.v1.RiderService.UpdateSavedAddress:output_type -> ride.rider.v1.SavedAddressResponse
+	20, // 45: ride.rider.v1.RiderService.DeleteSavedAddress:output_type -> ride.rider.v1.DeleteSavedAddressResponse
+	23, // 46: ride.rider.v1.RiderService.GetRiderDetails:output_type -> ride.rider.v1.RiderDetailsResponse
+	23, // 47: ride.rider.v1.RiderService.UpdateRiderDetails:output_type -> ride.rider.v1.RiderDetailsResponse
+	23, // 48: ride.rider.v1.RiderService.SetRiderPhoto:output_type -> ride.rider.v1.RiderDetailsResponse
+	23, // 49: ride.rider.v1.RiderService.DeleteRiderPhoto:output_type -> ride.rider.v1.RiderDetailsResponse
+	28, // 50: ride.rider.v1.RiderService.GetRiderPhoto:output_type -> ride.rider.v1.PhotoURLResponse
+	36, // [36:51] is the sub-list for method output_type
+	21, // [21:36] is the sub-list for method input_type
 	21, // [21:21] is the sub-list for extension type_name
 	21, // [21:21] is the sub-list for extension extendee
 	0,  // [0:21] is the sub-list for field type_name

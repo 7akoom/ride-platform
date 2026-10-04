@@ -4,9 +4,17 @@ package ride.wallet.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "ride/dataexport/v1/data_export.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/wallet/v1;walletv1";
 
 service WalletService {
+  // ExportPersonalData returns what this service keeps about one person,
+  // for their "Download your data" file. Internal only (identity-service).
+  rpc ExportPersonalData(ride.dataexport.v1.ExportPersonalDataRequest) returns (ride.dataexport.v1.ExportPersonalDataResponse);
+  // ListFeedTransactions is a wallet's movements older than a point, newest
+  // first, for the activity page (trip-service). Internal only.
+  rpc ListFeedTransactions(ListFeedTransactionsRequest) returns (ListFeedTransactionsResponse);
+
   // GetWallet returns the caller's own wallet: ?owner_type=OWNER_TYPE_RIDER or OWNER_TYPE_DRIVER.
   rpc GetWallet(GetWalletRequest) returns (GetWalletResponse) {
     option (google.api.http) = {
@@ -1300,4 +1308,22 @@ message DriverIncentive {
 
 message ListDriverIncentivesResponse {
   repeated DriverIncentive incentives = 1;
+}
+
+message ListFeedTransactionsRequest {
+  OwnerType owner_type = 1;
+  string owner_id = 2;
+  // Only movements before (before, before_id) in (created_at, id) order;
+  // unset for the newest.
+  google.protobuf.Timestamp before = 3;
+  string before_id = 4;
+  // 1 to 100.
+  int32 limit = 5;
+  // Leave out movements tied to a trip (the trip shows them).
+  bool exclude_trips = 6;
+}
+
+message ListFeedTransactionsResponse {
+  repeated Transaction transactions = 1;
+  string currency_code = 2;
 }

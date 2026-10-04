@@ -19,6 +19,9 @@ import (
 type DriverHandler struct {
 	driverv1.UnimplementedDriverServiceServer
 
+	// personalData answers ExportPersonalData; nil until WithPersonalData.
+	personalData PersonalDataFunc
+
 	driverService driver.Service
 	documents     *documents.Service
 	vehicles      *vehicles.Service

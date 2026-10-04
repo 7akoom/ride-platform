@@ -7,6 +7,7 @@
 package notificationv1
 
 import (
+	v1 "github.com/7akoom/ride-platform/gen/go/ride/dataexport/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -1289,7 +1290,7 @@ var File_ride_notification_v1_notification_proto protoreflect.FileDescriptor
 
 const file_ride_notification_v1_notification_proto_rawDesc = "" +
 	"\n" +
-	"'ride/notification/v1/notification.proto\x12\x14ride.notification.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb6\x03\n" +
+	"'ride/notification/v1/notification.proto\x12\x14ride.notification.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a$ride/dataexport/v1/data_export.proto\"\xb6\x03\n" +
 	"\fNotification\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12J\n" +
 	"\x0erecipient_type\x18\x02 \x01(\x0e2#.ride.notification.v1.RecipientTypeR\rrecipientType\x12!\n" +
@@ -1395,8 +1396,9 @@ const file_ride_notification_v1_notification_proto_rawDesc = "" +
 	"\x14PLATFORM_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PLATFORM_ANDROID\x10\x01\x12\x10\n" +
 	"\fPLATFORM_IOS\x10\x02\x12\x10\n" +
-	"\fPLATFORM_WEB\x10\x032\x9b\a\n" +
-	"\x13NotificationService\x12M\n" +
+	"\fPLATFORM_WEB\x10\x032\x90\b\n" +
+	"\x13NotificationService\x12s\n" +
+	"\x12ExportPersonalData\x12-.ride.dataexport.v1.ExportPersonalDataRequest\x1a..ride.dataexport.v1.ExportPersonalDataResponse\x12M\n" +
 	"\x04Send\x12!.ride.notification.v1.SendRequest\x1a\".ride.notification.v1.SendResponse\x12\x83\x01\n" +
 	"\x0eRegisterDevice\x12+.ride.notification.v1.RegisterDeviceRequest\x1a,.ride.notification.v1.RegisterDeviceResponse\"\x16\x82\xd3\xe4\x93\x02\x10:\x01*\"\v/v1/devices\x12\x94\x01\n" +
 	"\x10UnregisterDevice\x12-.ride.notification.v1.UnregisterDeviceRequest\x1a..ride.notification.v1.UnregisterDeviceResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/devices:unregister\x12\x8f\x01\n" +
@@ -1421,31 +1423,33 @@ func file_ride_notification_v1_notification_proto_rawDescGZIP() []byte {
 var file_ride_notification_v1_notification_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_ride_notification_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_ride_notification_v1_notification_proto_goTypes = []any{
-	(RecipientType)(0),                // 0: ride.notification.v1.RecipientType
-	(Channel)(0),                      // 1: ride.notification.v1.Channel
-	(DeliveryStatus)(0),               // 2: ride.notification.v1.DeliveryStatus
-	(Platform)(0),                     // 3: ride.notification.v1.Platform
-	(*Notification)(nil),              // 4: ride.notification.v1.Notification
-	(*Delivery)(nil),                  // 5: ride.notification.v1.Delivery
-	(*SendRequest)(nil),               // 6: ride.notification.v1.SendRequest
-	(*SendResponse)(nil),              // 7: ride.notification.v1.SendResponse
-	(*RegisterDeviceRequest)(nil),     // 8: ride.notification.v1.RegisterDeviceRequest
-	(*RegisterDeviceResponse)(nil),    // 9: ride.notification.v1.RegisterDeviceResponse
-	(*UnregisterDeviceRequest)(nil),   // 10: ride.notification.v1.UnregisterDeviceRequest
-	(*UnregisterDeviceResponse)(nil),  // 11: ride.notification.v1.UnregisterDeviceResponse
-	(*ListNotificationsRequest)(nil),  // 12: ride.notification.v1.ListNotificationsRequest
-	(*ListNotificationsResponse)(nil), // 13: ride.notification.v1.ListNotificationsResponse
-	(*GetUnreadCountRequest)(nil),     // 14: ride.notification.v1.GetUnreadCountRequest
-	(*GetUnreadCountResponse)(nil),    // 15: ride.notification.v1.GetUnreadCountResponse
-	(*MarkAsReadRequest)(nil),         // 16: ride.notification.v1.MarkAsReadRequest
-	(*MarkAsReadResponse)(nil),        // 17: ride.notification.v1.MarkAsReadResponse
-	(*TemplateTranslation)(nil),       // 18: ride.notification.v1.TemplateTranslation
-	(*UpsertTemplateRequest)(nil),     // 19: ride.notification.v1.UpsertTemplateRequest
-	(*UpsertTemplateResponse)(nil),    // 20: ride.notification.v1.UpsertTemplateResponse
-	nil,                               // 21: ride.notification.v1.Notification.DataEntry
-	nil,                               // 22: ride.notification.v1.SendRequest.VariablesEntry
-	nil,                               // 23: ride.notification.v1.SendRequest.DataEntry
-	(*timestamppb.Timestamp)(nil),     // 24: google.protobuf.Timestamp
+	(RecipientType)(0),                    // 0: ride.notification.v1.RecipientType
+	(Channel)(0),                          // 1: ride.notification.v1.Channel
+	(DeliveryStatus)(0),                   // 2: ride.notification.v1.DeliveryStatus
+	(Platform)(0),                         // 3: ride.notification.v1.Platform
+	(*Notification)(nil),                  // 4: ride.notification.v1.Notification
+	(*Delivery)(nil),                      // 5: ride.notification.v1.Delivery
+	(*SendRequest)(nil),                   // 6: ride.notification.v1.SendRequest
+	(*SendResponse)(nil),                  // 7: ride.notification.v1.SendResponse
+	(*RegisterDeviceRequest)(nil),         // 8: ride.notification.v1.RegisterDeviceRequest
+	(*RegisterDeviceResponse)(nil),        // 9: ride.notification.v1.RegisterDeviceResponse
+	(*UnregisterDeviceRequest)(nil),       // 10: ride.notification.v1.UnregisterDeviceRequest
+	(*UnregisterDeviceResponse)(nil),      // 11: ride.notification.v1.UnregisterDeviceResponse
+	(*ListNotificationsRequest)(nil),      // 12: ride.notification.v1.ListNotificationsRequest
+	(*ListNotificationsResponse)(nil),     // 13: ride.notification.v1.ListNotificationsResponse
+	(*GetUnreadCountRequest)(nil),         // 14: ride.notification.v1.GetUnreadCountRequest
+	(*GetUnreadCountResponse)(nil),        // 15: ride.notification.v1.GetUnreadCountResponse
+	(*MarkAsReadRequest)(nil),             // 16: ride.notification.v1.MarkAsReadRequest
+	(*MarkAsReadResponse)(nil),            // 17: ride.notification.v1.MarkAsReadResponse
+	(*TemplateTranslation)(nil),           // 18: ride.notification.v1.TemplateTranslation
+	(*UpsertTemplateRequest)(nil),         // 19: ride.notification.v1.UpsertTemplateRequest
+	(*UpsertTemplateResponse)(nil),        // 20: ride.notification.v1.UpsertTemplateResponse
+	nil,                                   // 21: ride.notification.v1.Notification.DataEntry
+	nil,                                   // 22: ride.notification.v1.SendRequest.VariablesEntry
+	nil,                                   // 23: ride.notification.v1.SendRequest.DataEntry
+	(*timestamppb.Timestamp)(nil),         // 24: google.protobuf.Timestamp
+	(*v1.ExportPersonalDataRequest)(nil),  // 25: ride.dataexport.v1.ExportPersonalDataRequest
+	(*v1.ExportPersonalDataResponse)(nil), // 26: ride.dataexport.v1.ExportPersonalDataResponse
 }
 var file_ride_notification_v1_notification_proto_depIdxs = []int32{
 	0,  // 0: ride.notification.v1.Notification.recipient_type:type_name -> ride.notification.v1.RecipientType
@@ -1467,22 +1471,24 @@ var file_ride_notification_v1_notification_proto_depIdxs = []int32{
 	0,  // 16: ride.notification.v1.MarkAsReadRequest.recipient_type:type_name -> ride.notification.v1.RecipientType
 	1,  // 17: ride.notification.v1.UpsertTemplateRequest.default_channels:type_name -> ride.notification.v1.Channel
 	18, // 18: ride.notification.v1.UpsertTemplateRequest.translations:type_name -> ride.notification.v1.TemplateTranslation
-	6,  // 19: ride.notification.v1.NotificationService.Send:input_type -> ride.notification.v1.SendRequest
-	8,  // 20: ride.notification.v1.NotificationService.RegisterDevice:input_type -> ride.notification.v1.RegisterDeviceRequest
-	10, // 21: ride.notification.v1.NotificationService.UnregisterDevice:input_type -> ride.notification.v1.UnregisterDeviceRequest
-	12, // 22: ride.notification.v1.NotificationService.ListNotifications:input_type -> ride.notification.v1.ListNotificationsRequest
-	16, // 23: ride.notification.v1.NotificationService.MarkAsRead:input_type -> ride.notification.v1.MarkAsReadRequest
-	14, // 24: ride.notification.v1.NotificationService.GetUnreadCount:input_type -> ride.notification.v1.GetUnreadCountRequest
-	19, // 25: ride.notification.v1.NotificationService.UpsertTemplate:input_type -> ride.notification.v1.UpsertTemplateRequest
-	7,  // 26: ride.notification.v1.NotificationService.Send:output_type -> ride.notification.v1.SendResponse
-	9,  // 27: ride.notification.v1.NotificationService.RegisterDevice:output_type -> ride.notification.v1.RegisterDeviceResponse
-	11, // 28: ride.notification.v1.NotificationService.UnregisterDevice:output_type -> ride.notification.v1.UnregisterDeviceResponse
-	13, // 29: ride.notification.v1.NotificationService.ListNotifications:output_type -> ride.notification.v1.ListNotificationsResponse
-	17, // 30: ride.notification.v1.NotificationService.MarkAsRead:output_type -> ride.notification.v1.MarkAsReadResponse
-	15, // 31: ride.notification.v1.NotificationService.GetUnreadCount:output_type -> ride.notification.v1.GetUnreadCountResponse
-	20, // 32: ride.notification.v1.NotificationService.UpsertTemplate:output_type -> ride.notification.v1.UpsertTemplateResponse
-	26, // [26:33] is the sub-list for method output_type
-	19, // [19:26] is the sub-list for method input_type
+	25, // 19: ride.notification.v1.NotificationService.ExportPersonalData:input_type -> ride.dataexport.v1.ExportPersonalDataRequest
+	6,  // 20: ride.notification.v1.NotificationService.Send:input_type -> ride.notification.v1.SendRequest
+	8,  // 21: ride.notification.v1.NotificationService.RegisterDevice:input_type -> ride.notification.v1.RegisterDeviceRequest
+	10, // 22: ride.notification.v1.NotificationService.UnregisterDevice:input_type -> ride.notification.v1.UnregisterDeviceRequest
+	12, // 23: ride.notification.v1.NotificationService.ListNotifications:input_type -> ride.notification.v1.ListNotificationsRequest
+	16, // 24: ride.notification.v1.NotificationService.MarkAsRead:input_type -> ride.notification.v1.MarkAsReadRequest
+	14, // 25: ride.notification.v1.NotificationService.GetUnreadCount:input_type -> ride.notification.v1.GetUnreadCountRequest
+	19, // 26: ride.notification.v1.NotificationService.UpsertTemplate:input_type -> ride.notification.v1.UpsertTemplateRequest
+	26, // 27: ride.notification.v1.NotificationService.ExportPersonalData:output_type -> ride.dataexport.v1.ExportPersonalDataResponse
+	7,  // 28: ride.notification.v1.NotificationService.Send:output_type -> ride.notification.v1.SendResponse
+	9,  // 29: ride.notification.v1.NotificationService.RegisterDevice:output_type -> ride.notification.v1.RegisterDeviceResponse
+	11, // 30: ride.notification.v1.NotificationService.UnregisterDevice:output_type -> ride.notification.v1.UnregisterDeviceResponse
+	13, // 31: ride.notification.v1.NotificationService.ListNotifications:output_type -> ride.notification.v1.ListNotificationsResponse
+	17, // 32: ride.notification.v1.NotificationService.MarkAsRead:output_type -> ride.notification.v1.MarkAsReadResponse
+	15, // 33: ride.notification.v1.NotificationService.GetUnreadCount:output_type -> ride.notification.v1.GetUnreadCountResponse
+	20, // 34: ride.notification.v1.NotificationService.UpsertTemplate:output_type -> ride.notification.v1.UpsertTemplateResponse
+	27, // [27:35] is the sub-list for method output_type
+	19, // [19:27] is the sub-list for method input_type
 	19, // [19:19] is the sub-list for extension type_name
 	19, // [19:19] is the sub-list for extension extendee
 	0,  // [0:19] is the sub-list for field type_name

@@ -702,6 +702,9 @@ services:
       TRIP_SERVICE_ADDRESS: trip-service:50055
       WALLET_SERVICE_ADDRESS: wallet-service:50058
       MEDIA_SERVICE_ADDRESS: media-service:50062
+      # "Download your data" also asks these.
+      SUPPORT_SERVICE_ADDRESS: support-service:50063
+      NOTIFICATION_SERVICE_ADDRESS: notification-service:50059
 
     volumes:
       - ../../services/identity-service/.local/keys:/app/.local/keys:ro

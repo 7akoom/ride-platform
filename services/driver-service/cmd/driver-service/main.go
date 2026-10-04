@@ -205,6 +205,7 @@ func run() int {
 		clockinfra.NewSystemClock(),
 	)
 	driverHandler := grpcserver.NewDriverHandler(driverService, documentService, vehicleService, logger).
+		WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export).
 		WithProfile(profileService)
 
 	ratingSubscription, err := subscribeTripRatings(

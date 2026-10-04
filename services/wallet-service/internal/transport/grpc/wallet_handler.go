@@ -23,6 +23,12 @@ import (
 type WalletHandler struct {
 	walletv1.UnimplementedWalletServiceServer
 
+	// personalData answers ExportPersonalData; nil until WithPersonalData.
+	personalData PersonalDataFunc
+
+	// feed answers ListFeedTransactions; nil until WithFeed.
+	feed FeedReader
+
 	walletService wallet.Service
 	topupService  topup.Service
 	transfers     *transfer.Service

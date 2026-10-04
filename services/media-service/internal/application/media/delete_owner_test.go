@@ -51,3 +51,44 @@ func TestDeleteOwnerDeletesHeldAndPendingFilesOfThatOwnerOnly(t *testing.T) {
 		t.Fatalf("bad owner: %v", err)
 	}
 }
+
+func TestStoreFileKeepsADataExportForItsOwner(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	zip := []byte("PK\x03\x04 a zip")
+
+	stored, err := f.service.StoreFile(ctx, ownerA, PurposeDataExport, TypeZIP, zip)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if stored.Status != StatusReady || stored.OwnerIdentityID != ownerA || stored.SizeBytes != int64(len(zip)) || !stored.UploadCleared {
+		t.Fatalf("stored %+v", stored)
+	}
+
+	if obj, ok := f.store.object(stored.ObjectKey); !ok || string(obj.data) != string(zip) {
+		t.Fatal("the bytes are not in the store")
+	}
+
+	if _, _, err := f.service.DownloadURL(ctx, stored.ID); err != nil {
+		t.Fatalf("download: %v", err)
+	}
+
+	for name, call := range map[string]func() error{
+		"another purpose": func() error {
+			_, err := f.service.StoreFile(ctx, ownerA, PurposeProfilePhoto, TypeZIP, zip)
+			return err
+		},
+		"another type": func() error { _, err := f.service.StoreFile(ctx, ownerA, PurposeDataExport, TypePDF, zip); return err },
+		"empty":        func() error { _, err := f.service.StoreFile(ctx, ownerA, PurposeDataExport, TypeZIP, nil); return err },
+		"no owner":     func() error { _, err := f.service.StoreFile(ctx, "x", PurposeDataExport, TypeZIP, zip); return err },
+	} {
+		if call() == nil {
+			t.Errorf("%s was accepted", name)
+		}
+	}
+
+	if _, _, err := f.service.CreateUpload(ctx, CreateUploadInput{OwnerIdentityID: ownerA, Purpose: PurposeDataExport, ContentType: TypeZIP, SizeBytes: 10}); !errors.Is(err, ErrInvalidPurpose) {
+		t.Fatalf("a data export upload: %v", err)
+	}
+}

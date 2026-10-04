@@ -4,9 +4,14 @@ package ride.notification.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "ride/dataexport/v1/data_export.proto";
 option go_package = "github.com/7akoom/ride-platform/gen/go/ride/notification/v1;notificationv1";
 
 service NotificationService {
+  // ExportPersonalData returns what this service keeps about one person,
+  // for their "Download your data" file. Internal only (identity-service).
+  rpc ExportPersonalData(ride.dataexport.v1.ExportPersonalDataRequest) returns (ride.dataexport.v1.ExportPersonalDataResponse);
+
   rpc Send(SendRequest) returns (SendResponse);
   // RegisterDevice registers a push token for the caller's own rider or driver profile.
   rpc RegisterDevice(RegisterDeviceRequest) returns (RegisterDeviceResponse) {

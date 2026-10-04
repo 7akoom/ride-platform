@@ -62,10 +62,18 @@ func TestAuthorization(t *testing.T) {
 		}
 	})
 
-	t.Run("the internal token has no methods here", func(t *testing.T) {
+	t.Run("the internal token reaches only the data export", func(t *testing.T) {
 		_, err := call(t, &recordingAuthorizer{allowed: true}, internalServicePrincipalID, supportRPCPrefix+"ListMyTickets", nil)
 		if status.Code(err) != codes.PermissionDenied {
 			t.Fatal(err)
+		}
+
+		if _, err := call(t, &recordingAuthorizer{allowed: true}, internalServicePrincipalID, supportRPCPrefix+"ExportPersonalData", nil); err != nil {
+			t.Fatalf("internal export: %v", err)
+		}
+
+		if _, err := call(t, &recordingAuthorizer{allowed: true}, user, supportRPCPrefix+"ExportPersonalData", nil); status.Code(err) != codes.PermissionDenied {
+			t.Fatalf("a person calling the export: %v", err)
 		}
 	})
 
@@ -134,9 +142,17 @@ func TestAuthorization(t *testing.T) {
 			full := supportRPCPrefix + m.MethodName
 			_, user := userMethods[full]
 			_, staff := staffMethods[full]
+			_, internal := internalMethods[full]
 
-			if user == staff {
-				t.Errorf("%s: user %v, staff %v", m.MethodName, user, staff)
+			classes := 0
+			for _, in := range []bool{user, staff, internal} {
+				if in {
+					classes++
+				}
+			}
+
+			if classes != 1 {
+				t.Errorf("%s: user %v, staff %v, internal %v", m.MethodName, user, staff, internal)
 			}
 		}
 	})

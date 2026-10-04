@@ -10,6 +10,7 @@ import (
 
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/activity"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/erasure"
+	"github.com/7akoom/ride-platform/services/trip-service/internal/application/feed"
 	outboxapp "github.com/7akoom/ride-platform/services/trip-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/schedule"
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/share"
@@ -282,6 +283,8 @@ func run() int {
 		)),
 		grpcserver.WithShares(shares),
 		grpcserver.WithActivity(activity.NewService(postgresrepo.NewActivityStore(pool))),
+		grpcserver.WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export),
+		grpcserver.WithFeed(feed.NewService(tripRepository, clients.NewWalletFeed(walletConn))),
 	)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(

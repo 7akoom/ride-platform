@@ -19,6 +19,8 @@ type Server struct {
 	healthServer *health.Server
 }
 
+const maxStoredFileMessage = 80 << 20
+
 func NewServer(
 	address string,
 	logger *slog.Logger,
@@ -32,7 +34,8 @@ func NewServer(
 		panic("gRPC server logger is required")
 	}
 
-	serverOptions := make([]googlegrpc.ServerOption, 0, 1)
+	// A data export ZIP reaches StoreFile in one message (up to 64 MB).
+	serverOptions := []googlegrpc.ServerOption{googlegrpc.MaxRecvMsgSize(maxStoredFileMessage)}
 
 	if len(unaryInterceptors) > 0 {
 		serverOptions = append(

@@ -154,6 +154,21 @@ func (h *MediaHandler) DeleteOwnerMedia(
 	return &mediav1.DeleteOwnerMediaResponse{DeletedCount: int32(deleted)}, nil
 }
 
+func (h *MediaHandler) StoreFile(
+	ctx context.Context,
+	request *mediav1.StoreFileRequest,
+) (*mediav1.MediaResponse, error) {
+	purpose, _ := purposeFromProto(request.GetPurpose())
+
+	stored, err := h.service.StoreFile(ctx, request.GetOwnerIdentityId(), purpose,
+		request.GetContentType(), request.GetContent())
+	if err != nil {
+		return nil, h.mapError(err)
+	}
+
+	return &mediav1.MediaResponse{Media: toProtoMedia(stored)}, nil
+}
+
 func (h *MediaHandler) mapError(err error) error {
 	switch {
 	case errors.Is(err, media.ErrInvalidPurpose),
@@ -195,6 +210,7 @@ var purposesFromProto = map[mediav1.MediaPurpose]media.Purpose{
 	mediav1.MediaPurpose_MEDIA_PURPOSE_PROFILE_PHOTO:      media.PurposeProfilePhoto,
 	mediav1.MediaPurpose_MEDIA_PURPOSE_ADDRESS_PHOTO:      media.PurposeAddressPhoto,
 	mediav1.MediaPurpose_MEDIA_PURPOSE_SUPPORT_ATTACHMENT: media.PurposeSupportAttachment,
+	mediav1.MediaPurpose_MEDIA_PURPOSE_DATA_EXPORT:        media.PurposeDataExport,
 }
 
 func purposeFromProto(purpose mediav1.MediaPurpose) (media.Purpose, bool) {

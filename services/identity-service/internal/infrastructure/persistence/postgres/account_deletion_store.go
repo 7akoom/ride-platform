@@ -304,6 +304,7 @@ var eraseIdentityStatements = []struct{ what, sql string }{
 	{"unlink operations", `DELETE FROM identifier_unlink_operations WHERE identity_id = $1::uuid`},
 	{"sessions", `DELETE FROM auth_sessions WHERE identity_id = $1::uuid`},
 	{"wallet PIN", `DELETE FROM wallet_pins WHERE identity_id = $1::uuid`},
+	{"data exports", `DELETE FROM data_exports WHERE identity_id = $1::uuid`},
 	{"sign-in methods", `DELETE FROM identity_identifiers WHERE identity_id = $1::uuid`},
 }
 
