@@ -28,6 +28,8 @@ type WalletHandler struct {
 
 	// feed answers ListFeedTransactions; nil until WithFeed.
 	feed FeedReader
+	// ledger answers SummarizeLedger; nil until WithLedger.
+	ledger LedgerSummarizer
 
 	walletService wallet.Service
 	topupService  topup.Service

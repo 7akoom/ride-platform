@@ -3,7 +3,9 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -54,5 +56,43 @@ func TestTripRequestedSaysWhereAndWhat(t *testing.T) {
 		if payload[key] != value {
 			t.Errorf("%s = %q, want %q", key, payload[key], value)
 		}
+	}
+}
+
+func TestRejectingAnOfferIsAnEvent(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	repo := NewTripRepository(pool)
+	driver := uuid.NewString()
+
+	created, err := repo.Create(ctx, trip.CreateInput{
+		ID: uuid.NewString(), RiderID: uuid.NewString(),
+		Pickup:  trip.Coordinates{Latitude: 36.1, Longitude: 44.1},
+		Dropoff: trip.Coordinates{Latitude: 36.2, Longitude: 44.2},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := repo.CreateOffer(ctx, created.ID, driver, 15*time.Second); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := repo.RejectOffer(ctx, created.ID, driver); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := repo.RejectOffer(ctx, created.ID, driver); !errors.Is(err, trip.ErrOfferNotFound) {
+		t.Fatalf("rejecting twice: %v", err)
+	}
+
+	var raw []byte
+	if err := pool.QueryRow(ctx, `SELECT payload FROM outbox_events WHERE event_type = 'trip.offer_rejected' AND aggregate_id = $1`, created.ID).Scan(&raw); err != nil {
+		t.Fatalf("one trip.offer_rejected: %v", err)
+	}
+
+	var payload map[string]string
+	if err := json.Unmarshal(raw, &payload); err != nil || payload["trip_id"] != created.ID || payload["driver_id"] != driver {
+		t.Fatalf("payload %s %v", raw, err)
 	}
 }

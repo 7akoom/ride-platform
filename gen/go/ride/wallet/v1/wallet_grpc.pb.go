@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	WalletService_ExportPersonalData_FullMethodName      = "/ride.wallet.v1.WalletService/ExportPersonalData"
 	WalletService_ListFeedTransactions_FullMethodName    = "/ride.wallet.v1.WalletService/ListFeedTransactions"
+	WalletService_SummarizeLedger_FullMethodName         = "/ride.wallet.v1.WalletService/SummarizeLedger"
 	WalletService_GetWallet_FullMethodName               = "/ride.wallet.v1.WalletService/GetWallet"
 	WalletService_TopUp_FullMethodName                   = "/ride.wallet.v1.WalletService/TopUp"
 	WalletService_SettleTrip_FullMethodName              = "/ride.wallet.v1.WalletService/SettleTrip"
@@ -81,6 +82,10 @@ type WalletServiceClient interface {
 	// ListFeedTransactions is a wallet's movements older than a point, newest
 	// first, for the activity page (trip-service). Internal only.
 	ListFeedTransactions(ctx context.Context, in *ListFeedTransactionsRequest, opts ...grpc.CallOption) (*ListFeedTransactionsResponse, error)
+	// SummarizeLedger totals the ledger by local day, owner and movement type,
+	// and what wallets hold now, for the business reports (analytics). Internal
+	// only.
+	SummarizeLedger(ctx context.Context, in *SummarizeLedgerRequest, opts ...grpc.CallOption) (*SummarizeLedgerResponse, error)
 	// GetWallet returns the caller's own wallet: ?owner_type=OWNER_TYPE_RIDER or OWNER_TYPE_DRIVER.
 	GetWallet(ctx context.Context, in *GetWalletRequest, opts ...grpc.CallOption) (*GetWalletResponse, error)
 	TopUp(ctx context.Context, in *TopUpRequest, opts ...grpc.CallOption) (*TopUpResponse, error)
@@ -258,6 +263,16 @@ func (c *walletServiceClient) ListFeedTransactions(ctx context.Context, in *List
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListFeedTransactionsResponse)
 	err := c.cc.Invoke(ctx, WalletService_ListFeedTransactions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) SummarizeLedger(ctx context.Context, in *SummarizeLedgerRequest, opts ...grpc.CallOption) (*SummarizeLedgerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SummarizeLedgerResponse)
+	err := c.cc.Invoke(ctx, WalletService_SummarizeLedger_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -744,6 +759,10 @@ type WalletServiceServer interface {
 	// ListFeedTransactions is a wallet's movements older than a point, newest
 	// first, for the activity page (trip-service). Internal only.
 	ListFeedTransactions(context.Context, *ListFeedTransactionsRequest) (*ListFeedTransactionsResponse, error)
+	// SummarizeLedger totals the ledger by local day, owner and movement type,
+	// and what wallets hold now, for the business reports (analytics). Internal
+	// only.
+	SummarizeLedger(context.Context, *SummarizeLedgerRequest) (*SummarizeLedgerResponse, error)
 	// GetWallet returns the caller's own wallet: ?owner_type=OWNER_TYPE_RIDER or OWNER_TYPE_DRIVER.
 	GetWallet(context.Context, *GetWalletRequest) (*GetWalletResponse, error)
 	TopUp(context.Context, *TopUpRequest) (*TopUpResponse, error)
@@ -912,6 +931,9 @@ func (UnimplementedWalletServiceServer) ExportPersonalData(context.Context, *v1.
 }
 func (UnimplementedWalletServiceServer) ListFeedTransactions(context.Context, *ListFeedTransactionsRequest) (*ListFeedTransactionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListFeedTransactions not implemented")
+}
+func (UnimplementedWalletServiceServer) SummarizeLedger(context.Context, *SummarizeLedgerRequest) (*SummarizeLedgerResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SummarizeLedger not implemented")
 }
 func (UnimplementedWalletServiceServer) GetWallet(context.Context, *GetWalletRequest) (*GetWalletResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetWallet not implemented")
@@ -1107,6 +1129,24 @@ func _WalletService_ListFeedTransactions_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WalletServiceServer).ListFeedTransactions(ctx, req.(*ListFeedTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_SummarizeLedger_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SummarizeLedgerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).SummarizeLedger(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_SummarizeLedger_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).SummarizeLedger(ctx, req.(*SummarizeLedgerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1971,6 +2011,10 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListFeedTransactions",
 			Handler:    _WalletService_ListFeedTransactions_Handler,
+		},
+		{
+			MethodName: "SummarizeLedger",
+			Handler:    _WalletService_SummarizeLedger_Handler,
 		},
 		{
 			MethodName: "GetWallet",

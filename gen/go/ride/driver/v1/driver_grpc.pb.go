@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	DriverService_ExportPersonalData_FullMethodName           = "/ride.driver.v1.DriverService/ExportPersonalData"
+	DriverService_GetDriverSupply_FullMethodName              = "/ride.driver.v1.DriverService/GetDriverSupply"
 	DriverService_CreateDriver_FullMethodName                 = "/ride.driver.v1.DriverService/CreateDriver"
 	DriverService_GetDriver_FullMethodName                    = "/ride.driver.v1.DriverService/GetDriver"
 	DriverService_GetDriverByIdentity_FullMethodName          = "/ride.driver.v1.DriverService/GetDriverByIdentity"
@@ -62,6 +63,9 @@ type DriverServiceClient interface {
 	// ExportPersonalData returns what this service keeps about one person,
 	// for their "Download your data" file. Internal only (identity-service).
 	ExportPersonalData(ctx context.Context, in *v1.ExportPersonalDataRequest, opts ...grpc.CallOption) (*v1.ExportPersonalDataResponse, error)
+	// GetDriverSupply counts drivers by status, availability and class right
+	// now, for the business reports (analytics). Internal only.
+	GetDriverSupply(ctx context.Context, in *GetDriverSupplyRequest, opts ...grpc.CallOption) (*GetDriverSupplyResponse, error)
 	// CreateDriver creates the caller's own driver profile: identity_id must be the caller's identity.
 	// The new driver starts PENDING and cannot go online until an operator approves it.
 	CreateDriver(ctx context.Context, in *CreateDriverRequest, opts ...grpc.CallOption) (*CreateDriverResponse, error)
@@ -176,6 +180,16 @@ func (c *driverServiceClient) ExportPersonalData(ctx context.Context, in *v1.Exp
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.ExportPersonalDataResponse)
 	err := c.cc.Invoke(ctx, DriverService_ExportPersonalData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) GetDriverSupply(ctx context.Context, in *GetDriverSupplyRequest, opts ...grpc.CallOption) (*GetDriverSupplyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDriverSupplyResponse)
+	err := c.cc.Invoke(ctx, DriverService_GetDriverSupply_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -509,6 +523,9 @@ type DriverServiceServer interface {
 	// ExportPersonalData returns what this service keeps about one person,
 	// for their "Download your data" file. Internal only (identity-service).
 	ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error)
+	// GetDriverSupply counts drivers by status, availability and class right
+	// now, for the business reports (analytics). Internal only.
+	GetDriverSupply(context.Context, *GetDriverSupplyRequest) (*GetDriverSupplyResponse, error)
 	// CreateDriver creates the caller's own driver profile: identity_id must be the caller's identity.
 	// The new driver starts PENDING and cannot go online until an operator approves it.
 	CreateDriver(context.Context, *CreateDriverRequest) (*CreateDriverResponse, error)
@@ -621,6 +638,9 @@ type UnimplementedDriverServiceServer struct{}
 
 func (UnimplementedDriverServiceServer) ExportPersonalData(context.Context, *v1.ExportPersonalDataRequest) (*v1.ExportPersonalDataResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ExportPersonalData not implemented")
+}
+func (UnimplementedDriverServiceServer) GetDriverSupply(context.Context, *GetDriverSupplyRequest) (*GetDriverSupplyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDriverSupply not implemented")
 }
 func (UnimplementedDriverServiceServer) CreateDriver(context.Context, *CreateDriverRequest) (*CreateDriverResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateDriver not implemented")
@@ -753,6 +773,24 @@ func _DriverService_ExportPersonalData_Handler(srv interface{}, ctx context.Cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DriverServiceServer).ExportPersonalData(ctx, req.(*v1.ExportPersonalDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_GetDriverSupply_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDriverSupplyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).GetDriverSupply(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverService_GetDriverSupply_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).GetDriverSupply(ctx, req.(*GetDriverSupplyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1343,6 +1381,10 @@ var DriverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExportPersonalData",
 			Handler:    _DriverService_ExportPersonalData_Handler,
+		},
+		{
+			MethodName: "GetDriverSupply",
+			Handler:    _DriverService_GetDriverSupply_Handler,
 		},
 		{
 			MethodName: "CreateDriver",

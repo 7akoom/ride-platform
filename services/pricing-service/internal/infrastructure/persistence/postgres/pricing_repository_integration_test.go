@@ -434,7 +434,7 @@ func TestAFareKeepsWhatItWasPricedWith(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !strings.Contains(payload, saved[0].ID) {
+	if !strings.Contains(payload, saved[0].ID) || !strings.Contains(payload, `"discount_amount":`) || !strings.Contains(payload, `"surge_amount":`) {
 		t.Fatalf("payload %s", payload)
 	}
 }

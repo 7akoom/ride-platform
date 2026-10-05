@@ -23,6 +23,21 @@ service AnalyticsService {
   rpc GetDriverRetention(GetRetentionRequest) returns (GetRetentionResponse) {
     option (google.api.http) = { get: "/v1/analytics/retention/drivers" };
   }
+  rpc GetServiceLevels(GetServiceLevelsRequest) returns (GetServiceLevelsResponse) {
+    option (google.api.http) = { get: "/v1/analytics/service-levels" };
+  }
+  rpc GetDriverOffers(GetDriverOffersRequest) returns (GetDriverOffersResponse) {
+    option (google.api.http) = { get: "/v1/analytics/driver-offers" };
+  }
+  rpc GetRatings(GetRatingsRequest) returns (GetRatingsResponse) {
+    option (google.api.http) = { get: "/v1/analytics/ratings" };
+  }
+  rpc GetMoneyFlows(GetMoneyFlowsRequest) returns (GetMoneyFlowsResponse) {
+    option (google.api.http) = { get: "/v1/analytics/money-flows" };
+  }
+  rpc GetLiveOverview(GetLiveOverviewRequest) returns (GetLiveOverviewResponse) {
+    option (google.api.http) = { get: "/v1/analytics/live" };
+  }
   rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
 }
 
@@ -123,6 +138,8 @@ message RevenueDayPoint {
   int64 trip_count = 5;
   string fee_total = 6;          // cancellation and no-show fees, decimal string
   int64 fee_count = 7;
+  string discount_total = 8;     // what riders were given off trip fares
+  string surge_total = 9;        // what surge added to trip fares
 }
 
 message GetRevenueSummaryResponse {
@@ -136,6 +153,8 @@ message GetRevenueSummaryResponse {
   string time_zone = 8;
   string from_date = 9;
   string to_date = 10;
+  string discount_total = 11;
+  string surge_total = 12;
 }
 
 // --- Retention / cohorts ---
@@ -155,4 +174,180 @@ message RetentionCohort {
 message GetRetentionResponse {
   repeated RetentionCohort cohorts = 1;
   string time_zone = 2;
+}
+
+// --- Service levels ---
+
+// How long things took, in seconds, over the trips that got that far.
+message DurationStats {
+  int64 count = 1;
+  int64 average_seconds = 2;
+  int64 median_seconds = 3;
+  int64 p90_seconds = 4;
+}
+
+message ServiceLevelDay {
+  string date = 1;
+  int64 requested_count = 2;
+  int64 completed_count = 3;
+  DurationStats match = 4;   // request to a driver accepting
+  DurationStats pickup = 5;  // accepting to arriving at the pickup
+  DurationStats ride = 6;    // start to completion
+}
+
+// Trips requested in the range: how fast they were matched, reached and
+// driven.
+message GetServiceLevelsRequest {
+  DateRange range = 1;
+  ReportScope scope = 2;
+}
+
+message GetServiceLevelsResponse {
+  repeated ServiceLevelDay days = 1;
+  ServiceLevelDay totals = 2;
+  string completion_rate_percent = 3;
+  string time_zone = 4;
+  string from_date = 5;
+  string to_date = 6;
+}
+
+// --- Driver offers ---
+
+message OfferDay {
+  string date = 1;
+  int64 offered = 2;
+  int64 accepted = 3;
+  int64 rejected = 4;
+  int64 expired = 5;
+  int64 pending = 6; // still open now
+}
+
+// Offers sent to drivers in the range (by the day they were sent) and how
+// they ended. Acceptance = accepted / (accepted + rejected + expired).
+message GetDriverOffersRequest {
+  DateRange range = 1;
+  ReportScope scope = 2;
+}
+
+message GetDriverOffersResponse {
+  repeated OfferDay days = 1;
+  OfferDay totals = 2;
+  string acceptance_rate_percent = 3;
+  string time_zone = 4;
+  string from_date = 5;
+  string to_date = 6;
+}
+
+// --- Ratings ---
+
+message RatingSummary {
+  int64 count = 1;
+  string average = 2;              // two decimals; "0.00" without ratings
+  repeated int64 by_stars = 3;     // five counts: 1 star first, 5 stars last
+}
+
+// Ratings on trips completed in the range.
+message GetRatingsRequest {
+  DateRange range = 1;
+  ReportScope scope = 2;
+}
+
+message GetRatingsResponse {
+  RatingSummary drivers = 1; // riders rating their drivers
+  RatingSummary riders = 2;  // drivers rating their riders
+  int64 completed_trips = 3;
+  string time_zone = 4;
+  string from_date = 5;
+  string to_date = 6;
+}
+
+// --- Money flows (the wallets' ledger) ---
+
+message MoneyFlowLine {
+  string owner_type = 1; // rider | driver
+  string type = 2;       // top_up, voucher, tip, refund, incentive, payout...
+  int64 entries = 3;
+  string credited = 4;   // into those wallets
+  string debited = 5;    // out of them, a positive number
+}
+
+message MoneyFlowDay {
+  string date = 1;
+  repeated MoneyFlowLine lines = 2;
+}
+
+// The figures most dashboards show, from the lines.
+message MoneyHeadline {
+  string topped_up = 1;          // top-ups through payment providers
+  string vouchers_redeemed = 2;
+  string commission = 3;         // taken from drivers
+  string tips = 4;
+  string refunds = 5;            // to riders
+  string incentives = 6;
+  string paid_out = 7;           // payouts requested less those returned
+  string transferred = 8;        // rider to rider
+  string adjustments_in = 9;
+  string adjustments_out = 10;
+}
+
+// What wallets hold now (not in the range).
+message MoneyHeld {
+  string rider_balances = 1;
+  string driver_credit = 2;
+  string driver_debt = 3;
+  int64 suspended_drivers = 4;
+  string rider_dues = 5;
+}
+
+// The whole platform (wallets are not tied to a city), on the platform's
+// clock.
+message GetMoneyFlowsRequest {
+  DateRange range = 1;
+}
+
+message GetMoneyFlowsResponse {
+  repeated MoneyFlowDay days = 1;
+  repeated MoneyFlowLine totals = 2;
+  MoneyHeadline headline = 3;
+  MoneyHeld held = 4;
+  string currency = 5;
+  string time_zone = 6;
+  string from_date = 7;
+  string to_date = 8;
+}
+
+// --- Live ---
+
+message LiveTrips {
+  int64 waiting = 1;     // requested, no driver yet
+  int64 on_the_way = 2;  // accepted, not started
+  int64 in_progress = 3;
+}
+
+message DriverClassSupply {
+  string vehicle_class = 1;
+  int64 available = 2;
+  int64 busy = 3;
+  int64 offline = 4;
+}
+
+// Right now: trips under way (scope applies) and today so far on the
+// report's clock; drivers (approved ones, by class; the platform's, a city
+// scope does not narrow them).
+message GetLiveOverviewRequest {
+  ReportScope scope = 1;
+}
+
+message GetLiveOverviewResponse {
+  LiveTrips trips = 1;
+  FunnelDayPoint today = 2;
+  string today_gross_fare = 3;
+  string currency = 4;
+  int64 drivers_available = 5;
+  int64 drivers_busy = 6;
+  int64 drivers_offline = 7;
+  int64 drivers_pending_review = 8;
+  repeated DriverClassSupply by_class = 9;
+  string time_zone = 10;
+  google.protobuf.Timestamp as_of = 11;
 }

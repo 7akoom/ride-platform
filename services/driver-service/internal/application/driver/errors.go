@@ -8,6 +8,7 @@ var (
 	ErrIdentityIDRequired     = errors.New("identity id is required")
 	ErrDriverIDRequired       = errors.New("driver id is required")
 	ErrVehicleFieldsRequired  = errors.New("vehicle make, model, and plate number are required")
+	ErrVehicleFieldsTooLong   = errors.New("vehicle make and model are at most 60 characters, color 40, plate number 20")
 	ErrInvalidVehicleClass    = errors.New("invalid vehicle class")
 	ErrInvalidAvailability    = errors.New("invalid availability status")
 	ErrInvalidVehicleYear     = errors.New("vehicle year must be between 1980 and next year")

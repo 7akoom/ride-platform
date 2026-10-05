@@ -32,6 +32,7 @@ var exemptMethods = map[string]struct{}{
 // end users, and so are accessOwner methods without an entry in ownerChecks.
 var methodAccess = map[string]accessLevel{
 	"/ride.driver.v1.DriverService/ExportPersonalData":  accessInternal,
+	"/ride.driver.v1.DriverService/GetDriverSupply":     accessInternal,
 	"/ride.driver.v1.DriverService/CreateDriver":        accessOwner,
 	"/ride.driver.v1.DriverService/GetDriver":           accessOwner,
 	"/ride.driver.v1.DriverService/GetDriverByIdentity": accessOwner,

@@ -24,6 +24,11 @@ const (
 	AnalyticsService_GetRevenueSummary_FullMethodName        = "/ride.analytics.v1.AnalyticsService/GetRevenueSummary"
 	AnalyticsService_GetRiderRetention_FullMethodName        = "/ride.analytics.v1.AnalyticsService/GetRiderRetention"
 	AnalyticsService_GetDriverRetention_FullMethodName       = "/ride.analytics.v1.AnalyticsService/GetDriverRetention"
+	AnalyticsService_GetServiceLevels_FullMethodName         = "/ride.analytics.v1.AnalyticsService/GetServiceLevels"
+	AnalyticsService_GetDriverOffers_FullMethodName          = "/ride.analytics.v1.AnalyticsService/GetDriverOffers"
+	AnalyticsService_GetRatings_FullMethodName               = "/ride.analytics.v1.AnalyticsService/GetRatings"
+	AnalyticsService_GetMoneyFlows_FullMethodName            = "/ride.analytics.v1.AnalyticsService/GetMoneyFlows"
+	AnalyticsService_GetLiveOverview_FullMethodName          = "/ride.analytics.v1.AnalyticsService/GetLiveOverview"
 	AnalyticsService_HealthCheck_FullMethodName              = "/ride.analytics.v1.AnalyticsService/HealthCheck"
 )
 
@@ -36,6 +41,11 @@ type AnalyticsServiceClient interface {
 	GetRevenueSummary(ctx context.Context, in *GetRevenueSummaryRequest, opts ...grpc.CallOption) (*GetRevenueSummaryResponse, error)
 	GetRiderRetention(ctx context.Context, in *GetRetentionRequest, opts ...grpc.CallOption) (*GetRetentionResponse, error)
 	GetDriverRetention(ctx context.Context, in *GetRetentionRequest, opts ...grpc.CallOption) (*GetRetentionResponse, error)
+	GetServiceLevels(ctx context.Context, in *GetServiceLevelsRequest, opts ...grpc.CallOption) (*GetServiceLevelsResponse, error)
+	GetDriverOffers(ctx context.Context, in *GetDriverOffersRequest, opts ...grpc.CallOption) (*GetDriverOffersResponse, error)
+	GetRatings(ctx context.Context, in *GetRatingsRequest, opts ...grpc.CallOption) (*GetRatingsResponse, error)
+	GetMoneyFlows(ctx context.Context, in *GetMoneyFlowsRequest, opts ...grpc.CallOption) (*GetMoneyFlowsResponse, error)
+	GetLiveOverview(ctx context.Context, in *GetLiveOverviewRequest, opts ...grpc.CallOption) (*GetLiveOverviewResponse, error)
 	HealthCheck(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error)
 }
 
@@ -97,6 +107,56 @@ func (c *analyticsServiceClient) GetDriverRetention(ctx context.Context, in *Get
 	return out, nil
 }
 
+func (c *analyticsServiceClient) GetServiceLevels(ctx context.Context, in *GetServiceLevelsRequest, opts ...grpc.CallOption) (*GetServiceLevelsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetServiceLevelsResponse)
+	err := c.cc.Invoke(ctx, AnalyticsService_GetServiceLevels_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *analyticsServiceClient) GetDriverOffers(ctx context.Context, in *GetDriverOffersRequest, opts ...grpc.CallOption) (*GetDriverOffersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDriverOffersResponse)
+	err := c.cc.Invoke(ctx, AnalyticsService_GetDriverOffers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *analyticsServiceClient) GetRatings(ctx context.Context, in *GetRatingsRequest, opts ...grpc.CallOption) (*GetRatingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRatingsResponse)
+	err := c.cc.Invoke(ctx, AnalyticsService_GetRatings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *analyticsServiceClient) GetMoneyFlows(ctx context.Context, in *GetMoneyFlowsRequest, opts ...grpc.CallOption) (*GetMoneyFlowsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMoneyFlowsResponse)
+	err := c.cc.Invoke(ctx, AnalyticsService_GetMoneyFlows_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *analyticsServiceClient) GetLiveOverview(ctx context.Context, in *GetLiveOverviewRequest, opts ...grpc.CallOption) (*GetLiveOverviewResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLiveOverviewResponse)
+	err := c.cc.Invoke(ctx, AnalyticsService_GetLiveOverview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *analyticsServiceClient) HealthCheck(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(HealthCheckResponse)
@@ -116,6 +176,11 @@ type AnalyticsServiceServer interface {
 	GetRevenueSummary(context.Context, *GetRevenueSummaryRequest) (*GetRevenueSummaryResponse, error)
 	GetRiderRetention(context.Context, *GetRetentionRequest) (*GetRetentionResponse, error)
 	GetDriverRetention(context.Context, *GetRetentionRequest) (*GetRetentionResponse, error)
+	GetServiceLevels(context.Context, *GetServiceLevelsRequest) (*GetServiceLevelsResponse, error)
+	GetDriverOffers(context.Context, *GetDriverOffersRequest) (*GetDriverOffersResponse, error)
+	GetRatings(context.Context, *GetRatingsRequest) (*GetRatingsResponse, error)
+	GetMoneyFlows(context.Context, *GetMoneyFlowsRequest) (*GetMoneyFlowsResponse, error)
+	GetLiveOverview(context.Context, *GetLiveOverviewRequest) (*GetLiveOverviewResponse, error)
 	HealthCheck(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error)
 	mustEmbedUnimplementedAnalyticsServiceServer()
 }
@@ -141,6 +206,21 @@ func (UnimplementedAnalyticsServiceServer) GetRiderRetention(context.Context, *G
 }
 func (UnimplementedAnalyticsServiceServer) GetDriverRetention(context.Context, *GetRetentionRequest) (*GetRetentionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDriverRetention not implemented")
+}
+func (UnimplementedAnalyticsServiceServer) GetServiceLevels(context.Context, *GetServiceLevelsRequest) (*GetServiceLevelsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetServiceLevels not implemented")
+}
+func (UnimplementedAnalyticsServiceServer) GetDriverOffers(context.Context, *GetDriverOffersRequest) (*GetDriverOffersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDriverOffers not implemented")
+}
+func (UnimplementedAnalyticsServiceServer) GetRatings(context.Context, *GetRatingsRequest) (*GetRatingsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRatings not implemented")
+}
+func (UnimplementedAnalyticsServiceServer) GetMoneyFlows(context.Context, *GetMoneyFlowsRequest) (*GetMoneyFlowsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMoneyFlows not implemented")
+}
+func (UnimplementedAnalyticsServiceServer) GetLiveOverview(context.Context, *GetLiveOverviewRequest) (*GetLiveOverviewResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLiveOverview not implemented")
 }
 func (UnimplementedAnalyticsServiceServer) HealthCheck(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method HealthCheck not implemented")
@@ -256,6 +336,96 @@ func _AnalyticsService_GetDriverRetention_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AnalyticsService_GetServiceLevels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetServiceLevelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalyticsServiceServer).GetServiceLevels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AnalyticsService_GetServiceLevels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalyticsServiceServer).GetServiceLevels(ctx, req.(*GetServiceLevelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AnalyticsService_GetDriverOffers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDriverOffersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalyticsServiceServer).GetDriverOffers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AnalyticsService_GetDriverOffers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalyticsServiceServer).GetDriverOffers(ctx, req.(*GetDriverOffersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AnalyticsService_GetRatings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRatingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalyticsServiceServer).GetRatings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AnalyticsService_GetRatings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalyticsServiceServer).GetRatings(ctx, req.(*GetRatingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AnalyticsService_GetMoneyFlows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMoneyFlowsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalyticsServiceServer).GetMoneyFlows(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AnalyticsService_GetMoneyFlows_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalyticsServiceServer).GetMoneyFlows(ctx, req.(*GetMoneyFlowsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AnalyticsService_GetLiveOverview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLiveOverviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalyticsServiceServer).GetLiveOverview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AnalyticsService_GetLiveOverview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalyticsServiceServer).GetLiveOverview(ctx, req.(*GetLiveOverviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AnalyticsService_HealthCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HealthCheckRequest)
 	if err := dec(in); err != nil {
@@ -300,6 +470,26 @@ var AnalyticsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDriverRetention",
 			Handler:    _AnalyticsService_GetDriverRetention_Handler,
+		},
+		{
+			MethodName: "GetServiceLevels",
+			Handler:    _AnalyticsService_GetServiceLevels_Handler,
+		},
+		{
+			MethodName: "GetDriverOffers",
+			Handler:    _AnalyticsService_GetDriverOffers_Handler,
+		},
+		{
+			MethodName: "GetRatings",
+			Handler:    _AnalyticsService_GetRatings_Handler,
+		},
+		{
+			MethodName: "GetMoneyFlows",
+			Handler:    _AnalyticsService_GetMoneyFlows_Handler,
+		},
+		{
+			MethodName: "GetLiveOverview",
+			Handler:    _AnalyticsService_GetLiveOverview_Handler,
 		},
 		{
 			MethodName: "HealthCheck",

@@ -81,14 +81,52 @@ func (w *Writer) TripRequested(ctx context.Context, tx pgx.Tx, t TripRequested) 
 		t.TripID, t.RiderID, t.CityID, t.ZoneID, t.VehicleClass, t.PaymentMethod, t.Scheduled, t.At)
 }
 
+// TripAccepted also closes the driver's offer for the trip, if there was one.
 func (w *Writer) TripAccepted(ctx context.Context, tx pgx.Tx, tripID, driverID string, at time.Time) error {
-	return exec(ctx, tx, "record trip acceptance", `
+	if err := exec(ctx, tx, "record trip acceptance", `
 		INSERT INTO trip_facts (trip_id, driver_id, accepted_at)
 		VALUES ($1, NULLIF($2, ''), $3)
 		ON CONFLICT (trip_id) DO UPDATE SET
 			driver_id   = COALESCE(trip_facts.driver_id, EXCLUDED.driver_id),
 			accepted_at = COALESCE(trip_facts.accepted_at, EXCLUDED.accepted_at)`,
+		tripID, driverID, at); err != nil {
+		return err
+	}
+
+	return exec(ctx, tx, "record accepted offer", `
+		UPDATE offer_facts SET outcome = 'accepted', decided_at = $3
+		WHERE trip_id = $1 AND driver_id = $2 AND outcome IS NULL`,
 		tripID, driverID, at)
+}
+
+// OfferMade records a trip offered to a driver.
+func (w *Writer) OfferMade(ctx context.Context, tx pgx.Tx, tripID, driverID string, offeredAt, expiresAt time.Time) error {
+	return exec(ctx, tx, "record offer", `
+		INSERT INTO offer_facts (trip_id, driver_id, offered_at, expires_at)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (trip_id, driver_id) DO NOTHING`,
+		tripID, driverID, offeredAt, expiresAt)
+}
+
+// OfferRejected closes an offer the driver turned down.
+func (w *Writer) OfferRejected(ctx context.Context, tx pgx.Tx, tripID, driverID string, at time.Time) error {
+	return exec(ctx, tx, "record rejected offer", `
+		UPDATE offer_facts SET outcome = 'rejected', decided_at = $3
+		WHERE trip_id = $1 AND driver_id = $2 AND outcome IS NULL`,
+		tripID, driverID, at)
+}
+
+// TripRated keeps the stars one side gave: ratedBy "rider" rates the driver.
+func (w *Writer) TripRated(ctx context.Context, tx pgx.Tx, tripID, ratedBy string, stars int, at time.Time) error {
+	column := "rider_stars"
+	if ratedBy == "driver" {
+		column = "driver_stars"
+	}
+
+	return exec(ctx, tx, "record rating", fmt.Sprintf(`
+		INSERT INTO trip_facts (trip_id, %[1]s) VALUES ($1, $2)
+		ON CONFLICT (trip_id) DO UPDATE SET %[1]s = COALESCE(trip_facts.%[1]s, EXCLUDED.%[1]s)`, column),
+		tripID, stars)
 }
 
 func (w *Writer) TripArrived(ctx context.Context, tx pgx.Tx, tripID string, at time.Time) error {
@@ -140,26 +178,31 @@ func (w *Writer) TripCancelled(ctx context.Context, tx pgx.Tx, c TripCancelled) 
 
 // Fare is what fare.calculated says. A later calculation replaces an
 // earlier one.
+// Discount and Surge are nil for events written before pricing named them.
 type Fare struct {
 	TripID   string
 	RiderID  string
 	Kind     string
 	Currency string
 	Total    decimal.Decimal
+	Discount *decimal.Decimal
+	Surge    *decimal.Decimal
 	At       time.Time
 }
 
 func (w *Writer) FareCalculated(ctx context.Context, tx pgx.Tx, f Fare) error {
 	return exec(ctx, tx, "record fare", `
-		INSERT INTO trip_facts (trip_id, rider_id, fare_kind, currency, fare_total, fare_at)
-		VALUES ($1, NULLIF($2, ''), $3, $4, $5, $6)
+		INSERT INTO trip_facts (trip_id, rider_id, fare_kind, currency, fare_total, discount_amount, surge_amount, fare_at)
+		VALUES ($1, NULLIF($2, ''), $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (trip_id) DO UPDATE SET
-			rider_id   = COALESCE(trip_facts.rider_id, EXCLUDED.rider_id),
-			fare_kind  = CASE WHEN trip_facts.fare_at > EXCLUDED.fare_at THEN trip_facts.fare_kind ELSE EXCLUDED.fare_kind END,
-			currency   = CASE WHEN trip_facts.fare_at > EXCLUDED.fare_at THEN trip_facts.currency ELSE EXCLUDED.currency END,
-			fare_total = CASE WHEN trip_facts.fare_at > EXCLUDED.fare_at THEN trip_facts.fare_total ELSE EXCLUDED.fare_total END,
-			fare_at    = GREATEST(trip_facts.fare_at, EXCLUDED.fare_at)`,
-		f.TripID, f.RiderID, f.Kind, f.Currency, f.Total, f.At)
+			rider_id        = COALESCE(trip_facts.rider_id, EXCLUDED.rider_id),
+			fare_kind       = CASE WHEN trip_facts.fare_at > EXCLUDED.fare_at THEN trip_facts.fare_kind ELSE EXCLUDED.fare_kind END,
+			currency        = CASE WHEN trip_facts.fare_at > EXCLUDED.fare_at THEN trip_facts.currency ELSE EXCLUDED.currency END,
+			fare_total      = CASE WHEN trip_facts.fare_at > EXCLUDED.fare_at THEN trip_facts.fare_total ELSE EXCLUDED.fare_total END,
+			discount_amount = CASE WHEN trip_facts.fare_at > EXCLUDED.fare_at THEN trip_facts.discount_amount ELSE EXCLUDED.discount_amount END,
+			surge_amount    = CASE WHEN trip_facts.fare_at > EXCLUDED.fare_at THEN trip_facts.surge_amount ELSE EXCLUDED.surge_amount END,
+			fare_at         = GREATEST(trip_facts.fare_at, EXCLUDED.fare_at)`,
+		f.TripID, f.RiderID, f.Kind, f.Currency, f.Total, f.Discount, f.Surge, f.At)
 }
 
 func (w *Writer) TripSettled(ctx context.Context, tx pgx.Tx, tripID, driverID string, commission decimal.Decimal, at time.Time) error {

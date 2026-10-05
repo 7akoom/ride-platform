@@ -31,6 +31,11 @@ var methodAccess = map[string]accessLevel{
 	"/ride.analytics.v1.AnalyticsService/GetRevenueSummary":        accessStaff,
 	"/ride.analytics.v1.AnalyticsService/GetRiderRetention":        accessStaff,
 	"/ride.analytics.v1.AnalyticsService/GetDriverRetention":       accessStaff,
+	"/ride.analytics.v1.AnalyticsService/GetServiceLevels":         accessStaff,
+	"/ride.analytics.v1.AnalyticsService/GetDriverOffers":          accessStaff,
+	"/ride.analytics.v1.AnalyticsService/GetRatings":               accessStaff,
+	"/ride.analytics.v1.AnalyticsService/GetMoneyFlows":            accessStaff,
+	"/ride.analytics.v1.AnalyticsService/GetLiveOverview":          accessStaff,
 	"/ride.analytics.v1.AnalyticsService/HealthCheck":              accessAuthenticated,
 }
 
@@ -41,6 +46,11 @@ var staffPermissions = map[string]string{
 	"/ride.analytics.v1.AnalyticsService/GetRevenueSummary":        permissionAnalyticsRead,
 	"/ride.analytics.v1.AnalyticsService/GetRiderRetention":        permissionAnalyticsRead,
 	"/ride.analytics.v1.AnalyticsService/GetDriverRetention":       permissionAnalyticsRead,
+	"/ride.analytics.v1.AnalyticsService/GetServiceLevels":         permissionAnalyticsRead,
+	"/ride.analytics.v1.AnalyticsService/GetDriverOffers":          permissionAnalyticsRead,
+	"/ride.analytics.v1.AnalyticsService/GetRatings":               permissionAnalyticsRead,
+	"/ride.analytics.v1.AnalyticsService/GetMoneyFlows":            permissionAnalyticsRead,
+	"/ride.analytics.v1.AnalyticsService/GetLiveOverview":          permissionAnalyticsRead,
 }
 
 func NewAuthorizationUnaryInterceptor(staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {

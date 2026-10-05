@@ -20,14 +20,25 @@ func NewReader(pool *pgxpool.Pool) *Reader {
 	return &Reader{pool: pool}
 }
 
-// scopeSQL filters trip_facts by the scope given as $4, $5, $6.
-const scopeSQL = `
-	AND ($4 = '' OR city_id = $4)
-	AND ($5 = '' OR zone_id = $5)
-	AND ($6 = '' OR vehicle_class = $6)`
+// scopeFrom filters trip_facts by the scope given as $n, $n+1, $n+2.
+func scopeFrom(n int) string {
+	return fmt.Sprintf(`
+	AND ($%[1]d = '' OR city_id = $%[1]d)
+	AND ($%[2]d = '' OR zone_id = $%[2]d)
+	AND ($%[3]d = '' OR vehicle_class = $%[3]d)`, n, n+1, n+2)
+}
+
+// scopeSQL follows windowArgs: $1 the time zone, $2 and $3 the window.
+var scopeSQL = scopeFrom(4)
 
 func windowArgs(w domain.Window, s domain.Scope) []any {
 	return []any{w.Location.String(), w.Start, w.End, s.CityID, s.ZoneID, s.VehicleClass}
+}
+
+// rangeArgs is windowArgs without the time zone: $1 and $2 the window,
+// then scopeFrom(3).
+func rangeArgs(w domain.Window, s domain.Scope) []any {
+	return []any{w.Start, w.End, s.CityID, s.ZoneID, s.VehicleClass}
 }
 
 // TripFunnel returns every day of the window (zeros included) with the
@@ -87,8 +98,8 @@ func (r *Reader) Cancellations(ctx context.Context, w domain.Window, s domain.Sc
 	err := r.pool.QueryRow(ctx, `
 		SELECT count(*), count(cancelled_at), count(*) FILTER (WHERE cancelled_at IS NOT NULL AND rider_no_show)
 		FROM trip_facts
-		WHERE requested_at >= $2 AND requested_at < $3 AND $1 <> ''`+scopeSQL,
-		windowArgs(w, s)...).Scan(&out.TotalTrips, &out.TotalCancellations, &out.RiderNoShows)
+		WHERE requested_at >= $1 AND requested_at < $2`+scopeFrom(3),
+		rangeArgs(w, s)...).Scan(&out.TotalTrips, &out.TotalCancellations, &out.RiderNoShows)
 	if err != nil {
 		return out, fmt.Errorf("count cancellations: %w", err)
 	}
@@ -99,9 +110,9 @@ func (r *Reader) Cancellations(ctx context.Context, w domain.Window, s domain.Sc
 	rows, err := r.pool.Query(ctx, `
 		SELECT COALESCE(cancel_stage, 'requested'), COALESCE(cancelled_by, 'unknown'), count(*)
 		FROM trip_facts
-		WHERE cancelled_at IS NOT NULL AND requested_at >= $2 AND requested_at < $3 AND $1 <> ''`+scopeSQL+`
+		WHERE cancelled_at IS NOT NULL AND requested_at >= $1 AND requested_at < $2`+scopeFrom(3)+`
 		GROUP BY 1, 2`,
-		windowArgs(w, s)...)
+		rangeArgs(w, s)...)
 	if err != nil {
 		return out, fmt.Errorf("query cancellations: %w", err)
 	}
@@ -147,7 +158,9 @@ func (r *Reader) Revenue(ctx context.Context, w domain.Window, s domain.Scope) (
 		       count(*) FILTER (WHERE fare_kind = 'trip'),
 		       COALESCE(sum(fare_total) FILTER (WHERE fare_kind <> 'trip'), 0),
 		       count(*) FILTER (WHERE fare_kind <> 'trip'),
-		       COALESCE(sum(commission), 0)
+		       COALESCE(sum(commission), 0),
+		       COALESCE(sum(discount_amount) FILTER (WHERE fare_kind = 'trip'), 0),
+		       COALESCE(sum(surge_amount) FILTER (WHERE fare_kind = 'trip'), 0)
 		FROM trip_facts
 		WHERE fare_at >= $2 AND fare_at < $3 AND currency IS NOT NULL`+scopeSQL+`
 		GROUP BY day, currency
@@ -166,7 +179,7 @@ func (r *Reader) Revenue(ctx context.Context, w domain.Window, s domain.Scope) (
 
 	for rows.Next() {
 		var p domain.RevenueDayPoint
-		if err := rows.Scan(&p.Day, &p.Currency, &p.GrossFareTotal, &p.TripCount, &p.FeeTotal, &p.FeeCount, &p.CommissionTotal); err != nil {
+		if err := rows.Scan(&p.Day, &p.Currency, &p.GrossFareTotal, &p.TripCount, &p.FeeTotal, &p.FeeCount, &p.CommissionTotal, &p.DiscountTotal, &p.SurgeTotal); err != nil {
 			return nil, domain.RevenueSummary{}, fmt.Errorf("scan revenue: %w", err)
 		}
 
@@ -178,6 +191,8 @@ func (r *Reader) Revenue(ctx context.Context, w domain.Window, s domain.Scope) (
 		summary.FeeTotal = summary.FeeTotal.Add(p.FeeTotal)
 		summary.TotalTrips += p.TripCount
 		summary.TotalFees += p.FeeCount
+		summary.DiscountTotal = summary.DiscountTotal.Add(p.DiscountTotal)
+		summary.SurgeTotal = summary.SurgeTotal.Add(p.SurgeTotal)
 	}
 
 	if err := rows.Err(); err != nil {

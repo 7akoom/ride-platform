@@ -779,6 +779,8 @@ type RevenueDayPoint struct {
 	TripCount       int64                  `protobuf:"varint,5,opt,name=trip_count,json=tripCount,proto3" json:"trip_count,omitempty"`
 	FeeTotal        string                 `protobuf:"bytes,6,opt,name=fee_total,json=feeTotal,proto3" json:"fee_total,omitempty"` // cancellation and no-show fees, decimal string
 	FeeCount        int64                  `protobuf:"varint,7,opt,name=fee_count,json=feeCount,proto3" json:"fee_count,omitempty"`
+	DiscountTotal   string                 `protobuf:"bytes,8,opt,name=discount_total,json=discountTotal,proto3" json:"discount_total,omitempty"` // what riders were given off trip fares
+	SurgeTotal      string                 `protobuf:"bytes,9,opt,name=surge_total,json=surgeTotal,proto3" json:"surge_total,omitempty"`          // what surge added to trip fares
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -862,6 +864,20 @@ func (x *RevenueDayPoint) GetFeeCount() int64 {
 	return 0
 }
 
+func (x *RevenueDayPoint) GetDiscountTotal() string {
+	if x != nil {
+		return x.DiscountTotal
+	}
+	return ""
+}
+
+func (x *RevenueDayPoint) GetSurgeTotal() string {
+	if x != nil {
+		return x.SurgeTotal
+	}
+	return ""
+}
+
 type GetRevenueSummaryResponse struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Days            []*RevenueDayPoint     `protobuf:"bytes,1,rep,name=days,proto3" json:"days,omitempty"`
@@ -874,6 +890,8 @@ type GetRevenueSummaryResponse struct {
 	TimeZone        string                 `protobuf:"bytes,8,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
 	FromDate        string                 `protobuf:"bytes,9,opt,name=from_date,json=fromDate,proto3" json:"from_date,omitempty"`
 	ToDate          string                 `protobuf:"bytes,10,opt,name=to_date,json=toDate,proto3" json:"to_date,omitempty"`
+	DiscountTotal   string                 `protobuf:"bytes,11,opt,name=discount_total,json=discountTotal,proto3" json:"discount_total,omitempty"`
+	SurgeTotal      string                 `protobuf:"bytes,12,opt,name=surge_total,json=surgeTotal,proto3" json:"surge_total,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -974,6 +992,20 @@ func (x *GetRevenueSummaryResponse) GetFromDate() string {
 func (x *GetRevenueSummaryResponse) GetToDate() string {
 	if x != nil {
 		return x.ToDate
+	}
+	return ""
+}
+
+func (x *GetRevenueSummaryResponse) GetDiscountTotal() string {
+	if x != nil {
+		return x.DiscountTotal
+	}
+	return ""
+}
+
+func (x *GetRevenueSummaryResponse) GetSurgeTotal() string {
+	if x != nil {
+		return x.SurgeTotal
 	}
 	return ""
 }
@@ -1136,6 +1168,1483 @@ func (x *GetRetentionResponse) GetTimeZone() string {
 	return ""
 }
 
+// How long things took, in seconds, over the trips that got that far.
+type DurationStats struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Count          int64                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	AverageSeconds int64                  `protobuf:"varint,2,opt,name=average_seconds,json=averageSeconds,proto3" json:"average_seconds,omitempty"`
+	MedianSeconds  int64                  `protobuf:"varint,3,opt,name=median_seconds,json=medianSeconds,proto3" json:"median_seconds,omitempty"`
+	P90Seconds     int64                  `protobuf:"varint,4,opt,name=p90_seconds,json=p90Seconds,proto3" json:"p90_seconds,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *DurationStats) Reset() {
+	*x = DurationStats{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DurationStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DurationStats) ProtoMessage() {}
+
+func (x *DurationStats) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DurationStats.ProtoReflect.Descriptor instead.
+func (*DurationStats) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *DurationStats) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *DurationStats) GetAverageSeconds() int64 {
+	if x != nil {
+		return x.AverageSeconds
+	}
+	return 0
+}
+
+func (x *DurationStats) GetMedianSeconds() int64 {
+	if x != nil {
+		return x.MedianSeconds
+	}
+	return 0
+}
+
+func (x *DurationStats) GetP90Seconds() int64 {
+	if x != nil {
+		return x.P90Seconds
+	}
+	return 0
+}
+
+type ServiceLevelDay struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Date           string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	RequestedCount int64                  `protobuf:"varint,2,opt,name=requested_count,json=requestedCount,proto3" json:"requested_count,omitempty"`
+	CompletedCount int64                  `protobuf:"varint,3,opt,name=completed_count,json=completedCount,proto3" json:"completed_count,omitempty"`
+	Match          *DurationStats         `protobuf:"bytes,4,opt,name=match,proto3" json:"match,omitempty"`   // request to a driver accepting
+	Pickup         *DurationStats         `protobuf:"bytes,5,opt,name=pickup,proto3" json:"pickup,omitempty"` // accepting to arriving at the pickup
+	Ride           *DurationStats         `protobuf:"bytes,6,opt,name=ride,proto3" json:"ride,omitempty"`     // start to completion
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ServiceLevelDay) Reset() {
+	*x = ServiceLevelDay{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ServiceLevelDay) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServiceLevelDay) ProtoMessage() {}
+
+func (x *ServiceLevelDay) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServiceLevelDay.ProtoReflect.Descriptor instead.
+func (*ServiceLevelDay) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ServiceLevelDay) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *ServiceLevelDay) GetRequestedCount() int64 {
+	if x != nil {
+		return x.RequestedCount
+	}
+	return 0
+}
+
+func (x *ServiceLevelDay) GetCompletedCount() int64 {
+	if x != nil {
+		return x.CompletedCount
+	}
+	return 0
+}
+
+func (x *ServiceLevelDay) GetMatch() *DurationStats {
+	if x != nil {
+		return x.Match
+	}
+	return nil
+}
+
+func (x *ServiceLevelDay) GetPickup() *DurationStats {
+	if x != nil {
+		return x.Pickup
+	}
+	return nil
+}
+
+func (x *ServiceLevelDay) GetRide() *DurationStats {
+	if x != nil {
+		return x.Ride
+	}
+	return nil
+}
+
+// Trips requested in the range: how fast they were matched, reached and
+// driven.
+type GetServiceLevelsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Range         *DateRange             `protobuf:"bytes,1,opt,name=range,proto3" json:"range,omitempty"`
+	Scope         *ReportScope           `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetServiceLevelsRequest) Reset() {
+	*x = GetServiceLevelsRequest{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetServiceLevelsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetServiceLevelsRequest) ProtoMessage() {}
+
+func (x *GetServiceLevelsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetServiceLevelsRequest.ProtoReflect.Descriptor instead.
+func (*GetServiceLevelsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetServiceLevelsRequest) GetRange() *DateRange {
+	if x != nil {
+		return x.Range
+	}
+	return nil
+}
+
+func (x *GetServiceLevelsRequest) GetScope() *ReportScope {
+	if x != nil {
+		return x.Scope
+	}
+	return nil
+}
+
+type GetServiceLevelsResponse struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	Days                  []*ServiceLevelDay     `protobuf:"bytes,1,rep,name=days,proto3" json:"days,omitempty"`
+	Totals                *ServiceLevelDay       `protobuf:"bytes,2,opt,name=totals,proto3" json:"totals,omitempty"`
+	CompletionRatePercent string                 `protobuf:"bytes,3,opt,name=completion_rate_percent,json=completionRatePercent,proto3" json:"completion_rate_percent,omitempty"`
+	TimeZone              string                 `protobuf:"bytes,4,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	FromDate              string                 `protobuf:"bytes,5,opt,name=from_date,json=fromDate,proto3" json:"from_date,omitempty"`
+	ToDate                string                 `protobuf:"bytes,6,opt,name=to_date,json=toDate,proto3" json:"to_date,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *GetServiceLevelsResponse) Reset() {
+	*x = GetServiceLevelsResponse{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetServiceLevelsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetServiceLevelsResponse) ProtoMessage() {}
+
+func (x *GetServiceLevelsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetServiceLevelsResponse.ProtoReflect.Descriptor instead.
+func (*GetServiceLevelsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetServiceLevelsResponse) GetDays() []*ServiceLevelDay {
+	if x != nil {
+		return x.Days
+	}
+	return nil
+}
+
+func (x *GetServiceLevelsResponse) GetTotals() *ServiceLevelDay {
+	if x != nil {
+		return x.Totals
+	}
+	return nil
+}
+
+func (x *GetServiceLevelsResponse) GetCompletionRatePercent() string {
+	if x != nil {
+		return x.CompletionRatePercent
+	}
+	return ""
+}
+
+func (x *GetServiceLevelsResponse) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *GetServiceLevelsResponse) GetFromDate() string {
+	if x != nil {
+		return x.FromDate
+	}
+	return ""
+}
+
+func (x *GetServiceLevelsResponse) GetToDate() string {
+	if x != nil {
+		return x.ToDate
+	}
+	return ""
+}
+
+type OfferDay struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	Offered       int64                  `protobuf:"varint,2,opt,name=offered,proto3" json:"offered,omitempty"`
+	Accepted      int64                  `protobuf:"varint,3,opt,name=accepted,proto3" json:"accepted,omitempty"`
+	Rejected      int64                  `protobuf:"varint,4,opt,name=rejected,proto3" json:"rejected,omitempty"`
+	Expired       int64                  `protobuf:"varint,5,opt,name=expired,proto3" json:"expired,omitempty"`
+	Pending       int64                  `protobuf:"varint,6,opt,name=pending,proto3" json:"pending,omitempty"` // still open now
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OfferDay) Reset() {
+	*x = OfferDay{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OfferDay) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OfferDay) ProtoMessage() {}
+
+func (x *OfferDay) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OfferDay.ProtoReflect.Descriptor instead.
+func (*OfferDay) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *OfferDay) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *OfferDay) GetOffered() int64 {
+	if x != nil {
+		return x.Offered
+	}
+	return 0
+}
+
+func (x *OfferDay) GetAccepted() int64 {
+	if x != nil {
+		return x.Accepted
+	}
+	return 0
+}
+
+func (x *OfferDay) GetRejected() int64 {
+	if x != nil {
+		return x.Rejected
+	}
+	return 0
+}
+
+func (x *OfferDay) GetExpired() int64 {
+	if x != nil {
+		return x.Expired
+	}
+	return 0
+}
+
+func (x *OfferDay) GetPending() int64 {
+	if x != nil {
+		return x.Pending
+	}
+	return 0
+}
+
+// Offers sent to drivers in the range (by the day they were sent) and how
+// they ended. Acceptance = accepted / (accepted + rejected + expired).
+type GetDriverOffersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Range         *DateRange             `protobuf:"bytes,1,opt,name=range,proto3" json:"range,omitempty"`
+	Scope         *ReportScope           `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDriverOffersRequest) Reset() {
+	*x = GetDriverOffersRequest{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDriverOffersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDriverOffersRequest) ProtoMessage() {}
+
+func (x *GetDriverOffersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDriverOffersRequest.ProtoReflect.Descriptor instead.
+func (*GetDriverOffersRequest) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetDriverOffersRequest) GetRange() *DateRange {
+	if x != nil {
+		return x.Range
+	}
+	return nil
+}
+
+func (x *GetDriverOffersRequest) GetScope() *ReportScope {
+	if x != nil {
+		return x.Scope
+	}
+	return nil
+}
+
+type GetDriverOffersResponse struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	Days                  []*OfferDay            `protobuf:"bytes,1,rep,name=days,proto3" json:"days,omitempty"`
+	Totals                *OfferDay              `protobuf:"bytes,2,opt,name=totals,proto3" json:"totals,omitempty"`
+	AcceptanceRatePercent string                 `protobuf:"bytes,3,opt,name=acceptance_rate_percent,json=acceptanceRatePercent,proto3" json:"acceptance_rate_percent,omitempty"`
+	TimeZone              string                 `protobuf:"bytes,4,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	FromDate              string                 `protobuf:"bytes,5,opt,name=from_date,json=fromDate,proto3" json:"from_date,omitempty"`
+	ToDate                string                 `protobuf:"bytes,6,opt,name=to_date,json=toDate,proto3" json:"to_date,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *GetDriverOffersResponse) Reset() {
+	*x = GetDriverOffersResponse{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDriverOffersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDriverOffersResponse) ProtoMessage() {}
+
+func (x *GetDriverOffersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDriverOffersResponse.ProtoReflect.Descriptor instead.
+func (*GetDriverOffersResponse) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *GetDriverOffersResponse) GetDays() []*OfferDay {
+	if x != nil {
+		return x.Days
+	}
+	return nil
+}
+
+func (x *GetDriverOffersResponse) GetTotals() *OfferDay {
+	if x != nil {
+		return x.Totals
+	}
+	return nil
+}
+
+func (x *GetDriverOffersResponse) GetAcceptanceRatePercent() string {
+	if x != nil {
+		return x.AcceptanceRatePercent
+	}
+	return ""
+}
+
+func (x *GetDriverOffersResponse) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *GetDriverOffersResponse) GetFromDate() string {
+	if x != nil {
+		return x.FromDate
+	}
+	return ""
+}
+
+func (x *GetDriverOffersResponse) GetToDate() string {
+	if x != nil {
+		return x.ToDate
+	}
+	return ""
+}
+
+type RatingSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Count         int64                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	Average       string                 `protobuf:"bytes,2,opt,name=average,proto3" json:"average,omitempty"`                        // two decimals; "0.00" without ratings
+	ByStars       []int64                `protobuf:"varint,3,rep,packed,name=by_stars,json=byStars,proto3" json:"by_stars,omitempty"` // five counts: 1 star first, 5 stars last
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RatingSummary) Reset() {
+	*x = RatingSummary{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RatingSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RatingSummary) ProtoMessage() {}
+
+func (x *RatingSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RatingSummary.ProtoReflect.Descriptor instead.
+func (*RatingSummary) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *RatingSummary) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *RatingSummary) GetAverage() string {
+	if x != nil {
+		return x.Average
+	}
+	return ""
+}
+
+func (x *RatingSummary) GetByStars() []int64 {
+	if x != nil {
+		return x.ByStars
+	}
+	return nil
+}
+
+// Ratings on trips completed in the range.
+type GetRatingsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Range         *DateRange             `protobuf:"bytes,1,opt,name=range,proto3" json:"range,omitempty"`
+	Scope         *ReportScope           `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRatingsRequest) Reset() {
+	*x = GetRatingsRequest{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRatingsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRatingsRequest) ProtoMessage() {}
+
+func (x *GetRatingsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRatingsRequest.ProtoReflect.Descriptor instead.
+func (*GetRatingsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *GetRatingsRequest) GetRange() *DateRange {
+	if x != nil {
+		return x.Range
+	}
+	return nil
+}
+
+func (x *GetRatingsRequest) GetScope() *ReportScope {
+	if x != nil {
+		return x.Scope
+	}
+	return nil
+}
+
+type GetRatingsResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Drivers        *RatingSummary         `protobuf:"bytes,1,opt,name=drivers,proto3" json:"drivers,omitempty"` // riders rating their drivers
+	Riders         *RatingSummary         `protobuf:"bytes,2,opt,name=riders,proto3" json:"riders,omitempty"`   // drivers rating their riders
+	CompletedTrips int64                  `protobuf:"varint,3,opt,name=completed_trips,json=completedTrips,proto3" json:"completed_trips,omitempty"`
+	TimeZone       string                 `protobuf:"bytes,4,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	FromDate       string                 `protobuf:"bytes,5,opt,name=from_date,json=fromDate,proto3" json:"from_date,omitempty"`
+	ToDate         string                 `protobuf:"bytes,6,opt,name=to_date,json=toDate,proto3" json:"to_date,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetRatingsResponse) Reset() {
+	*x = GetRatingsResponse{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRatingsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRatingsResponse) ProtoMessage() {}
+
+func (x *GetRatingsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRatingsResponse.ProtoReflect.Descriptor instead.
+func (*GetRatingsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *GetRatingsResponse) GetDrivers() *RatingSummary {
+	if x != nil {
+		return x.Drivers
+	}
+	return nil
+}
+
+func (x *GetRatingsResponse) GetRiders() *RatingSummary {
+	if x != nil {
+		return x.Riders
+	}
+	return nil
+}
+
+func (x *GetRatingsResponse) GetCompletedTrips() int64 {
+	if x != nil {
+		return x.CompletedTrips
+	}
+	return 0
+}
+
+func (x *GetRatingsResponse) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *GetRatingsResponse) GetFromDate() string {
+	if x != nil {
+		return x.FromDate
+	}
+	return ""
+}
+
+func (x *GetRatingsResponse) GetToDate() string {
+	if x != nil {
+		return x.ToDate
+	}
+	return ""
+}
+
+type MoneyFlowLine struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OwnerType     string                 `protobuf:"bytes,1,opt,name=owner_type,json=ownerType,proto3" json:"owner_type,omitempty"` // rider | driver
+	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`                            // top_up, voucher, tip, refund, incentive, payout...
+	Entries       int64                  `protobuf:"varint,3,opt,name=entries,proto3" json:"entries,omitempty"`
+	Credited      string                 `protobuf:"bytes,4,opt,name=credited,proto3" json:"credited,omitempty"` // into those wallets
+	Debited       string                 `protobuf:"bytes,5,opt,name=debited,proto3" json:"debited,omitempty"`   // out of them, a positive number
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoneyFlowLine) Reset() {
+	*x = MoneyFlowLine{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoneyFlowLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoneyFlowLine) ProtoMessage() {}
+
+func (x *MoneyFlowLine) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoneyFlowLine.ProtoReflect.Descriptor instead.
+func (*MoneyFlowLine) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *MoneyFlowLine) GetOwnerType() string {
+	if x != nil {
+		return x.OwnerType
+	}
+	return ""
+}
+
+func (x *MoneyFlowLine) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *MoneyFlowLine) GetEntries() int64 {
+	if x != nil {
+		return x.Entries
+	}
+	return 0
+}
+
+func (x *MoneyFlowLine) GetCredited() string {
+	if x != nil {
+		return x.Credited
+	}
+	return ""
+}
+
+func (x *MoneyFlowLine) GetDebited() string {
+	if x != nil {
+		return x.Debited
+	}
+	return ""
+}
+
+type MoneyFlowDay struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	Lines         []*MoneyFlowLine       `protobuf:"bytes,2,rep,name=lines,proto3" json:"lines,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoneyFlowDay) Reset() {
+	*x = MoneyFlowDay{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoneyFlowDay) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoneyFlowDay) ProtoMessage() {}
+
+func (x *MoneyFlowDay) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoneyFlowDay.ProtoReflect.Descriptor instead.
+func (*MoneyFlowDay) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *MoneyFlowDay) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *MoneyFlowDay) GetLines() []*MoneyFlowLine {
+	if x != nil {
+		return x.Lines
+	}
+	return nil
+}
+
+// The figures most dashboards show, from the lines.
+type MoneyHeadline struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	ToppedUp         string                 `protobuf:"bytes,1,opt,name=topped_up,json=toppedUp,proto3" json:"topped_up,omitempty"` // top-ups through payment providers
+	VouchersRedeemed string                 `protobuf:"bytes,2,opt,name=vouchers_redeemed,json=vouchersRedeemed,proto3" json:"vouchers_redeemed,omitempty"`
+	Commission       string                 `protobuf:"bytes,3,opt,name=commission,proto3" json:"commission,omitempty"` // taken from drivers
+	Tips             string                 `protobuf:"bytes,4,opt,name=tips,proto3" json:"tips,omitempty"`
+	Refunds          string                 `protobuf:"bytes,5,opt,name=refunds,proto3" json:"refunds,omitempty"` // to riders
+	Incentives       string                 `protobuf:"bytes,6,opt,name=incentives,proto3" json:"incentives,omitempty"`
+	PaidOut          string                 `protobuf:"bytes,7,opt,name=paid_out,json=paidOut,proto3" json:"paid_out,omitempty"` // payouts requested less those returned
+	Transferred      string                 `protobuf:"bytes,8,opt,name=transferred,proto3" json:"transferred,omitempty"`        // rider to rider
+	AdjustmentsIn    string                 `protobuf:"bytes,9,opt,name=adjustments_in,json=adjustmentsIn,proto3" json:"adjustments_in,omitempty"`
+	AdjustmentsOut   string                 `protobuf:"bytes,10,opt,name=adjustments_out,json=adjustmentsOut,proto3" json:"adjustments_out,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *MoneyHeadline) Reset() {
+	*x = MoneyHeadline{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoneyHeadline) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoneyHeadline) ProtoMessage() {}
+
+func (x *MoneyHeadline) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoneyHeadline.ProtoReflect.Descriptor instead.
+func (*MoneyHeadline) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *MoneyHeadline) GetToppedUp() string {
+	if x != nil {
+		return x.ToppedUp
+	}
+	return ""
+}
+
+func (x *MoneyHeadline) GetVouchersRedeemed() string {
+	if x != nil {
+		return x.VouchersRedeemed
+	}
+	return ""
+}
+
+func (x *MoneyHeadline) GetCommission() string {
+	if x != nil {
+		return x.Commission
+	}
+	return ""
+}
+
+func (x *MoneyHeadline) GetTips() string {
+	if x != nil {
+		return x.Tips
+	}
+	return ""
+}
+
+func (x *MoneyHeadline) GetRefunds() string {
+	if x != nil {
+		return x.Refunds
+	}
+	return ""
+}
+
+func (x *MoneyHeadline) GetIncentives() string {
+	if x != nil {
+		return x.Incentives
+	}
+	return ""
+}
+
+func (x *MoneyHeadline) GetPaidOut() string {
+	if x != nil {
+		return x.PaidOut
+	}
+	return ""
+}
+
+func (x *MoneyHeadline) GetTransferred() string {
+	if x != nil {
+		return x.Transferred
+	}
+	return ""
+}
+
+func (x *MoneyHeadline) GetAdjustmentsIn() string {
+	if x != nil {
+		return x.AdjustmentsIn
+	}
+	return ""
+}
+
+func (x *MoneyHeadline) GetAdjustmentsOut() string {
+	if x != nil {
+		return x.AdjustmentsOut
+	}
+	return ""
+}
+
+// What wallets hold now (not in the range).
+type MoneyHeld struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	RiderBalances    string                 `protobuf:"bytes,1,opt,name=rider_balances,json=riderBalances,proto3" json:"rider_balances,omitempty"`
+	DriverCredit     string                 `protobuf:"bytes,2,opt,name=driver_credit,json=driverCredit,proto3" json:"driver_credit,omitempty"`
+	DriverDebt       string                 `protobuf:"bytes,3,opt,name=driver_debt,json=driverDebt,proto3" json:"driver_debt,omitempty"`
+	SuspendedDrivers int64                  `protobuf:"varint,4,opt,name=suspended_drivers,json=suspendedDrivers,proto3" json:"suspended_drivers,omitempty"`
+	RiderDues        string                 `protobuf:"bytes,5,opt,name=rider_dues,json=riderDues,proto3" json:"rider_dues,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *MoneyHeld) Reset() {
+	*x = MoneyHeld{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoneyHeld) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoneyHeld) ProtoMessage() {}
+
+func (x *MoneyHeld) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoneyHeld.ProtoReflect.Descriptor instead.
+func (*MoneyHeld) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *MoneyHeld) GetRiderBalances() string {
+	if x != nil {
+		return x.RiderBalances
+	}
+	return ""
+}
+
+func (x *MoneyHeld) GetDriverCredit() string {
+	if x != nil {
+		return x.DriverCredit
+	}
+	return ""
+}
+
+func (x *MoneyHeld) GetDriverDebt() string {
+	if x != nil {
+		return x.DriverDebt
+	}
+	return ""
+}
+
+func (x *MoneyHeld) GetSuspendedDrivers() int64 {
+	if x != nil {
+		return x.SuspendedDrivers
+	}
+	return 0
+}
+
+func (x *MoneyHeld) GetRiderDues() string {
+	if x != nil {
+		return x.RiderDues
+	}
+	return ""
+}
+
+// The whole platform (wallets are not tied to a city), on the platform's
+// clock.
+type GetMoneyFlowsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Range         *DateRange             `protobuf:"bytes,1,opt,name=range,proto3" json:"range,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMoneyFlowsRequest) Reset() {
+	*x = GetMoneyFlowsRequest{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMoneyFlowsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMoneyFlowsRequest) ProtoMessage() {}
+
+func (x *GetMoneyFlowsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMoneyFlowsRequest.ProtoReflect.Descriptor instead.
+func (*GetMoneyFlowsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *GetMoneyFlowsRequest) GetRange() *DateRange {
+	if x != nil {
+		return x.Range
+	}
+	return nil
+}
+
+type GetMoneyFlowsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Days          []*MoneyFlowDay        `protobuf:"bytes,1,rep,name=days,proto3" json:"days,omitempty"`
+	Totals        []*MoneyFlowLine       `protobuf:"bytes,2,rep,name=totals,proto3" json:"totals,omitempty"`
+	Headline      *MoneyHeadline         `protobuf:"bytes,3,opt,name=headline,proto3" json:"headline,omitempty"`
+	Held          *MoneyHeld             `protobuf:"bytes,4,opt,name=held,proto3" json:"held,omitempty"`
+	Currency      string                 `protobuf:"bytes,5,opt,name=currency,proto3" json:"currency,omitempty"`
+	TimeZone      string                 `protobuf:"bytes,6,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	FromDate      string                 `protobuf:"bytes,7,opt,name=from_date,json=fromDate,proto3" json:"from_date,omitempty"`
+	ToDate        string                 `protobuf:"bytes,8,opt,name=to_date,json=toDate,proto3" json:"to_date,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMoneyFlowsResponse) Reset() {
+	*x = GetMoneyFlowsResponse{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMoneyFlowsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMoneyFlowsResponse) ProtoMessage() {}
+
+func (x *GetMoneyFlowsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMoneyFlowsResponse.ProtoReflect.Descriptor instead.
+func (*GetMoneyFlowsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *GetMoneyFlowsResponse) GetDays() []*MoneyFlowDay {
+	if x != nil {
+		return x.Days
+	}
+	return nil
+}
+
+func (x *GetMoneyFlowsResponse) GetTotals() []*MoneyFlowLine {
+	if x != nil {
+		return x.Totals
+	}
+	return nil
+}
+
+func (x *GetMoneyFlowsResponse) GetHeadline() *MoneyHeadline {
+	if x != nil {
+		return x.Headline
+	}
+	return nil
+}
+
+func (x *GetMoneyFlowsResponse) GetHeld() *MoneyHeld {
+	if x != nil {
+		return x.Held
+	}
+	return nil
+}
+
+func (x *GetMoneyFlowsResponse) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
+}
+
+func (x *GetMoneyFlowsResponse) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *GetMoneyFlowsResponse) GetFromDate() string {
+	if x != nil {
+		return x.FromDate
+	}
+	return ""
+}
+
+func (x *GetMoneyFlowsResponse) GetToDate() string {
+	if x != nil {
+		return x.ToDate
+	}
+	return ""
+}
+
+type LiveTrips struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Waiting       int64                  `protobuf:"varint,1,opt,name=waiting,proto3" json:"waiting,omitempty"`                     // requested, no driver yet
+	OnTheWay      int64                  `protobuf:"varint,2,opt,name=on_the_way,json=onTheWay,proto3" json:"on_the_way,omitempty"` // accepted, not started
+	InProgress    int64                  `protobuf:"varint,3,opt,name=in_progress,json=inProgress,proto3" json:"in_progress,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LiveTrips) Reset() {
+	*x = LiveTrips{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LiveTrips) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LiveTrips) ProtoMessage() {}
+
+func (x *LiveTrips) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LiveTrips.ProtoReflect.Descriptor instead.
+func (*LiveTrips) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *LiveTrips) GetWaiting() int64 {
+	if x != nil {
+		return x.Waiting
+	}
+	return 0
+}
+
+func (x *LiveTrips) GetOnTheWay() int64 {
+	if x != nil {
+		return x.OnTheWay
+	}
+	return 0
+}
+
+func (x *LiveTrips) GetInProgress() int64 {
+	if x != nil {
+		return x.InProgress
+	}
+	return 0
+}
+
+type DriverClassSupply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VehicleClass  string                 `protobuf:"bytes,1,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	Available     int64                  `protobuf:"varint,2,opt,name=available,proto3" json:"available,omitempty"`
+	Busy          int64                  `protobuf:"varint,3,opt,name=busy,proto3" json:"busy,omitempty"`
+	Offline       int64                  `protobuf:"varint,4,opt,name=offline,proto3" json:"offline,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DriverClassSupply) Reset() {
+	*x = DriverClassSupply{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DriverClassSupply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DriverClassSupply) ProtoMessage() {}
+
+func (x *DriverClassSupply) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DriverClassSupply.ProtoReflect.Descriptor instead.
+func (*DriverClassSupply) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *DriverClassSupply) GetVehicleClass() string {
+	if x != nil {
+		return x.VehicleClass
+	}
+	return ""
+}
+
+func (x *DriverClassSupply) GetAvailable() int64 {
+	if x != nil {
+		return x.Available
+	}
+	return 0
+}
+
+func (x *DriverClassSupply) GetBusy() int64 {
+	if x != nil {
+		return x.Busy
+	}
+	return 0
+}
+
+func (x *DriverClassSupply) GetOffline() int64 {
+	if x != nil {
+		return x.Offline
+	}
+	return 0
+}
+
+// Right now: trips under way (scope applies) and today so far on the
+// report's clock; drivers (approved ones, by class; the platform's, a city
+// scope does not narrow them).
+type GetLiveOverviewRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Scope         *ReportScope           `protobuf:"bytes,1,opt,name=scope,proto3" json:"scope,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLiveOverviewRequest) Reset() {
+	*x = GetLiveOverviewRequest{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLiveOverviewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLiveOverviewRequest) ProtoMessage() {}
+
+func (x *GetLiveOverviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLiveOverviewRequest.ProtoReflect.Descriptor instead.
+func (*GetLiveOverviewRequest) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *GetLiveOverviewRequest) GetScope() *ReportScope {
+	if x != nil {
+		return x.Scope
+	}
+	return nil
+}
+
+type GetLiveOverviewResponse struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Trips                *LiveTrips             `protobuf:"bytes,1,opt,name=trips,proto3" json:"trips,omitempty"`
+	Today                *FunnelDayPoint        `protobuf:"bytes,2,opt,name=today,proto3" json:"today,omitempty"`
+	TodayGrossFare       string                 `protobuf:"bytes,3,opt,name=today_gross_fare,json=todayGrossFare,proto3" json:"today_gross_fare,omitempty"`
+	Currency             string                 `protobuf:"bytes,4,opt,name=currency,proto3" json:"currency,omitempty"`
+	DriversAvailable     int64                  `protobuf:"varint,5,opt,name=drivers_available,json=driversAvailable,proto3" json:"drivers_available,omitempty"`
+	DriversBusy          int64                  `protobuf:"varint,6,opt,name=drivers_busy,json=driversBusy,proto3" json:"drivers_busy,omitempty"`
+	DriversOffline       int64                  `protobuf:"varint,7,opt,name=drivers_offline,json=driversOffline,proto3" json:"drivers_offline,omitempty"`
+	DriversPendingReview int64                  `protobuf:"varint,8,opt,name=drivers_pending_review,json=driversPendingReview,proto3" json:"drivers_pending_review,omitempty"`
+	ByClass              []*DriverClassSupply   `protobuf:"bytes,9,rep,name=by_class,json=byClass,proto3" json:"by_class,omitempty"`
+	TimeZone             string                 `protobuf:"bytes,10,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	AsOf                 *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *GetLiveOverviewResponse) Reset() {
+	*x = GetLiveOverviewResponse{}
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLiveOverviewResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLiveOverviewResponse) ProtoMessage() {}
+
+func (x *GetLiveOverviewResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_analytics_v1_analytics_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLiveOverviewResponse.ProtoReflect.Descriptor instead.
+func (*GetLiveOverviewResponse) Descriptor() ([]byte, []int) {
+	return file_ride_analytics_v1_analytics_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *GetLiveOverviewResponse) GetTrips() *LiveTrips {
+	if x != nil {
+		return x.Trips
+	}
+	return nil
+}
+
+func (x *GetLiveOverviewResponse) GetToday() *FunnelDayPoint {
+	if x != nil {
+		return x.Today
+	}
+	return nil
+}
+
+func (x *GetLiveOverviewResponse) GetTodayGrossFare() string {
+	if x != nil {
+		return x.TodayGrossFare
+	}
+	return ""
+}
+
+func (x *GetLiveOverviewResponse) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
+}
+
+func (x *GetLiveOverviewResponse) GetDriversAvailable() int64 {
+	if x != nil {
+		return x.DriversAvailable
+	}
+	return 0
+}
+
+func (x *GetLiveOverviewResponse) GetDriversBusy() int64 {
+	if x != nil {
+		return x.DriversBusy
+	}
+	return 0
+}
+
+func (x *GetLiveOverviewResponse) GetDriversOffline() int64 {
+	if x != nil {
+		return x.DriversOffline
+	}
+	return 0
+}
+
+func (x *GetLiveOverviewResponse) GetDriversPendingReview() int64 {
+	if x != nil {
+		return x.DriversPendingReview
+	}
+	return 0
+}
+
+func (x *GetLiveOverviewResponse) GetByClass() []*DriverClassSupply {
+	if x != nil {
+		return x.ByClass
+	}
+	return nil
+}
+
+func (x *GetLiveOverviewResponse) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *GetLiveOverviewResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
+	}
+	return nil
+}
+
 var File_ride_analytics_v1_analytics_proto protoreflect.FileDescriptor
 
 const file_ride_analytics_v1_analytics_proto_rawDesc = "" +
@@ -1192,7 +2701,7 @@ const file_ride_analytics_v1_analytics_proto_rawDesc = "" +
 	"\ato_date\x18\t \x01(\tR\x06toDate\"\x84\x01\n" +
 	"\x18GetRevenueSummaryRequest\x122\n" +
 	"\x05range\x18\x01 \x01(\v2\x1c.ride.analytics.v1.DateRangeR\x05range\x124\n" +
-	"\x05scope\x18\x02 \x01(\v2\x1e.ride.analytics.v1.ReportScopeR\x05scope\"\xef\x01\n" +
+	"\x05scope\x18\x02 \x01(\v2\x1e.ride.analytics.v1.ReportScopeR\x05scope\"\xb7\x02\n" +
 	"\x0fRevenueDayPoint\x12\x12\n" +
 	"\x04date\x18\x01 \x01(\tR\x04date\x12\x1a\n" +
 	"\bcurrency\x18\x02 \x01(\tR\bcurrency\x12(\n" +
@@ -1201,7 +2710,10 @@ const file_ride_analytics_v1_analytics_proto_rawDesc = "" +
 	"\n" +
 	"trip_count\x18\x05 \x01(\x03R\ttripCount\x12\x1b\n" +
 	"\tfee_total\x18\x06 \x01(\tR\bfeeTotal\x12\x1b\n" +
-	"\tfee_count\x18\a \x01(\x03R\bfeeCount\"\xf4\x02\n" +
+	"\tfee_count\x18\a \x01(\x03R\bfeeCount\x12%\n" +
+	"\x0ediscount_total\x18\b \x01(\tR\rdiscountTotal\x12\x1f\n" +
+	"\vsurge_total\x18\t \x01(\tR\n" +
+	"surgeTotal\"\xbc\x03\n" +
 	"\x19GetRevenueSummaryResponse\x126\n" +
 	"\x04days\x18\x01 \x03(\v2\".ride.analytics.v1.RevenueDayPointR\x04days\x12(\n" +
 	"\x10gross_fare_total\x18\x02 \x01(\tR\x0egrossFareTotal\x12)\n" +
@@ -1215,7 +2727,10 @@ const file_ride_analytics_v1_analytics_proto_rawDesc = "" +
 	"\ttime_zone\x18\b \x01(\tR\btimeZone\x12\x1b\n" +
 	"\tfrom_date\x18\t \x01(\tR\bfromDate\x12\x17\n" +
 	"\ato_date\x18\n" +
-	" \x01(\tR\x06toDate\"8\n" +
+	" \x01(\tR\x06toDate\x12%\n" +
+	"\x0ediscount_total\x18\v \x01(\tR\rdiscountTotal\x12\x1f\n" +
+	"\vsurge_total\x18\f \x01(\tR\n" +
+	"surgeTotal\"8\n" +
 	"\x13GetRetentionRequest\x12!\n" +
 	"\fcohort_weeks\x18\x01 \x01(\x05R\vcohortWeeks\"\x8e\x01\n" +
 	"\x0fRetentionCohort\x12\x1f\n" +
@@ -1226,13 +2741,144 @@ const file_ride_analytics_v1_analytics_proto_rawDesc = "" +
 	"\x19retention_percent_by_week\x18\x03 \x03(\tR\x16retentionPercentByWeek\"q\n" +
 	"\x14GetRetentionResponse\x12<\n" +
 	"\acohorts\x18\x01 \x03(\v2\".ride.analytics.v1.RetentionCohortR\acohorts\x12\x1b\n" +
-	"\ttime_zone\x18\x02 \x01(\tR\btimeZone2\xd3\x06\n" +
+	"\ttime_zone\x18\x02 \x01(\tR\btimeZone\"\x96\x01\n" +
+	"\rDurationStats\x12\x14\n" +
+	"\x05count\x18\x01 \x01(\x03R\x05count\x12'\n" +
+	"\x0faverage_seconds\x18\x02 \x01(\x03R\x0eaverageSeconds\x12%\n" +
+	"\x0emedian_seconds\x18\x03 \x01(\x03R\rmedianSeconds\x12\x1f\n" +
+	"\vp90_seconds\x18\x04 \x01(\x03R\n" +
+	"p90Seconds\"\x9f\x02\n" +
+	"\x0fServiceLevelDay\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12'\n" +
+	"\x0frequested_count\x18\x02 \x01(\x03R\x0erequestedCount\x12'\n" +
+	"\x0fcompleted_count\x18\x03 \x01(\x03R\x0ecompletedCount\x126\n" +
+	"\x05match\x18\x04 \x01(\v2 .ride.analytics.v1.DurationStatsR\x05match\x128\n" +
+	"\x06pickup\x18\x05 \x01(\v2 .ride.analytics.v1.DurationStatsR\x06pickup\x124\n" +
+	"\x04ride\x18\x06 \x01(\v2 .ride.analytics.v1.DurationStatsR\x04ride\"\x83\x01\n" +
+	"\x17GetServiceLevelsRequest\x122\n" +
+	"\x05range\x18\x01 \x01(\v2\x1c.ride.analytics.v1.DateRangeR\x05range\x124\n" +
+	"\x05scope\x18\x02 \x01(\v2\x1e.ride.analytics.v1.ReportScopeR\x05scope\"\x99\x02\n" +
+	"\x18GetServiceLevelsResponse\x126\n" +
+	"\x04days\x18\x01 \x03(\v2\".ride.analytics.v1.ServiceLevelDayR\x04days\x12:\n" +
+	"\x06totals\x18\x02 \x01(\v2\".ride.analytics.v1.ServiceLevelDayR\x06totals\x126\n" +
+	"\x17completion_rate_percent\x18\x03 \x01(\tR\x15completionRatePercent\x12\x1b\n" +
+	"\ttime_zone\x18\x04 \x01(\tR\btimeZone\x12\x1b\n" +
+	"\tfrom_date\x18\x05 \x01(\tR\bfromDate\x12\x17\n" +
+	"\ato_date\x18\x06 \x01(\tR\x06toDate\"\xa4\x01\n" +
+	"\bOfferDay\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x18\n" +
+	"\aoffered\x18\x02 \x01(\x03R\aoffered\x12\x1a\n" +
+	"\baccepted\x18\x03 \x01(\x03R\baccepted\x12\x1a\n" +
+	"\brejected\x18\x04 \x01(\x03R\brejected\x12\x18\n" +
+	"\aexpired\x18\x05 \x01(\x03R\aexpired\x12\x18\n" +
+	"\apending\x18\x06 \x01(\x03R\apending\"\x82\x01\n" +
+	"\x16GetDriverOffersRequest\x122\n" +
+	"\x05range\x18\x01 \x01(\v2\x1c.ride.analytics.v1.DateRangeR\x05range\x124\n" +
+	"\x05scope\x18\x02 \x01(\v2\x1e.ride.analytics.v1.ReportScopeR\x05scope\"\x8a\x02\n" +
+	"\x17GetDriverOffersResponse\x12/\n" +
+	"\x04days\x18\x01 \x03(\v2\x1b.ride.analytics.v1.OfferDayR\x04days\x123\n" +
+	"\x06totals\x18\x02 \x01(\v2\x1b.ride.analytics.v1.OfferDayR\x06totals\x126\n" +
+	"\x17acceptance_rate_percent\x18\x03 \x01(\tR\x15acceptanceRatePercent\x12\x1b\n" +
+	"\ttime_zone\x18\x04 \x01(\tR\btimeZone\x12\x1b\n" +
+	"\tfrom_date\x18\x05 \x01(\tR\bfromDate\x12\x17\n" +
+	"\ato_date\x18\x06 \x01(\tR\x06toDate\"Z\n" +
+	"\rRatingSummary\x12\x14\n" +
+	"\x05count\x18\x01 \x01(\x03R\x05count\x12\x18\n" +
+	"\aaverage\x18\x02 \x01(\tR\aaverage\x12\x19\n" +
+	"\bby_stars\x18\x03 \x03(\x03R\abyStars\"}\n" +
+	"\x11GetRatingsRequest\x122\n" +
+	"\x05range\x18\x01 \x01(\v2\x1c.ride.analytics.v1.DateRangeR\x05range\x124\n" +
+	"\x05scope\x18\x02 \x01(\v2\x1e.ride.analytics.v1.ReportScopeR\x05scope\"\x86\x02\n" +
+	"\x12GetRatingsResponse\x12:\n" +
+	"\adrivers\x18\x01 \x01(\v2 .ride.analytics.v1.RatingSummaryR\adrivers\x128\n" +
+	"\x06riders\x18\x02 \x01(\v2 .ride.analytics.v1.RatingSummaryR\x06riders\x12'\n" +
+	"\x0fcompleted_trips\x18\x03 \x01(\x03R\x0ecompletedTrips\x12\x1b\n" +
+	"\ttime_zone\x18\x04 \x01(\tR\btimeZone\x12\x1b\n" +
+	"\tfrom_date\x18\x05 \x01(\tR\bfromDate\x12\x17\n" +
+	"\ato_date\x18\x06 \x01(\tR\x06toDate\"\x92\x01\n" +
+	"\rMoneyFlowLine\x12\x1d\n" +
+	"\n" +
+	"owner_type\x18\x01 \x01(\tR\townerType\x12\x12\n" +
+	"\x04type\x18\x02 \x01(\tR\x04type\x12\x18\n" +
+	"\aentries\x18\x03 \x01(\x03R\aentries\x12\x1a\n" +
+	"\bcredited\x18\x04 \x01(\tR\bcredited\x12\x18\n" +
+	"\adebited\x18\x05 \x01(\tR\adebited\"Z\n" +
+	"\fMoneyFlowDay\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x126\n" +
+	"\x05lines\x18\x02 \x03(\v2 .ride.analytics.v1.MoneyFlowLineR\x05lines\"\xd4\x02\n" +
+	"\rMoneyHeadline\x12\x1b\n" +
+	"\ttopped_up\x18\x01 \x01(\tR\btoppedUp\x12+\n" +
+	"\x11vouchers_redeemed\x18\x02 \x01(\tR\x10vouchersRedeemed\x12\x1e\n" +
+	"\n" +
+	"commission\x18\x03 \x01(\tR\n" +
+	"commission\x12\x12\n" +
+	"\x04tips\x18\x04 \x01(\tR\x04tips\x12\x18\n" +
+	"\arefunds\x18\x05 \x01(\tR\arefunds\x12\x1e\n" +
+	"\n" +
+	"incentives\x18\x06 \x01(\tR\n" +
+	"incentives\x12\x19\n" +
+	"\bpaid_out\x18\a \x01(\tR\apaidOut\x12 \n" +
+	"\vtransferred\x18\b \x01(\tR\vtransferred\x12%\n" +
+	"\x0eadjustments_in\x18\t \x01(\tR\radjustmentsIn\x12'\n" +
+	"\x0fadjustments_out\x18\n" +
+	" \x01(\tR\x0eadjustmentsOut\"\xc4\x01\n" +
+	"\tMoneyHeld\x12%\n" +
+	"\x0erider_balances\x18\x01 \x01(\tR\rriderBalances\x12#\n" +
+	"\rdriver_credit\x18\x02 \x01(\tR\fdriverCredit\x12\x1f\n" +
+	"\vdriver_debt\x18\x03 \x01(\tR\n" +
+	"driverDebt\x12+\n" +
+	"\x11suspended_drivers\x18\x04 \x01(\x03R\x10suspendedDrivers\x12\x1d\n" +
+	"\n" +
+	"rider_dues\x18\x05 \x01(\tR\triderDues\"J\n" +
+	"\x14GetMoneyFlowsRequest\x122\n" +
+	"\x05range\x18\x01 \x01(\v2\x1c.ride.analytics.v1.DateRangeR\x05range\"\xe5\x02\n" +
+	"\x15GetMoneyFlowsResponse\x123\n" +
+	"\x04days\x18\x01 \x03(\v2\x1f.ride.analytics.v1.MoneyFlowDayR\x04days\x128\n" +
+	"\x06totals\x18\x02 \x03(\v2 .ride.analytics.v1.MoneyFlowLineR\x06totals\x12<\n" +
+	"\bheadline\x18\x03 \x01(\v2 .ride.analytics.v1.MoneyHeadlineR\bheadline\x120\n" +
+	"\x04held\x18\x04 \x01(\v2\x1c.ride.analytics.v1.MoneyHeldR\x04held\x12\x1a\n" +
+	"\bcurrency\x18\x05 \x01(\tR\bcurrency\x12\x1b\n" +
+	"\ttime_zone\x18\x06 \x01(\tR\btimeZone\x12\x1b\n" +
+	"\tfrom_date\x18\a \x01(\tR\bfromDate\x12\x17\n" +
+	"\ato_date\x18\b \x01(\tR\x06toDate\"d\n" +
+	"\tLiveTrips\x12\x18\n" +
+	"\awaiting\x18\x01 \x01(\x03R\awaiting\x12\x1c\n" +
+	"\n" +
+	"on_the_way\x18\x02 \x01(\x03R\bonTheWay\x12\x1f\n" +
+	"\vin_progress\x18\x03 \x01(\x03R\n" +
+	"inProgress\"\x84\x01\n" +
+	"\x11DriverClassSupply\x12#\n" +
+	"\rvehicle_class\x18\x01 \x01(\tR\fvehicleClass\x12\x1c\n" +
+	"\tavailable\x18\x02 \x01(\x03R\tavailable\x12\x12\n" +
+	"\x04busy\x18\x03 \x01(\x03R\x04busy\x12\x18\n" +
+	"\aoffline\x18\x04 \x01(\x03R\aoffline\"N\n" +
+	"\x16GetLiveOverviewRequest\x124\n" +
+	"\x05scope\x18\x01 \x01(\v2\x1e.ride.analytics.v1.ReportScopeR\x05scope\"\x8a\x04\n" +
+	"\x17GetLiveOverviewResponse\x122\n" +
+	"\x05trips\x18\x01 \x01(\v2\x1c.ride.analytics.v1.LiveTripsR\x05trips\x127\n" +
+	"\x05today\x18\x02 \x01(\v2!.ride.analytics.v1.FunnelDayPointR\x05today\x12(\n" +
+	"\x10today_gross_fare\x18\x03 \x01(\tR\x0etodayGrossFare\x12\x1a\n" +
+	"\bcurrency\x18\x04 \x01(\tR\bcurrency\x12+\n" +
+	"\x11drivers_available\x18\x05 \x01(\x03R\x10driversAvailable\x12!\n" +
+	"\fdrivers_busy\x18\x06 \x01(\x03R\vdriversBusy\x12'\n" +
+	"\x0fdrivers_offline\x18\a \x01(\x03R\x0edriversOffline\x124\n" +
+	"\x16drivers_pending_review\x18\b \x01(\x03R\x14driversPendingReview\x12?\n" +
+	"\bby_class\x18\t \x03(\v2$.ride.analytics.v1.DriverClassSupplyR\abyClass\x12\x1b\n" +
+	"\ttime_zone\x18\n" +
+	" \x01(\tR\btimeZone\x12/\n" +
+	"\x05as_of\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf2\x80\f\n" +
 	"\x10AnalyticsService\x12\x85\x01\n" +
 	"\rGetTripFunnel\x12'.ride.analytics.v1.GetTripFunnelRequest\x1a(.ride.analytics.v1.GetTripFunnelResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/analytics/trip-funnel\x12\xa8\x01\n" +
 	"\x18GetCancellationBreakdown\x122.ride.analytics.v1.GetCancellationBreakdownRequest\x1a3.ride.analytics.v1.GetCancellationBreakdownResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/analytics/cancellations\x12\x8d\x01\n" +
 	"\x11GetRevenueSummary\x12+.ride.analytics.v1.GetRevenueSummaryRequest\x1a,.ride.analytics.v1.GetRevenueSummaryResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/v1/analytics/revenue\x12\x8c\x01\n" +
 	"\x11GetRiderRetention\x12&.ride.analytics.v1.GetRetentionRequest\x1a'.ride.analytics.v1.GetRetentionResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/analytics/retention/riders\x12\x8e\x01\n" +
-	"\x12GetDriverRetention\x12&.ride.analytics.v1.GetRetentionRequest\x1a'.ride.analytics.v1.GetRetentionResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/analytics/retention/drivers\x12\\\n" +
+	"\x12GetDriverRetention\x12&.ride.analytics.v1.GetRetentionRequest\x1a'.ride.analytics.v1.GetRetentionResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/analytics/retention/drivers\x12\x91\x01\n" +
+	"\x10GetServiceLevels\x12*.ride.analytics.v1.GetServiceLevelsRequest\x1a+.ride.analytics.v1.GetServiceLevelsResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/v1/analytics/service-levels\x12\x8d\x01\n" +
+	"\x0fGetDriverOffers\x12).ride.analytics.v1.GetDriverOffersRequest\x1a*.ride.analytics.v1.GetDriverOffersResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/analytics/driver-offers\x12x\n" +
+	"\n" +
+	"GetRatings\x12$.ride.analytics.v1.GetRatingsRequest\x1a%.ride.analytics.v1.GetRatingsResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/v1/analytics/ratings\x12\x85\x01\n" +
+	"\rGetMoneyFlows\x12'.ride.analytics.v1.GetMoneyFlowsRequest\x1a(.ride.analytics.v1.GetMoneyFlowsResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/analytics/money-flows\x12\x84\x01\n" +
+	"\x0fGetLiveOverview\x12).ride.analytics.v1.GetLiveOverviewRequest\x1a*.ride.analytics.v1.GetLiveOverviewResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/analytics/live\x12\\\n" +
 	"\vHealthCheck\x12%.ride.analytics.v1.HealthCheckRequest\x1a&.ride.analytics.v1.HealthCheckResponseBFZDgithub.com/7akoom/ride-platform/gen/go/ride/analytics/v1;analyticsv1b\x06proto3"
 
 var (
@@ -1247,7 +2893,7 @@ func file_ride_analytics_v1_analytics_proto_rawDescGZIP() []byte {
 	return file_ride_analytics_v1_analytics_proto_rawDescData
 }
 
-var file_ride_analytics_v1_analytics_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_ride_analytics_v1_analytics_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_ride_analytics_v1_analytics_proto_goTypes = []any{
 	(*HealthCheckRequest)(nil),               // 0: ride.analytics.v1.HealthCheckRequest
 	(*HealthCheckResponse)(nil),              // 1: ride.analytics.v1.HealthCheckResponse
@@ -1266,11 +2912,31 @@ var file_ride_analytics_v1_analytics_proto_goTypes = []any{
 	(*GetRetentionRequest)(nil),              // 14: ride.analytics.v1.GetRetentionRequest
 	(*RetentionCohort)(nil),                  // 15: ride.analytics.v1.RetentionCohort
 	(*GetRetentionResponse)(nil),             // 16: ride.analytics.v1.GetRetentionResponse
-	(*timestamppb.Timestamp)(nil),            // 17: google.protobuf.Timestamp
+	(*DurationStats)(nil),                    // 17: ride.analytics.v1.DurationStats
+	(*ServiceLevelDay)(nil),                  // 18: ride.analytics.v1.ServiceLevelDay
+	(*GetServiceLevelsRequest)(nil),          // 19: ride.analytics.v1.GetServiceLevelsRequest
+	(*GetServiceLevelsResponse)(nil),         // 20: ride.analytics.v1.GetServiceLevelsResponse
+	(*OfferDay)(nil),                         // 21: ride.analytics.v1.OfferDay
+	(*GetDriverOffersRequest)(nil),           // 22: ride.analytics.v1.GetDriverOffersRequest
+	(*GetDriverOffersResponse)(nil),          // 23: ride.analytics.v1.GetDriverOffersResponse
+	(*RatingSummary)(nil),                    // 24: ride.analytics.v1.RatingSummary
+	(*GetRatingsRequest)(nil),                // 25: ride.analytics.v1.GetRatingsRequest
+	(*GetRatingsResponse)(nil),               // 26: ride.analytics.v1.GetRatingsResponse
+	(*MoneyFlowLine)(nil),                    // 27: ride.analytics.v1.MoneyFlowLine
+	(*MoneyFlowDay)(nil),                     // 28: ride.analytics.v1.MoneyFlowDay
+	(*MoneyHeadline)(nil),                    // 29: ride.analytics.v1.MoneyHeadline
+	(*MoneyHeld)(nil),                        // 30: ride.analytics.v1.MoneyHeld
+	(*GetMoneyFlowsRequest)(nil),             // 31: ride.analytics.v1.GetMoneyFlowsRequest
+	(*GetMoneyFlowsResponse)(nil),            // 32: ride.analytics.v1.GetMoneyFlowsResponse
+	(*LiveTrips)(nil),                        // 33: ride.analytics.v1.LiveTrips
+	(*DriverClassSupply)(nil),                // 34: ride.analytics.v1.DriverClassSupply
+	(*GetLiveOverviewRequest)(nil),           // 35: ride.analytics.v1.GetLiveOverviewRequest
+	(*GetLiveOverviewResponse)(nil),          // 36: ride.analytics.v1.GetLiveOverviewResponse
+	(*timestamppb.Timestamp)(nil),            // 37: google.protobuf.Timestamp
 }
 var file_ride_analytics_v1_analytics_proto_depIdxs = []int32{
-	17, // 0: ride.analytics.v1.DateRange.start_date:type_name -> google.protobuf.Timestamp
-	17, // 1: ride.analytics.v1.DateRange.end_date:type_name -> google.protobuf.Timestamp
+	37, // 0: ride.analytics.v1.DateRange.start_date:type_name -> google.protobuf.Timestamp
+	37, // 1: ride.analytics.v1.DateRange.end_date:type_name -> google.protobuf.Timestamp
 	2,  // 2: ride.analytics.v1.GetTripFunnelRequest.range:type_name -> ride.analytics.v1.DateRange
 	3,  // 3: ride.analytics.v1.GetTripFunnelRequest.scope:type_name -> ride.analytics.v1.ReportScope
 	5,  // 4: ride.analytics.v1.GetTripFunnelResponse.days:type_name -> ride.analytics.v1.FunnelDayPoint
@@ -1283,23 +2949,59 @@ var file_ride_analytics_v1_analytics_proto_depIdxs = []int32{
 	3,  // 11: ride.analytics.v1.GetRevenueSummaryRequest.scope:type_name -> ride.analytics.v1.ReportScope
 	12, // 12: ride.analytics.v1.GetRevenueSummaryResponse.days:type_name -> ride.analytics.v1.RevenueDayPoint
 	15, // 13: ride.analytics.v1.GetRetentionResponse.cohorts:type_name -> ride.analytics.v1.RetentionCohort
-	4,  // 14: ride.analytics.v1.AnalyticsService.GetTripFunnel:input_type -> ride.analytics.v1.GetTripFunnelRequest
-	7,  // 15: ride.analytics.v1.AnalyticsService.GetCancellationBreakdown:input_type -> ride.analytics.v1.GetCancellationBreakdownRequest
-	11, // 16: ride.analytics.v1.AnalyticsService.GetRevenueSummary:input_type -> ride.analytics.v1.GetRevenueSummaryRequest
-	14, // 17: ride.analytics.v1.AnalyticsService.GetRiderRetention:input_type -> ride.analytics.v1.GetRetentionRequest
-	14, // 18: ride.analytics.v1.AnalyticsService.GetDriverRetention:input_type -> ride.analytics.v1.GetRetentionRequest
-	0,  // 19: ride.analytics.v1.AnalyticsService.HealthCheck:input_type -> ride.analytics.v1.HealthCheckRequest
-	6,  // 20: ride.analytics.v1.AnalyticsService.GetTripFunnel:output_type -> ride.analytics.v1.GetTripFunnelResponse
-	10, // 21: ride.analytics.v1.AnalyticsService.GetCancellationBreakdown:output_type -> ride.analytics.v1.GetCancellationBreakdownResponse
-	13, // 22: ride.analytics.v1.AnalyticsService.GetRevenueSummary:output_type -> ride.analytics.v1.GetRevenueSummaryResponse
-	16, // 23: ride.analytics.v1.AnalyticsService.GetRiderRetention:output_type -> ride.analytics.v1.GetRetentionResponse
-	16, // 24: ride.analytics.v1.AnalyticsService.GetDriverRetention:output_type -> ride.analytics.v1.GetRetentionResponse
-	1,  // 25: ride.analytics.v1.AnalyticsService.HealthCheck:output_type -> ride.analytics.v1.HealthCheckResponse
-	20, // [20:26] is the sub-list for method output_type
-	14, // [14:20] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	17, // 14: ride.analytics.v1.ServiceLevelDay.match:type_name -> ride.analytics.v1.DurationStats
+	17, // 15: ride.analytics.v1.ServiceLevelDay.pickup:type_name -> ride.analytics.v1.DurationStats
+	17, // 16: ride.analytics.v1.ServiceLevelDay.ride:type_name -> ride.analytics.v1.DurationStats
+	2,  // 17: ride.analytics.v1.GetServiceLevelsRequest.range:type_name -> ride.analytics.v1.DateRange
+	3,  // 18: ride.analytics.v1.GetServiceLevelsRequest.scope:type_name -> ride.analytics.v1.ReportScope
+	18, // 19: ride.analytics.v1.GetServiceLevelsResponse.days:type_name -> ride.analytics.v1.ServiceLevelDay
+	18, // 20: ride.analytics.v1.GetServiceLevelsResponse.totals:type_name -> ride.analytics.v1.ServiceLevelDay
+	2,  // 21: ride.analytics.v1.GetDriverOffersRequest.range:type_name -> ride.analytics.v1.DateRange
+	3,  // 22: ride.analytics.v1.GetDriverOffersRequest.scope:type_name -> ride.analytics.v1.ReportScope
+	21, // 23: ride.analytics.v1.GetDriverOffersResponse.days:type_name -> ride.analytics.v1.OfferDay
+	21, // 24: ride.analytics.v1.GetDriverOffersResponse.totals:type_name -> ride.analytics.v1.OfferDay
+	2,  // 25: ride.analytics.v1.GetRatingsRequest.range:type_name -> ride.analytics.v1.DateRange
+	3,  // 26: ride.analytics.v1.GetRatingsRequest.scope:type_name -> ride.analytics.v1.ReportScope
+	24, // 27: ride.analytics.v1.GetRatingsResponse.drivers:type_name -> ride.analytics.v1.RatingSummary
+	24, // 28: ride.analytics.v1.GetRatingsResponse.riders:type_name -> ride.analytics.v1.RatingSummary
+	27, // 29: ride.analytics.v1.MoneyFlowDay.lines:type_name -> ride.analytics.v1.MoneyFlowLine
+	2,  // 30: ride.analytics.v1.GetMoneyFlowsRequest.range:type_name -> ride.analytics.v1.DateRange
+	28, // 31: ride.analytics.v1.GetMoneyFlowsResponse.days:type_name -> ride.analytics.v1.MoneyFlowDay
+	27, // 32: ride.analytics.v1.GetMoneyFlowsResponse.totals:type_name -> ride.analytics.v1.MoneyFlowLine
+	29, // 33: ride.analytics.v1.GetMoneyFlowsResponse.headline:type_name -> ride.analytics.v1.MoneyHeadline
+	30, // 34: ride.analytics.v1.GetMoneyFlowsResponse.held:type_name -> ride.analytics.v1.MoneyHeld
+	3,  // 35: ride.analytics.v1.GetLiveOverviewRequest.scope:type_name -> ride.analytics.v1.ReportScope
+	33, // 36: ride.analytics.v1.GetLiveOverviewResponse.trips:type_name -> ride.analytics.v1.LiveTrips
+	5,  // 37: ride.analytics.v1.GetLiveOverviewResponse.today:type_name -> ride.analytics.v1.FunnelDayPoint
+	34, // 38: ride.analytics.v1.GetLiveOverviewResponse.by_class:type_name -> ride.analytics.v1.DriverClassSupply
+	37, // 39: ride.analytics.v1.GetLiveOverviewResponse.as_of:type_name -> google.protobuf.Timestamp
+	4,  // 40: ride.analytics.v1.AnalyticsService.GetTripFunnel:input_type -> ride.analytics.v1.GetTripFunnelRequest
+	7,  // 41: ride.analytics.v1.AnalyticsService.GetCancellationBreakdown:input_type -> ride.analytics.v1.GetCancellationBreakdownRequest
+	11, // 42: ride.analytics.v1.AnalyticsService.GetRevenueSummary:input_type -> ride.analytics.v1.GetRevenueSummaryRequest
+	14, // 43: ride.analytics.v1.AnalyticsService.GetRiderRetention:input_type -> ride.analytics.v1.GetRetentionRequest
+	14, // 44: ride.analytics.v1.AnalyticsService.GetDriverRetention:input_type -> ride.analytics.v1.GetRetentionRequest
+	19, // 45: ride.analytics.v1.AnalyticsService.GetServiceLevels:input_type -> ride.analytics.v1.GetServiceLevelsRequest
+	22, // 46: ride.analytics.v1.AnalyticsService.GetDriverOffers:input_type -> ride.analytics.v1.GetDriverOffersRequest
+	25, // 47: ride.analytics.v1.AnalyticsService.GetRatings:input_type -> ride.analytics.v1.GetRatingsRequest
+	31, // 48: ride.analytics.v1.AnalyticsService.GetMoneyFlows:input_type -> ride.analytics.v1.GetMoneyFlowsRequest
+	35, // 49: ride.analytics.v1.AnalyticsService.GetLiveOverview:input_type -> ride.analytics.v1.GetLiveOverviewRequest
+	0,  // 50: ride.analytics.v1.AnalyticsService.HealthCheck:input_type -> ride.analytics.v1.HealthCheckRequest
+	6,  // 51: ride.analytics.v1.AnalyticsService.GetTripFunnel:output_type -> ride.analytics.v1.GetTripFunnelResponse
+	10, // 52: ride.analytics.v1.AnalyticsService.GetCancellationBreakdown:output_type -> ride.analytics.v1.GetCancellationBreakdownResponse
+	13, // 53: ride.analytics.v1.AnalyticsService.GetRevenueSummary:output_type -> ride.analytics.v1.GetRevenueSummaryResponse
+	16, // 54: ride.analytics.v1.AnalyticsService.GetRiderRetention:output_type -> ride.analytics.v1.GetRetentionResponse
+	16, // 55: ride.analytics.v1.AnalyticsService.GetDriverRetention:output_type -> ride.analytics.v1.GetRetentionResponse
+	20, // 56: ride.analytics.v1.AnalyticsService.GetServiceLevels:output_type -> ride.analytics.v1.GetServiceLevelsResponse
+	23, // 57: ride.analytics.v1.AnalyticsService.GetDriverOffers:output_type -> ride.analytics.v1.GetDriverOffersResponse
+	26, // 58: ride.analytics.v1.AnalyticsService.GetRatings:output_type -> ride.analytics.v1.GetRatingsResponse
+	32, // 59: ride.analytics.v1.AnalyticsService.GetMoneyFlows:output_type -> ride.analytics.v1.GetMoneyFlowsResponse
+	36, // 60: ride.analytics.v1.AnalyticsService.GetLiveOverview:output_type -> ride.analytics.v1.GetLiveOverviewResponse
+	1,  // 61: ride.analytics.v1.AnalyticsService.HealthCheck:output_type -> ride.analytics.v1.HealthCheckResponse
+	51, // [51:62] is the sub-list for method output_type
+	40, // [40:51] is the sub-list for method input_type
+	40, // [40:40] is the sub-list for extension type_name
+	40, // [40:40] is the sub-list for extension extendee
+	0,  // [0:40] is the sub-list for field type_name
 }
 
 func init() { file_ride_analytics_v1_analytics_proto_init() }
@@ -1313,7 +3015,7 @@ func file_ride_analytics_v1_analytics_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_analytics_v1_analytics_proto_rawDesc), len(file_ride_analytics_v1_analytics_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   37,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

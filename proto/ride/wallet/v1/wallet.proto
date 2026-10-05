@@ -15,6 +15,11 @@ service WalletService {
   // first, for the activity page (trip-service). Internal only.
   rpc ListFeedTransactions(ListFeedTransactionsRequest) returns (ListFeedTransactionsResponse);
 
+  // SummarizeLedger totals the ledger by local day, owner and movement type,
+  // and what wallets hold now, for the business reports (analytics). Internal
+  // only.
+  rpc SummarizeLedger(SummarizeLedgerRequest) returns (SummarizeLedgerResponse);
+
   // GetWallet returns the caller's own wallet: ?owner_type=OWNER_TYPE_RIDER or OWNER_TYPE_DRIVER.
   rpc GetWallet(GetWalletRequest) returns (GetWalletResponse) {
     option (google.api.http) = {
@@ -1326,4 +1331,34 @@ message ListFeedTransactionsRequest {
 message ListFeedTransactionsResponse {
   repeated Transaction transactions = 1;
   string currency_code = 2;
+}
+
+message SummarizeLedgerRequest {
+  // Movements from start (inclusive) to end (exclusive).
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
+  // IANA time zone the days are cut on.
+  string time_zone = 3;
+}
+
+// One day's movements of one type into or out of one kind of wallet.
+message LedgerTotal {
+  string date = 1;       // YYYY-MM-DD
+  string owner_type = 2; // rider | driver
+  string type = 3;       // the ledger's own name: top_up, tip, refund...
+  int64 entries = 4;
+  string credited = 5;   // money in, decimal string
+  string debited = 6;    // money out, a positive decimal string
+}
+
+message SummarizeLedgerResponse {
+  repeated LedgerTotal totals = 1;
+  string currency_code = 2;
+  // Now, not in the range: what riders hold, what drivers are owed and owe,
+  // how many drivers are suspended for it, and riders' unpaid fees.
+  string rider_balances = 3;
+  string driver_credit = 4;
+  string driver_debt = 5;
+  int64 suspended_drivers = 6;
+  string rider_dues = 7;
 }

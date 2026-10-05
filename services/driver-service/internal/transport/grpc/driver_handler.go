@@ -21,6 +21,8 @@ type DriverHandler struct {
 
 	// personalData answers ExportPersonalData; nil until WithPersonalData.
 	personalData PersonalDataFunc
+	// supply answers GetDriverSupply; nil until WithSupply.
+	supply SupplyFunc
 
 	driverService driver.Service
 	documents     *documents.Service
@@ -300,6 +302,7 @@ func (h *DriverHandler) mapDriverError(err error) error {
 		errors.Is(err, driver.ErrDisplayNameRequired),
 		errors.Is(err, driver.ErrDisplayNameTooLong),
 		errors.Is(err, driver.ErrVehicleFieldsRequired),
+		errors.Is(err, driver.ErrVehicleFieldsTooLong),
 		errors.Is(err, driver.ErrInvalidVehicleClass),
 		errors.Is(err, driver.ErrInvalidAvailability),
 		errors.Is(err, driver.ErrInvalidVehicleYear),

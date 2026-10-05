@@ -64,3 +64,21 @@ type RiderCreatedPayload struct {
 type DriverPayload struct {
 	DriverID string `json:"driver_id"`
 }
+
+type FareAmountsPayload struct {
+	DiscountAmount *decimal.Decimal `json:"discount_amount"`
+	SurgeAmount    *decimal.Decimal `json:"surge_amount"`
+}
+
+type TripOfferedPayload struct {
+	TripID    string `json:"trip_id"`
+	DriverID  string `json:"driver_id"`
+	OfferedAt string `json:"offered_at"`
+	ExpiresAt string `json:"expires_at"`
+}
+
+type TripRatedPayload struct {
+	TripID  string `json:"trip_id"`
+	RatedBy string `json:"rated_by"`
+	Stars   string `json:"stars"`
+}

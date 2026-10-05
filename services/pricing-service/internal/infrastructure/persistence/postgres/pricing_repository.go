@@ -265,6 +265,9 @@ func (r *PricingRepository) PersistFare(
 		"total":         b.Total,
 		"quote_id":      input.QuoteID,
 		"kind":          string(kind),
+		// What the rider was given off and what surge added, for reports.
+		"discount_amount": b.DiscountAmount,
+		"surge_amount":    b.SurgeAmount,
 	})
 	if err != nil {
 		return pricing.Fare{}, fmt.Errorf("marshal fare.calculated payload: %w", err)

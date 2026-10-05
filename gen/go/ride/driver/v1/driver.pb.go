@@ -4025,6 +4025,154 @@ func (x *RejectNameChangeRequest) GetReason() string {
 	return ""
 }
 
+type GetDriverSupplyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDriverSupplyRequest) Reset() {
+	*x = GetDriverSupplyRequest{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDriverSupplyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDriverSupplyRequest) ProtoMessage() {}
+
+func (x *GetDriverSupplyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDriverSupplyRequest.ProtoReflect.Descriptor instead.
+func (*GetDriverSupplyRequest) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{59}
+}
+
+type DriverSupplyCount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`             // pending | active | rejected | suspended
+	Availability  string                 `protobuf:"bytes,2,opt,name=availability,proto3" json:"availability,omitempty"` // offline | available | busy
+	VehicleClass  string                 `protobuf:"bytes,3,opt,name=vehicle_class,json=vehicleClass,proto3" json:"vehicle_class,omitempty"`
+	Drivers       int64                  `protobuf:"varint,4,opt,name=drivers,proto3" json:"drivers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DriverSupplyCount) Reset() {
+	*x = DriverSupplyCount{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DriverSupplyCount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DriverSupplyCount) ProtoMessage() {}
+
+func (x *DriverSupplyCount) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DriverSupplyCount.ProtoReflect.Descriptor instead.
+func (*DriverSupplyCount) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{60}
+}
+
+func (x *DriverSupplyCount) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *DriverSupplyCount) GetAvailability() string {
+	if x != nil {
+		return x.Availability
+	}
+	return ""
+}
+
+func (x *DriverSupplyCount) GetVehicleClass() string {
+	if x != nil {
+		return x.VehicleClass
+	}
+	return ""
+}
+
+func (x *DriverSupplyCount) GetDrivers() int64 {
+	if x != nil {
+		return x.Drivers
+	}
+	return 0
+}
+
+type GetDriverSupplyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Counts        []*DriverSupplyCount   `protobuf:"bytes,1,rep,name=counts,proto3" json:"counts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDriverSupplyResponse) Reset() {
+	*x = GetDriverSupplyResponse{}
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDriverSupplyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDriverSupplyResponse) ProtoMessage() {}
+
+func (x *GetDriverSupplyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_driver_v1_driver_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDriverSupplyResponse.ProtoReflect.Descriptor instead.
+func (*GetDriverSupplyResponse) Descriptor() ([]byte, []int) {
+	return file_ride_driver_v1_driver_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *GetDriverSupplyResponse) GetCounts() []*DriverSupplyCount {
+	if x != nil {
+		return x.Counts
+	}
+	return nil
+}
+
 var File_ride_driver_v1_driver_proto protoreflect.FileDescriptor
 
 const file_ride_driver_v1_driver_proto_rawDesc = "" +
@@ -4306,7 +4454,15 @@ const file_ride_driver_v1_driver_proto_rawDesc = "" +
 	"\x0ename_change_id\x18\x01 \x01(\tR\fnameChangeId\"W\n" +
 	"\x17RejectNameChangeRequest\x12$\n" +
 	"\x0ename_change_id\x18\x01 \x01(\tR\fnameChangeId\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason*\x9b\x01\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"\x18\n" +
+	"\x16GetDriverSupplyRequest\"\x8e\x01\n" +
+	"\x11DriverSupplyCount\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\"\n" +
+	"\favailability\x18\x02 \x01(\tR\favailability\x12#\n" +
+	"\rvehicle_class\x18\x03 \x01(\tR\fvehicleClass\x12\x18\n" +
+	"\adrivers\x18\x04 \x01(\x03R\adrivers\"T\n" +
+	"\x17GetDriverSupplyResponse\x129\n" +
+	"\x06counts\x18\x01 \x03(\v2!.ride.driver.v1.DriverSupplyCountR\x06counts*\x9b\x01\n" +
 	"\fDriverStatus\x12\x1d\n" +
 	"\x19DRIVER_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14DRIVER_STATUS_ACTIVE\x10\x01\x12\x1b\n" +
@@ -4346,9 +4502,10 @@ const file_ride_driver_v1_driver_proto_rawDesc = "" +
 	"\x1eNAME_CHANGE_STATUS_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aNAME_CHANGE_STATUS_PENDING\x10\x01\x12\x1f\n" +
 	"\x1bNAME_CHANGE_STATUS_APPROVED\x10\x02\x12\x1f\n" +
-	"\x1bNAME_CHANGE_STATUS_REJECTED\x10\x032\xa4&\n" +
+	"\x1bNAME_CHANGE_STATUS_REJECTED\x10\x032\x88'\n" +
 	"\rDriverService\x12s\n" +
-	"\x12ExportPersonalData\x12-.ride.dataexport.v1.ExportPersonalDataRequest\x1a..ride.dataexport.v1.ExportPersonalDataResponse\x12q\n" +
+	"\x12ExportPersonalData\x12-.ride.dataexport.v1.ExportPersonalDataRequest\x1a..ride.dataexport.v1.ExportPersonalDataResponse\x12b\n" +
+	"\x0fGetDriverSupply\x12&.ride.driver.v1.GetDriverSupplyRequest\x1a'.ride.driver.v1.GetDriverSupplyResponse\x12q\n" +
 	"\fCreateDriver\x12#.ride.driver.v1.CreateDriverRequest\x1a$.ride.driver.v1.CreateDriverResponse\"\x16\x82\xd3\xe4\x93\x02\x10:\x01*\"\v/v1/drivers\x12q\n" +
 	"\tGetDriver\x12 .ride.driver.v1.GetDriverRequest\x1a!.ride.driver.v1.GetDriverResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/drivers/{driver_id}\x12\x91\x01\n" +
 	"\x13GetDriverByIdentity\x12*.ride.driver.v1.GetDriverByIdentityRequest\x1a!.ride.driver.v1.GetDriverResponse\"+\x82\xd3\xe4\x93\x02%\x12#/v1/identities/{identity_id}/driver\x12\x92\x01\n" +
@@ -4396,7 +4553,7 @@ func file_ride_driver_v1_driver_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_driver_v1_driver_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_ride_driver_v1_driver_proto_msgTypes = make([]protoimpl.MessageInfo, 59)
+var file_ride_driver_v1_driver_proto_msgTypes = make([]protoimpl.MessageInfo, 62)
 var file_ride_driver_v1_driver_proto_goTypes = []any{
 	(DriverStatus)(0),                          // 0: ride.driver.v1.DriverStatus
 	(AvailabilityStatus)(0),                    // 1: ride.driver.v1.AvailabilityStatus
@@ -4464,16 +4621,19 @@ var file_ride_driver_v1_driver_proto_goTypes = []any{
 	(*ListPendingNameChangesRequest)(nil),      // 63: ride.driver.v1.ListPendingNameChangesRequest
 	(*ApproveNameChangeRequest)(nil),           // 64: ride.driver.v1.ApproveNameChangeRequest
 	(*RejectNameChangeRequest)(nil),            // 65: ride.driver.v1.RejectNameChangeRequest
-	(*timestamppb.Timestamp)(nil),              // 66: google.protobuf.Timestamp
-	(*v1.ExportPersonalDataRequest)(nil),       // 67: ride.dataexport.v1.ExportPersonalDataRequest
-	(*v1.ExportPersonalDataResponse)(nil),      // 68: ride.dataexport.v1.ExportPersonalDataResponse
+	(*GetDriverSupplyRequest)(nil),             // 66: ride.driver.v1.GetDriverSupplyRequest
+	(*DriverSupplyCount)(nil),                  // 67: ride.driver.v1.DriverSupplyCount
+	(*GetDriverSupplyResponse)(nil),            // 68: ride.driver.v1.GetDriverSupplyResponse
+	(*timestamppb.Timestamp)(nil),              // 69: google.protobuf.Timestamp
+	(*v1.ExportPersonalDataRequest)(nil),       // 70: ride.dataexport.v1.ExportPersonalDataRequest
+	(*v1.ExportPersonalDataResponse)(nil),      // 71: ride.dataexport.v1.ExportPersonalDataResponse
 }
 var file_ride_driver_v1_driver_proto_depIdxs = []int32{
 	0,  // 0: ride.driver.v1.Driver.status:type_name -> ride.driver.v1.DriverStatus
 	1,  // 1: ride.driver.v1.Driver.availability_status:type_name -> ride.driver.v1.AvailabilityStatus
 	7,  // 2: ride.driver.v1.Driver.vehicle:type_name -> ride.driver.v1.Vehicle
-	66, // 3: ride.driver.v1.Driver.created_at:type_name -> google.protobuf.Timestamp
-	66, // 4: ride.driver.v1.Driver.updated_at:type_name -> google.protobuf.Timestamp
+	69, // 3: ride.driver.v1.Driver.created_at:type_name -> google.protobuf.Timestamp
+	69, // 4: ride.driver.v1.Driver.updated_at:type_name -> google.protobuf.Timestamp
 	7,  // 5: ride.driver.v1.CreateDriverRequest.vehicle:type_name -> ride.driver.v1.Vehicle
 	8,  // 6: ride.driver.v1.CreateDriverResponse.driver:type_name -> ride.driver.v1.Driver
 	8,  // 7: ride.driver.v1.GetDriverResponse.driver:type_name -> ride.driver.v1.Driver
@@ -4486,8 +4646,8 @@ var file_ride_driver_v1_driver_proto_depIdxs = []int32{
 	0,  // 14: ride.driver.v1.ListDriversRequest.status:type_name -> ride.driver.v1.DriverStatus
 	8,  // 15: ride.driver.v1.ListDriversResponse.drivers:type_name -> ride.driver.v1.Driver
 	2,  // 16: ride.driver.v1.DriverDocument.status:type_name -> ride.driver.v1.DriverDocumentStatus
-	66, // 17: ride.driver.v1.DriverDocument.submitted_at:type_name -> google.protobuf.Timestamp
-	66, // 18: ride.driver.v1.DriverDocument.reviewed_at:type_name -> google.protobuf.Timestamp
+	69, // 17: ride.driver.v1.DriverDocument.submitted_at:type_name -> google.protobuf.Timestamp
+	69, // 18: ride.driver.v1.DriverDocument.reviewed_at:type_name -> google.protobuf.Timestamp
 	24, // 19: ride.driver.v1.DocumentRequirement.type:type_name -> ride.driver.v1.DriverDocumentType
 	3,  // 20: ride.driver.v1.DocumentRequirement.state:type_name -> ride.driver.v1.DocumentRequirementState
 	25, // 21: ride.driver.v1.DocumentRequirement.approved:type_name -> ride.driver.v1.DriverDocument
@@ -4504,94 +4664,97 @@ var file_ride_driver_v1_driver_proto_depIdxs = []int32{
 	0,  // 32: ride.driver.v1.PendingDriverDocument.driver_status:type_name -> ride.driver.v1.DriverStatus
 	36, // 33: ride.driver.v1.ListPendingDriverDocumentsResponse.documents:type_name -> ride.driver.v1.PendingDriverDocument
 	4,  // 34: ride.driver.v1.DriverVehicle.status:type_name -> ride.driver.v1.VehicleStatus
-	66, // 35: ride.driver.v1.DriverVehicle.created_at:type_name -> google.protobuf.Timestamp
-	66, // 36: ride.driver.v1.DriverVehicle.reviewed_at:type_name -> google.protobuf.Timestamp
+	69, // 35: ride.driver.v1.DriverVehicle.created_at:type_name -> google.protobuf.Timestamp
+	69, // 36: ride.driver.v1.DriverVehicle.reviewed_at:type_name -> google.protobuf.Timestamp
 	40, // 37: ride.driver.v1.VehicleResponse.vehicle:type_name -> ride.driver.v1.DriverVehicle
 	40, // 38: ride.driver.v1.ListVehiclesResponse.vehicles:type_name -> ride.driver.v1.DriverVehicle
 	40, // 39: ride.driver.v1.PendingVehicle.vehicle:type_name -> ride.driver.v1.DriverVehicle
 	0,  // 40: ride.driver.v1.PendingVehicle.driver_status:type_name -> ride.driver.v1.DriverStatus
 	48, // 41: ride.driver.v1.ListPendingVehiclesResponse.vehicles:type_name -> ride.driver.v1.PendingVehicle
 	5,  // 42: ride.driver.v1.DriverDetails.gender:type_name -> ride.driver.v1.Gender
-	66, // 43: ride.driver.v1.DriverDetails.updated_at:type_name -> google.protobuf.Timestamp
+	69, // 43: ride.driver.v1.DriverDetails.updated_at:type_name -> google.protobuf.Timestamp
 	52, // 44: ride.driver.v1.DriverDetailsResponse.details:type_name -> ride.driver.v1.DriverDetails
 	5,  // 45: ride.driver.v1.UpdateDriverDetailsRequest.gender:type_name -> ride.driver.v1.Gender
-	66, // 46: ride.driver.v1.DriverPhotoResponse.expires_at:type_name -> google.protobuf.Timestamp
+	69, // 46: ride.driver.v1.DriverPhotoResponse.expires_at:type_name -> google.protobuf.Timestamp
 	6,  // 47: ride.driver.v1.NameChange.status:type_name -> ride.driver.v1.NameChangeStatus
-	66, // 48: ride.driver.v1.NameChange.created_at:type_name -> google.protobuf.Timestamp
-	66, // 49: ride.driver.v1.NameChange.decided_at:type_name -> google.protobuf.Timestamp
+	69, // 48: ride.driver.v1.NameChange.created_at:type_name -> google.protobuf.Timestamp
+	69, // 49: ride.driver.v1.NameChange.decided_at:type_name -> google.protobuf.Timestamp
 	58, // 50: ride.driver.v1.NameChangeResponse.name_change:type_name -> ride.driver.v1.NameChange
 	58, // 51: ride.driver.v1.ListNameChangesResponse.name_changes:type_name -> ride.driver.v1.NameChange
-	67, // 52: ride.driver.v1.DriverService.ExportPersonalData:input_type -> ride.dataexport.v1.ExportPersonalDataRequest
-	9,  // 53: ride.driver.v1.DriverService.CreateDriver:input_type -> ride.driver.v1.CreateDriverRequest
-	11, // 54: ride.driver.v1.DriverService.GetDriver:input_type -> ride.driver.v1.GetDriverRequest
-	12, // 55: ride.driver.v1.DriverService.GetDriverByIdentity:input_type -> ride.driver.v1.GetDriverByIdentityRequest
-	14, // 56: ride.driver.v1.DriverService.UpdateDriverProfile:input_type -> ride.driver.v1.UpdateDriverProfileRequest
-	16, // 57: ride.driver.v1.DriverService.UpdateAvailability:input_type -> ride.driver.v1.UpdateAvailabilityRequest
-	18, // 58: ride.driver.v1.DriverService.ApproveDriver:input_type -> ride.driver.v1.ApproveDriverRequest
-	20, // 59: ride.driver.v1.DriverService.RejectDriver:input_type -> ride.driver.v1.RejectDriverRequest
-	22, // 60: ride.driver.v1.DriverService.ListDrivers:input_type -> ride.driver.v1.ListDriversRequest
-	27, // 61: ride.driver.v1.DriverService.ListDriverDocumentTypes:input_type -> ride.driver.v1.ListDriverDocumentTypesRequest
-	27, // 62: ride.driver.v1.DriverService.AdminListDriverDocumentTypes:input_type -> ride.driver.v1.ListDriverDocumentTypesRequest
-	29, // 63: ride.driver.v1.DriverService.UpsertDriverDocumentType:input_type -> ride.driver.v1.UpsertDriverDocumentTypeRequest
-	31, // 64: ride.driver.v1.DriverService.SubmitDriverDocument:input_type -> ride.driver.v1.SubmitDriverDocumentRequest
-	33, // 65: ride.driver.v1.DriverService.ListDriverDocuments:input_type -> ride.driver.v1.ListDriverDocumentsRequest
-	35, // 66: ride.driver.v1.DriverService.ListPendingDriverDocuments:input_type -> ride.driver.v1.ListPendingDriverDocumentsRequest
-	38, // 67: ride.driver.v1.DriverService.ApproveDriverDocument:input_type -> ride.driver.v1.ApproveDriverDocumentRequest
-	39, // 68: ride.driver.v1.DriverService.RejectDriverDocument:input_type -> ride.driver.v1.RejectDriverDocumentRequest
-	42, // 69: ride.driver.v1.DriverService.AddVehicle:input_type -> ride.driver.v1.AddVehicleRequest
-	43, // 70: ride.driver.v1.DriverService.ListVehicles:input_type -> ride.driver.v1.ListVehiclesRequest
-	45, // 71: ride.driver.v1.DriverService.UpdateVehicle:input_type -> ride.driver.v1.UpdateVehicleRequest
-	46, // 72: ride.driver.v1.DriverService.ActivateVehicle:input_type -> ride.driver.v1.VehicleActionRequest
-	46, // 73: ride.driver.v1.DriverService.RetireVehicle:input_type -> ride.driver.v1.VehicleActionRequest
-	47, // 74: ride.driver.v1.DriverService.ListPendingVehicles:input_type -> ride.driver.v1.ListPendingVehiclesRequest
-	50, // 75: ride.driver.v1.DriverService.ApproveVehicle:input_type -> ride.driver.v1.ApproveVehicleRequest
-	51, // 76: ride.driver.v1.DriverService.RejectVehicle:input_type -> ride.driver.v1.RejectVehicleRequest
-	53, // 77: ride.driver.v1.DriverService.GetDriverDetails:input_type -> ride.driver.v1.GetDriverDetailsRequest
-	55, // 78: ride.driver.v1.DriverService.UpdateDriverDetails:input_type -> ride.driver.v1.UpdateDriverDetailsRequest
-	56, // 79: ride.driver.v1.DriverService.GetDriverPhoto:input_type -> ride.driver.v1.GetDriverPhotoRequest
-	59, // 80: ride.driver.v1.DriverService.RequestNameChange:input_type -> ride.driver.v1.RequestNameChangeRequest
-	61, // 81: ride.driver.v1.DriverService.ListNameChanges:input_type -> ride.driver.v1.ListNameChangesRequest
-	63, // 82: ride.driver.v1.DriverService.ListPendingNameChanges:input_type -> ride.driver.v1.ListPendingNameChangesRequest
-	64, // 83: ride.driver.v1.DriverService.ApproveNameChange:input_type -> ride.driver.v1.ApproveNameChangeRequest
-	65, // 84: ride.driver.v1.DriverService.RejectNameChange:input_type -> ride.driver.v1.RejectNameChangeRequest
-	68, // 85: ride.driver.v1.DriverService.ExportPersonalData:output_type -> ride.dataexport.v1.ExportPersonalDataResponse
-	10, // 86: ride.driver.v1.DriverService.CreateDriver:output_type -> ride.driver.v1.CreateDriverResponse
-	13, // 87: ride.driver.v1.DriverService.GetDriver:output_type -> ride.driver.v1.GetDriverResponse
-	13, // 88: ride.driver.v1.DriverService.GetDriverByIdentity:output_type -> ride.driver.v1.GetDriverResponse
-	15, // 89: ride.driver.v1.DriverService.UpdateDriverProfile:output_type -> ride.driver.v1.UpdateDriverProfileResponse
-	17, // 90: ride.driver.v1.DriverService.UpdateAvailability:output_type -> ride.driver.v1.UpdateAvailabilityResponse
-	19, // 91: ride.driver.v1.DriverService.ApproveDriver:output_type -> ride.driver.v1.ApproveDriverResponse
-	21, // 92: ride.driver.v1.DriverService.RejectDriver:output_type -> ride.driver.v1.RejectDriverResponse
-	23, // 93: ride.driver.v1.DriverService.ListDrivers:output_type -> ride.driver.v1.ListDriversResponse
-	28, // 94: ride.driver.v1.DriverService.ListDriverDocumentTypes:output_type -> ride.driver.v1.ListDriverDocumentTypesResponse
-	28, // 95: ride.driver.v1.DriverService.AdminListDriverDocumentTypes:output_type -> ride.driver.v1.ListDriverDocumentTypesResponse
-	30, // 96: ride.driver.v1.DriverService.UpsertDriverDocumentType:output_type -> ride.driver.v1.DriverDocumentTypeResponse
-	32, // 97: ride.driver.v1.DriverService.SubmitDriverDocument:output_type -> ride.driver.v1.DriverDocumentResponse
-	34, // 98: ride.driver.v1.DriverService.ListDriverDocuments:output_type -> ride.driver.v1.ListDriverDocumentsResponse
-	37, // 99: ride.driver.v1.DriverService.ListPendingDriverDocuments:output_type -> ride.driver.v1.ListPendingDriverDocumentsResponse
-	32, // 100: ride.driver.v1.DriverService.ApproveDriverDocument:output_type -> ride.driver.v1.DriverDocumentResponse
-	32, // 101: ride.driver.v1.DriverService.RejectDriverDocument:output_type -> ride.driver.v1.DriverDocumentResponse
-	41, // 102: ride.driver.v1.DriverService.AddVehicle:output_type -> ride.driver.v1.VehicleResponse
-	44, // 103: ride.driver.v1.DriverService.ListVehicles:output_type -> ride.driver.v1.ListVehiclesResponse
-	41, // 104: ride.driver.v1.DriverService.UpdateVehicle:output_type -> ride.driver.v1.VehicleResponse
-	41, // 105: ride.driver.v1.DriverService.ActivateVehicle:output_type -> ride.driver.v1.VehicleResponse
-	41, // 106: ride.driver.v1.DriverService.RetireVehicle:output_type -> ride.driver.v1.VehicleResponse
-	49, // 107: ride.driver.v1.DriverService.ListPendingVehicles:output_type -> ride.driver.v1.ListPendingVehiclesResponse
-	41, // 108: ride.driver.v1.DriverService.ApproveVehicle:output_type -> ride.driver.v1.VehicleResponse
-	41, // 109: ride.driver.v1.DriverService.RejectVehicle:output_type -> ride.driver.v1.VehicleResponse
-	54, // 110: ride.driver.v1.DriverService.GetDriverDetails:output_type -> ride.driver.v1.DriverDetailsResponse
-	54, // 111: ride.driver.v1.DriverService.UpdateDriverDetails:output_type -> ride.driver.v1.DriverDetailsResponse
-	57, // 112: ride.driver.v1.DriverService.GetDriverPhoto:output_type -> ride.driver.v1.DriverPhotoResponse
-	60, // 113: ride.driver.v1.DriverService.RequestNameChange:output_type -> ride.driver.v1.NameChangeResponse
-	62, // 114: ride.driver.v1.DriverService.ListNameChanges:output_type -> ride.driver.v1.ListNameChangesResponse
-	62, // 115: ride.driver.v1.DriverService.ListPendingNameChanges:output_type -> ride.driver.v1.ListNameChangesResponse
-	60, // 116: ride.driver.v1.DriverService.ApproveNameChange:output_type -> ride.driver.v1.NameChangeResponse
-	60, // 117: ride.driver.v1.DriverService.RejectNameChange:output_type -> ride.driver.v1.NameChangeResponse
-	85, // [85:118] is the sub-list for method output_type
-	52, // [52:85] is the sub-list for method input_type
-	52, // [52:52] is the sub-list for extension type_name
-	52, // [52:52] is the sub-list for extension extendee
-	0,  // [0:52] is the sub-list for field type_name
+	67, // 52: ride.driver.v1.GetDriverSupplyResponse.counts:type_name -> ride.driver.v1.DriverSupplyCount
+	70, // 53: ride.driver.v1.DriverService.ExportPersonalData:input_type -> ride.dataexport.v1.ExportPersonalDataRequest
+	66, // 54: ride.driver.v1.DriverService.GetDriverSupply:input_type -> ride.driver.v1.GetDriverSupplyRequest
+	9,  // 55: ride.driver.v1.DriverService.CreateDriver:input_type -> ride.driver.v1.CreateDriverRequest
+	11, // 56: ride.driver.v1.DriverService.GetDriver:input_type -> ride.driver.v1.GetDriverRequest
+	12, // 57: ride.driver.v1.DriverService.GetDriverByIdentity:input_type -> ride.driver.v1.GetDriverByIdentityRequest
+	14, // 58: ride.driver.v1.DriverService.UpdateDriverProfile:input_type -> ride.driver.v1.UpdateDriverProfileRequest
+	16, // 59: ride.driver.v1.DriverService.UpdateAvailability:input_type -> ride.driver.v1.UpdateAvailabilityRequest
+	18, // 60: ride.driver.v1.DriverService.ApproveDriver:input_type -> ride.driver.v1.ApproveDriverRequest
+	20, // 61: ride.driver.v1.DriverService.RejectDriver:input_type -> ride.driver.v1.RejectDriverRequest
+	22, // 62: ride.driver.v1.DriverService.ListDrivers:input_type -> ride.driver.v1.ListDriversRequest
+	27, // 63: ride.driver.v1.DriverService.ListDriverDocumentTypes:input_type -> ride.driver.v1.ListDriverDocumentTypesRequest
+	27, // 64: ride.driver.v1.DriverService.AdminListDriverDocumentTypes:input_type -> ride.driver.v1.ListDriverDocumentTypesRequest
+	29, // 65: ride.driver.v1.DriverService.UpsertDriverDocumentType:input_type -> ride.driver.v1.UpsertDriverDocumentTypeRequest
+	31, // 66: ride.driver.v1.DriverService.SubmitDriverDocument:input_type -> ride.driver.v1.SubmitDriverDocumentRequest
+	33, // 67: ride.driver.v1.DriverService.ListDriverDocuments:input_type -> ride.driver.v1.ListDriverDocumentsRequest
+	35, // 68: ride.driver.v1.DriverService.ListPendingDriverDocuments:input_type -> ride.driver.v1.ListPendingDriverDocumentsRequest
+	38, // 69: ride.driver.v1.DriverService.ApproveDriverDocument:input_type -> ride.driver.v1.ApproveDriverDocumentRequest
+	39, // 70: ride.driver.v1.DriverService.RejectDriverDocument:input_type -> ride.driver.v1.RejectDriverDocumentRequest
+	42, // 71: ride.driver.v1.DriverService.AddVehicle:input_type -> ride.driver.v1.AddVehicleRequest
+	43, // 72: ride.driver.v1.DriverService.ListVehicles:input_type -> ride.driver.v1.ListVehiclesRequest
+	45, // 73: ride.driver.v1.DriverService.UpdateVehicle:input_type -> ride.driver.v1.UpdateVehicleRequest
+	46, // 74: ride.driver.v1.DriverService.ActivateVehicle:input_type -> ride.driver.v1.VehicleActionRequest
+	46, // 75: ride.driver.v1.DriverService.RetireVehicle:input_type -> ride.driver.v1.VehicleActionRequest
+	47, // 76: ride.driver.v1.DriverService.ListPendingVehicles:input_type -> ride.driver.v1.ListPendingVehiclesRequest
+	50, // 77: ride.driver.v1.DriverService.ApproveVehicle:input_type -> ride.driver.v1.ApproveVehicleRequest
+	51, // 78: ride.driver.v1.DriverService.RejectVehicle:input_type -> ride.driver.v1.RejectVehicleRequest
+	53, // 79: ride.driver.v1.DriverService.GetDriverDetails:input_type -> ride.driver.v1.GetDriverDetailsRequest
+	55, // 80: ride.driver.v1.DriverService.UpdateDriverDetails:input_type -> ride.driver.v1.UpdateDriverDetailsRequest
+	56, // 81: ride.driver.v1.DriverService.GetDriverPhoto:input_type -> ride.driver.v1.GetDriverPhotoRequest
+	59, // 82: ride.driver.v1.DriverService.RequestNameChange:input_type -> ride.driver.v1.RequestNameChangeRequest
+	61, // 83: ride.driver.v1.DriverService.ListNameChanges:input_type -> ride.driver.v1.ListNameChangesRequest
+	63, // 84: ride.driver.v1.DriverService.ListPendingNameChanges:input_type -> ride.driver.v1.ListPendingNameChangesRequest
+	64, // 85: ride.driver.v1.DriverService.ApproveNameChange:input_type -> ride.driver.v1.ApproveNameChangeRequest
+	65, // 86: ride.driver.v1.DriverService.RejectNameChange:input_type -> ride.driver.v1.RejectNameChangeRequest
+	71, // 87: ride.driver.v1.DriverService.ExportPersonalData:output_type -> ride.dataexport.v1.ExportPersonalDataResponse
+	68, // 88: ride.driver.v1.DriverService.GetDriverSupply:output_type -> ride.driver.v1.GetDriverSupplyResponse
+	10, // 89: ride.driver.v1.DriverService.CreateDriver:output_type -> ride.driver.v1.CreateDriverResponse
+	13, // 90: ride.driver.v1.DriverService.GetDriver:output_type -> ride.driver.v1.GetDriverResponse
+	13, // 91: ride.driver.v1.DriverService.GetDriverByIdentity:output_type -> ride.driver.v1.GetDriverResponse
+	15, // 92: ride.driver.v1.DriverService.UpdateDriverProfile:output_type -> ride.driver.v1.UpdateDriverProfileResponse
+	17, // 93: ride.driver.v1.DriverService.UpdateAvailability:output_type -> ride.driver.v1.UpdateAvailabilityResponse
+	19, // 94: ride.driver.v1.DriverService.ApproveDriver:output_type -> ride.driver.v1.ApproveDriverResponse
+	21, // 95: ride.driver.v1.DriverService.RejectDriver:output_type -> ride.driver.v1.RejectDriverResponse
+	23, // 96: ride.driver.v1.DriverService.ListDrivers:output_type -> ride.driver.v1.ListDriversResponse
+	28, // 97: ride.driver.v1.DriverService.ListDriverDocumentTypes:output_type -> ride.driver.v1.ListDriverDocumentTypesResponse
+	28, // 98: ride.driver.v1.DriverService.AdminListDriverDocumentTypes:output_type -> ride.driver.v1.ListDriverDocumentTypesResponse
+	30, // 99: ride.driver.v1.DriverService.UpsertDriverDocumentType:output_type -> ride.driver.v1.DriverDocumentTypeResponse
+	32, // 100: ride.driver.v1.DriverService.SubmitDriverDocument:output_type -> ride.driver.v1.DriverDocumentResponse
+	34, // 101: ride.driver.v1.DriverService.ListDriverDocuments:output_type -> ride.driver.v1.ListDriverDocumentsResponse
+	37, // 102: ride.driver.v1.DriverService.ListPendingDriverDocuments:output_type -> ride.driver.v1.ListPendingDriverDocumentsResponse
+	32, // 103: ride.driver.v1.DriverService.ApproveDriverDocument:output_type -> ride.driver.v1.DriverDocumentResponse
+	32, // 104: ride.driver.v1.DriverService.RejectDriverDocument:output_type -> ride.driver.v1.DriverDocumentResponse
+	41, // 105: ride.driver.v1.DriverService.AddVehicle:output_type -> ride.driver.v1.VehicleResponse
+	44, // 106: ride.driver.v1.DriverService.ListVehicles:output_type -> ride.driver.v1.ListVehiclesResponse
+	41, // 107: ride.driver.v1.DriverService.UpdateVehicle:output_type -> ride.driver.v1.VehicleResponse
+	41, // 108: ride.driver.v1.DriverService.ActivateVehicle:output_type -> ride.driver.v1.VehicleResponse
+	41, // 109: ride.driver.v1.DriverService.RetireVehicle:output_type -> ride.driver.v1.VehicleResponse
+	49, // 110: ride.driver.v1.DriverService.ListPendingVehicles:output_type -> ride.driver.v1.ListPendingVehiclesResponse
+	41, // 111: ride.driver.v1.DriverService.ApproveVehicle:output_type -> ride.driver.v1.VehicleResponse
+	41, // 112: ride.driver.v1.DriverService.RejectVehicle:output_type -> ride.driver.v1.VehicleResponse
+	54, // 113: ride.driver.v1.DriverService.GetDriverDetails:output_type -> ride.driver.v1.DriverDetailsResponse
+	54, // 114: ride.driver.v1.DriverService.UpdateDriverDetails:output_type -> ride.driver.v1.DriverDetailsResponse
+	57, // 115: ride.driver.v1.DriverService.GetDriverPhoto:output_type -> ride.driver.v1.DriverPhotoResponse
+	60, // 116: ride.driver.v1.DriverService.RequestNameChange:output_type -> ride.driver.v1.NameChangeResponse
+	62, // 117: ride.driver.v1.DriverService.ListNameChanges:output_type -> ride.driver.v1.ListNameChangesResponse
+	62, // 118: ride.driver.v1.DriverService.ListPendingNameChanges:output_type -> ride.driver.v1.ListNameChangesResponse
+	60, // 119: ride.driver.v1.DriverService.ApproveNameChange:output_type -> ride.driver.v1.NameChangeResponse
+	60, // 120: ride.driver.v1.DriverService.RejectNameChange:output_type -> ride.driver.v1.NameChangeResponse
+	87, // [87:121] is the sub-list for method output_type
+	53, // [53:87] is the sub-list for method input_type
+	53, // [53:53] is the sub-list for extension type_name
+	53, // [53:53] is the sub-list for extension extendee
+	0,  // [0:53] is the sub-list for field type_name
 }
 
 func init() { file_ride_driver_v1_driver_proto_init() }
@@ -4606,7 +4769,7 @@ func file_ride_driver_v1_driver_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_driver_v1_driver_proto_rawDesc), len(file_ride_driver_v1_driver_proto_rawDesc)),
 			NumEnums:      7,
-			NumMessages:   59,
+			NumMessages:   62,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

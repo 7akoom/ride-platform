@@ -35,6 +35,7 @@ var methodAccess = map[string]accessLevel{
 	"/ride.wallet.v1.WalletService/SettleTrip":           accessInternal,
 	"/ride.wallet.v1.WalletService/ExportPersonalData":   accessInternal,
 	"/ride.wallet.v1.WalletService/ListFeedTransactions": accessInternal,
+	"/ride.wallet.v1.WalletService/SummarizeLedger":      accessInternal,
 	"/ride.wallet.v1.WalletService/ListTransactions":     accessOwner,
 	"/ride.wallet.v1.WalletService/CheckDriverStanding":  accessOwner,
 	"/ride.wallet.v1.WalletService/RequestPayout":        accessOwner,

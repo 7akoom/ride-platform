@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/shopspring/decimal"
@@ -120,14 +122,59 @@ func (h *Handler) apply(ctx context.Context, tx pgx.Tx, env Envelope) error {
 			return payloadError(env, err)
 		}
 
+		var amounts FareAmountsPayload
+		if err := unmarshal(env.Payload, &amounts); err != nil {
+			return payloadError(env, err)
+		}
+
 		kind := strings.TrimSpace(p.Kind)
 		if kind == "" {
 			kind = domain.FareKindTrip
 		}
 
 		return h.writer.FareCalculated(ctx, tx, postgres.Fare{
-			TripID: p.TripID, RiderID: p.RiderID, Kind: kind, Currency: p.CurrencyCode, Total: p.Total, At: at,
+			TripID: p.TripID, RiderID: p.RiderID, Kind: kind, Currency: p.CurrencyCode, Total: p.Total,
+			Discount: amounts.DiscountAmount, Surge: amounts.SurgeAmount, At: at,
 		})
+
+	case "trip.offered":
+		var p TripOfferedPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.TripID == "" || p.DriverID == "" {
+			return payloadError(env, err)
+		}
+
+		offeredAt, err := time.Parse(time.RFC3339Nano, p.OfferedAt)
+		if err != nil {
+			offeredAt = at
+		}
+
+		expiresAt, err := time.Parse(time.RFC3339Nano, p.ExpiresAt)
+		if err != nil {
+			return payloadError(env, err)
+		}
+
+		return h.writer.OfferMade(ctx, tx, p.TripID, p.DriverID, offeredAt, expiresAt)
+
+	case "trip.offer_rejected":
+		var p TripAcceptedPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.TripID == "" || p.DriverID == "" {
+			return payloadError(env, err)
+		}
+
+		return h.writer.OfferRejected(ctx, tx, p.TripID, p.DriverID, at)
+
+	case "trip.rated":
+		var p TripRatedPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.TripID == "" {
+			return payloadError(env, err)
+		}
+
+		stars, err := strconv.Atoi(p.Stars)
+		if err != nil || stars < 1 || stars > 5 || (p.RatedBy != "rider" && p.RatedBy != "driver") {
+			return payloadError(env, fmt.Errorf("rating %q by %q", p.Stars, p.RatedBy))
+		}
+
+		return h.writer.TripRated(ctx, tx, p.TripID, p.RatedBy, stars, at)
 
 	case "trip.settled":
 		var p TripSettledPayload

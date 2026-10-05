@@ -31,6 +31,8 @@ type Cities interface {
 type Service struct {
 	reader   *postgres.Reader
 	cities   Cities
+	ledger   Ledger
+	drivers  Drivers
 	location *time.Location
 	now      func() time.Time
 }

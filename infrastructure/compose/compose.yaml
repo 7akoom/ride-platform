@@ -1107,6 +1107,8 @@ services:
       NATS_URL: nats://nats:4222
       STAFF_SERVICE_ADDRESS: staff-service:50061
       LOCATION_SERVICE_ADDRESS: location-service:50054
+      WALLET_SERVICE_ADDRESS: wallet-service:50058
+      DRIVER_SERVICE_ADDRESS: driver-service:50053
       ANALYTICS_TIME_ZONE: ${ANALYTICS_TIME_ZONE:-Asia/Baghdad}
 
     volumes:

@@ -3987,6 +3987,234 @@
         ]
       }
     },
+    "/v1/analytics/driver-offers": {
+      "get": {
+        "operationId": "AnalyticsService_GetDriverOffers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDriverOffersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "range.startDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "range.endDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "range.fromDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "range.toDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.cityId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.zoneId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.vehicleClass",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AnalyticsService"
+        ]
+      }
+    },
+    "/v1/analytics/live": {
+      "get": {
+        "operationId": "AnalyticsService_GetLiveOverview",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetLiveOverviewResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "scope.cityId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.zoneId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.vehicleClass",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AnalyticsService"
+        ]
+      }
+    },
+    "/v1/analytics/money-flows": {
+      "get": {
+        "operationId": "AnalyticsService_GetMoneyFlows",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetMoneyFlowsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "range.startDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "range.endDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "range.fromDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "range.toDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AnalyticsService"
+        ]
+      }
+    },
+    "/v1/analytics/ratings": {
+      "get": {
+        "operationId": "AnalyticsService_GetRatings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetRatingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "range.startDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "range.endDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "range.fromDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "range.toDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.cityId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.zoneId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.vehicleClass",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AnalyticsService"
+        ]
+      }
+    },
     "/v1/analytics/retention/drivers": {
       "get": {
         "operationId": "AnalyticsService_GetDriverRetention",
@@ -4059,6 +4287,74 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/v1GetRevenueSummaryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "range.startDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "range.endDate",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "range.fromDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "range.toDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.cityId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.zoneId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.vehicleClass",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AnalyticsService"
+        ]
+      }
+    },
+    "/v1/analytics/service-levels": {
+      "get": {
+        "operationId": "AnalyticsService_GetServiceLevels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetServiceLevelsResponse"
             }
           },
           "default": {
@@ -11933,6 +12229,26 @@
         }
       }
     },
+    "v1DriverClassSupply": {
+      "type": "object",
+      "properties": {
+        "vehicleClass": {
+          "type": "string"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "busy": {
+          "type": "string",
+          "format": "int64"
+        },
+        "offline": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "v1DriverDetails": {
       "type": "object",
       "properties": {
@@ -12240,6 +12556,28 @@
           "format": "date-time"
         }
       }
+    },
+    "v1DurationStats": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        },
+        "averageSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "medianSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "p90Seconds": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "How long things took, in seconds, over the trips that got that far."
     },
     "v1EarningsDay": {
       "type": "object",
@@ -12613,11 +12951,85 @@
         }
       }
     },
+    "v1GetDriverOffersResponse": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1OfferDay"
+          }
+        },
+        "totals": {
+          "$ref": "#/definitions/v1OfferDay"
+        },
+        "acceptanceRatePercent": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "fromDate": {
+          "type": "string"
+        },
+        "toDate": {
+          "type": "string"
+        }
+      }
+    },
     "v1GetDriverResponse": {
       "type": "object",
       "properties": {
         "driver": {
           "$ref": "#/definitions/v1Driver"
+        }
+      }
+    },
+    "v1GetLiveOverviewResponse": {
+      "type": "object",
+      "properties": {
+        "trips": {
+          "$ref": "#/definitions/v1LiveTrips"
+        },
+        "today": {
+          "$ref": "#/definitions/v1FunnelDayPoint"
+        },
+        "todayGrossFare": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "driversAvailable": {
+          "type": "string",
+          "format": "int64"
+        },
+        "driversBusy": {
+          "type": "string",
+          "format": "int64"
+        },
+        "driversOffline": {
+          "type": "string",
+          "format": "int64"
+        },
+        "driversPendingReview": {
+          "type": "string",
+          "format": "int64"
+        },
+        "byClass": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DriverClassSupply"
+          }
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "asOf": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -12630,6 +13042,43 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "v1GetMoneyFlowsResponse": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1MoneyFlowDay"
+          }
+        },
+        "totals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1MoneyFlowLine"
+          }
+        },
+        "headline": {
+          "$ref": "#/definitions/v1MoneyHeadline"
+        },
+        "held": {
+          "$ref": "#/definitions/v1MoneyHeld"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "fromDate": {
+          "type": "string"
+        },
+        "toDate": {
+          "type": "string"
         }
       }
     },
@@ -12686,6 +13135,32 @@
         }
       }
     },
+    "v1GetRatingsResponse": {
+      "type": "object",
+      "properties": {
+        "drivers": {
+          "$ref": "#/definitions/v1RatingSummary",
+          "title": "riders rating their drivers"
+        },
+        "riders": {
+          "$ref": "#/definitions/v1RatingSummary",
+          "title": "drivers rating their riders"
+        },
+        "completedTrips": {
+          "type": "string",
+          "format": "int64"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "fromDate": {
+          "type": "string"
+        },
+        "toDate": {
+          "type": "string"
+        }
+      }
+    },
     "v1GetRetentionResponse": {
       "type": "object",
       "properties": {
@@ -12738,6 +13213,12 @@
           "type": "string"
         },
         "toDate": {
+          "type": "string"
+        },
+        "discountTotal": {
+          "type": "string"
+        },
+        "surgeTotal": {
           "type": "string"
         }
       }
@@ -12805,6 +13286,33 @@
         "polyline": {
           "type": "string",
           "description": "The whole path as a Google encoded polyline with 5 digits of precision (about a\nmetre), ready to decode and draw."
+        }
+      }
+    },
+    "v1GetServiceLevelsResponse": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ServiceLevelDay"
+          }
+        },
+        "totals": {
+          "$ref": "#/definitions/v1ServiceLevelDay"
+        },
+        "completionRatePercent": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "fromDate": {
+          "type": "string"
+        },
+        "toDate": {
+          "type": "string"
         }
       }
     },
@@ -14074,6 +14582,25 @@
         }
       }
     },
+    "v1LiveTrips": {
+      "type": "object",
+      "properties": {
+        "waiting": {
+          "type": "string",
+          "format": "int64",
+          "title": "requested, no driver yet"
+        },
+        "onTheWay": {
+          "type": "string",
+          "format": "int64",
+          "title": "accepted, not started"
+        },
+        "inProgress": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "v1LogoutAllSessionsRequest": {
       "type": "object",
       "properties": {
@@ -14271,6 +14798,109 @@
       "default": "MESSAGE_AUTHOR_UNSPECIFIED",
       "description": " - MESSAGE_AUTHOR_SYSTEM: What happened to the ticket (status, assignment, actions); staff only."
     },
+    "v1MoneyFlowDay": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1MoneyFlowLine"
+          }
+        }
+      }
+    },
+    "v1MoneyFlowLine": {
+      "type": "object",
+      "properties": {
+        "ownerType": {
+          "type": "string",
+          "title": "rider | driver"
+        },
+        "type": {
+          "type": "string",
+          "description": "top_up, voucher, tip, refund, incentive, payout..."
+        },
+        "entries": {
+          "type": "string",
+          "format": "int64"
+        },
+        "credited": {
+          "type": "string",
+          "title": "into those wallets"
+        },
+        "debited": {
+          "type": "string",
+          "title": "out of them, a positive number"
+        }
+      }
+    },
+    "v1MoneyHeadline": {
+      "type": "object",
+      "properties": {
+        "toppedUp": {
+          "type": "string",
+          "title": "top-ups through payment providers"
+        },
+        "vouchersRedeemed": {
+          "type": "string"
+        },
+        "commission": {
+          "type": "string",
+          "title": "taken from drivers"
+        },
+        "tips": {
+          "type": "string"
+        },
+        "refunds": {
+          "type": "string",
+          "title": "to riders"
+        },
+        "incentives": {
+          "type": "string"
+        },
+        "paidOut": {
+          "type": "string",
+          "title": "payouts requested less those returned"
+        },
+        "transferred": {
+          "type": "string",
+          "title": "rider to rider"
+        },
+        "adjustmentsIn": {
+          "type": "string"
+        },
+        "adjustmentsOut": {
+          "type": "string"
+        }
+      },
+      "description": "The figures most dashboards show, from the lines."
+    },
+    "v1MoneyHeld": {
+      "type": "object",
+      "properties": {
+        "riderBalances": {
+          "type": "string"
+        },
+        "driverCredit": {
+          "type": "string"
+        },
+        "driverDebt": {
+          "type": "string"
+        },
+        "suspendedDrivers": {
+          "type": "string",
+          "format": "int64"
+        },
+        "riderDues": {
+          "type": "string"
+        }
+      },
+      "description": "What wallets hold now (not in the range)."
+    },
     "v1MoneyRequest": {
       "type": "object",
       "properties": {
@@ -14434,6 +15064,35 @@
         "OTP_DELIVERY_CHANNEL_EMAIL"
       ],
       "default": "OTP_DELIVERY_CHANNEL_UNSPECIFIED"
+    },
+    "v1OfferDay": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "offered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "accepted": {
+          "type": "string",
+          "format": "int64"
+        },
+        "rejected": {
+          "type": "string",
+          "format": "int64"
+        },
+        "expired": {
+          "type": "string",
+          "format": "int64"
+        },
+        "pending": {
+          "type": "string",
+          "format": "int64",
+          "title": "still open now"
+        }
+      }
     },
     "v1OwnerType": {
       "type": "string",
@@ -14836,6 +15495,27 @@
       ],
       "default": "RATED_BY_UNSPECIFIED"
     },
+    "v1RatingSummary": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        },
+        "average": {
+          "type": "string",
+          "title": "two decimals; \"0.00\" without ratings"
+        },
+        "byStars": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "title": "five counts: 1 star first, 5 stars last"
+        }
+      }
+    },
     "v1ReachStopResponse": {
       "type": "object",
       "properties": {
@@ -15236,6 +15916,14 @@
         "feeCount": {
           "type": "string",
           "format": "int64"
+        },
+        "discountTotal": {
+          "type": "string",
+          "title": "what riders were given off trip fares"
+        },
+        "surgeTotal": {
+          "type": "string",
+          "title": "what surge added to trip fares"
         }
       }
     },
@@ -15621,6 +16309,34 @@
         "wallet": {
           "$ref": "#/definitions/v1Wallet",
           "description": "The sender's wallet after it."
+        }
+      }
+    },
+    "v1ServiceLevelDay": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "requestedCount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "completedCount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "match": {
+          "$ref": "#/definitions/v1DurationStats",
+          "title": "request to a driver accepting"
+        },
+        "pickup": {
+          "$ref": "#/definitions/v1DurationStats",
+          "title": "accepting to arriving at the pickup"
+        },
+        "ride": {
+          "$ref": "#/definitions/v1DurationStats",
+          "title": "start to completion"
         }
       }
     },

@@ -89,6 +89,8 @@ func (h *AnalyticsHandler) GetRevenueSummary(ctx context.Context, req *analytics
 		FeeTotal:        summary.FeeTotal.String(),
 		TotalFees:       summary.TotalFees,
 		Currency:        summary.Currency,
+		DiscountTotal:   summary.DiscountTotal.String(),
+		SurgeTotal:      summary.SurgeTotal.String(),
 		TimeZone:        w.Location.String(),
 		FromDate:        w.From.Format(time.DateOnly),
 		ToDate:          w.To.Format(time.DateOnly),
@@ -102,6 +104,8 @@ func (h *AnalyticsHandler) GetRevenueSummary(ctx context.Context, req *analytics
 			TripCount:       d.TripCount,
 			FeeTotal:        d.FeeTotal.String(),
 			FeeCount:        d.FeeCount,
+			DiscountTotal:   d.DiscountTotal.String(),
+			SurgeTotal:      d.SurgeTotal.String(),
 		})
 	}
 
@@ -138,7 +142,7 @@ func (h *AnalyticsHandler) mapError(rpc string, err error) error {
 	case errors.Is(err, domain.ErrUnknownCity):
 		return status.Error(codes.InvalidArgument, "unknown city_id")
 	case errors.Is(err, domain.ErrUpstreamUnavailable):
-		return status.Error(codes.Unavailable, "the city's time zone could not be read; try again")
+		return status.Error(codes.Unavailable, "a service this report needs did not answer; try again")
 	}
 
 	h.logger.Error("analytics query failed", "rpc", rpc, "error", err)

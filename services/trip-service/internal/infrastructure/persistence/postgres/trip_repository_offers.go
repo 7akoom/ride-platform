@@ -249,13 +249,31 @@ func (r *TripRepository) RejectOffer(
 	tripID string,
 	driverID string,
 ) error {
-	tag, err := r.pool.Exec(ctx, sqlRejectOffer, tripID, driverID)
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	tag, err := tx.Exec(ctx, sqlRejectOffer, tripID, driverID)
 	if err != nil {
 		return fmt.Errorf("reject offer: %w", err)
 	}
 
 	if tag.RowsAffected() == 0 {
 		return trip.ErrOfferNotFound
+	}
+
+	// Reports count a driver's refusals from this event.
+	if err := writeOutboxEvent(ctx, tx, "trip.offer_rejected", tripID, map[string]string{
+		"trip_id":   tripID,
+		"driver_id": driverID,
+	}); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return nil

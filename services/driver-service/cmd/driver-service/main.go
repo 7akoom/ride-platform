@@ -206,6 +206,7 @@ func run() int {
 	)
 	driverHandler := grpcserver.NewDriverHandler(driverService, documentService, vehicleService, logger).
 		WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export).
+		WithSupply(postgresrepo.NewDriverSupply(pool).Count).
 		WithProfile(profileService)
 
 	ratingSubscription, err := subscribeTripRatings(

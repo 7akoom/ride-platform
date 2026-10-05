@@ -27,9 +27,12 @@ type Config struct {
 	RateLimitBurst             string
 
 	// Staff-service decides who may read reports (analytics.read);
-	// location-service gives a city's time zone.
+	// location-service gives a city's time zone; wallet-service sums the
+	// ledger; driver-service counts drivers.
 	StaffServiceAddress    string
 	LocationServiceAddress string
+	WalletServiceAddress   string
+	DriverServiceAddress   string
 
 	// TimeZone is the platform's clock (IANA): report days follow it unless
 	// a report is about one city, which has its own.
@@ -60,6 +63,8 @@ func Load() Config {
 
 		StaffServiceAddress:    getEnv("STAFF_SERVICE_ADDRESS", "localhost:50061"),
 		LocationServiceAddress: getEnv("LOCATION_SERVICE_ADDRESS", "localhost:50054"),
+		WalletServiceAddress:   getEnv("WALLET_SERVICE_ADDRESS", "localhost:50058"),
+		DriverServiceAddress:   getEnv("DRIVER_SERVICE_ADDRESS", "localhost:50053"),
 
 		TimeZone: getEnv("ANALYTICS_TIME_ZONE", "UTC"),
 	}

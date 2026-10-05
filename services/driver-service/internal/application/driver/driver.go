@@ -3,6 +3,7 @@ package driver
 import (
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // Status is the operator-controlled state of a driver account.
@@ -118,6 +119,11 @@ func NewVehicle(make_, model, color, plateNumber, vehicleClass string) (Vehicle,
 		strings.TrimSpace(model) == "" ||
 		trimmedPlate == "" {
 		return Vehicle{}, ErrVehicleFieldsRequired
+	}
+
+	if utf8.RuneCountInString(strings.TrimSpace(make_)) > 60 || utf8.RuneCountInString(strings.TrimSpace(model)) > 60 ||
+		utf8.RuneCountInString(strings.TrimSpace(color)) > 40 || utf8.RuneCountInString(trimmedPlate) > 20 {
+		return Vehicle{}, ErrVehicleFieldsTooLong
 	}
 
 	class := VehicleClass(strings.ToLower(strings.TrimSpace(vehicleClass)))

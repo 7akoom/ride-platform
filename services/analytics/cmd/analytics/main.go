@@ -104,6 +104,8 @@ func run() int {
 	for name, address := range map[string]string{
 		"staff-service":    cfg.StaffServiceAddress,
 		"location-service": cfg.LocationServiceAddress,
+		"wallet-service":   cfg.WalletServiceAddress,
+		"driver-service":   cfg.DriverServiceAddress,
 	} {
 		conn, err := grpc.NewClient(
 			address,
@@ -123,7 +125,9 @@ func run() int {
 
 	writer := postgres.NewWriter(pool)
 	reader := postgres.NewReader(pool)
-	queryService := query.NewService(reader, clients.NewCities(conns["location-service"]), timeZone)
+	queryService := query.NewService(reader, clients.NewCities(conns["location-service"]), timeZone).
+		WithLedger(clients.NewLedger(conns["wallet-service"])).
+		WithDrivers(clients.NewDrivers(conns["driver-service"]))
 	analyticsHandler := grpcserver.NewAnalyticsHandler(queryService, logger)
 
 	ingestHandler := ingest.NewHandler(writer, logger)
