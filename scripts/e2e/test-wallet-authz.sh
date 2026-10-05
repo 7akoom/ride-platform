@@ -14,6 +14,7 @@
 #   4. the internal token still works (services keep talking to each other)
 set -Eeuo pipefail
 trap 'echo "FAIL: the script stopped unexpectedly at line $LINENO" >&2' ERR
+bash scripts/e2e/lib/legacy-fixtures.sh  # the fixed drivers and rider this script uses
 
 INTERNAL_TOKEN="${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}"
 PROTOSET="/tmp/ride.binpb"

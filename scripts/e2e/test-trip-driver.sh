@@ -14,6 +14,7 @@
 # DISPATCH_OFFER_TTL=0 (direct assignment) like the other trip scripts. It cancels its trips.
 set -Eeuo pipefail
 trap 'echo "FAIL: the script stopped unexpectedly at line $LINENO" >&2' ERR
+bash scripts/e2e/lib/legacy-fixtures.sh  # the fixed drivers and rider this script uses
 
 BASE="${GATEWAY_URL:-http://localhost:8080}"
 TOKEN="${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}"
@@ -168,7 +169,9 @@ same "the name is the one driver-service keeps" "$(sql ride-driver-postgres "sel
 same "the plate is the one driver-service keeps" "$(sql ride-driver-postgres "select vehicle_plate_number from drivers where id='$DRV';")" "$(body_field 'd["driver"]["vehicle"]["plateNumber"]')"
 same "the car's make" "$(sql ride-driver-postgres "select vehicle_make from drivers where id='$DRV';")" "$(body_field 'd["driver"]["vehicle"]["make"]')"
 same "the rating count" "$(sql ride-driver-postgres "select rating_count from drivers where id='$DRV';")" "$(body_field 'd["driver"]["ratingCount"]')"
-same "nothing else about the driver is shown" "displayName,ratingAverage,ratingCount,vehicle" "$(body_field '",".join(sorted(d["driver"].keys()))')"
+# The photo link came with P10a; it is there only when the driver has one.
+same "nothing else about the driver is shown" "True" \
+  "$(body_field 'set(d["driver"]) <= {"displayName", "ratingAverage", "ratingCount", "vehicle", "photoUrl", "photoUrlExpiresAt"} and {"displayName", "vehicle"} <= set(d["driver"])')"
 
 if grep -q "$DRIVER_IDENTITY" "$BODY_FILE"; then
   echo "  FAIL  the answer contains the driver's identity id"

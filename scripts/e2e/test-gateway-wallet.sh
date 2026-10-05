@@ -16,6 +16,7 @@
 # never printed. Nothing is changed in any wallet.
 set -Eeuo pipefail
 trap 'echo "FAIL: the script stopped unexpectedly at line $LINENO" >&2' ERR
+bash scripts/e2e/lib/legacy-fixtures.sh  # the fixed drivers and rider this script uses
 
 BASE="${GATEWAY_URL:-http://localhost:8080}"
 INTERNAL_TOKEN="${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}"
@@ -189,7 +190,9 @@ expect "rider 1 requests a payout from driver A's wallet"  403 POST "/v1/drivers
 expect "nobody requests a payout"                        401 POST "/v1/drivers/$DRIVER_A/payouts" "" "$PAYOUT"
 expect_authorized "driver A starts a ZainCash top-up"    POST "/v1/wallet/topups/zaincash" "$TA" "{\"driverId\":\"$DRIVER_A\",\"amount\":\"not-a-number\"}"
 expect "driver B starts a top-up for driver A"           403 POST "/v1/wallet/topups/zaincash" "$TB" "{\"driverId\":\"$DRIVER_A\",\"amount\":\"not-a-number\"}"
-expect_no_route "topping up a wallet directly has no route"   POST "/v1/wallets/$DRIVER_A/topups" "$TA" '{"amount":"1000"}'
+# POST /v1/wallets/{id}/topups is the payment-provider top-up (P6d-2); the
+# internal TopUp, which credits a wallet without any payment, has no route.
+expect_no_route "topping up a wallet directly has no route"   POST "/v1/wallets/$DRIVER_A:topUp" "$TA" '{"amount":"1000"}'
 expect_no_route "settling a trip has no route"                POST "/v1/trips/$DRIVER_A:settle" "$TA" '{}'
 
 echo "==> [6/6] the ZainCash webhook is called by ZainCash, not by a user"

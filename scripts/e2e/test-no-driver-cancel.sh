@@ -10,6 +10,7 @@
 #   3. the rider is told (trip.cancelled notification)
 #   4. the rider is FREE again: a new trip can be requested right away
 set -euo pipefail
+bash scripts/e2e/lib/legacy-fixtures.sh  # the fixed drivers and rider this script uses
 
 TOKEN="${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}"
 DRV="fe94a3d3-f10d-4c3e-853d-3d1302a5feb5"

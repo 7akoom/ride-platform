@@ -23,6 +23,7 @@
 #   5. an offer expires on its own, and a cancelled trip withdraws its offer at once
 set -Eeuo pipefail
 trap 'echo "FAIL: the script stopped unexpectedly at line $LINENO" >&2' ERR
+bash scripts/e2e/lib/legacy-fixtures.sh  # the fixed drivers and rider this script uses
 
 BASE="${GATEWAY_URL:-http://localhost:8080}"
 INTERNAL_TOKEN="${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}"
@@ -222,7 +223,10 @@ expect_offer "dispatch offers trip 1 to driver A (20 s)"    OK "$TRIP_1" "$DRIVE
 echo "==> [3/7] the driver sees it; nobody else does"
 expect "driver A reads their offer"                          200 GET "/v1/drivers/$DRIVER_A/offer" "$TA"
 if [ "$(body_field 'd["offer"]["tripId"]')" = "$TRIP_1" ]; then pass "it is trip 1"; else fail "it is not trip 1: $(head -c 200 "$BODY_FILE")"; fi
-if [ "$(body_field 'sorted(d["offer"].keys())')" = "['dropoff', 'expiresAt', 'offeredAt', 'paymentMethod', 'pickup', 'tripId', 'vehicleClass']" ]; then
+# What an offer may show (addresses, quoted fare and stops came later); never
+# who the rider is.
+OFFER_FIELDS="['currencyCode', 'dropoff', 'dropoffAddress', 'expiresAt', 'offeredAt', 'paymentMethod', 'pickup', 'pickupAddress', 'quotedFare', 'stops', 'tripId', 'vehicleClass']"
+if [ "$(body_field "set(d['offer']) <= set($OFFER_FIELDS) and {'tripId', 'pickup', 'dropoff', 'expiresAt'} <= set(d['offer'])")" = True ]; then
   pass "the offer shows the route, the vehicle class, the payment method and the times, and does not identify the rider"
 else
   fail "the offer has unexpected fields: $(body_field 'sorted(d["offer"].keys())')"

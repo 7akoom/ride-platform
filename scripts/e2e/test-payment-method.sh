@@ -10,6 +10,7 @@
 #   3. a WALLET trip is stored as wallet and settled the wallet way:
 #        rider balance goes DOWN by the fare, driver balance goes UP by the earning
 set -euo pipefail
+bash scripts/e2e/lib/legacy-fixtures.sh  # the fixed drivers and rider this script uses
 
 TOKEN="${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}"
 DRV="fe94a3d3-f10d-4c3e-853d-3d1302a5feb5"

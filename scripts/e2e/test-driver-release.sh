@@ -20,6 +20,7 @@
 #   4. driver B, who had no trip, is not touched
 set -Eeuo pipefail
 trap 'echo "FAIL: the script stopped unexpectedly at line $LINENO" >&2' ERR
+bash scripts/e2e/lib/legacy-fixtures.sh  # the fixed drivers and rider this script uses
 
 BASE="${GATEWAY_URL:-http://localhost:8080}"
 NATS_MONITOR="${NATS_MONITOR_URL:-http://127.0.0.1:8222}"

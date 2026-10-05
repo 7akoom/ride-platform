@@ -17,6 +17,7 @@
 # the original balance back when it ends.
 set -Eeuo pipefail
 trap 'echo "FAIL: the script stopped unexpectedly at line $LINENO" >&2' ERR
+bash scripts/e2e/lib/legacy-fixtures.sh  # the fixed drivers and rider this script uses
 
 TOKEN="${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}"
 DRV="fe94a3d3-f10d-4c3e-853d-3d1302a5feb5"

@@ -13,6 +13,7 @@
 #   SOS_OPERATOR_PHONES=<the same number as SOS_TEST_PHONE>
 #   BULKSMSIRAQ_ENDPOINT=...  BULKSMSIRAQ_API_KEY=...  BULKSMSIRAQ_SENDER_ID=...
 set -euo pipefail
+bash scripts/e2e/lib/legacy-fixtures.sh  # the fixed drivers and rider this script uses
 
 TOKEN="${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}"
 DRV="fe94a3d3-f10d-4c3e-853d-3d1302a5feb5"

@@ -21,6 +21,7 @@
 #   5. bad input is a 400: a negative page size, a page token that is not one
 set -Eeuo pipefail
 trap 'echo "FAIL: the script stopped unexpectedly at line $LINENO" >&2' ERR
+bash scripts/e2e/lib/legacy-fixtures.sh  # the fixed drivers and rider this script uses
 
 BASE="${GATEWAY_URL:-http://localhost:8080}"
 INTERNAL_TOKEN="${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}"
