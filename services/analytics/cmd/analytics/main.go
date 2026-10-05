@@ -7,10 +7,15 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/7akoom/ride-platform/services/analytics/internal/application/ingest"
 	"github.com/7akoom/ride-platform/services/analytics/internal/application/query"
 	"github.com/7akoom/ride-platform/services/analytics/internal/config"
+	"github.com/7akoom/ride-platform/services/analytics/internal/infrastructure/clients"
 	natsinfra "github.com/7akoom/ride-platform/services/analytics/internal/infrastructure/messaging/nats"
 	"github.com/7akoom/ride-platform/services/analytics/internal/infrastructure/postgres"
 	"github.com/7akoom/ride-platform/services/analytics/internal/infrastructure/token"
@@ -86,12 +91,42 @@ func run() int {
 	}
 	defer pool.Close()
 
+	timeZone, err := time.LoadLocation(cfg.TimeZone)
+	if err != nil {
+		logger.Error("ANALYTICS_TIME_ZONE is not an IANA time zone", "time_zone", cfg.TimeZone, "error", err)
+
+		return 1
+	}
+
+	// Peers are called as a service (internal token).
+	conns := map[string]*grpc.ClientConn{}
+
+	for name, address := range map[string]string{
+		"staff-service":    cfg.StaffServiceAddress,
+		"location-service": cfg.LocationServiceAddress,
+	} {
+		conn, err := grpc.NewClient(
+			address,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithUnaryInterceptor(clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken)),
+		)
+		if err != nil {
+			logger.Error("failed to connect to a peer service", "service", name, "error", err)
+
+			return 1
+		}
+
+		defer conn.Close()
+
+		conns[name] = conn
+	}
+
 	writer := postgres.NewWriter(pool)
 	reader := postgres.NewReader(pool)
-	queryService := query.NewService(reader)
+	queryService := query.NewService(reader, clients.NewCities(conns["location-service"]), timeZone)
 	analyticsHandler := grpcserver.NewAnalyticsHandler(queryService, logger)
 
-	ingestHandler := ingest.NewHandler(writer)
+	ingestHandler := ingest.NewHandler(writer, logger)
 
 	natsConnection, err := natsinfra.OpenConnection(
 		natsinfra.ConnectionConfig{
@@ -203,7 +238,7 @@ func run() int {
 		logger,
 		metricsInterceptor,
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
-		grpcserver.NewAuthorizationUnaryInterceptor(),
+		grpcserver.NewAuthorizationUnaryInterceptor(clients.NewStaffAuthorizer(conns["staff-service"], logger)),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),
 	)
 	server.RegisterAnalyticsService(analyticsHandler)

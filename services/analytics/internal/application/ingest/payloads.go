@@ -2,23 +2,22 @@ package ingest
 
 import "github.com/shopspring/decimal"
 
-// These structs mirror exactly what each service's outbox writer marshals
-// into the payload field (see each service's *_repository.go). Field names
-// and presence/absence are copied verbatim — e.g. TripSettledPayload has no
-// currency, because wallet-service's trip.settled payload genuinely omits
-// it (see the trip_fare_currency lookup this package relies on instead).
+// These mirror what each service writes into its outbox payload. Only ids,
+// kinds, flags and amounts are read: names, phones and places that some
+// payloads carry are never kept.
 //
-// IMPORTANT: not every service serializes decimal.Decimal the same way.
-// wallet-service calls .String() explicitly, producing a quoted JSON string
-// ("15000.500"). pricing-service's fare.calculated instead marshals the
-// decimal.Decimal value directly through `any`, which shopspring/decimal
-// encodes as a bare JSON number (15000.5, no quotes) — so that one field
-// must be typed decimal.Decimal here (its UnmarshalJSON accepts both forms),
-// never plain string.
+// Decimals: wallet-service writes strings ("15000.500"); pricing-service's
+// fare.calculated writes a bare JSON number, so that field is a
+// decimal.Decimal (it reads both).
 
 type TripRequestedPayload struct {
-	TripID  string `json:"trip_id"`
-	RiderID string `json:"rider_id"`
+	TripID        string `json:"trip_id"`
+	RiderID       string `json:"rider_id"`
+	CityID        string `json:"city_id"`
+	ZoneID        string `json:"zone_id"`
+	VehicleClass  string `json:"vehicle_class"`
+	PaymentMethod string `json:"payment_method"`
+	Scheduled     string `json:"scheduled"`
 }
 
 type TripAcceptedPayload struct {
@@ -26,7 +25,7 @@ type TripAcceptedPayload struct {
 	DriverID string `json:"driver_id"`
 }
 
-type TripStartedPayload struct {
+type TripIDPayload struct {
 	TripID string `json:"trip_id"`
 }
 
@@ -37,35 +36,31 @@ type TripCompletedPayload struct {
 }
 
 type TripCancelledPayload struct {
-	TripID string `json:"trip_id"`
-	Reason string `json:"reason"`
+	TripID        string `json:"trip_id"`
+	CancelledBy   string `json:"cancelled_by"`
+	RiderNoShow   string `json:"rider_no_show"`
+	FromStatus    string `json:"from_status"`
+	DriverArrived string `json:"driver_arrived"`
 }
 
 type FareCalculatedPayload struct {
 	TripID       string          `json:"trip_id"`
 	RiderID      string          `json:"rider_id"`
 	CurrencyCode string          `json:"currency_code"`
-	Total        decimal.Decimal `json:"total"` // bare JSON number, not a string
+	Total        decimal.Decimal `json:"total"`
+	Kind         string          `json:"kind"`
 }
 
 type TripSettledPayload struct {
 	TripID           string `json:"trip_id"`
-	RiderID          string `json:"rider_id"`
 	DriverID         string `json:"driver_id"`
-	PaymentMethod    string `json:"payment_method"`
-	FareAmount       string `json:"fare_amount"`       // decimal string (wallet-service calls .String())
-	CommissionAmount string `json:"commission_amount"` // decimal string
-	DriverEarning    string `json:"driver_earning"`    // decimal string
+	CommissionAmount string `json:"commission_amount"`
 }
 
 type RiderCreatedPayload struct {
-	RiderID     string `json:"rider_id"`
-	IdentityID  string `json:"identity_id"`
-	DisplayName string `json:"display_name"`
+	RiderID string `json:"rider_id"`
 }
 
-type DriverCreatedPayload struct {
-	DriverID    string `json:"driver_id"`
-	IdentityID  string `json:"identity_id"`
-	DisplayName string `json:"display_name"`
+type DriverPayload struct {
+	DriverID string `json:"driver_id"`
 }

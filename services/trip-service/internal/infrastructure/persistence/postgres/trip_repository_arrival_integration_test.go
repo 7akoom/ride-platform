@@ -81,7 +81,8 @@ func TestArrivalAndWhoCancelled(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !strings.Contains(payload, `"cancelled_by": "driver"`) || !strings.Contains(payload, `"rider_no_show": "true"`) {
+	if !strings.Contains(payload, `"cancelled_by": "driver"`) || !strings.Contains(payload, `"rider_no_show": "true"`) ||
+		!strings.Contains(payload, `"from_status": "accepted"`) || !strings.Contains(payload, `"driver_arrived": "true"`) {
 		t.Fatalf("payload %s", payload)
 	}
 

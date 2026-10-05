@@ -31,15 +31,32 @@ message HealthCheckResponse {
   string status = 1;
 }
 
+// The days a report covers, inclusive. from_date/to_date (YYYY-MM-DD) are
+// days on the report's clock (see ReportScope); they win over the older
+// start_date/end_date, which are read as the day they fall on in that clock.
+// Nothing given: the last 30 days up to today. At most 366 days.
 message DateRange {
   google.protobuf.Timestamp start_date = 1;
   google.protobuf.Timestamp end_date = 2;
+  string from_date = 3;
+  string to_date = 4;
+}
+
+// Which trips a report counts. Empty fields do not filter. The report's
+// days follow the city's clock when city_id is given, otherwise the
+// platform's (ANALYTICS_TIME_ZONE).
+message ReportScope {
+  string city_id = 1;
+  string zone_id = 2;
+  string vehicle_class = 3;
 }
 
 // --- Trip funnel ---
 
+// Trips requested on each day and how far they got.
 message GetTripFunnelRequest {
   DateRange range = 1;
+  ReportScope scope = 2;
 }
 
 message FunnelDayPoint {
@@ -54,16 +71,26 @@ message FunnelDayPoint {
 message GetTripFunnelResponse {
   repeated FunnelDayPoint days = 1;
   FunnelDayPoint totals = 2;
+  string time_zone = 3;
+  string from_date = 4;
+  string to_date = 5;
 }
 
 // --- Cancellations ---
 
+// Trips requested in the range that were cancelled.
 message GetCancellationBreakdownRequest {
   DateRange range = 1;
+  ReportScope scope = 2;
 }
 
 message CancellationStageCount {
-  string stage = 1; // requested | accepted | started
+  string stage = 1; // requested | accepted | arrived | started
+  int64 count = 2;
+}
+
+message CancellationByCount {
+  string cancelled_by = 1; // rider | driver | system | unknown
   int64 count = 2;
 }
 
@@ -72,12 +99,20 @@ message GetCancellationBreakdownResponse {
   int64 total_cancellations = 2;
   int64 total_trips = 3;
   string cancellation_rate_percent = 4; // decimal string
+  repeated CancellationByCount by_cancelled_by = 5;
+  int64 rider_no_shows = 6;
+  string time_zone = 7;
+  string from_date = 8;
+  string to_date = 9;
 }
 
 // --- Revenue ---
 
+// Fares by the day they were worked out: trip fares, and cancellation and
+// no-show fees apart.
 message GetRevenueSummaryRequest {
   DateRange range = 1;
+  ReportScope scope = 2;
 }
 
 message RevenueDayPoint {
@@ -86,6 +121,8 @@ message RevenueDayPoint {
   string gross_fare_total = 3;   // decimal string
   string commission_total = 4;   // decimal string
   int64 trip_count = 5;
+  string fee_total = 6;          // cancellation and no-show fees, decimal string
+  int64 fee_count = 7;
 }
 
 message GetRevenueSummaryResponse {
@@ -93,12 +130,20 @@ message GetRevenueSummaryResponse {
   string gross_fare_total = 2;
   string commission_total = 3;
   int64 total_trips = 4;
+  string fee_total = 5;
+  int64 total_fees = 6;
+  string currency = 7;
+  string time_zone = 8;
+  string from_date = 9;
+  string to_date = 10;
 }
 
 // --- Retention / cohorts ---
 
+// Riders by the week they signed up (drivers: were approved, else signed
+// up) and the share who took (drivers: accepted) a trip in each week after.
 message GetRetentionRequest {
-  int32 cohort_weeks = 1; // how many weeks back to include
+  int32 cohort_weeks = 1; // how many weeks back to include (default 12, at most 52)
 }
 
 message RetentionCohort {
@@ -109,4 +154,5 @@ message RetentionCohort {
 
 message GetRetentionResponse {
   repeated RetentionCohort cohorts = 1;
+  string time_zone = 2;
 }

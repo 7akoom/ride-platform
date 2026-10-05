@@ -93,8 +93,13 @@ func (r *TripRepository) Create(
 	}
 
 	if err := writeOutboxEvent(ctx, tx, "trip.requested", created.ID, map[string]string{
-		"trip_id":  created.ID,
-		"rider_id": created.RiderID,
+		"trip_id":        created.ID,
+		"rider_id":       created.RiderID,
+		"city_id":        input.PickupCityID,
+		"zone_id":        input.PickupZoneID,
+		"vehicle_class":  created.VehicleClass,
+		"payment_method": created.PaymentMethod,
+		"scheduled":      strconv.FormatBool(created.Scheduled),
 	}); err != nil {
 		return trip.Trip{}, err
 	}
@@ -278,10 +283,12 @@ func (r *TripRepository) Cancel(
 		}
 
 		return updated, writeOutboxEvent(ctx, tx, "trip.cancelled", updated.ID, map[string]string{
-			"trip_id":       updated.ID,
-			"reason":        record.Reason,
-			"cancelled_by":  string(record.By),
-			"rider_no_show": strconv.FormatBool(record.RiderNoShow),
+			"trip_id":        updated.ID,
+			"reason":         record.Reason,
+			"cancelled_by":   string(record.By),
+			"rider_no_show":  strconv.FormatBool(record.RiderNoShow),
+			"from_status":    string(current.Status),
+			"driver_arrived": strconv.FormatBool(current.ArrivedAt != nil),
 		})
 	})
 }

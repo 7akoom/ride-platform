@@ -1105,6 +1105,9 @@ services:
       METRICS_ADDRESS: ":9100"
       DATABASE_URL: postgres://${ANALYTICS_DB_USER}:${ANALYTICS_DB_PASSWORD}@analytics-postgres:5432/${ANALYTICS_DB_NAME}?sslmode=disable
       NATS_URL: nats://nats:4222
+      STAFF_SERVICE_ADDRESS: staff-service:50061
+      LOCATION_SERVICE_ADDRESS: location-service:50054
+      ANALYTICS_TIME_ZONE: ${ANALYTICS_TIME_ZONE:-Asia/Baghdad}
 
     volumes:
       - ../../services/identity-service/.local/keys/access_token_public.pem:/app/.local/keys/access_token_public.pem:ro
@@ -1277,6 +1280,7 @@ services:
       STAFF_SERVICE_ADDRESS: staff-service:50061
       MEDIA_SERVICE_ADDRESS: media-service:50062
       SUPPORT_SERVICE_ADDRESS: support-service:50063
+      ANALYTICS_SERVICE_ADDRESS: analytics-service:50060
       ALLOWED_ORIGINS: http://localhost:3000
 
     depends_on:
@@ -1301,6 +1305,8 @@ services:
       media-service:
         condition: service_started
       support-service:
+        condition: service_started
+      analytics-service:
         condition: service_started
 
     ports:

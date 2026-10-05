@@ -27,6 +27,7 @@ type Config struct {
 	StaffServiceAddress        string
 	MediaServiceAddress        string
 	SupportServiceAddress      string
+	AnalyticsServiceAddress    string
 
 	// Comma-separated browser origins allowed to call this gateway
 	// (the Admin web app). Mobile apps don't send an Origin header and
@@ -80,6 +81,10 @@ func Load() Config {
 		SupportServiceAddress: getEnv(
 			"SUPPORT_SERVICE_ADDRESS",
 			"localhost:50063",
+		),
+		AnalyticsServiceAddress: getEnv(
+			"ANALYTICS_SERVICE_ADDRESS",
+			"localhost:50060",
 		),
 
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:3000"),

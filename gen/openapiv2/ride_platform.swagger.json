@@ -3950,6 +3950,36 @@
             "required": false,
             "type": "string",
             "format": "date-time"
+          },
+          {
+            "name": "range.fromDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "range.toDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.cityId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.zoneId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.vehicleClass",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -3977,7 +4007,7 @@
         "parameters": [
           {
             "name": "cohortWeeks",
-            "description": "how many weeks back to include",
+            "description": "how many weeks back to include (default 12, at most 52)",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -4009,7 +4039,7 @@
         "parameters": [
           {
             "name": "cohortWeeks",
-            "description": "how many weeks back to include",
+            "description": "how many weeks back to include (default 12, at most 52)",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -4052,6 +4082,36 @@
             "required": false,
             "type": "string",
             "format": "date-time"
+          },
+          {
+            "name": "range.fromDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "range.toDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.cityId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.zoneId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.vehicleClass",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -4090,6 +4150,36 @@
             "required": false,
             "type": "string",
             "format": "date-time"
+          },
+          {
+            "name": "range.fromDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "range.toDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.cityId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.zoneId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "scope.vehicleClass",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -10880,12 +10970,25 @@
         }
       }
     },
+    "v1CancellationByCount": {
+      "type": "object",
+      "properties": {
+        "cancelledBy": {
+          "type": "string",
+          "title": "rider | driver | system | unknown"
+        },
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "v1CancellationStageCount": {
       "type": "object",
       "properties": {
         "stage": {
           "type": "string",
-          "title": "requested | accepted | started"
+          "title": "requested | accepted | arrived | started"
         },
         "count": {
           "type": "string",
@@ -11718,8 +11821,15 @@
         "endDate": {
           "type": "string",
           "format": "date-time"
+        },
+        "fromDate": {
+          "type": "string"
+        },
+        "toDate": {
+          "type": "string"
         }
-      }
+      },
+      "description": "The days a report covers, inclusive. from_date/to_date (YYYY-MM-DD) are\ndays on the report's clock (see ReportScope); they win over the older\nstart_date/end_date, which are read as the day they fall on in that clock.\nNothing given: the last 30 days up to today. At most 366 days."
     },
     "v1DeleteMediaResponse": {
       "type": "object"
@@ -12447,6 +12557,26 @@
         "cancellationRatePercent": {
           "type": "string",
           "title": "decimal string"
+        },
+        "byCancelledBy": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1CancellationByCount"
+          }
+        },
+        "riderNoShows": {
+          "type": "string",
+          "format": "int64"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "fromDate": {
+          "type": "string"
+        },
+        "toDate": {
+          "type": "string"
         }
       }
     },
@@ -12565,6 +12695,9 @@
             "type": "object",
             "$ref": "#/definitions/v1RetentionCohort"
           }
+        },
+        "timeZone": {
+          "type": "string"
         }
       }
     },
@@ -12587,6 +12720,25 @@
         "totalTrips": {
           "type": "string",
           "format": "int64"
+        },
+        "feeTotal": {
+          "type": "string"
+        },
+        "totalFees": {
+          "type": "string",
+          "format": "int64"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "fromDate": {
+          "type": "string"
+        },
+        "toDate": {
+          "type": "string"
         }
       }
     },
@@ -12807,6 +12959,15 @@
         },
         "totals": {
           "$ref": "#/definitions/v1FunnelDayPoint"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "fromDate": {
+          "type": "string"
+        },
+        "toDate": {
+          "type": "string"
         }
       }
     },
@@ -14820,6 +14981,21 @@
     "v1RejectOfferResponse": {
       "type": "object"
     },
+    "v1ReportScope": {
+      "type": "object",
+      "properties": {
+        "cityId": {
+          "type": "string"
+        },
+        "zoneId": {
+          "type": "string"
+        },
+        "vehicleClass": {
+          "type": "string"
+        }
+      },
+      "description": "Which trips a report counts. Empty fields do not filter. The report's\ndays follow the city's clock when city_id is given, otherwise the\nplatform's (ANALYTICS_TIME_ZONE)."
+    },
     "v1RequestAccountDeletionOTPRequest": {
       "type": "object",
       "properties": {
@@ -15050,6 +15226,14 @@
           "title": "decimal string"
         },
         "tripCount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "feeTotal": {
+          "type": "string",
+          "title": "cancellation and no-show fees, decimal string"
+        },
+        "feeCount": {
           "type": "string",
           "format": "int64"
         }

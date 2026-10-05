@@ -44,6 +44,9 @@ const (
 	PermissionSupportSuspend   = "support.suspend"
 	PermissionSupportSafety    = "support.safety"
 	PermissionSupportConfigure = "support.configure"
+	// PermissionAnalyticsRead: business reports (trips, cancellations,
+	// revenue, retention). Only the owner holds it by default.
+	PermissionAnalyticsRead = "analytics.read"
 )
 
 // RoleKeyOwner is the system role that always holds every permission,
@@ -76,6 +79,7 @@ var permissionCatalog = map[string]string{
 	PermissionSupportSuspend:   "Suspend and reactivate riders' and drivers' accounts from a ticket",
 	PermissionSupportSafety:    "See and work safety tickets and SOS alerts",
 	PermissionSupportConfigure: "Create and change support ticket categories",
+	PermissionAnalyticsRead:    "See business reports: trips, cancellations, revenue and retention",
 }
 
 // PermissionInfo describes one grantable permission.

@@ -14,13 +14,9 @@ type Config struct {
 	NATSReconnectWait  string
 	NATSDrainTimeout   string
 
-	// Verifies access tokens issued by identity-service, for the query
-	// gRPC API this service exposes to the Admin web app via the gateway.
-	// This service never dials another service as a client — it only
-	// consumes NATS events and answers queries — so unlike most other
-	// services there is no InternalServiceToken use as an outbound caller,
-	// only as a value other services could present to call in (kept for
-	// consistency with the shared auth interceptor, unused for now).
+	// Verifies access tokens issued by identity-service, for the reports the
+	// Admin web app reads through the gateway. The internal token is also
+	// what this service presents to staff-service and location-service.
 	AccessTokenPublicKeyPath string
 	AccessTokenIssuer        string
 	AccessTokenAudience      string
@@ -29,6 +25,15 @@ type Config struct {
 
 	RateLimitRequestsPerSecond string
 	RateLimitBurst             string
+
+	// Staff-service decides who may read reports (analytics.read);
+	// location-service gives a city's time zone.
+	StaffServiceAddress    string
+	LocationServiceAddress string
+
+	// TimeZone is the platform's clock (IANA): report days follow it unless
+	// a report is about one city, which has its own.
+	TimeZone string
 }
 
 func Load() Config {
@@ -52,6 +57,11 @@ func Load() Config {
 
 		RateLimitRequestsPerSecond: getEnv("RATE_LIMIT_REQUESTS_PER_SECOND", "20"),
 		RateLimitBurst:             getEnv("RATE_LIMIT_BURST", "40"),
+
+		StaffServiceAddress:    getEnv("STAFF_SERVICE_ADDRESS", "localhost:50061"),
+		LocationServiceAddress: getEnv("LOCATION_SERVICE_ADDRESS", "localhost:50054"),
+
+		TimeZone: getEnv("ANALYTICS_TIME_ZONE", "UTC"),
 	}
 }
 

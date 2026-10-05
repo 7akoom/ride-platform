@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	analyticsv1 "github.com/7akoom/ride-platform/gen/go/ride/analytics/v1"
 	driverv1 "github.com/7akoom/ride-platform/gen/go/ride/driver/v1"
 	identityv1 "github.com/7akoom/ride-platform/gen/go/ride/identity/v1"
 	locationv1 "github.com/7akoom/ride-platform/gen/go/ride/location/v1"
@@ -223,6 +224,21 @@ func run() int {
 
 	if err := supportv1.RegisterSupportServiceHandler(ctx, mux, supportConn); err != nil {
 		logger.Error("failed to register support-service gateway handler", "error", err)
+
+		return 1
+	}
+
+	// Business reports for the Admin (staff with analytics.read).
+	analyticsConn, err := dialBackend(cfg.AnalyticsServiceAddress)
+	if err != nil {
+		logger.Error("failed to connect to analytics-service", "error", err)
+
+		return 1
+	}
+	defer analyticsConn.Close()
+
+	if err := analyticsv1.RegisterAnalyticsServiceHandler(ctx, mux, analyticsConn); err != nil {
+		logger.Error("failed to register analytics-service gateway handler", "error", err)
 
 		return 1
 	}

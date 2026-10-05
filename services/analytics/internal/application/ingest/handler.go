@@ -2,8 +2,10 @@ package ingest
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"time"
+	"log/slog"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/shopspring/decimal"
@@ -12,225 +14,195 @@ import (
 	"github.com/7akoom/ride-platform/services/analytics/internal/infrastructure/postgres"
 )
 
-// unknownCurrency is the bucket used for trip.settled events whose trip_id
-// has no matching trip_fare_currency row yet (fare.calculated arrived out
-// of order or was never processed). Rare in practice, but must not crash
-// ingestion — a mis-bucketed revenue row is recoverable later; a stuck
-// consumer is not.
-const unknownCurrency = "UNKNOWN"
+// errUnusable is an event that can never be counted (no id, bad JSON).
+// It is logged and acknowledged, so it does not come back forever.
+var errUnusable = errors.New("unusable event")
 
-// Handler turns a decoded envelope into the corresponding Writer calls,
-// all inside one transaction per event. It is the single place that knows
-// how each event_type maps to the analytics schema.
+// Handler turns one event into fact changes, in one transaction per event.
 type Handler struct {
 	writer *postgres.Writer
+	logger *slog.Logger
 }
 
-func NewHandler(writer *postgres.Writer) *Handler {
-	return &Handler{writer: writer}
+func NewHandler(writer *postgres.Writer, logger *slog.Logger) *Handler {
+	if logger == nil {
+		panic("ingest logger is required")
+	}
+
+	return &Handler{writer: writer, logger: logger}
 }
 
-// Dispatch decodes data as an Envelope and processes it. It is safe to call
-// with a redelivered message: InsertRawEvent's idempotency check makes the
-// whole method a no-op (after the initial insert attempt) for an event_id
-// already recorded.
-func (h *Handler) Dispatch(ctx context.Context, _ string, data []byte) error {
+// Dispatch is safe with redelivered messages: an event id already
+// processed changes nothing.
+func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) error {
 	envelope, err := DecodeEnvelope(data)
-	if err != nil {
-		return fmt.Errorf("decode envelope: %w", err)
+	if err != nil || envelope.EventID == "" || envelope.OccurredAt.IsZero() {
+		h.logger.Warn("skipping an event that cannot be read", "subject", subject, "error", err)
+
+		return nil
 	}
 
 	return h.writer.WithTx(ctx, func(tx pgx.Tx) error {
-		inserted, err := h.writer.InsertRawEvent(ctx, tx, envelope.EventID, envelope.EventType, envelope.Payload, envelope.OccurredAt)
-		if err != nil {
+		fresh, err := h.writer.MarkProcessed(ctx, tx, envelope.EventID, envelope.EventType, envelope.OccurredAt)
+		if err != nil || !fresh {
 			return err
 		}
-		if !inserted {
-			// Already processed this exact event_id — skip the derived-table
-			// updates so a JetStream redelivery never double-counts.
-			return nil
+
+		if err := h.apply(ctx, tx, envelope); err != nil {
+			if !errors.Is(err, errUnusable) {
+				return err
+			}
+
+			h.logger.Warn("skipping an event that cannot be counted", "event_type", envelope.EventType, "event_id", envelope.EventID, "error", err)
 		}
 
-		day := truncateToDay(envelope.OccurredAt)
-		weekStart := isoWeekStart(envelope.OccurredAt)
-
-		switch envelope.EventType {
-		case "trip.requested":
-			return h.handleTripRequested(ctx, tx, envelope, day, weekStart)
-		case "trip.accepted":
-			return h.handleTripAccepted(ctx, tx, envelope, day, weekStart)
-		case "trip.started":
-			return h.handleTripStarted(ctx, tx, envelope, day)
-		case "trip.completed":
-			return h.handleTripCompleted(ctx, tx, envelope, day)
-		case "trip.cancelled":
-			return h.handleTripCancelled(ctx, tx, envelope, day)
-		case "fare.calculated":
-			return h.handleFareCalculated(ctx, tx, envelope, day)
-		case "trip.settled":
-			return h.handleTripSettled(ctx, tx, envelope, day)
-		case "rider.created":
-			return h.handleRiderCreated(ctx, tx, envelope, weekStart)
-		case "driver.created":
-			return h.handleDriverCreated(ctx, tx, envelope, weekStart)
-		default:
-			// Unknown/future event type — already stored in raw_events above,
-			// nothing more to do. Not an error: new event types shouldn't
-			// break ingestion of the ones this handler already understands.
-			return nil
-		}
+		return nil
 	})
 }
 
-func (h *Handler) handleTripRequested(ctx context.Context, tx pgx.Tx, env Envelope, day, weekStart time.Time) error {
-	var p TripRequestedPayload
-	if err := unmarshal(env.Payload, &p); err != nil {
-		return err
+func (h *Handler) apply(ctx context.Context, tx pgx.Tx, env Envelope) error {
+	at := env.OccurredAt.UTC()
+
+	switch env.EventType {
+	case "trip.requested":
+		var p TripRequestedPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.TripID == "" {
+			return payloadError(env, err)
+		}
+
+		return h.writer.TripRequested(ctx, tx, postgres.TripRequested{
+			TripID: p.TripID, RiderID: p.RiderID, CityID: p.CityID, ZoneID: p.ZoneID,
+			VehicleClass: p.VehicleClass, PaymentMethod: p.PaymentMethod, Scheduled: optionalBool(p.Scheduled), At: at,
+		})
+
+	case "trip.accepted":
+		var p TripAcceptedPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.TripID == "" {
+			return payloadError(env, err)
+		}
+
+		return h.writer.TripAccepted(ctx, tx, p.TripID, p.DriverID, at)
+
+	case "trip.driver_arrived", "trip.started":
+		var p TripIDPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.TripID == "" {
+			return payloadError(env, err)
+		}
+
+		if env.EventType == "trip.started" {
+			return h.writer.TripStarted(ctx, tx, p.TripID, at)
+		}
+
+		return h.writer.TripArrived(ctx, tx, p.TripID, at)
+
+	case "trip.completed":
+		var p TripCompletedPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.TripID == "" {
+			return payloadError(env, err)
+		}
+
+		return h.writer.TripCompleted(ctx, tx, p.TripID, p.RiderID, p.DriverID, at)
+
+	case "trip.cancelled":
+		var p TripCancelledPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.TripID == "" {
+			return payloadError(env, err)
+		}
+
+		return h.writer.TripCancelled(ctx, tx, postgres.TripCancelled{
+			TripID: p.TripID, CancelledBy: p.CancelledBy, RiderNoShow: p.RiderNoShow == "true",
+			Stage: string(CancelStageOf(p.FromStatus, p.DriverArrived == "true")), At: at,
+		})
+
+	case "fare.calculated":
+		var p FareCalculatedPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.TripID == "" {
+			return payloadError(env, err)
+		}
+
+		kind := strings.TrimSpace(p.Kind)
+		if kind == "" {
+			kind = domain.FareKindTrip
+		}
+
+		return h.writer.FareCalculated(ctx, tx, postgres.Fare{
+			TripID: p.TripID, RiderID: p.RiderID, Kind: kind, Currency: p.CurrencyCode, Total: p.Total, At: at,
+		})
+
+	case "trip.settled":
+		var p TripSettledPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.TripID == "" {
+			return payloadError(env, err)
+		}
+
+		commission, err := decimal.NewFromString(p.CommissionAmount)
+		if err != nil {
+			return payloadError(env, err)
+		}
+
+		return h.writer.TripSettled(ctx, tx, p.TripID, p.DriverID, commission, at)
+
+	case "rider.created":
+		var p RiderCreatedPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.RiderID == "" {
+			return payloadError(env, err)
+		}
+
+		return h.writer.RiderSignedUp(ctx, tx, p.RiderID, at)
+
+	case "driver.created", "driver.approved":
+		var p DriverPayload
+		if err := unmarshal(env.Payload, &p); err != nil || p.DriverID == "" {
+			return payloadError(env, err)
+		}
+
+		if env.EventType == "driver.approved" {
+			return h.writer.DriverApproved(ctx, tx, p.DriverID, at)
+		}
+
+		return h.writer.DriverSignedUp(ctx, tx, p.DriverID, at)
 	}
 
-	if err := h.writer.IncrementFunnelRequested(ctx, tx, day); err != nil {
-		return err
-	}
-	if err := h.writer.SetTripStage(ctx, tx, p.TripID, domain.TripStageRequested, env.OccurredAt); err != nil {
-		return err
-	}
-	if p.RiderID != "" {
-		if err := h.writer.RecordRiderActivity(ctx, tx, p.RiderID, weekStart); err != nil {
-			return err
+	// Other event types are not counted yet.
+	return nil
+}
+
+// CancelStageOf maps the trip's status when it was cancelled to a stage;
+// empty when the event did not say (older events).
+func CancelStageOf(fromStatus string, driverArrived bool) domain.CancelStage {
+	switch fromStatus {
+	case "requested":
+		return domain.CancelStageRequested
+	case "accepted":
+		if driverArrived {
+			return domain.CancelStageArrived
 		}
+
+		return domain.CancelStageAccepted
+	case "in_progress":
+		return domain.CancelStageStarted
+	}
+
+	return ""
+}
+
+func optionalBool(value string) *bool {
+	switch value {
+	case "true":
+		v := true
+		return &v
+	case "false":
+		v := false
+		return &v
 	}
 
 	return nil
 }
 
-func (h *Handler) handleTripAccepted(ctx context.Context, tx pgx.Tx, env Envelope, day, weekStart time.Time) error {
-	var p TripAcceptedPayload
-	if err := unmarshal(env.Payload, &p); err != nil {
-		return err
+func payloadError(env Envelope, err error) error {
+	if err == nil {
+		err = errors.New("missing id")
 	}
 
-	if err := h.writer.IncrementFunnelAccepted(ctx, tx, day); err != nil {
-		return err
-	}
-	if err := h.writer.SetTripStage(ctx, tx, p.TripID, domain.TripStageAccepted, env.OccurredAt); err != nil {
-		return err
-	}
-	if p.DriverID != "" {
-		if err := h.writer.RecordDriverActivity(ctx, tx, p.DriverID, weekStart); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (h *Handler) handleTripStarted(ctx context.Context, tx pgx.Tx, env Envelope, day time.Time) error {
-	var p TripStartedPayload
-	if err := unmarshal(env.Payload, &p); err != nil {
-		return err
-	}
-
-	if err := h.writer.IncrementFunnelStarted(ctx, tx, day); err != nil {
-		return err
-	}
-
-	return h.writer.SetTripStage(ctx, tx, p.TripID, domain.TripStageStarted, env.OccurredAt)
-}
-
-func (h *Handler) handleTripCompleted(ctx context.Context, tx pgx.Tx, env Envelope, day time.Time) error {
-	var p TripCompletedPayload
-	if err := unmarshal(env.Payload, &p); err != nil {
-		return err
-	}
-
-	if err := h.writer.IncrementFunnelCompleted(ctx, tx, day); err != nil {
-		return err
-	}
-
-	return h.writer.SetTripStage(ctx, tx, p.TripID, domain.TripStageCompleted, env.OccurredAt)
-}
-
-func (h *Handler) handleTripCancelled(ctx context.Context, tx pgx.Tx, env Envelope, day time.Time) error {
-	var p TripCancelledPayload
-	if err := unmarshal(env.Payload, &p); err != nil {
-		return err
-	}
-
-	// trip.cancelled itself carries no memory of which stage the trip was
-	// at — look it up from what SetTripStage recorded on the way here.
-	stage, found, err := h.writer.GetTripStage(ctx, tx, p.TripID)
-	if err != nil {
-		return err
-	}
-	if !found {
-		stage = domain.TripStageRequested
-	}
-
-	if err := h.writer.RecordCancellation(ctx, tx, p.TripID, stage, env.OccurredAt); err != nil {
-		return err
-	}
-
-	return h.writer.IncrementFunnelCancelled(ctx, tx, day)
-}
-
-func (h *Handler) handleFareCalculated(ctx context.Context, tx pgx.Tx, env Envelope, day time.Time) error {
-	var p FareCalculatedPayload
-	if err := unmarshal(env.Payload, &p); err != nil {
-		return err
-	}
-
-	if err := h.writer.RecordTripCurrency(ctx, tx, p.TripID, p.CurrencyCode); err != nil {
-		return err
-	}
-
-	// Gross revenue is recorded here; commission and the trip-count
-	// increment happen at trip.settled instead, since that's the event that
-	// actually finalizes a trip financially (a calculated fare can be
-	// recalculated before settlement).
-	return h.writer.RecordRevenue(ctx, tx, day, p.CurrencyCode, p.Total, decimal.Zero, 0)
-}
-
-func (h *Handler) handleTripSettled(ctx context.Context, tx pgx.Tx, env Envelope, day time.Time) error {
-	var p TripSettledPayload
-	if err := unmarshal(env.Payload, &p); err != nil {
-		return err
-	}
-
-	currency, found, err := h.writer.GetTripCurrency(ctx, tx, p.TripID)
-	if err != nil {
-		return err
-	}
-	if !found {
-		currency = unknownCurrency
-	}
-
-	commission, err := decimal.NewFromString(p.CommissionAmount)
-	if err != nil {
-		return fmt.Errorf("parse trip.settled commission_amount %q: %w", p.CommissionAmount, err)
-	}
-
-	return h.writer.RecordRevenue(ctx, tx, day, currency, decimal.Zero, commission, 1)
-}
-
-func (h *Handler) handleRiderCreated(ctx context.Context, tx pgx.Tx, env Envelope, weekStart time.Time) error {
-	var p RiderCreatedPayload
-	if err := unmarshal(env.Payload, &p); err != nil {
-		return err
-	}
-
-	return h.writer.RecordRiderCohort(ctx, tx, p.RiderID, weekStart)
-}
-
-func (h *Handler) handleDriverCreated(ctx context.Context, tx pgx.Tx, env Envelope, weekStart time.Time) error {
-	var p DriverCreatedPayload
-	if err := unmarshal(env.Payload, &p); err != nil {
-		return err
-	}
-
-	return h.writer.RecordDriverCohort(ctx, tx, p.DriverID, weekStart)
-}
-
-func truncateToDay(t time.Time) time.Time {
-	t = t.UTC()
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	return fmt.Errorf("%w: %s event %s: %v", errUnusable, env.EventType, env.EventID, err)
 }

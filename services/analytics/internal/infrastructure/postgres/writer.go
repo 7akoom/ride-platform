@@ -2,22 +2,17 @@ package postgres
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
-
-	"github.com/7akoom/ride-platform/services/analytics/internal/domain"
 )
 
-// Writer is the ingest-side repository: every method here is called from
-// inside a single event handler's transaction, so a consumer can insert the
-// raw event and update its one derived table atomically — either both land
-// or neither does, keeping raw_events and the aggregates it feeds always in
-// sync even across crashes/redeliveries.
+// Writer is the ingest side: every method runs inside one event's
+// transaction, so marking the event processed and changing the facts land
+// together or not at all.
 type Writer struct {
 	pool *pgxpool.Pool
 }
@@ -26,15 +21,13 @@ func NewWriter(pool *pgxpool.Pool) *Writer {
 	return &Writer{pool: pool}
 }
 
-// WithTx runs fn inside a single transaction, committing on success and
-// rolling back on any error (including a panic recovered further up the
-// call stack — Rollback on an already-committed tx is a documented no-op).
+// WithTx runs fn in one transaction, committing on success.
 func (w *Writer) WithTx(ctx context.Context, fn func(tx pgx.Tx) error) error {
 	tx, err := w.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
-	defer tx.Rollback(ctx) //nolint:errcheck // no-op if already committed
+	defer tx.Rollback(ctx) //nolint:errcheck // no-op once committed
 
 	if err := fn(tx); err != nil {
 		return err
@@ -47,238 +40,175 @@ func (w *Writer) WithTx(ctx context.Context, fn func(tx pgx.Tx) error) error {
 	return nil
 }
 
-// InsertRawEvent stores the event verbatim, keyed by its own event_id for
-// idempotency. Returns false (no error) when the event_id was already
-// present — the caller uses this to skip updating derived tables on a
-// JetStream redelivery, so counts never get double-counted.
-func (w *Writer) InsertRawEvent(
-	ctx context.Context,
-	tx pgx.Tx,
-	eventID, eventType string,
-	payload []byte,
-	occurredAt time.Time,
-) (bool, error) {
+// MarkProcessed records the event; false means it was already counted.
+func (w *Writer) MarkProcessed(ctx context.Context, tx pgx.Tx, eventID, eventType string, occurredAt time.Time) (bool, error) {
 	tag, err := tx.Exec(ctx, `
-		INSERT INTO raw_events (event_id, event_type, payload, occurred_at)
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (event_id) DO NOTHING
-	`, eventID, eventType, payload, occurredAt)
+		INSERT INTO processed_events (event_id, event_type, occurred_at)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (event_id) DO NOTHING`,
+		eventID, eventType, occurredAt)
 	if err != nil {
-		return false, fmt.Errorf("insert raw event: %w", err)
+		return false, fmt.Errorf("record processed event: %w", err)
 	}
 
 	return tag.RowsAffected() > 0, nil
 }
 
-// --- Trip funnel ---
-
-func (w *Writer) IncrementFunnelRequested(ctx context.Context, tx pgx.Tx, day time.Time) error {
-	return w.incrementFunnelColumn(ctx, tx, day, "requested_count")
+// TripRequested is what trip.requested says about a trip.
+type TripRequested struct {
+	TripID        string
+	RiderID       string
+	CityID        string
+	ZoneID        string
+	VehicleClass  string
+	PaymentMethod string
+	Scheduled     *bool
+	At            time.Time
 }
 
-func (w *Writer) IncrementFunnelAccepted(ctx context.Context, tx pgx.Tx, day time.Time) error {
-	return w.incrementFunnelColumn(ctx, tx, day, "accepted_count")
+func (w *Writer) TripRequested(ctx context.Context, tx pgx.Tx, t TripRequested) error {
+	return exec(ctx, tx, "record trip request", `
+		INSERT INTO trip_facts (trip_id, rider_id, city_id, zone_id, vehicle_class, payment_method, scheduled, requested_at)
+		VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''), NULLIF($5, ''), NULLIF($6, ''), $7, $8)
+		ON CONFLICT (trip_id) DO UPDATE SET
+			rider_id       = COALESCE(trip_facts.rider_id, EXCLUDED.rider_id),
+			city_id        = COALESCE(trip_facts.city_id, EXCLUDED.city_id),
+			zone_id        = COALESCE(trip_facts.zone_id, EXCLUDED.zone_id),
+			vehicle_class  = COALESCE(trip_facts.vehicle_class, EXCLUDED.vehicle_class),
+			payment_method = COALESCE(trip_facts.payment_method, EXCLUDED.payment_method),
+			scheduled      = COALESCE(trip_facts.scheduled, EXCLUDED.scheduled),
+			requested_at   = COALESCE(trip_facts.requested_at, EXCLUDED.requested_at)`,
+		t.TripID, t.RiderID, t.CityID, t.ZoneID, t.VehicleClass, t.PaymentMethod, t.Scheduled, t.At)
 }
 
-func (w *Writer) IncrementFunnelStarted(ctx context.Context, tx pgx.Tx, day time.Time) error {
-	return w.incrementFunnelColumn(ctx, tx, day, "started_count")
+func (w *Writer) TripAccepted(ctx context.Context, tx pgx.Tx, tripID, driverID string, at time.Time) error {
+	return exec(ctx, tx, "record trip acceptance", `
+		INSERT INTO trip_facts (trip_id, driver_id, accepted_at)
+		VALUES ($1, NULLIF($2, ''), $3)
+		ON CONFLICT (trip_id) DO UPDATE SET
+			driver_id   = COALESCE(trip_facts.driver_id, EXCLUDED.driver_id),
+			accepted_at = COALESCE(trip_facts.accepted_at, EXCLUDED.accepted_at)`,
+		tripID, driverID, at)
 }
 
-func (w *Writer) IncrementFunnelCompleted(ctx context.Context, tx pgx.Tx, day time.Time) error {
-	return w.incrementFunnelColumn(ctx, tx, day, "completed_count")
+func (w *Writer) TripArrived(ctx context.Context, tx pgx.Tx, tripID string, at time.Time) error {
+	return w.setOnce(ctx, tx, "arrived_at", tripID, at)
 }
 
-func (w *Writer) IncrementFunnelCancelled(ctx context.Context, tx pgx.Tx, day time.Time) error {
-	return w.incrementFunnelColumn(ctx, tx, day, "cancelled_count")
+func (w *Writer) TripStarted(ctx context.Context, tx pgx.Tx, tripID string, at time.Time) error {
+	return w.setOnce(ctx, tx, "started_at", tripID, at)
 }
 
-// incrementFunnelColumn is unexported and only ever called with one of the
-// five hardcoded literal column names above — never with caller-controlled
-// input — so building the column name into the query string here is safe.
-func (w *Writer) incrementFunnelColumn(ctx context.Context, tx pgx.Tx, day time.Time, column string) error {
-	query := fmt.Sprintf(`
-		INSERT INTO trip_funnel_daily (day, %[1]s)
-		VALUES ($1, 1)
-		ON CONFLICT (day) DO UPDATE SET %[1]s = trip_funnel_daily.%[1]s + 1
-	`, column)
+func (w *Writer) TripCompleted(ctx context.Context, tx pgx.Tx, tripID, riderID, driverID string, at time.Time) error {
+	return exec(ctx, tx, "record trip completion", `
+		INSERT INTO trip_facts (trip_id, rider_id, driver_id, completed_at)
+		VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), $4)
+		ON CONFLICT (trip_id) DO UPDATE SET
+			rider_id     = COALESCE(trip_facts.rider_id, EXCLUDED.rider_id),
+			driver_id    = COALESCE(trip_facts.driver_id, EXCLUDED.driver_id),
+			completed_at = COALESCE(trip_facts.completed_at, EXCLUDED.completed_at)`,
+		tripID, riderID, driverID, at)
+}
 
-	if _, err := tx.Exec(ctx, query, day); err != nil {
-		return fmt.Errorf("increment funnel %s: %w", column, err)
+// TripCancelled is what trip.cancelled says. Stage is empty for events
+// written before trip-service named it; the stage then follows from what
+// the trip had reached.
+type TripCancelled struct {
+	TripID      string
+	CancelledBy string
+	RiderNoShow bool
+	Stage       string
+	At          time.Time
+}
+
+func (w *Writer) TripCancelled(ctx context.Context, tx pgx.Tx, c TripCancelled) error {
+	return exec(ctx, tx, "record trip cancellation", `
+		INSERT INTO trip_facts (trip_id, cancelled_at, cancelled_by, rider_no_show, cancel_stage)
+		VALUES ($1, $2, NULLIF($3, ''), $4, COALESCE(NULLIF($5, ''), 'requested'))
+		ON CONFLICT (trip_id) DO UPDATE SET
+			cancelled_at  = COALESCE(trip_facts.cancelled_at, EXCLUDED.cancelled_at),
+			cancelled_by  = COALESCE(trip_facts.cancelled_by, EXCLUDED.cancelled_by),
+			rider_no_show = trip_facts.rider_no_show OR EXCLUDED.rider_no_show,
+			cancel_stage  = COALESCE(trip_facts.cancel_stage, NULLIF($5, ''), CASE
+				WHEN trip_facts.started_at IS NOT NULL THEN 'started'
+				WHEN trip_facts.arrived_at IS NOT NULL THEN 'arrived'
+				WHEN trip_facts.accepted_at IS NOT NULL THEN 'accepted'
+				ELSE 'requested'
+			END)`,
+		c.TripID, c.At, c.CancelledBy, c.RiderNoShow, c.Stage)
+}
+
+// Fare is what fare.calculated says. A later calculation replaces an
+// earlier one.
+type Fare struct {
+	TripID   string
+	RiderID  string
+	Kind     string
+	Currency string
+	Total    decimal.Decimal
+	At       time.Time
+}
+
+func (w *Writer) FareCalculated(ctx context.Context, tx pgx.Tx, f Fare) error {
+	return exec(ctx, tx, "record fare", `
+		INSERT INTO trip_facts (trip_id, rider_id, fare_kind, currency, fare_total, fare_at)
+		VALUES ($1, NULLIF($2, ''), $3, $4, $5, $6)
+		ON CONFLICT (trip_id) DO UPDATE SET
+			rider_id   = COALESCE(trip_facts.rider_id, EXCLUDED.rider_id),
+			fare_kind  = CASE WHEN trip_facts.fare_at > EXCLUDED.fare_at THEN trip_facts.fare_kind ELSE EXCLUDED.fare_kind END,
+			currency   = CASE WHEN trip_facts.fare_at > EXCLUDED.fare_at THEN trip_facts.currency ELSE EXCLUDED.currency END,
+			fare_total = CASE WHEN trip_facts.fare_at > EXCLUDED.fare_at THEN trip_facts.fare_total ELSE EXCLUDED.fare_total END,
+			fare_at    = GREATEST(trip_facts.fare_at, EXCLUDED.fare_at)`,
+		f.TripID, f.RiderID, f.Kind, f.Currency, f.Total, f.At)
+}
+
+func (w *Writer) TripSettled(ctx context.Context, tx pgx.Tx, tripID, driverID string, commission decimal.Decimal, at time.Time) error {
+	return exec(ctx, tx, "record settlement", `
+		INSERT INTO trip_facts (trip_id, driver_id, commission, settled_at)
+		VALUES ($1, NULLIF($2, ''), $3, $4)
+		ON CONFLICT (trip_id) DO UPDATE SET
+			driver_id  = COALESCE(trip_facts.driver_id, EXCLUDED.driver_id),
+			commission = CASE WHEN trip_facts.settled_at > EXCLUDED.settled_at THEN trip_facts.commission ELSE EXCLUDED.commission END,
+			settled_at = GREATEST(trip_facts.settled_at, EXCLUDED.settled_at)`,
+		tripID, driverID, commission, at)
+}
+
+func (w *Writer) RiderSignedUp(ctx context.Context, tx pgx.Tx, riderID string, at time.Time) error {
+	return exec(ctx, tx, "record rider signup", `
+		INSERT INTO rider_signups (rider_id, signed_up_at) VALUES ($1, $2)
+		ON CONFLICT (rider_id) DO UPDATE SET signed_up_at = LEAST(rider_signups.signed_up_at, EXCLUDED.signed_up_at)`,
+		riderID, at)
+}
+
+func (w *Writer) DriverSignedUp(ctx context.Context, tx pgx.Tx, driverID string, at time.Time) error {
+	return exec(ctx, tx, "record driver signup", `
+		INSERT INTO driver_signups (driver_id, signed_up_at) VALUES ($1, $2)
+		ON CONFLICT (driver_id) DO UPDATE SET signed_up_at = COALESCE(LEAST(driver_signups.signed_up_at, EXCLUDED.signed_up_at), EXCLUDED.signed_up_at)`,
+		driverID, at)
+}
+
+// DriverApproved keeps the first approval: a driver's cohort is the week
+// they could start driving.
+func (w *Writer) DriverApproved(ctx context.Context, tx pgx.Tx, driverID string, at time.Time) error {
+	return exec(ctx, tx, "record driver approval", `
+		INSERT INTO driver_signups (driver_id, approved_at) VALUES ($1, $2)
+		ON CONFLICT (driver_id) DO UPDATE SET approved_at = COALESCE(LEAST(driver_signups.approved_at, EXCLUDED.approved_at), EXCLUDED.approved_at)`,
+		driverID, at)
+}
+
+// setOnce fills a timestamp column the first time; column is a literal
+// from this file, never caller input.
+func (w *Writer) setOnce(ctx context.Context, tx pgx.Tx, column, tripID string, at time.Time) error {
+	return exec(ctx, tx, "record "+column, fmt.Sprintf(`
+		INSERT INTO trip_facts (trip_id, %[1]s) VALUES ($1, $2)
+		ON CONFLICT (trip_id) DO UPDATE SET %[1]s = COALESCE(trip_facts.%[1]s, EXCLUDED.%[1]s)`, column),
+		tripID, at)
+}
+
+func exec(ctx context.Context, tx pgx.Tx, what, sql string, args ...any) error {
+	if _, err := tx.Exec(ctx, sql, args...); err != nil {
+		return fmt.Errorf("%s: %w", what, err)
 	}
 
 	return nil
-}
-
-// --- Cancellations & trip stage tracking ---
-
-// SetTripStage records the latest known stage for a trip. Called on every
-// trip.* event except trip.cancelled itself, so that when trip.cancelled
-// arrives we can look up what stage it was cancelled from (the cancellation
-// event carries no memory of the trip's prior state on its own).
-func (w *Writer) SetTripStage(ctx context.Context, tx pgx.Tx, tripID string, stage domain.TripStage, at time.Time) error {
-	_, err := tx.Exec(ctx, `
-		INSERT INTO trip_last_known_stage (trip_id, stage, updated_at)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (trip_id) DO UPDATE SET stage = $2, updated_at = $3
-	`, tripID, string(stage), at)
-	if err != nil {
-		return fmt.Errorf("set trip stage: %w", err)
-	}
-
-	return nil
-}
-
-// GetTripStage returns the last recorded stage for a trip, or
-// domain.TripStageRequested with found=false if none was ever recorded
-// (e.g. trip.requested's own outbox event hasn't been delivered yet).
-func (w *Writer) GetTripStage(ctx context.Context, tx pgx.Tx, tripID string) (stage domain.TripStage, found bool, err error) {
-	var raw string
-
-	err = tx.QueryRow(ctx, `
-		SELECT stage FROM trip_last_known_stage WHERE trip_id = $1
-	`, tripID).Scan(&raw)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.TripStageRequested, false, nil
-	}
-	if err != nil {
-		return "", false, fmt.Errorf("get trip stage: %w", err)
-	}
-
-	return domain.TripStage(raw), true, nil
-}
-
-// RecordCancellation stores which stage a trip was cancelled from. Idempotent
-// on trip_id — a trip can only be cancelled once.
-func (w *Writer) RecordCancellation(ctx context.Context, tx pgx.Tx, tripID string, stage domain.TripStage, cancelledAt time.Time) error {
-	_, err := tx.Exec(ctx, `
-		INSERT INTO trip_cancellations (trip_id, stage_at_cancellation, cancelled_at)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (trip_id) DO NOTHING
-	`, tripID, string(stage), cancelledAt)
-	if err != nil {
-		return fmt.Errorf("record cancellation: %w", err)
-	}
-
-	return nil
-}
-
-// --- Revenue ---
-
-// RecordRevenue adds gross/commission deltas and a trip-count delta into the
-// (day, currency) bucket, creating it if absent.
-func (w *Writer) RecordRevenue(
-	ctx context.Context,
-	tx pgx.Tx,
-	day time.Time,
-	currency string,
-	grossDelta, commissionDelta decimal.Decimal,
-	tripCountDelta int64,
-) error {
-	_, err := tx.Exec(ctx, `
-		INSERT INTO revenue_daily (day, currency, gross_fare_total, commission_total, trip_count)
-		VALUES ($1, $2, $3, $4, $5)
-		ON CONFLICT (day, currency) DO UPDATE SET
-			gross_fare_total = revenue_daily.gross_fare_total + $3,
-			commission_total = revenue_daily.commission_total + $4,
-			trip_count = revenue_daily.trip_count + $5
-	`, day, currency, grossDelta, commissionDelta, tripCountDelta)
-	if err != nil {
-		return fmt.Errorf("record revenue: %w", err)
-	}
-
-	return nil
-}
-
-// --- Cohorts & weekly activity (weeks stored as their Monday DATE) ---
-
-// RecordRiderCohort assigns a rider to their signup cohort week the first
-// time it's called for that rider; subsequent calls (there shouldn't be any,
-// since rider.created fires once, but redeliveries are possible) no-op.
-func (w *Writer) RecordRiderCohort(ctx context.Context, tx pgx.Tx, riderID string, cohortWeekStart time.Time) error {
-	_, err := tx.Exec(ctx, `
-		INSERT INTO rider_cohorts (rider_id, cohort_week_start)
-		VALUES ($1, $2)
-		ON CONFLICT (rider_id) DO NOTHING
-	`, riderID, cohortWeekStart)
-	if err != nil {
-		return fmt.Errorf("record rider cohort: %w", err)
-	}
-
-	return nil
-}
-
-func (w *Writer) RecordDriverCohort(ctx context.Context, tx pgx.Tx, driverID string, cohortWeekStart time.Time) error {
-	_, err := tx.Exec(ctx, `
-		INSERT INTO driver_cohorts (driver_id, cohort_week_start)
-		VALUES ($1, $2)
-		ON CONFLICT (driver_id) DO NOTHING
-	`, driverID, cohortWeekStart)
-	if err != nil {
-		return fmt.Errorf("record driver cohort: %w", err)
-	}
-
-	return nil
-}
-
-// RecordRiderActivity marks a rider as active in the given week (called on
-// trip.requested) — used to compute retention against their cohort week.
-func (w *Writer) RecordRiderActivity(ctx context.Context, tx pgx.Tx, riderID string, activityWeekStart time.Time) error {
-	_, err := tx.Exec(ctx, `
-		INSERT INTO rider_weekly_activity (rider_id, activity_week_start)
-		VALUES ($1, $2)
-		ON CONFLICT (rider_id, activity_week_start) DO NOTHING
-	`, riderID, activityWeekStart)
-	if err != nil {
-		return fmt.Errorf("record rider activity: %w", err)
-	}
-
-	return nil
-}
-
-// RecordDriverActivity marks a driver as active in the given week (called on
-// trip.accepted) — used to compute retention against their cohort week.
-func (w *Writer) RecordDriverActivity(ctx context.Context, tx pgx.Tx, driverID string, activityWeekStart time.Time) error {
-	_, err := tx.Exec(ctx, `
-		INSERT INTO driver_weekly_activity (driver_id, activity_week_start)
-		VALUES ($1, $2)
-		ON CONFLICT (driver_id, activity_week_start) DO NOTHING
-	`, driverID, activityWeekStart)
-	if err != nil {
-		return fmt.Errorf("record driver activity: %w", err)
-	}
-
-	return nil
-}
-
-// --- Trip currency lookup (needed because trip.settled carries no
-// currency_code of its own — only fare.calculated does) ---
-
-func (w *Writer) RecordTripCurrency(ctx context.Context, tx pgx.Tx, tripID, currency string) error {
-	_, err := tx.Exec(ctx, `
-		INSERT INTO trip_fare_currency (trip_id, currency)
-		VALUES ($1, $2)
-		ON CONFLICT (trip_id) DO NOTHING
-	`, tripID, currency)
-	if err != nil {
-		return fmt.Errorf("record trip currency: %w", err)
-	}
-
-	return nil
-}
-
-// GetTripCurrency returns the currency recorded for a trip, or ("", false)
-// if fare.calculated hasn't been processed for it yet (e.g. arrived out of
-// order — the caller should fall back to a default rather than fail).
-func (w *Writer) GetTripCurrency(ctx context.Context, tx pgx.Tx, tripID string) (currency string, found bool, err error) {
-	err = tx.QueryRow(ctx, `
-		SELECT currency FROM trip_fare_currency WHERE trip_id = $1
-	`, tripID).Scan(&currency)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return "", false, nil
-	}
-	if err != nil {
-		return "", false, fmt.Errorf("get trip currency: %w", err)
-	}
-
-	return currency, true, nil
 }

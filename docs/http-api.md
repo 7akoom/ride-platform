@@ -366,6 +366,24 @@ before it runs. A caller who is not staff, or lacks the permission, gets 403.
 | POST | `/v1/admin/payouts/{payoutId}:markPaid` | `payouts.manage` | `reference` (1-120): a pending or approved request, once the money reached the driver |
 | POST | `/v1/admin/payouts/{payoutId}:reject` | `payouts.manage` | `reason` (3-300, the driver sees it): the held amount comes back (`TRANSACTION_TYPE_PAYOUT_RETURN`); not once paid |
 
+### Reports (analytics)
+
+Staff with `analytics.read` (only the owner by default). Every read is audited.
+Ranges: `range.from_date` / `range.to_date` (`YYYY-MM-DD`, inclusive; default the
+last 30 days up to today; at most 366 days). Scope: `scope.city_id`,
+`scope.zone_id`, `scope.vehicle_class`. Days follow the city's clock when
+`scope.city_id` is given, otherwise the platform's (`ANALYTICS_TIME_ZONE`); each
+answer says `timeZone`, `fromDate`, `toDate`. 400 for a bad range or an unknown
+city.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/v1/analytics/trip-funnel?range…&scope…` | every day (zeros too): trips requested that day and how many were accepted, started, completed, cancelled; `totals` |
+| GET | `/v1/analytics/cancellations?range…&scope…` | of the trips requested in the range: `byStage` (`requested`, `accepted`, `arrived`, `started`), `byCancelledBy` (`rider`, `driver`, `system`), `riderNoShows`, `cancellationRatePercent` |
+| GET | `/v1/analytics/revenue?range…&scope…` | fares by the day they were worked out: `grossFareTotal`/`totalTrips` (trip fares), `feeTotal`/`totalFees` (cancellation and no-show fees), `commissionTotal`, `currency`; per day in `days` |
+| GET | `/v1/analytics/retention/riders?cohort_weeks=` | riders by signup week (Monday) and the share who requested a trip in each week since; 1-52 weeks, default 12 |
+| GET | `/v1/analytics/retention/drivers?cohort_weeks=` | drivers by the week they were approved (else signed up) and the share who accepted a trip each week |
+
 ## Not exposed yet
 
-Ratings and analytics.
+Ratings.
