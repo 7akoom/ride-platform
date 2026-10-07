@@ -51,3 +51,6 @@ tmp/
 # Local backups and downloaded patch files — never committed
 backups/
 *.patch
+
+# A deployed instance: secrets and keys (scripts/deploy/init-instance.sh)
+instance/
