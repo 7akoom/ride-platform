@@ -40,12 +40,44 @@ shared_token="$(sed -n 's/^INTERNAL_SERVICE_TOKEN=//p' instance/shared.env | tai
 [ -s instance/keys/access_token_private.pem ] && [ -s instance/keys/access_token_public.pem ] \
   && ok "the access-token key pair is there" || fail "instance/keys has no key pair"
 
+identity() { sed -n "s/^$1=//p" instance/identity-service.env 2> /dev/null | tail -1; }
 if [ "$(value IDENTITY_APP_ENV)" = test ]; then
   warn "STAGING: login codes are written to identity-service's log, not sent. Never launch like this."
 else
-  provider="$(sed -n 's/^SMS_DEFAULT_PROVIDER=//p' instance/identity-service.env 2> /dev/null | tail -1)"
-  [ -n "$provider" ] && ok "login codes are sent by $provider" \
-    || fail "IDENTITY_APP_ENV=production but no SMS_DEFAULT_PROVIDER in instance/identity-service.env: nobody could sign in"
+  case "$(identity OTP_PHONE_DEFAULT_CHANNEL)" in
+    whatsapp)
+      provider="$(identity WHATSAPP_DEFAULT_PROVIDER)"
+      [ -n "$provider" ] && ok "phone codes go by WhatsApp ($provider)" \
+        || fail "OTP_PHONE_DEFAULT_CHANNEL=whatsapp but no WHATSAPP_DEFAULT_PROVIDER in instance/identity-service.env" ;;
+    ""|sms)
+      provider="$(identity SMS_DEFAULT_PROVIDER)"
+      [ -n "$provider" ] && ok "phone codes go by SMS ($provider)" \
+        || fail "IDENTITY_APP_ENV=production but no SMS_DEFAULT_PROVIDER in instance/identity-service.env: nobody could sign in" ;;
+    *) fail "OTP_PHONE_DEFAULT_CHANNEL must be sms or whatsapp" ;;
+  esac
+  if [ "$(identity WHATSAPP_DEFAULT_PROVIDER)" = bulksmsiraq ] || [ "$(identity SMS_DEFAULT_PROVIDER)" = bulksmsiraq ]; then
+    for key in BULKSMSIRAQ_ENDPOINT BULKSMSIRAQ_OTP_ENDPOINT BULKSMSIRAQ_API_KEY BULKSMSIRAQ_SENDER_ID; do
+      [ -n "$(identity "$key")" ] || fail "$key is empty in instance/identity-service.env"
+    done
+  fi
+  if [ -n "$(identity RESEND_API_KEY)" ] && [ -n "$(identity RESEND_FROM)" ]; then ok "email codes go by Resend"
+  else fail "RESEND_API_KEY and RESEND_FROM are needed in instance/identity-service.env (staff sign in by email)"; fi
+fi
+
+fcm="$(sed -n 's/^FCM_CREDENTIALS_FILE=//p' instance/notification-service.env 2> /dev/null | tail -1)"
+if [ -z "$fcm" ]; then
+  warn "no FCM_CREDENTIALS_FILE: push notifications are off (in-app notifications still work)"
+elif [ "$fcm" != /app/providers/fcm-service-account.json ]; then
+  fail "FCM_CREDENTIALS_FILE must be /app/providers/fcm-service-account.json (the file goes in instance/providers/)"
+elif [ ! -s instance/providers/fcm-service-account.json ]; then
+  fail "instance/providers/fcm-service-account.json is missing"
+elif ! python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if d.get("type")=="service_account" and d.get("private_key") else 1)' \
+       instance/providers/fcm-service-account.json 2> /dev/null; then
+  fail "instance/providers/fcm-service-account.json is not a Firebase service-account key"
+elif [ "$(stat -c %a instance/providers/fcm-service-account.json)" != 644 ]; then
+  fail "chmod 644 instance/providers/fcm-service-account.json (the container user must read it; instance/ itself stays private)"
+else
+  ok "push by Firebase project $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["project_id"])' instance/providers/fcm-service-account.json)"
 fi
 
 echo "==> the server"
@@ -78,6 +110,8 @@ ls infrastructure/osrm/data/"$dataset".osrm* > /dev/null 2>&1 && ok "road data $
   || warn "road data $dataset is not prepared yet (deploy.sh prepares it; about 2 GB of memory for a few minutes)"
 
 echo "==> names"
+if [ -e /etc/nginx/sites-enabled/ride-platform ]; then ok "the nginx site is enabled"
+else warn "no nginx site yet: sudo bash scripts/deploy/nginx-site.sh (otherwise the domains reach another site)"; fi
 for key in API_DOMAIN FILES_DOMAIN; do
   domain="$(value "$key")"
   if getent hosts "$domain" > /dev/null; then ok "$domain resolves"; else warn "$domain does not resolve yet (add it in DNS)"; fi

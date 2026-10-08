@@ -890,3 +890,30 @@ func validMetaProductionConfig() Config {
 		MetaWhatsAppTemplateKULanguage: "ku",
 	}
 }
+
+func TestValidateProductionProvidersPhoneDefaultChannel(
+	t *testing.T,
+) {
+	cfg := Config{
+		Environment:            "production",
+		OTPPhoneDefaultChannel: "whatsapp",
+	}
+
+	if err := ValidateProductionProviders(cfg); err == nil {
+		t.Fatal("WhatsApp by default without WHATSAPP_DEFAULT_PROVIDER was accepted")
+	}
+
+	cfg.WhatsAppDefaultProvider = "bulksmsiraq"
+	cfg.BulkSMSIraqOTPEndpoint = "https://example.com/api/v5/otp/send"
+	cfg.BulkSMSIraqAPIKey = "test-api-key"
+	cfg.BulkSMSIraqSenderID = "sender"
+
+	if err := ValidateProductionProviders(cfg); err != nil {
+		t.Fatalf("WhatsApp by default with BulkSMSIraq: %v", err)
+	}
+
+	cfg.OTPPhoneDefaultChannel = "pigeon"
+	if err := ValidateProductionProviders(cfg); err == nil {
+		t.Fatal("an unknown OTP_PHONE_DEFAULT_CHANNEL was accepted")
+	}
+}

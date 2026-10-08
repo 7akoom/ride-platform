@@ -12,6 +12,9 @@ value() { sed -n "s/^$1=//p" instance/instance.env | tail -1; }
 
 bash scripts/deploy/preflight.sh
 
+# Instances made before P13 have no providers folder; notification mounts it.
+[ -d instance/providers ] || { mkdir -p instance/providers && chmod 755 instance/providers; }
+
 dataset="$(value OSRM_DATASET_NAME)"
 if ! ls infrastructure/osrm/data/"$dataset".osrm* > /dev/null 2>&1; then
   echo "==> road data (first time only)"
@@ -24,8 +27,13 @@ echo "==> building ($(git rev-parse --short HEAD))"
 
 echo "==> databases, cache, messaging, files"
 "${COMPOSE[@]}" up -d --wait postgres identity-valkey location-valkey nats seaweedfs
-"${COMPOSE[@]}" up nats-bootstrap driver-nats-bootstrap pricing-nats-bootstrap rider-nats-bootstrap \
-  support-nats-bootstrap trip-nats-bootstrap wallet-nats-bootstrap
+# The stream descriptions are long; keep them in a file unless something fails.
+if ! "${COMPOSE[@]}" up nats-bootstrap driver-nats-bootstrap pricing-nats-bootstrap rider-nats-bootstrap \
+     support-nats-bootstrap trip-nats-bootstrap wallet-nats-bootstrap > /tmp/ride-nats-bootstrap.log 2>&1; then
+  tail -40 /tmp/ride-nats-bootstrap.log >&2
+  false
+fi
+echo "  streams ready (details: /tmp/ride-nats-bootstrap.log)"
 
 echo "==> migrations"
 "${COMPOSE[@]}" --profile tools run --rm migrate

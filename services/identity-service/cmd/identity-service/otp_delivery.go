@@ -82,143 +82,26 @@ func buildProductionOTPDeliveryWithTracking(
 		)
 	}
 
-	defaultSMSProviderName := normalizeProviderName(
-		cfg.SMSDefaultProvider,
+	phoneAutoChannel, err := phoneAutoChannelFromConfig(
+		cfg,
 	)
-	if defaultSMSProviderName == "" {
-		return nil, errors.New(
-			"global SMS default provider is required in production",
-		)
-	}
-
-	defaultSMSProvider, err :=
-		buildSMSProvider(
-			defaultSMSProviderName,
-			httpClient,
-			cfg,
-		)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"configure global SMS default provider: %w",
-			err,
-		)
-	}
-
-	fallbackSMSProviderName := normalizeProviderName(
-		cfg.SMSFallbackProvider,
-	)
-
-	var fallbackSMSProvider otp.SMSProvider
-
-	if fallbackSMSProviderName != "" {
-		fallbackSMSProvider, err =
-			buildSMSProvider(
-				fallbackSMSProviderName,
-				httpClient,
-				cfg,
-			)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"configure SMS fallback provider: %w",
-				err,
-			)
-		}
-	}
-
-	smsHealthTracker, err :=
-		buildSMSProviderHealthTracker(
-			cfg,
-		)
 	if err != nil {
 		return nil, err
 	}
 
-	smsRoutes, err := buildSMSRoutes(
-		cfg.SMSRoutes,
+	var smsSender otp.SMSSender
+
+	smsSender, err = buildSMSSender(
 		httpClient,
 		cfg,
+		smsRenderer,
+		phoneAutoChannel,
+		metricsRecorder,
+		providerHealthMetricsRecorder,
+		trackingStore,
 	)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"configure SMS routes: %w",
-			err,
-		)
-	}
-
-	smsRouterOptions := make(
-		[]otp.SMSRouterOption,
-		0,
-		5,
-	)
-
-	if metricsRecorder != nil {
-		smsRouterOptions = append(
-			smsRouterOptions,
-			otp.WithSMSDeliveryMetricsRecorder(
-				metricsRecorder,
-			),
-		)
-	}
-
-	if providerHealthMetricsRecorder != nil {
-		smsRouterOptions = append(
-			smsRouterOptions,
-			otp.WithSMSProviderHealthMetricsRecorder(
-				providerHealthMetricsRecorder,
-			),
-		)
-	}
-
-	if trackingStore != nil {
-		smsRouterOptions = append(
-			smsRouterOptions,
-			otp.WithSMSDeliveryTrackingStore(
-				trackingStore,
-			),
-		)
-	}
-
-	smsRouterOptions = append(
-		smsRouterOptions,
-		otp.WithSMSProviderHealthTracker(
-			smsHealthTracker,
-		),
-	)
-
-	if fallbackSMSProvider != nil {
-		smsRouterOptions = append(
-			smsRouterOptions,
-			otp.WithSMSFallbackProvider(
-				fallbackSMSProviderName,
-				fallbackSMSProvider,
-				otp.ConservativeProviderFailoverPolicy{},
-			),
-		)
-	}
-
-	smsRouter, err := otp.NewSMSRouter(
-		smsRoutes,
-		defaultSMSProviderName,
-		defaultSMSProvider,
-		smsRouterOptions...,
-	)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"configure SMS router: %w",
-			err,
-		)
-	}
-
-	smsSender, err :=
-		otp.NewProviderSMSSender(
-			smsRouter,
-			smsRenderer,
-		)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"configure SMS sender: %w",
-			err,
-		)
+		return nil, err
 	}
 
 	var whatsAppSender otp.WhatsAppSender
@@ -323,6 +206,9 @@ func buildProductionOTPDeliveryWithTracking(
 			smsSender,
 			whatsAppSender,
 			emailSender,
+			otp.WithPhoneAutoChannel(
+				phoneAutoChannel,
+			),
 		)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -952,4 +838,187 @@ func buildWhatsAppProviderHealthTracker(
 	}
 
 	return tracker, nil
+}
+
+// phoneAutoChannelFromConfig reads OTP_PHONE_DEFAULT_CHANNEL: where a phone
+// code goes when the app asks for "auto". Empty means SMS.
+func phoneAutoChannelFromConfig(
+	cfg config.Config,
+) (auth.OTPDeliveryChannel, error) {
+	switch strings.ToLower(
+		strings.TrimSpace(
+			cfg.OTPPhoneDefaultChannel,
+		),
+	) {
+	case "", "sms":
+		return auth.OTPDeliveryChannelSMS, nil
+
+	case "whatsapp":
+		return auth.OTPDeliveryChannelWhatsApp, nil
+
+	default:
+		return "", fmt.Errorf(
+			"OTP_PHONE_DEFAULT_CHANNEL must be sms or whatsapp, got %q",
+			cfg.OTPPhoneDefaultChannel,
+		)
+	}
+}
+
+// buildSMSSender builds the SMS router and sender. It returns no sender
+// (and no error) when no SMS provider is set and phone codes go by
+// WhatsApp by default.
+func buildSMSSender(
+	httpClient otp.HTTPDoer,
+	cfg config.Config,
+	smsRenderer otp.SMSMessageRenderer,
+	phoneAutoChannel auth.OTPDeliveryChannel,
+	metricsRecorder otp.DeliveryMetricsRecorder,
+	providerHealthMetricsRecorder otp.ProviderHealthMetricsRecorder,
+	trackingStore otp.DeliveryTrackingStore,
+) (otp.SMSSender, error) {
+	defaultSMSProviderName := normalizeProviderName(
+		cfg.SMSDefaultProvider,
+	)
+	if defaultSMSProviderName == "" {
+		// Phone codes may go by WhatsApp only; then SMS is simply off.
+		if phoneAutoChannel == auth.OTPDeliveryChannelWhatsApp {
+			return nil, nil
+		}
+
+		return nil, errors.New(
+			"global SMS default provider is required in production",
+		)
+	}
+
+	defaultSMSProvider, err :=
+		buildSMSProvider(
+			defaultSMSProviderName,
+			httpClient,
+			cfg,
+		)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"configure global SMS default provider: %w",
+			err,
+		)
+	}
+
+	fallbackSMSProviderName := normalizeProviderName(
+		cfg.SMSFallbackProvider,
+	)
+
+	var fallbackSMSProvider otp.SMSProvider
+
+	if fallbackSMSProviderName != "" {
+		fallbackSMSProvider, err =
+			buildSMSProvider(
+				fallbackSMSProviderName,
+				httpClient,
+				cfg,
+			)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"configure SMS fallback provider: %w",
+				err,
+			)
+		}
+	}
+
+	smsHealthTracker, err :=
+		buildSMSProviderHealthTracker(
+			cfg,
+		)
+	if err != nil {
+		return nil, err
+	}
+
+	smsRoutes, err := buildSMSRoutes(
+		cfg.SMSRoutes,
+		httpClient,
+		cfg,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"configure SMS routes: %w",
+			err,
+		)
+	}
+
+	smsRouterOptions := make(
+		[]otp.SMSRouterOption,
+		0,
+		5,
+	)
+
+	if metricsRecorder != nil {
+		smsRouterOptions = append(
+			smsRouterOptions,
+			otp.WithSMSDeliveryMetricsRecorder(
+				metricsRecorder,
+			),
+		)
+	}
+
+	if providerHealthMetricsRecorder != nil {
+		smsRouterOptions = append(
+			smsRouterOptions,
+			otp.WithSMSProviderHealthMetricsRecorder(
+				providerHealthMetricsRecorder,
+			),
+		)
+	}
+
+	if trackingStore != nil {
+		smsRouterOptions = append(
+			smsRouterOptions,
+			otp.WithSMSDeliveryTrackingStore(
+				trackingStore,
+			),
+		)
+	}
+
+	smsRouterOptions = append(
+		smsRouterOptions,
+		otp.WithSMSProviderHealthTracker(
+			smsHealthTracker,
+		),
+	)
+
+	if fallbackSMSProvider != nil {
+		smsRouterOptions = append(
+			smsRouterOptions,
+			otp.WithSMSFallbackProvider(
+				fallbackSMSProviderName,
+				fallbackSMSProvider,
+				otp.ConservativeProviderFailoverPolicy{},
+			),
+		)
+	}
+
+	smsRouter, err := otp.NewSMSRouter(
+		smsRoutes,
+		defaultSMSProviderName,
+		defaultSMSProvider,
+		smsRouterOptions...,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"configure SMS router: %w",
+			err,
+		)
+	}
+
+	smsSender, err :=
+		otp.NewProviderSMSSender(
+			smsRouter,
+			smsRenderer,
+		)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"configure SMS sender: %w",
+			err,
+		)
+	}
+
+	return smsSender, nil
 }

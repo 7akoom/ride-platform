@@ -126,6 +126,27 @@ func ValidateProductionProviders(
 		)
 	}
 
+	switch strings.ToLower(
+		strings.TrimSpace(
+			cfg.OTPPhoneDefaultChannel,
+		),
+	) {
+	case "", "sms":
+		// The SMS sender itself insists on SMS_DEFAULT_PROVIDER at startup.
+
+	case "whatsapp":
+		if whatsAppDefaultProvider == "" {
+			return fmt.Errorf(
+				"WHATSAPP_DEFAULT_PROVIDER is required when OTP_PHONE_DEFAULT_CHANNEL=whatsapp",
+			)
+		}
+
+	default:
+		return fmt.Errorf(
+			"OTP_PHONE_DEFAULT_CHANNEL must be sms or whatsapp",
+		)
+	}
+
 	if err := validateWebhookConfiguration(
 		cfg,
 	); err != nil {

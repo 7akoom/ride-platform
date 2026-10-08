@@ -46,6 +46,9 @@ openssl pkey -in instance/keys/access_token_private.pem -pubout -out instance/ke
 chmod 644 instance/keys/access_token_public.pem
 chmod 644 instance/keys/access_token_private.pem
 chmod 755 instance/keys
+# Provider files the containers read (the Firebase service account, P13).
+mkdir -p instance/providers
+chmod 755 instance/providers
 
 {
   echo "# Ride Platform instance, made $(date -u +%FT%TZ) by scripts/deploy/init-instance.sh."
@@ -96,12 +99,23 @@ echo "ACCESS_TOKEN_PRIVATE_KEY_PATH=.local/keys/access_token_private.pem" >> ins
 
 # Provider credentials, one file per service that needs them (P13).
 cat > instance/identity-service.env <<'IDENTITY'
-# SMS / WhatsApp / email providers for login codes (see services/identity-service/.env.example).
+# Login codes (see services/identity-service/.env.example). They only go out
+# with IDENTITY_APP_ENV=production in instance.env; "test" writes them to the log.
+#
+# Phone codes: OTP_PHONE_DEFAULT_CHANNEL=whatsapp sends them by WhatsApp and
+# needs WHATSAPP_DEFAULT_PROVIDER; "sms" (or empty) needs SMS_DEFAULT_PROVIDER.
+OTP_PHONE_DEFAULT_CHANNEL=whatsapp
+WHATSAPP_DEFAULT_PROVIDER=bulksmsiraq
 SMS_DEFAULT_PROVIDER=
+SMS_ROUTES=
 BULKSMSIRAQ_ENDPOINT=
+BULKSMSIRAQ_OTP_ENDPOINT=
 BULKSMSIRAQ_API_KEY=
 BULKSMSIRAQ_SENDER_ID=
+#
+# Email codes (staff sign in by email): Resend, with a verified domain.
 RESEND_API_KEY=
+RESEND_FROM=
 IDENTITY
 cat > instance/wallet-service.env <<'WALLET'
 # ZainCash (see services/wallet-service/.env.example).
@@ -115,6 +129,9 @@ echo "STAFF_BOOTSTRAP_OWNER_EMAIL=$OWNER" > instance/staff-service.env
 cat > instance/notification-service.env <<'NOTIFY'
 # Who is called when a rider or driver presses SOS (comma separated, E.164).
 SOS_OPERATOR_PHONES=
+# Push: put the Firebase service-account JSON at
+# instance/providers/fcm-service-account.json (chmod 644), then uncomment.
+#FCM_CREDENTIALS_FILE=/app/providers/fcm-service-account.json
 NOTIFY
 
 echo "made instance/ (instance.env, shared.env, provider files, keys). Back it up now, for example:"

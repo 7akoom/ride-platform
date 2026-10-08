@@ -43,16 +43,48 @@ type ProductionDelivery struct {
 	smsSender      SMSSender
 	whatsAppSender WhatsAppSender
 	emailSender    EmailSender
+
+	// phoneAutoChannel is where a phone code goes when the client asks for
+	// "auto": SMS (the default) or WhatsApp.
+	phoneAutoChannel auth.OTPDeliveryChannel
 }
 
+// ProductionDeliveryOption adjusts a ProductionDelivery.
+type ProductionDeliveryOption func(*ProductionDelivery) error
+
+// WithPhoneAutoChannel sends "auto" phone codes by SMS or by WhatsApp.
+func WithPhoneAutoChannel(
+	channel auth.OTPDeliveryChannel,
+) ProductionDeliveryOption {
+	return func(d *ProductionDelivery) error {
+		switch channel {
+		case auth.OTPDeliveryChannelSMS,
+			auth.OTPDeliveryChannelWhatsApp:
+			d.phoneAutoChannel = channel
+
+			return nil
+
+		default:
+			return fmt.Errorf(
+				"phone auto channel must be sms or whatsapp, got %q",
+				channel,
+			)
+		}
+	}
+}
+
+// NewProductionDelivery needs an email sender and at least one phone
+// sender; the phone channel "auto" uses must have its sender. A missing
+// SMS or WhatsApp sender makes that channel unavailable, not an error.
 func NewProductionDelivery(
 	smsSender SMSSender,
 	whatsAppSender WhatsAppSender,
 	emailSender EmailSender,
+	options ...ProductionDeliveryOption,
 ) (*ProductionDelivery, error) {
-	if smsSender == nil {
+	if smsSender == nil && whatsAppSender == nil {
 		return nil, errors.New(
-			"SMS sender is required",
+			"an SMS or a WhatsApp sender is required",
 		)
 	}
 
@@ -62,11 +94,42 @@ func NewProductionDelivery(
 		)
 	}
 
-	return &ProductionDelivery{
-		smsSender:      smsSender,
-		whatsAppSender: whatsAppSender,
-		emailSender:    emailSender,
-	}, nil
+	delivery := &ProductionDelivery{
+		smsSender:        smsSender,
+		whatsAppSender:   whatsAppSender,
+		emailSender:      emailSender,
+		phoneAutoChannel: auth.OTPDeliveryChannelSMS,
+	}
+
+	for _, option := range options {
+		if option == nil {
+			return nil, errors.New(
+				"production delivery option cannot be nil",
+			)
+		}
+
+		if err := option(delivery); err != nil {
+			return nil, err
+		}
+	}
+
+	switch delivery.phoneAutoChannel {
+	case auth.OTPDeliveryChannelSMS:
+		if smsSender == nil {
+			return nil, errors.New(
+				"SMS sender is required when phone codes go by SMS by default",
+			)
+		}
+
+	case auth.OTPDeliveryChannelWhatsApp:
+		if whatsAppSender == nil {
+			return nil, errors.New(
+				"WhatsApp sender is required when phone codes go by WhatsApp by default",
+			)
+		}
+	}
+
+	return delivery, nil
 }
 
 func (d *ProductionDelivery) Send(
@@ -117,6 +180,17 @@ func (d *ProductionDelivery) Send(
 	case auth.OTPDeliveryChannelAuto:
 		switch identifier.Type {
 		case auth.IdentifierTypePhone:
+			if d.phoneAutoChannel == auth.OTPDeliveryChannelWhatsApp {
+				return d.sendWhatsApp(
+					ctx,
+					input.ChallengeID,
+					identifier.Value,
+					code,
+					purpose,
+					input.Locale,
+				)
+			}
+
 			return d.sendSMS(
 				ctx,
 				input.ChallengeID,
@@ -202,6 +276,13 @@ func (d *ProductionDelivery) sendSMS(
 	purpose auth.OTPPurpose,
 	locale string,
 ) error {
+	if d.smsSender == nil {
+		return fmt.Errorf(
+			"%w: SMS sender is not configured",
+			auth.ErrOTPDeliveryChannelUnavailable,
+		)
+	}
+
 	if challengeAwareSender, ok :=
 		d.smsSender.(ChallengeAwareSMSSender); ok &&
 		strings.TrimSpace(challengeID) != "" {

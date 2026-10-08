@@ -51,9 +51,34 @@ new migrations, restarts, runs the smoke test.
 
 ## Providers (P13)
 
-`instance/identity-service.env` (SMS), `instance/wallet-service.env`
-(ZainCash), `instance/notification-service.env` (SOS phones). Fill them, set
-`IDENTITY_APP_ENV=production` in `instance/instance.env`, deploy again.
+Credentials live only on the server, in `instance/` (never in git, never in
+chat). After filling them: `bash scripts/deploy/deploy.sh`; the preflight
+says what is missing.
+
+**Login codes**, `instance/identity-service.env`:
+
+- Phone codes by WhatsApp through BulkSMSIraq:
+  `OTP_PHONE_DEFAULT_CHANNEL=whatsapp`, `WHATSAPP_DEFAULT_PROVIDER=bulksmsiraq`,
+  `BULKSMSIRAQ_ENDPOINT`, `BULKSMSIRAQ_OTP_ENDPOINT`, `BULKSMSIRAQ_API_KEY`,
+  `BULKSMSIRAQ_SENDER_ID`. SMS stays off while `SMS_DEFAULT_PROVIDER` and
+  `SMS_ROUTES` are empty; to add it later set `SMS_DEFAULT_PROVIDER` (and
+  `OTP_PHONE_DEFAULT_CHANNEL=sms` to make it the default).
+- Email codes (staff sign in by email): `RESEND_API_KEY`, and `RESEND_FROM`
+  on a domain verified in Resend, e.g. `Ride <no-reply@example.com>`.
+- Then `IDENTITY_APP_ENV=production` in `instance/instance.env`. From then
+  on codes are really sent and no longer logged. Try one:
+  `SMOKE_PHONE=+9647501234567 bash scripts/deploy/smoke.sh` (it asks for the
+  code that arrived).
+
+**Push**, `instance/notification-service.env`: put the Firebase
+service-account key (Firebase console > Project settings > Service accounts >
+Generate new private key) at `instance/providers/fcm-service-account.json`,
+`chmod 644` it, and uncomment
+`FCM_CREDENTIALS_FILE=/app/providers/fcm-service-account.json`. Only
+notification-service sees that folder.
+
+**ZainCash**, `instance/wallet-service.env`; **SOS phones**,
+`SOS_OPERATOR_PHONES` in `instance/notification-service.env`.
 
 ## When the development compose changes
 

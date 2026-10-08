@@ -963,6 +963,12 @@
           "source": "../../instance/keys/access_token_public.pem",
           "target": "/app/.local/keys/access_token_public.pem",
           "type": "bind"
+        },
+        {
+          "read_only": true,
+          "source": "../../instance/providers",
+          "target": "/app/providers",
+          "type": "bind"
         }
       ]
     },

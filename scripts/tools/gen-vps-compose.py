@@ -41,6 +41,7 @@ PUBLISHED = {
 }
 
 KEYS = "../../instance/keys"
+PROVIDERS = "../../instance/providers"
 
 # Secrets only the service that needs them gets (from instance/instance.env,
 # which compose reads for interpolation and never hands to containers whole).
@@ -50,6 +51,10 @@ SERVICE_SECRETS = {
     "notification-service": ["SOS_WEBHOOK_SECRET"],
 }
 LOGGING = {"driver": "json-file", "options": {"max-size": "10m", "max-file": "3"}}
+
+
+def service_dir_of(svc):
+    return (svc.get("build") or {}).get("args", {}).get("SERVICE_NAME")
 
 
 def load_dev():
@@ -140,6 +145,11 @@ def main():
             svc["mem_limit"] = MEMORY.get(name, DEFAULT_SERVICE_MEMORY)
         else:
             svc["mem_limit"] = MEMORY.get(name, SMALL_MEMORY)
+
+        if service_dir_of(svc) == "notification-service":
+            # The Firebase service-account file (P13), read-only, and only here.
+            svc.setdefault("volumes", []).append(
+                {"type": "bind", "source": PROVIDERS, "target": "/app/providers", "read_only": True})
 
         for volume in svc.get("volumes", []):
             source = volume.get("source", "")

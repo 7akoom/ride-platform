@@ -26,6 +26,10 @@ type Config struct {
 	TelnyxMessagingProfileID string
 	TelnyxPublicKey          string
 
+	// OTPPhoneDefaultChannel is where a phone code goes when the app asks
+	// for "auto": sms (default) or whatsapp.
+	OTPPhoneDefaultChannel string
+
 	WhatsAppDefaultProvider                string
 	WhatsAppFallbackProvider               string
 	WhatsAppRoutes                         string
@@ -125,6 +129,11 @@ func Load() Config {
 
 		SMSDefaultProvider: getEnv(
 			"SMS_DEFAULT_PROVIDER",
+			"",
+		),
+
+		OTPPhoneDefaultChannel: getEnv(
+			"OTP_PHONE_DEFAULT_CHANNEL",
 			"",
 		),
 
