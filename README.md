@@ -21,7 +21,7 @@ The platform is designed to support:
 ## Repository Structure
 
 - `services/` - Go microservices
-- `apps/` - Rider, driver, and admin applications
+- Apps live in their own repos: [ride-rider-app](https://github.com/7akoom/ride-rider-app), [ride-driver-app](https://github.com/7akoom/ride-driver-app), [ride-admin-web](https://github.com/7akoom/ride-admin-web)
 - `proto/` - Protobuf and gRPC contracts
 - `infrastructure/` - Docker, gateway, and deployment configuration
 - `docs/` - Architecture decisions and documentation
