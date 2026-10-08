@@ -41,6 +41,13 @@ if [ "$fails" -gt 0 ]; then
   echo "  (the gateway answers here but not through $API: is the nginx site on? sudo bash scripts/deploy/nginx-site.sh)"
 fi
 
+TILES="$(value TILES_DOMAIN)"
+if [ -n "$TILES" ]; then
+  echo "==> https://$TILES (the map)"
+  check "a style" 200 "$(status "https://$TILES/styles/light-ar.json")"
+  check "a piece of the basemap (range request)" 206 "$(status -H 'Range: bytes=0-126' "https://$TILES/basemap.pmtiles")"
+fi
+
 sign_in() { # <phone> <how to get the code: log|ask>
   local phone="$1" code otp challenge token
   code="$(status -X POST "$API/v1/auth/otp:request" -H 'Content-Type: application/json' \

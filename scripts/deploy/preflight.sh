@@ -117,8 +117,17 @@ ls infrastructure/osrm/data/"$dataset".osrm* > /dev/null 2>&1 && ok "road data $
 echo "==> names"
 if [ -e /etc/nginx/sites-enabled/ride-platform ]; then ok "the nginx site is enabled"
 else warn "no nginx site yet: sudo bash scripts/deploy/nginx-site.sh (otherwise the domains reach another site)"; fi
-for key in API_DOMAIN FILES_DOMAIN; do
+tiles_dir="$(value TILES_DIR)"
+if [ -z "$(value TILES_DOMAIN)" ]; then
+  warn "no map server yet (sudo bash scripts/deploy/nginx-tiles-site.sh --domain ride-tiles.<domain>, then prepare-tiles.sh)"
+elif [ -s "$tiles_dir/basemap.pmtiles" ]; then
+  ok "the map is prepared ($(sed -n 's/^build=//p' "$tiles_dir/VERSION" 2> /dev/null))"
+else
+  warn "no basemap in $tiles_dir yet: bash scripts/deploy/prepare-tiles.sh"
+fi
+for key in API_DOMAIN FILES_DOMAIN TILES_DOMAIN; do
   domain="$(value "$key")"
+  [ -n "$domain" ] || continue
   if getent hosts "$domain" > /dev/null; then ok "$domain resolves"; else warn "$domain does not resolve yet (add it in DNS)"; fi
 done
 
