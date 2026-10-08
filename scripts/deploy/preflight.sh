@@ -102,7 +102,12 @@ free_gb="$(df -BG --output=avail . | tail -1 | tr -dc 0-9)"
 for key in GATEWAY_PORT FILES_PORT; do
   port="$(value "$key")"
   owner="$(ss -Htlnp "sport = :$port" 2> /dev/null)"
-  if [ -z "$owner" ] || echo "$owner" | grep -q docker; then ok "port $port is free for us"; else fail "port $port is taken: $owner"; fi
+  # Without root, ss cannot name docker-proxy; ask docker whether one of our
+  # containers publishes the port (a re-deploy finds it taken by us).
+  ours="$(docker ps --filter name=ride- --format '{{.Names}} {{.Ports}}' 2> /dev/null | grep -F "127.0.0.1:$port->" | cut -d' ' -f1)"
+  if [ -z "$owner" ]; then ok "port $port is free for us"
+  elif [ -n "$ours" ]; then ok "port $port is ours ($ours)"
+  else fail "port $port is taken by something else: $owner"; fi
 done
 
 dataset="$(value OSRM_DATASET_NAME)"
