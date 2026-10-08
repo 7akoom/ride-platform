@@ -37,11 +37,19 @@ func run() int {
 	}
 
 	logger := slog.New(
-		slog.NewJSONHandler(os.Stdout, nil),
+		observability.NewTraceLogHandler(slog.NewJSONHandler(os.Stdout, nil)),
 	).With(
 		"service", cfg.ServiceName,
 		"environment", cfg.Environment,
 	)
+
+	tracingRuntime, err := observability.NewTracingRuntime(context.Background(), cfg.ServiceName, cfg.Environment)
+	if err != nil {
+		logger.Error("invalid tracing configuration", "error", err)
+
+		return 1
+	}
+	defer tracingRuntime.Close(logger)
 
 	metricsRuntime, err := observability.NewMetricsRuntime(cfg.ServiceName, cfg.MetricsAddress)
 	if err != nil {
@@ -77,6 +85,7 @@ func run() int {
 	identityConn, err := grpc.NewClient(
 		cfg.IdentityServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		observability.GRPCClientOption(),
 	)
 	if err != nil {
 		logger.Error("failed to connect to identity-service", "error", err)
@@ -126,6 +135,7 @@ func run() int {
 		cfg.GRPCAddress,
 		logger,
 		metricsInterceptor,
+		observability.ErrorLogUnaryServerInterceptor(logger),
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
 		grpcserver.NewAuthorizationUnaryInterceptor(staffService, logger),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),

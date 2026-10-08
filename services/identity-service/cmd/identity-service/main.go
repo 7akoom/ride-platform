@@ -45,6 +45,14 @@ func run() int {
 		cfg.Environment,
 	)
 
+	tracingRuntime, err := observability.NewTracingRuntime(context.Background(), cfg.ServiceName, cfg.Environment)
+	if err != nil {
+		logger.Error("invalid tracing configuration", "error", err)
+
+		return 1
+	}
+	defer tracingRuntime.Close(logger)
+
 	metricsRuntime, err := observability.NewMetricsRuntime(
 		cfg.ServiceName,
 		cfg.MetricsAddress,
@@ -605,6 +613,7 @@ func run() int {
 	server := grpcserver.NewServer(
 		cfg.GRPCAddress,
 		logger,
+		observability.ErrorLogUnaryServerInterceptor(logger),
 		grpcserver.NewClientContextUnaryInterceptor(trustedProxies),
 		grpcserver.NewRequestSourceUnaryInterceptor(),
 		grpcserver.NewInternalServiceUnaryInterceptor(cfg.InternalServiceToken),

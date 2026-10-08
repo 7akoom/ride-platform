@@ -80,6 +80,18 @@ else
   ok "push by Firebase project $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["project_id"])' instance/providers/fcm-service-account.json)"
 fi
 
+if [ -s instance/monitoring.env ]; then
+  monitoring_ok=1
+  for key in GRAFANA_CLOUD_OTLP_ENDPOINT GRAFANA_CLOUD_INSTANCE_ID GRAFANA_CLOUD_API_TOKEN; do
+    grep -q "^$key=." instance/monitoring.env || { fail "$key is empty in instance/monitoring.env (bash scripts/deploy/enable-monitoring.sh)"; monitoring_ok=0; }
+  done
+  [ "$(value OTEL_EXPORTER_OTLP_ENDPOINT)" = http://alloy:4317 ] \
+    || { fail "monitoring is set up but OTEL_EXPORTER_OTLP_ENDPOINT is not http://alloy:4317 in instance.env"; monitoring_ok=0; }
+  [ "$monitoring_ok" = 1 ] && ok "monitoring goes to Grafana Cloud ($(sed -n 's/^GRAFANA_CLOUD_OTLP_ENDPOINT=//p' instance/monitoring.env))"
+else
+  warn "monitoring is off (bash scripts/deploy/enable-monitoring.sh); trace.sh still finds requests in the logs"
+fi
+
 echo "==> the server"
 command -v docker > /dev/null && docker compose version > /dev/null 2>&1 && ok "docker and compose" \
   || fail "docker with the compose plugin is not installed (curl -fsSL https://get.docker.com | sudo sh)"

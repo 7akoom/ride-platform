@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/7akoom/ride-platform/infrastructure/gateway/internal/observability"
 	"log/slog"
 	"net/http"
 	"os"
@@ -37,11 +38,19 @@ func run() int {
 	cfg := config.Load()
 
 	logger := slog.New(
-		slog.NewJSONHandler(os.Stdout, nil),
+		observability.NewTraceLogHandler(slog.NewJSONHandler(os.Stdout, nil)),
 	).With(
 		"service", cfg.ServiceName,
 		"environment", cfg.Environment,
 	)
+
+	tracingRuntime, err := observability.NewTracingRuntime(context.Background(), cfg.ServiceName, cfg.Environment)
+	if err != nil {
+		logger.Error("invalid tracing configuration", "error", err)
+
+		return 1
+	}
+	defer tracingRuntime.Close(logger)
 
 	ctx, stop := signal.NotifyContext(
 		context.Background(),
@@ -245,7 +254,7 @@ func run() int {
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddress,
-		Handler:           withCORS(cfg.AllowedOrigins, requireUserCredentials(mux)),
+		Handler:           traced(logger, withCORS(cfg.AllowedOrigins, requireUserCredentials(mux))),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -296,6 +305,7 @@ func dialBackend(address string) (*grpc.ClientConn, error) {
 	return grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		observability.GRPCClientOption(),
 	)
 }
 
@@ -318,6 +328,7 @@ func withCORS(allowedOrigins string, next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Expose-Headers", "X-Request-Id")
 			w.Header().Set("Vary", "Origin")
 		}
 

@@ -3,6 +3,7 @@ package accounts
 import (
 	"context"
 	"fmt"
+	"github.com/7akoom/ride-platform/services/identity-service/internal/observability"
 	"strings"
 
 	"google.golang.org/grpc"
@@ -23,6 +24,7 @@ func Dial(address, internalServiceToken string) (*grpc.ClientConn, error) {
 	return grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		observability.GRPCClientOption(),
 		grpc.WithUnaryInterceptor(func(
 			ctx context.Context,
 			method string,

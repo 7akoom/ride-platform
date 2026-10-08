@@ -4,6 +4,53 @@
 {
   "name": "ride",
   "services": {
+    "alloy": {
+      "command": [
+        "run",
+        "--server.http.listen-addr=127.0.0.1:12345",
+        "--storage.path=/var/lib/alloy/data",
+        "/etc/alloy/config.alloy"
+      ],
+      "container_name": "ride-alloy",
+      "env_file": [
+        {
+          "path": "../../instance/monitoring.env",
+          "required": true
+        }
+      ],
+      "image": "grafana/alloy:v1.20.1",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "320m",
+      "profiles": [
+        "monitoring"
+      ],
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "read_only": true,
+          "source": "./alloy/config.alloy",
+          "target": "/etc/alloy/config.alloy",
+          "type": "bind"
+        },
+        {
+          "read_only": true,
+          "source": "/var/lib/docker/containers",
+          "target": "/var/lib/docker/containers",
+          "type": "bind"
+        },
+        {
+          "source": "alloy-data",
+          "target": "/var/lib/alloy/data",
+          "type": "volume"
+        }
+      ]
+    },
     "analytics-service": {
       "build": {
         "args": {
@@ -46,6 +93,8 @@
         "LOCATION_SERVICE_ADDRESS": "location-service:50054",
         "METRICS_ADDRESS": ":9100",
         "NATS_URL": "nats://nats:4222",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "STAFF_SERVICE_ADDRESS": "staff-service:50061",
         "WALLET_SERVICE_ADDRESS": "wallet-service:50058"
       },
@@ -129,6 +178,8 @@
         "LOCATION_SERVICE_ADDRESS": "location-service:50054",
         "METRICS_ADDRESS": ":9096",
         "NATS_URL": "nats://nats:4222",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "TRIP_SERVICE_ADDRESS": "trip-service:50055",
         "WALLET_SERVICE_ADDRESS": "wallet-service:50058"
       },
@@ -256,6 +307,8 @@
         "MEDIA_SERVICE_ADDRESS": "media-service:50062",
         "METRICS_ADDRESS": ":9093",
         "NATS_URL": "nats://nats:4222",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "STAFF_SERVICE_ADDRESS": "staff-service:50061"
       },
       "image": "ride-platform/driver-service:vps",
@@ -350,6 +403,8 @@
         "LOCATION_SERVICE_ADDRESS": "location-service:50054",
         "MEDIA_SERVICE_ADDRESS": "media-service:50062",
         "NOTIFICATION_SERVICE_ADDRESS": "notification-service:50059",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "PRICING_SERVICE_ADDRESS": "pricing-service:50057",
         "RIDER_SERVICE_ADDRESS": "rider-service:50052",
         "STAFF_SERVICE_ADDRESS": "staff-service:50061",
@@ -421,6 +476,8 @@
         "METRICS_ADDRESS": ":9090",
         "NATS_URL": "nats://nats:4222",
         "NOTIFICATION_SERVICE_ADDRESS": "notification-service:50059",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "OTP_HASH_SECRET": "${OTP_HASH_SECRET:?run scripts/deploy/init-instance.sh}",
         "RIDER_SERVICE_ADDRESS": "rider-service:50052",
         "SUPPORT_SERVICE_ADDRESS": "support-service:50063",
@@ -550,6 +607,8 @@
         "METRICS_ADDRESS": ":9094",
         "NOMINATIM_BASE_URL": "http://nominatim:8080",
         "OSRM_BASE_URL": "http://osrm:5000",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "RIDER_SERVICE_ADDRESS": "rider-service:50052",
         "STAFF_SERVICE_ADDRESS": "staff-service:50061",
         "VALKEY_ADDRESS": "location-valkey:6379",
@@ -664,6 +723,8 @@
         "ENVIRONMENT": "production",
         "GRPC_ADDRESS": ":50062",
         "METRICS_ADDRESS": ":9102",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "S3_ACCESS_KEY": "${S3_ACCESS_KEY}",
         "S3_ENDPOINT": "http://seaweedfs:8333",
         "S3_PUBLIC_ENDPOINT": "${S3_PUBLIC_ENDPOINT:-http://127.0.0.1:8333}",
@@ -937,6 +998,8 @@
         "GRPC_ADDRESS": ":50059",
         "METRICS_ADDRESS": ":9099",
         "NATS_URL": "nats://nats:4222",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "RIDER_SERVICE_ADDRESS": "rider-service:50052",
         "SOS_WEBHOOK_SECRET": "${SOS_WEBHOOK_SECRET:?run scripts/deploy/init-instance.sh}",
         "TRIP_SERVICE_ADDRESS": "trip-service:50055"
@@ -1215,6 +1278,8 @@
         "METRICS_ADDRESS": ":9097",
         "NATS_URL": "nats://nats:4222",
         "OSRM_BASE_URL": "http://osrm:5000",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "RIDER_SERVICE_ADDRESS": "rider-service:50052",
         "STAFF_SERVICE_ADDRESS": "staff-service:50061",
         "TRIP_SERVICE_ADDRESS": "trip-service:50055"
@@ -1337,7 +1402,9 @@
         "GRPC_ADDRESS": ":50052",
         "MEDIA_SERVICE_ADDRESS": "media-service:50062",
         "METRICS_ADDRESS": ":9092",
-        "NATS_URL": "nats://nats:4222"
+        "NATS_URL": "nats://nats:4222",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}"
       },
       "image": "ride-platform/rider-service:vps",
       "logging": {
@@ -1448,7 +1515,9 @@
         "ENVIRONMENT": "production",
         "GRPC_ADDRESS": ":50061",
         "IDENTITY_SERVICE_ADDRESS": "identity-service:50051",
-        "METRICS_ADDRESS": ":9101"
+        "METRICS_ADDRESS": ":9101",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}"
       },
       "image": "ride-platform/staff-service:vps",
       "logging": {
@@ -1603,6 +1672,8 @@
         "MEDIA_SERVICE_ADDRESS": "media-service:50062",
         "METRICS_ADDRESS": ":9103",
         "NATS_URL": "nats://nats:4222",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "RIDER_SERVICE_ADDRESS": "rider-service:50052",
         "STAFF_SERVICE_ADDRESS": "staff-service:50061",
         "TRIP_SERVICE_ADDRESS": "trip-service:50055",
@@ -1741,6 +1812,8 @@
         "MEDIA_SERVICE_ADDRESS": "media-service:50062",
         "METRICS_ADDRESS": ":9095",
         "NATS_URL": "nats://nats:4222",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "PRICING_SERVICE_ADDRESS": "pricing-service:50057",
         "RIDER_SERVICE_ADDRESS": "rider-service:50052",
         "WALLET_SERVICE_ADDRESS": "wallet-service:50058"
@@ -1885,6 +1958,8 @@
         "IDENTITY_SERVICE_ADDRESS": "identity-service:50051",
         "METRICS_ADDRESS": ":9098",
         "NATS_URL": "nats://nats:4222",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
+        "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
         "RIDER_SERVICE_ADDRESS": "rider-service:50052",
         "STAFF_SERVICE_ADDRESS": "staff-service:50061",
         "TRIP_SERVICE_ADDRESS": "trip-service:50055",
@@ -1918,6 +1993,7 @@
     }
   },
   "volumes": {
+    "alloy-data": {},
     "identity-valkey-data": {
       "name": "compose_identity-valkey-data"
     },

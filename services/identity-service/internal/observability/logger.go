@@ -34,7 +34,7 @@ func NewLogger(
 		},
 	)
 
-	return slog.New(handler).With(
+	return slog.New(NewTraceLogHandler(handler)).With(
 		"service", serviceName,
 		"environment", environment,
 	)

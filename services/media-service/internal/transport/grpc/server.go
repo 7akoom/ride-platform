@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"fmt"
+	"github.com/7akoom/ride-platform/services/media-service/internal/observability"
 	"log/slog"
 	"net"
 	"strings"
@@ -36,6 +37,7 @@ func NewServer(
 
 	// A data export ZIP reaches StoreFile in one message (up to 64 MB).
 	serverOptions := []googlegrpc.ServerOption{googlegrpc.MaxRecvMsgSize(maxStoredFileMessage)}
+	serverOptions = append(serverOptions, observability.GRPCServerOption())
 
 	if len(unaryInterceptors) > 0 {
 		serverOptions = append(

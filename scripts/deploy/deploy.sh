@@ -12,6 +12,12 @@ value() { sed -n "s/^$1=//p" instance/instance.env | tail -1; }
 
 bash scripts/deploy/preflight.sh
 
+# Monitoring (the Alloy agent) runs once enable-monitoring.sh wrote its credentials.
+if [ -s instance/monitoring.env ]; then
+  COMPOSE+=(--profile monitoring)
+  echo "==> monitoring is on (Grafana Cloud)"
+fi
+
 # Instances made before P13 have no providers folder; notification mounts it.
 [ -d instance/providers ] || { mkdir -p instance/providers && chmod 755 instance/providers; }
 

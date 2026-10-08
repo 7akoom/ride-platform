@@ -34,6 +34,8 @@ fi
 echo "==> $API"
 check "a protected route without a token (nginx -> gateway -> service)" 401 "$(status "$API/v1/me")"
 check "an unknown route" 404 "$(status "$API/v1/nothing-here")"
+request_id="$(curl -s -o /dev/null -D - "$API/v1/me" | tr -d '\r' | sed -n 's/^[Xx]-[Rr]equest-[Ii]d: //p')"
+check "every answer carries its request id (X-Request-Id)" ok "$( [[ "$request_id" =~ ^[0-9a-f]{32}$ ]] && echo ok || echo "'$request_id'")"
 check "TLS certificate is valid" 0 "$(curl -s -o /dev/null "$API/v1/me"; echo $?)"
 files_code="$(status "$FILES/")"
 case "$files_code" in 200|403) check "the file store answers through nginx" ok ok ;; *) check "the file store answers through nginx" "200 or 403" "$files_code" ;; esac

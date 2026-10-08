@@ -45,11 +45,19 @@ func run() int {
 	}
 
 	logger := slog.New(
-		slog.NewJSONHandler(os.Stdout, nil),
+		observability.NewTraceLogHandler(slog.NewJSONHandler(os.Stdout, nil)),
 	).With(
 		"service", cfg.ServiceName,
 		"environment", cfg.Environment,
 	)
+
+	tracingRuntime, err := observability.NewTracingRuntime(context.Background(), cfg.ServiceName, cfg.Environment)
+	if err != nil {
+		logger.Error("invalid tracing configuration", "error", err)
+
+		return 1
+	}
+	defer tracingRuntime.Close(logger)
 
 	metricsRuntime, err := observability.NewMetricsRuntime(cfg.ServiceName, cfg.MetricsAddress)
 	if err != nil {
@@ -119,6 +127,7 @@ func run() int {
 	riderConn, err := grpc.NewClient(
 		cfg.RiderServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		observability.GRPCClientOption(),
 		grpc.WithUnaryInterceptor(
 			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
 		),
@@ -133,6 +142,7 @@ func run() int {
 	driverConn, err := grpc.NewClient(
 		cfg.DriverServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		observability.GRPCClientOption(),
 		grpc.WithUnaryInterceptor(
 			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
 		),
@@ -149,6 +159,7 @@ func run() int {
 	staffConn, err := grpc.NewClient(
 		cfg.StaffServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		observability.GRPCClientOption(),
 		grpc.WithUnaryInterceptor(
 			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
 		),
@@ -183,6 +194,7 @@ func run() int {
 		cfg.GRPCAddress,
 		logger,
 		metricsInterceptor,
+		observability.ErrorLogUnaryServerInterceptor(logger),
 		grpcserver.NewAuthenticationUnaryInterceptor(accessTokenVerifier, cfg.InternalServiceToken),
 		grpcserver.NewAuthorizationUnaryInterceptor(profileResolver, clients.NewStaffAuthorizer(staffConn, logger)),
 		grpcserver.NewRateLimitUnaryInterceptor(rateLimitConfig.RequestsPerSecond, rateLimitConfig.Burst),

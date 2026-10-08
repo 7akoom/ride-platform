@@ -1,0 +1,120 @@
+// Grafana Alloy on the server: sends this instance's traces, metrics and
+// service logs to Grafana Cloud over OTLP.
+// config.alloy is GENERATED from config.alloy.template by
+// scripts/tools/gen-vps-compose.py (it fills in the services' metrics
+// addresses); edit the template, then run the generator.
+// Credentials come from instance/monitoring.env
+// (scripts/deploy/enable-monitoring.sh writes it).
+
+otelcol.auth.basic "grafana_cloud" {
+  username = sys.env("GRAFANA_CLOUD_INSTANCE_ID")
+  password = sys.env("GRAFANA_CLOUD_API_TOKEN")
+}
+
+otelcol.exporter.otlphttp "grafana_cloud" {
+  client {
+    endpoint = sys.env("GRAFANA_CLOUD_OTLP_ENDPOINT")
+    auth     = otelcol.auth.basic.grafana_cloud.handler
+  }
+}
+
+otelcol.processor.batch "default" {
+  output {
+    metrics = [otelcol.exporter.otlphttp.grafana_cloud.input]
+    logs    = [otelcol.exporter.otlphttp.grafana_cloud.input]
+    traces  = [otelcol.exporter.otlphttp.grafana_cloud.input]
+  }
+}
+
+// Traces: the services and the gateway send them here
+// (OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4317 in instance/instance.env).
+otelcol.receiver.otlp "services" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+
+  output {
+    traces = [otelcol.processor.batch.default.input]
+  }
+}
+
+// Metrics: every service's /metrics (requests, durations, errors, outbox).
+prometheus.scrape "services" {
+  targets = [
+    {"__address__" = "analytics-service:9100", "service" = "analytics-service"},
+    {"__address__" = "dispatch-service:9096", "service" = "dispatch-service"},
+    {"__address__" = "driver-service:9093", "service" = "driver-service"},
+    {"__address__" = "identity-service:9090", "service" = "identity-service"},
+    {"__address__" = "location-service:9094", "service" = "location-service"},
+    {"__address__" = "media-service:9102", "service" = "media-service"},
+    {"__address__" = "notification-service:9099", "service" = "notification-service"},
+    {"__address__" = "pricing-service:9097", "service" = "pricing-service"},
+    {"__address__" = "rider-service:9092", "service" = "rider-service"},
+    {"__address__" = "staff-service:9101", "service" = "staff-service"},
+    {"__address__" = "support-service:9103", "service" = "support-service"},
+    {"__address__" = "trip-service:9095", "service" = "trip-service"},
+    {"__address__" = "wallet-service:9098", "service" = "wallet-service"},
+  ]
+  scrape_interval = "30s"
+  forward_to      = [otelcol.receiver.prometheus.default.receiver]
+}
+
+otelcol.receiver.prometheus "default" {
+  output {
+    metrics = [otelcol.processor.batch.default.input]
+  }
+}
+
+// Logs: Docker's log files, but only the JSON lines our services and the
+// gateway write ("service" is gateway or *-service). Everything else on the
+// server (databases, other sites' containers) stays here.
+local.file_match "containers" {
+  path_targets = [{"__path__" = "/var/lib/docker/containers/*/*-json.log"}]
+}
+
+loki.source.file "containers" {
+  targets    = local.file_match.containers.targets
+  forward_to = [loki.process.services.receiver]
+}
+
+loki.process "services" {
+  stage.docker {}
+
+  stage.json {
+    expressions = {
+      service  = "service",
+      level    = "level",
+      trace_id = "trace_id",
+    }
+  }
+
+  stage.labels {
+    values = {
+      service = "",
+      level   = "",
+    }
+  }
+
+  stage.match {
+    selector = "{service!~\"gateway|[a-z]+-service\"}"
+    action   = "drop"
+  }
+
+  stage.structured_metadata {
+    values = {
+      trace_id = "",
+    }
+  }
+
+  stage.label_drop {
+    values = ["filename", "stream"]
+  }
+
+  forward_to = [otelcol.receiver.loki.default.receiver]
+}
+
+otelcol.receiver.loki "default" {
+  output {
+    logs = [otelcol.processor.batch.default.input]
+  }
+}

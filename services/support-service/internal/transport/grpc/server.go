@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"fmt"
+	"github.com/7akoom/ride-platform/services/support-service/internal/observability"
 	"log/slog"
 	"net"
 	"strings"
@@ -33,6 +34,7 @@ func NewServer(
 	}
 
 	serverOptions := make([]googlegrpc.ServerOption, 0, 1)
+	serverOptions = append(serverOptions, observability.GRPCServerOption())
 
 	if len(unaryInterceptors) > 0 {
 		serverOptions = append(
