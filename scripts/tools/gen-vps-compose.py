@@ -38,7 +38,10 @@ ALLOY_OUT = ROOT / "infrastructure/deploy/alloy/config.alloy"
 ALLOY_IMAGE = "grafana/alloy:v1.20.1"
 
 # Memory each container may use (the VPS shares its memory with other sites).
-MEMORY = {"postgres": "1200m", "osrm": "1536m", "seaweedfs": "512m", "nats": "256m", "gateway": "192m", "alloy": "320m"}
+MEMORY = {"postgres": "1200m", "osrm": "1536m", "seaweedfs": "512m", "nats": "256m", "gateway": "192m", "alloy": "320m",
+          # Address search (profile maps, MAPS_SEARCH=on): Postgres inside, about 2 GB
+          # for one country once imported, more while importing.
+          "nominatim": "3g"}
 DEFAULT_SERVICE_MEMORY = "256m"
 SMALL_MEMORY = "128m"
 
@@ -177,6 +180,10 @@ def main():
             svc["mem_limit"] = MEMORY.get(name, DEFAULT_SERVICE_MEMORY)
         else:
             svc["mem_limit"] = MEMORY.get(name, SMALL_MEMORY)
+
+        if name == "nominatim":
+            # The import uses this many processes; a VPS usually has 4 cores.
+            svc.setdefault("environment", {})["THREADS"] = "${NOMINATIM_THREADS:-4}"
 
         if service_dir_of(svc) == "notification-service":
             # The Firebase service-account file (P13), read-only, and only here.

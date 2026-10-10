@@ -111,6 +111,19 @@ fi
 free_gb="$(df -BG --output=avail . | tail -1 | tr -dc 0-9)"
 [ "$free_gb" -ge 10 ] && ok "${free_gb} GB of disk free" || fail "only ${free_gb} GB of disk free (10 GB at least)"
 
+# Address search (MAPS_SEARCH=on) adds Nominatim: about 2 GB of memory and 10 GB of
+# disk for one country, more while it imports the map the first time.
+if [ "$(value MAPS_SEARCH)" = "on" ]; then
+  total_mb="$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)"
+  swap_mb="$(awk '/SwapTotal/ {print int($2/1024)}' /proc/meminfo)"
+  [ "$total_mb" -ge 7000 ] && ok "address search: ${total_mb} MB of memory in all" \
+    || fail "address search needs about 7 GB of memory in all; this server has ${total_mb} MB (or set MAPS_SEARCH=off)"
+  [ "$free_gb" -ge 20 ] && ok "address search: disk for the map" \
+    || fail "address search needs 20 GB of disk free; ${free_gb} GB here"
+  [ "$swap_mb" -ge 2000 ] && ok "swap: ${swap_mb} MB" \
+    || warn "no swap: the first map import may run out of memory (docs/deploy-vps.md, Address search)"
+fi
+
 for key in GATEWAY_PORT FILES_PORT; do
   port="$(value "$key")"
   owner="$(ss -Htlnp "sport = :$port" 2> /dev/null)"

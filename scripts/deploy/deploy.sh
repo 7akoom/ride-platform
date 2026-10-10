@@ -18,6 +18,13 @@ if [ -s instance/monitoring.env ]; then
   echo "==> monitoring is on (Grafana Cloud)"
 fi
 
+# Address search (Nominatim) runs when the instance turns it on: MAPS_SEARCH=on in
+# instance/instance.env. Its first start imports the country's map (about an hour).
+if [ "$(value MAPS_SEARCH)" = "on" ]; then
+  COMPOSE+=(--profile maps)
+  echo "==> address search is on (Nominatim)"
+fi
+
 # Instances made before P13 have no providers folder; notification mounts it.
 [ -d instance/providers ] || { mkdir -p instance/providers && chmod 755 instance/providers; }
 
@@ -54,6 +61,11 @@ if [ -n "$stopped" ]; then
   echo "FAIL: not running:" >&2; echo "$stopped" >&2
   echo "see: docker logs <name>" >&2
   exit 1
+fi
+
+if [ "$(value MAPS_SEARCH)" = "on" ] && ! docker inspect -f '{{.State.Health.Status}}' ride-nominatim 2> /dev/null | grep -q healthy; then
+  echo "NOTE: address search is still importing the map (first time: about an hour)."
+  echo "      Searches answer \"unavailable\" until then. Follow it: docker logs -f ride-nominatim"
 fi
 
 bash scripts/deploy/smoke.sh

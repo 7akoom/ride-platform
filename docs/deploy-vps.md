@@ -6,9 +6,9 @@ but two ports on 127.0.0.1, and nginx sends its two domains there.
 
 What runs: the 13 services and the gateway, one Postgres with PostGIS (a
 database and a role per service), two Valkeys, NATS, SeaweedFS (files) and
-OSRM (roads). Nominatim (address search) is left out: it wants 8 GB of memory
-on its own; searches then return the curated places only. About 3.5 GB of
-memory in all, each container capped.
+OSRM (roads). About 3.5 GB of memory in all, each container capped. Address
+search (Nominatim) is optional, see below: without it riders can only find the
+curated places and pick points on the map.
 
 | Piece | Where |
 |---|---|
@@ -43,6 +43,29 @@ memory in all, each container capped.
    email (`POST /v1/me/identifiers/link-otp`, then `/link`), then accept
    (`POST /v1/staff/me:accept`). On staging both codes are in the log:
    `docker logs ride-identity-service 2>&1 | grep otp_code | tail -1`.
+
+## Address search (Nominatim)
+
+Finding streets and places by name, and naming a point on the map, needs
+Nominatim with the country's map. For one country (Iraq) it takes about 2 GB of
+memory and 10 GB of disk once imported; the first start imports the map, about
+an hour. A server with 8 GB of memory runs it beside everything else.
+
+1. Swap, so the import cannot run out of memory (once per server):
+   ```
+   sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile
+   sudo mkswap /swapfile && sudo swapon /swapfile
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+   ```
+2. `echo MAPS_SEARCH=on >> instance/instance.env`
+3. `bash scripts/deploy/deploy.sh`, then follow the import:
+   `docker logs -f ride-nominatim` (done when it says it is listening;
+   `docker ps` then shows it healthy). Until then searches answer
+   "unavailable".
+
+The map is the country's OpenStreetMap extract from Geofabrik
+(`PBF_URL` in `infrastructure/compose/compose.yaml`); `NOMINATIM_THREADS`
+(default 4) sets how many cores the import uses.
 
 ## Updates
 

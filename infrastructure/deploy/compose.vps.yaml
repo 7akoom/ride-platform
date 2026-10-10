@@ -903,7 +903,7 @@
         "POSTGRES_SHARED_BUFFERS": "1GB",
         "POSTGRES_WORK_MEM": "50MB",
         "REPLICATION_URL": "https://download.geofabrik.de/asia/iraq-updates/",
-        "THREADS": "6",
+        "THREADS": "${NOMINATIM_THREADS:-4}",
         "UPDATE_MODE": "once"
       },
       "healthcheck": {
@@ -924,7 +924,7 @@
           "max-size": "10m"
         }
       },
-      "mem_limit": "128m",
+      "mem_limit": "3g",
       "networks": {
         "default": null
       },
