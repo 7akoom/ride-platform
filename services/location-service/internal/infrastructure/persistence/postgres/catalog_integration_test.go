@@ -62,7 +62,7 @@ func testPool(t *testing.T) *pgxpool.Pool {
 	}
 
 	dropAll := func() {
-		psql("DROP TABLE IF EXISTS curated_places, zones, cities CASCADE;")
+		psql("DROP TABLE IF EXISTS imported_places, curated_places, zones, cities CASCADE; DROP FUNCTION IF EXISTS place_search_text(TEXT);")
 	}
 
 	dropAll()

@@ -112,11 +112,13 @@ func run() int {
 	cityService := city.NewService(postgresrepo.NewCityStore(pool), identifier.NewUUIDGenerator())
 	placeService := place.NewService(postgresrepo.NewPlaceStore(pool), identifier.NewUUIDGenerator())
 
-	// Curated places come before map results in search.
-	mapsService := maps.NewServiceWithCurated(
+	// Search: curated places first, then places imported from the open places
+	// dataset (scripts/tools/import-places), then the map's own results.
+	mapsService := maps.NewServiceWithSources(
 		routing.NewOSRMClient(mapsConfig.OSRMBaseURL, mapsConfig.Timeout),
 		geocoding.NewNominatimClient(mapsConfig.NominatimBaseURL, mapsConfig.CountryCodes, mapsConfig.Timeout),
 		placeService,
+		postgresrepo.NewImportedPlaceStore(pool),
 		logger,
 	)
 

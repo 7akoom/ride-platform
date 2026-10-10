@@ -67,6 +67,38 @@ The map is the country's OpenStreetMap extract from Geofabrik
 (`PBF_URL` in `infrastructure/compose/compose.yaml`); `NOMINATIM_THREADS`
 (default 4) sets how many cores the import uses.
 
+## Places for search (Overture Maps)
+
+The map knows streets well but few shops, restaurants and offices. Search also
+looks in places imported from Overture Maps (https://overturemaps.org), an open
+places dataset (CDLA Permissive 2.0 / Apache 2.0; much of it from businesses'
+own pages). They come after curated places and before the map's results.
+
+Nothing names a city or a country: the import takes what lies inside the
+instance's **active zones of active cities**, so another governorate or country
+only needs its cities and zones, then a run.
+
+1. The instance's cities and zones exist (admin: `/v1/admin/cities`,
+   `/v1/admin/zones`).
+2. `bash scripts/deploy/import-places.sh --dry-run` reads and counts (a few
+   minutes: it reads the dataset's files from S3 for the zones' area).
+3. `bash scripts/deploy/import-places.sh` imports. Every run replaces the last
+   import in one step, so search never sees it empty; curated places are never
+   touched.
+
+Run it again when zones change, and monthly for fresh data (Overture releases
+monthly; the latest is found by itself, `--release` picks one), for example
+from cron on the first of the month:
+`0 3 1 * * cd ~/ride-platform && bash scripts/deploy/import-places.sh >> /var/log/ride-places.log 2>&1`
+
+Settings: `instance/places-import.json` with any keys of
+`scripts/tools/import-places/defaults.json`, the rest staying default: the
+lowest confidence kept (`min_confidence`), categories never imported
+(`exclude_categories`), how categories map to the apps' kinds (`kinds`), how
+strongly each kind ranks (`kind_weights`, `category_weights`), and when two
+near places are one (`dedupe_meters`, `dedupe_similarity`). Credit "Overture Maps Foundation"
+with the map credits in the apps.
+
 ## Updates
 
 `git pull && bash scripts/deploy/deploy.sh` — builds what changed, applies

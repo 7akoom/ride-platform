@@ -1,0 +1,36 @@
+{
+  "_comment": "Defaults for scripts/tools/import-places. An instance changes any of them in instance/places-import.json (only the keys it sets).",
+
+  "min_confidence": 0.5,
+  "skip_statuses": ["permanently_closed", "temporarily_closed"],
+
+  "_comment_exclude": "The dataset's categories never imported (basic_category).",
+  "exclude_categories": [],
+
+  "_comment_kinds": "What the apps show a place as: the first kind whose words appear in its category. Anything else is 'other'.",
+  "kinds": [
+    ["airport", ["airport"]],
+    ["mall", ["shopping_mall", "shopping_center", "mall"]],
+    ["hospital", ["hospital", "medical_center", "emergency"]],
+    ["university", ["college_university", "university", "college"]],
+    ["hotel", ["hotel", "resort", "motel", "hostel"]],
+    ["station", ["bus_station", "train_station", "transit", "terminal"]],
+    ["government", ["government", "embassy", "consulate", "city_hall", "courthouse", "police"]],
+    ["landmark", ["monument", "historic", "landmark", "museum", "park", "tourist", "castle", "mosque", "church", "place_of_worship", "stadium"]],
+    ["restaurant", ["restaurant", "cafe", "coffee", "eatery", "bakery", "food"]]
+  ],
+
+  "_comment_weights": "How strongly each kind ranks in search; category_weights override it for one category.",
+  "kind_weights": {
+    "airport": 2.0, "mall": 2.0, "landmark": 1.8, "hospital": 1.8, "university": 1.6,
+    "station": 1.5, "government": 1.4, "hotel": 1.4, "restaurant": 1.0, "other": 0.8
+  },
+  "category_weights": {
+    "real_estate_service": 0.3,
+    "attorney_or_law_firm": 0.3
+  },
+
+  "_comment_dedupe": "Places closer than this with the same or nearly the same name are one place (the more confident is kept).",
+  "dedupe_meters": 150,
+  "dedupe_similarity": 0.8
+}

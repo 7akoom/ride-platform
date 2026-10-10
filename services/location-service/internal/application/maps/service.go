@@ -27,11 +27,9 @@ type service struct {
 	router   Router
 	geocoder Geocoder
 	curated  CuratedSearcher
+	imported ImportedSearcher
 	logger   *slog.Logger
 }
-
-// dedupeMeters: a map result this close to a curated place is the same place.
-const dedupeMeters = 75
 
 func NewService(router Router, geocoder Geocoder) Service {
 	if router == nil {
@@ -56,6 +54,26 @@ func NewServiceWithCurated(router Router, geocoder Geocoder, curated CuratedSear
 	s := NewService(router, geocoder).(*service)
 	s.curated = curated
 	s.logger = logger
+
+	return s
+}
+
+// NewServiceWithSources also searches imported places, which come after
+// curated places and before the map's own results. As with curated places, a
+// source that fails is logged and the others still answer.
+func NewServiceWithSources(
+	router Router,
+	geocoder Geocoder,
+	curated CuratedSearcher,
+	imported ImportedSearcher,
+	logger *slog.Logger,
+) Service {
+	if imported == nil {
+		panic("imported searcher is required")
+	}
+
+	s := NewServiceWithCurated(router, geocoder, curated, logger).(*service)
+	s.imported = imported
 
 	return s
 }
@@ -163,52 +181,46 @@ func (s *service) SearchPlaces(ctx context.Context, input SearchInput) ([]Place,
 		}
 	}
 
-	var curated []Place
-
-	if s.curated != nil {
-		found, err := s.curated.SearchCurated(ctx, query, input.Near, limit, strings.Split(languages, ","))
-		if err != nil {
-			s.logger.Error("curated place search failed", "error", err)
-		}
-
-		curated = found
-	}
+	curated := s.searchCurated(ctx, query, input.Near, limit, languages)
+	imported := s.searchImported(ctx, query, input.Near, limit)
 
 	places, err := s.geocoder.Search(ctx, query, input.Near, limit, languages)
 	if err != nil {
-		if len(curated) == 0 {
+		if len(curated) == 0 && len(imported) == 0 {
 			return nil, err
 		}
 
-		s.logger.Warn("map place search failed; answering with curated places only", "error", err)
+		s.logger.Warn("map place search failed; answering with the other sources", "error", err)
 		places = nil
 	}
 
-	merged := make([]Place, 0, limit)
-	merged = append(merged, curated...)
-
-	for _, place := range places {
-		if !nearAny(place.Coordinates, curated, dedupeMeters) {
-			merged = append(merged, place)
-		}
-	}
-
-	// However many the sources return, never more than asked for.
-	if len(merged) > limit {
-		merged = merged[:limit]
-	}
-
-	return merged, nil
+	return mergeResults(curated, imported, places, limit), nil
 }
 
-func nearAny(point Coordinates, places []Place, meters float64) bool {
-	for _, p := range places {
-		if DistanceMeters(point, p.Coordinates) <= meters {
-			return true
-		}
+func (s *service) searchCurated(ctx context.Context, query string, near *Coordinates, limit int, languages string) []Place {
+	if s.curated == nil {
+		return nil
 	}
 
-	return false
+	found, err := s.curated.SearchCurated(ctx, query, near, limit, strings.Split(languages, ","))
+	if err != nil {
+		s.logger.Error("curated place search failed", "error", err)
+	}
+
+	return found
+}
+
+func (s *service) searchImported(ctx context.Context, query string, near *Coordinates, limit int) []Place {
+	if s.imported == nil {
+		return nil
+	}
+
+	found, err := s.imported.SearchImported(ctx, query, near, limit)
+	if err != nil {
+		s.logger.Error("imported place search failed", "error", err)
+	}
+
+	return found
 }
 
 // DistanceMeters is the great-circle distance between two points.

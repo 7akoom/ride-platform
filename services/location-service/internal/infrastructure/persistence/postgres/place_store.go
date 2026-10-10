@@ -223,32 +223,31 @@ func (s *PlaceStore) List(ctx context.Context, filter place.Filter) ([]place.Pla
 }
 
 // Search matches the query inside any name (or close to it, by trigrams),
-// in active places of active cities. A name containing the query ranks above
-// a merely similar one; then closer places (by 2 km steps) and higher
-// priority come first.
+// in active places of active cities, both compared through
+// place_search_text (letters written differently in Arabic and Kurdish made
+// the same). A name containing the query ranks above a merely similar one;
+// then closer places (by 2 km steps) and higher priority come first.
 func (s *PlaceStore) Search(ctx context.Context, query string, near *place.Coordinates, limit int) ([]place.Match, error) {
-	lowered := strings.ToLower(query)
-	pattern := "%" + escapeLike(lowered) + "%"
-
 	distance := "0::float8"
-	args := []any{lowered, pattern, limit}
+	args := []any{query, limit}
 
 	if near != nil {
 		args = append(args, pointWKT(*near))
-		distance = "ST_Distance(p.location, ST_GeogFromText($4))"
+		distance = "ST_Distance(p.location, ST_GeogFromText($3))"
 	}
 
 	rows, err := s.pool.Query(ctx, `
 		SELECT `+placeColumns+`, `+distance+` AS distance
 		FROM `+placeFrom+`
 		WHERE p.active AND c.active
-		  AND (p.search_text LIKE $2 ESCAPE '\' OR p.search_text % $1)
-		ORDER BY (p.search_text LIKE $2 ESCAPE '\') DESC,
+		  AND (strpos(p.search_text, place_search_text($1)) > 0
+		       OR p.search_text % place_search_text($1))
+		ORDER BY (strpos(p.search_text, place_search_text($1)) > 0) DESC,
 		         floor(`+distance+` / 2000),
 		         p.priority DESC,
-		         similarity(p.search_text, $1) DESC,
+		         similarity(p.search_text, place_search_text($1)) DESC,
 		         p.id
-		LIMIT $3`,
+		LIMIT $2`,
 		args...,
 	)
 	if err != nil {
@@ -275,8 +274,4 @@ func (s *PlaceStore) Search(ctx context.Context, query string, near *place.Coord
 	}
 
 	return matches, nil
-}
-
-func escapeLike(value string) string {
-	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(value)
 }

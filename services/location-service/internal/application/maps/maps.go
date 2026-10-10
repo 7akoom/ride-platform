@@ -83,7 +83,8 @@ type TravelTimesInput struct {
 
 // Place is somewhere on the map: a named place, a street, an address.
 type Place struct {
-	// ID is the OpenStreetMap object, for example "way/123456".
+	// ID is the OpenStreetMap object, for example "way/123456"; "curated/<id>"
+	// for a curated place and "imported/<id>" for an imported one.
 	ID string
 
 	// Name is the short name (a mall, a street); DisplayName is the full one with
@@ -135,6 +136,12 @@ type ReverseInput struct {
 // search. languages is the ordered preference for names ("ar", "ku", "en").
 type CuratedSearcher interface {
 	SearchCurated(ctx context.Context, query string, near *Coordinates, limit int, languages []string) ([]Place, error)
+}
+
+// ImportedSearcher finds places imported from an open places dataset (see
+// scripts/tools/import-places) matching a search, best match first.
+type ImportedSearcher interface {
+	SearchImported(ctx context.Context, query string, near *Coordinates, limit int) ([]Place, error)
 }
 
 // Router is the port to the routing engine (OSRM).

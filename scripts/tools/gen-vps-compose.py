@@ -20,6 +20,7 @@ that also runs other sites:
     development machine is needed
   - restart unless-stopped, memory limits, rotated logs
   - a "migrate" tool (profile tools) runs goose on every database
+  - a "places-import" tool (profile tools) imports places for search
   - an "alloy" agent (profile monitoring) sends traces, metrics and the
     services' logs to Grafana Cloud; its config, alloy/config.alloy, is
     written here too, from alloy/config.alloy.template, with every
@@ -41,7 +42,9 @@ ALLOY_IMAGE = "grafana/alloy:v1.20.1"
 MEMORY = {"postgres": "1200m", "osrm": "1536m", "seaweedfs": "512m", "nats": "256m", "gateway": "192m", "alloy": "320m",
           # Address search (profile maps, MAPS_SEARCH=on): Postgres inside, about 2 GB
           # for one country once imported, more while importing.
-          "nominatim": "3g"}
+          "nominatim": "3g",
+          # The place import reads the dataset with DuckDB (limited to 768 MB).
+          "places-import": "1g"}
 DEFAULT_SERVICE_MEMORY = "256m"
 SMALL_MEMORY = "128m"
 
@@ -222,6 +225,28 @@ def main():
         "entrypoint": ["sh", "/migrate.sh"],
         "depends_on": {"postgres": {"condition": "service_healthy", "required": True}},
         "restart": "no",
+    }
+
+    # Places for search from an open dataset (Overture Maps), for the instance's
+    # own zones: scripts/deploy/import-places.sh. Only the location database's
+    # credentials, and the instance's optional settings file.
+    out["services"]["places-import"] = {
+        "build": {"context": "../../scripts/tools/import-places"},
+        "image": "ride-platform/places-import:vps",
+        "profiles": ["tools"],
+        "environment": {
+            "DB_HOST": "postgres",
+            "PLACES_IMPORT_SETTINGS": "/config/places-import.json",
+            **{f"LOCATION_DB_{k}": f"${{LOCATION_DB_{k}}}" for k in ("NAME", "USER", "PASSWORD")},
+        },
+        "volumes": [
+            {"type": "bind", "source": "../../instance/places-import.json",
+             "target": "/config/places-import.json", "read_only": True},
+        ],
+        "depends_on": {"postgres": {"condition": "service_healthy", "required": True}},
+        "restart": "no",
+        "logging": LOGGING,
+        "mem_limit": MEMORY["places-import"],
     }
 
     out["services"]["alloy"] = {
