@@ -1,0 +1,214 @@
+<!doctype html>
+<!--
+  The page a shared-trip link opens (https://<api domain>/t/#<token>). The token is
+  in the fragment, so it never reaches a server log; the page reads the trip from
+  GET /v1/shared-trips/{token} on the same domain every 5 seconds and shows it on the
+  platform's own map. scripts/deploy/share-page.sh fills in __TILES_ORIGIN__ and puts
+  it in place. Text goes in with textContent only: names and addresses come from users.
+-->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: __TILES_ORIGIN__; connect-src 'self' __TILES_ORIGIN__ https://unpkg.com; worker-src blob:; child-src blob:">
+<title>Ride</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>
+<style>
+  :root { --brand: #F3D59A; --ink: #05070F; --surface: #FFFFFF; --muted: #5B6170; --line: #E6E8EC; --ok: #16794C; --bad: #B42318; }
+  html, body { margin: 0; height: 100%; font-family: "IBM Plex Sans Arabic", system-ui, sans-serif; background: #F4F5F7; color: var(--ink); }
+  #map { position: fixed; inset: 0; }
+  .card { position: fixed; left: 12px; right: 12px; bottom: 12px; max-width: 560px; margin: 0 auto; background: var(--surface);
+          border-radius: 20px; box-shadow: 0 8px 28px rgba(5, 7, 15, .18); padding: 16px 18px; }
+  .status { font-size: 18px; font-weight: 700; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0; }
+  .row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .plate { direction: ltr; unicode-bidi: isolate; border: 1px solid var(--ink); border-radius: 6px; padding: 2px 8px; font-weight: 700; letter-spacing: 1px; white-space: nowrap; }
+  .grow { flex: 1; min-width: 0; }
+  .name { font-weight: 700; }
+  .route { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; font-size: 14px; }
+  .route p { margin: 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-inline-end: 8px; vertical-align: middle; }
+  .gone { color: var(--bad); }
+  .done { color: var(--ok); }
+  .car { width: 40px; height: 40px; transition: transform .8s linear; }
+  .pin { width: 14px; height: 14px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="card">
+  <p class="status" id="status"></p>
+  <p class="sub" id="updated"></p>
+  <div class="row" id="captain" hidden>
+    <div class="grow"><div class="name" id="name"></div><div class="sub" id="car"></div></div>
+    <span class="plate" id="plate"></span>
+  </div>
+  <div class="route" id="route" hidden>
+    <p><span class="dot" style="background: var(--ink)"></span><span id="from"></span></p>
+    <p><span class="dot" style="background: var(--brand)"></span><span id="to"></span></p>
+  </div>
+</div>
+<script>
+(function () {
+  "use strict";
+  var TILES = "__TILES_ORIGIN__";
+  var EVERY = 5000;
+  var TEXT = {
+    ar: { loading: "جارٍ تحميل الرحلة…", requested: "بانتظار كابتن", coming: "الكابتن في الطريق إلى نقطة الانطلاق",
+          arrived: "وصل الكابتن إلى نقطة الانطلاق", onTrip: "الرحلة جارية", completed: "وصلت الرحلة بالسلامة",
+          cancelled: "أُلغيت الرحلة", gone: "هذا الرابط لم يعد يعمل.", offline: "تعذّر التحديث، نحاول مجدداً…",
+          updated: "آخر تحديث ", from: "من: ", to: "إلى: ", pinned: "نقطة على الخريطة" },
+    ku: { loading: "گەشتەکە بار دەکرێت…", requested: "چاوەڕێی کاپتن", coming: "کاپتن لە ڕێگایە بۆ خاڵی دەستپێکردن",
+          arrived: "کاپتن گەیشتە خاڵی دەستپێکردن", onTrip: "گەشتەکە بەردەوامە", completed: "گەشتەکە بە سەلامەتی گەیشت",
+          cancelled: "گەشتەکە هەڵوەشێنرایەوە", gone: "ئەم بەستەرە چیتر کار ناکات.", offline: "نوێکردنەوە نەکرا، دووبارە هەوڵ دەدەینەوە…",
+          updated: "دوایین نوێکردنەوە ", from: "لە: ", to: "بۆ: ", pinned: "خاڵێک لەسەر نەخشە" },
+    en: { loading: "Loading the trip…", requested: "Waiting for a captain", coming: "The captain is on the way to the pickup",
+          arrived: "The captain is at the pickup", onTrip: "The trip is under way", completed: "The trip arrived safely",
+          cancelled: "The trip was cancelled", gone: "This link no longer works.", offline: "Could not update, trying again…",
+          updated: "Updated ", from: "From: ", to: "To: ", pinned: "A point on the map" }
+  };
+  var asked = (navigator.language || "en").toLowerCase();
+  var lang = asked.indexOf("ar") === 0 ? "ar" : (asked.indexOf("ku") === 0 || asked.indexOf("ckb") === 0 ? "ku" : "en");
+  var t = TEXT[lang];
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "en" ? "ltr" : "rtl";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var token = decodeURIComponent((location.hash || "").slice(1));
+  var timer = null, framed = false, car = null, lastAt = null, heading = 0;
+
+  function show(id, text, cls) { var el = $(id); el.textContent = text; el.className = el.className.split(" ")[0] + (cls ? " " + cls : ""); }
+  function two(n) { return (n < 10 ? "0" : "") + n; }
+  function clock(d) { return two(d.getHours()) + ":" + two(d.getMinutes()); }
+  function point(c) { return c && typeof c.latitude === "number" ? [c.longitude, c.latitude] : null; }
+
+  show("status", t.loading);
+  if (!/^[A-Za-z0-9_-]{20,128}$/.test(token)) { show("status", t.gone, "gone"); return; }
+
+  if (window.maplibregl) {
+    maplibregl.setRTLTextPlugin("https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.3.0/dist/mapbox-gl-rtl-text.js", true);
+    var protocol = new pmtiles.Protocol();
+    maplibregl.addProtocol("pmtiles", protocol.tile);
+  }
+  var map = window.maplibregl ? new maplibregl.Map({
+    container: "map",
+    style: TILES + "/styles/light-" + (lang === "en" ? "en" : "ar") + ".json",
+    center: [44.0092, 36.1911], zoom: 12, attributionControl: { compact: true }
+  }) : null;
+
+  function marker(lngLat, color) {
+    var el = document.createElement("div");
+    el.className = "pin";
+    el.style.background = color;
+    return new maplibregl.Marker({ element: el }).setLngLat(lngLat).addTo(map);
+  }
+
+  function carElement() {
+    var ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 100 100");
+    svg.setAttribute("class", "car");
+    var parts = [
+      ["rect", { x: 25.5, y: 20, width: 8, height: 15, rx: 2.5, fill: "#05070F" }], ["rect", { x: 66.5, y: 20, width: 8, height: 15, rx: 2.5, fill: "#05070F" }],
+      ["rect", { x: 25.5, y: 64, width: 8, height: 15, rx: 2.5, fill: "#05070F" }], ["rect", { x: 66.5, y: 64, width: 8, height: 15, rx: 2.5, fill: "#05070F" }],
+      ["rect", { x: 29, y: 9, width: 42, height: 80, rx: 12, fill: "#F3D59A", stroke: "#5C461E", "stroke-width": 1.8 }],
+      ["polygon", { points: "37,31 63,31 66,42 34,42", fill: "#2A2C33" }], ["rect", { x: 33.5, y: 42, width: 33, height: 24, rx: 4, fill: "#E8C480" }],
+      ["polygon", { points: "34.5,66 65.5,66 63,75 37,75", fill: "#2A2C33" }],
+      ["rect", { x: 33, y: 10.5, width: 8, height: 2.5, rx: 1.2, fill: "#FFF3D1" }], ["rect", { x: 59, y: 10.5, width: 8, height: 2.5, rx: 1.2, fill: "#FFF3D1" }],
+      ["rect", { x: 33, y: 85.5, width: 8, height: 2, rx: 1, fill: "#DC2832" }], ["rect", { x: 59, y: 85.5, width: 8, height: 2, rx: 1, fill: "#DC2832" }]
+    ];
+    parts.forEach(function (p) {
+      var el = document.createElementNS(ns, p[0]);
+      Object.keys(p[1]).forEach(function (k) { el.setAttribute(k, p[1][k]); });
+      svg.appendChild(el);
+    });
+    return svg;
+  }
+
+  function bearing(a, b) {
+    var dx = (b[0] - a[0]) * Math.cos(a[1] * Math.PI / 180), dy = b[1] - a[1];
+    return (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+  }
+
+  function moveCar(at) {
+    if (!map) { return; }
+    if (!at) { if (car) { car.remove(); car = null; } return; }
+    if (!car) { car = new maplibregl.Marker({ element: carElement(), rotationAlignment: "map" }).setLngLat(at).addTo(map); }
+    if (lastAt && (Math.abs(at[0] - lastAt[0]) + Math.abs(at[1] - lastAt[1]) > 0.00003)) { heading = bearing(lastAt, at); }
+    car.setLngLat(at).setRotation(heading);
+    lastAt = at;
+  }
+
+  var pins = [];
+  function draw(trip) {
+    var pickup = point(trip.pickup), dropoff = point(trip.dropoff), at = point(trip.driverLocation);
+    if (map && !framed && pickup && dropoff) {
+      pins.push(marker(pickup, "#05070F"), marker(dropoff, "#F3D59A"));
+      var bounds = new maplibregl.LngLatBounds(pickup, pickup).extend(dropoff);
+      if (at) { bounds.extend(at); }
+      map.fitBounds(bounds, { padding: { top: 60, left: 40, right: 40, bottom: 240 }, maxZoom: 15, duration: 0 });
+      framed = true;
+    }
+    moveCar(at);
+  }
+
+  function statusOf(trip) {
+    switch (trip.status) {
+      case "TRIP_STATUS_ACCEPTED": return [trip.arrivedAt ? t.arrived : t.coming, ""];
+      case "TRIP_STATUS_IN_PROGRESS": return [t.onTrip, ""];
+      case "TRIP_STATUS_COMPLETED": return [t.completed, "done"];
+      case "TRIP_STATUS_CANCELLED": return [t.cancelled, "gone"];
+      default: return [t.requested, ""];
+    }
+  }
+
+  function render(trip) {
+    var s = statusOf(trip);
+    show("status", s[0], s[1]);
+    show("updated", t.updated + clock(new Date()));
+    var v = trip.vehicle || {};
+    if (trip.driverName) {
+      $("captain").hidden = false;
+      show("name", trip.driverName);
+      show("car", [[v.make, v.model].filter(Boolean).join(" "), v.color].filter(Boolean).join(" · "));
+      show("plate", v.plateNumber || "");
+      $("plate").hidden = !v.plateNumber;
+    }
+    $("route").hidden = false;
+    show("from", t.from + (trip.pickupAddress || t.pinned));
+    show("to", t.to + (trip.dropoffAddress || t.pinned));
+    draw(trip);
+    if (trip.status === "TRIP_STATUS_COMPLETED" || trip.status === "TRIP_STATUS_CANCELLED") { moveCar(null); }
+  }
+
+  function poll() {
+    fetch("/v1/shared-trips/" + encodeURIComponent(token), { headers: { Accept: "application/json" }, cache: "no-store" })
+      .then(function (r) {
+        if (r.status === 404 || r.status === 400) { throw { gone: true }; }
+        if (!r.ok) { throw { gone: false }; }
+        return r.json();
+      })
+      .then(function (body) { render(body.trip || {}); })
+      .catch(function (e) {
+        if (e && e.gone) {
+          show("status", t.gone, "gone");
+          $("updated").textContent = "";
+          $("captain").hidden = true;
+          $("route").hidden = true;
+          moveCar(null);
+          clearInterval(timer);
+        } else {
+          show("updated", t.offline);
+        }
+      });
+  }
+
+  poll();
+  timer = setInterval(poll, EVERY);
+})();
+</script>
+</body>
+</html>
