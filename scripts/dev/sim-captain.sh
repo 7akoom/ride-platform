@@ -11,8 +11,8 @@
 # Then, until Ctrl+C:
 #   - online, standing at --at (the middle of Erbil), or 1.5 km from a ride that waits
 #     farther away, so it is the captain dispatch offers it to
-#   - takes the ride, drives to the pickup (the rider sees the car move), says it has
-#     arrived, waits --wait seconds, starts, drives to the destination and completes
+#   - takes the ride, drives to the pickup along the road (the rider sees the car move),
+#     says it has arrived, waits --wait seconds, starts, drives to the destination and completes
 #   - stops following a ride the rider cancels
 # It refuses to run unless instance/instance.env says IDENTITY_APP_ENV=test.
 set -Euo pipefail
@@ -161,17 +161,68 @@ load_trip() { # <trip id>: its status and ends
   D_LAT="$(echo "$BODY" | field trip.dropoff.latitude)"; D_LNG="$(echo "$BODY" | field trip.dropoff.longitude)"
 }
 
-drive() { # <trip> <to lat> <to lng> <steps>: a straight line, a position every 2 s; fails when the ride ended
-  local from_lat="$LAT" from_lng="$LNG" i
-  for i in $(seq 1 "$4"); do
-    report "$(awk -v a="$from_lat" -v b="$2" -v i="$i" -v n="$4" 'BEGIN { printf "%.6f", a + (b - a) * i / n }')" \
-      "$(awk -v a="$from_lng" -v b="$3" -v i="$i" -v n="$4" 'BEGIN { printf "%.6f", a + (b - a) * i / n }')"
+ROAD_PY='
+import json, math, sys
+try:
+    encoded = json.load(sys.stdin)["polyline"]
+except Exception:
+    sys.exit(0)
+points, index, lat, lng = [], 0, 0, 0
+while index < len(encoded):
+    for axis in (0, 1):
+        shift = result = 0
+        while True:
+            byte = ord(encoded[index]) - 63
+            index += 1
+            result |= (byte & 0x1F) << shift
+            shift += 5
+            if byte < 0x20:
+                break
+        delta = ~(result >> 1) if result & 1 else result >> 1
+        if axis == 0:
+            lat += delta
+        else:
+            lng += delta
+    points.append((lat / 1e5, lng / 1e5))
+def metres(a, b):
+    dy = (a[0] - b[0]) * 111000
+    dx = (a[1] - b[1]) * 111000 * math.cos(math.radians(a[0]))
+    return math.hypot(dx, dy)
+total = sum(metres(points[i], points[i + 1]) for i in range(len(points) - 1))
+step = max(30.0, total / 60)
+out, travelled, goal = [], 0.0, step
+for i in range(len(points) - 1):
+    a, b = points[i], points[i + 1]
+    length = metres(a, b)
+    while length > 0 and travelled + length >= goal:
+        t = (goal - travelled) / length
+        out.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t))
+        goal += step
+    travelled += length
+out.append(points[-1])
+for p in out:
+    print("%.6f %.6f" % p)
+'
+
+drive() { # <trip> <to lat> <to lng>: along the road, a position every 2 s; fails when the ride ended
+  local path i=0 lat lng
+  api POST /v1/routes:compute "{\"origin\":{\"latitude\":$LAT,\"longitude\":$LNG},\"destination\":{\"latitude\":$2,\"longitude\":$3}}"
+  path="$(echo "$BODY" | python3 -c "$ROAD_PY")"
+  if [ -z "$path" ]; then
+    # No road found: a straight line, so the trip still goes on.
+    path="$(awk -v a="$LAT" -v b="$2" -v c="$LNG" -v d="$3" 'BEGIN {
+      for (i = 1; i <= 20; i++) printf "%.6f %.6f\n", a + (b - a) * i / 20, c + (d - c) * i / 20 }')"
+  fi
+  while read -r lat lng; do
+    i=$((i + 1))
+    report "$lat" "$lng"
     sleep 2
     if [ $((i % 5)) = 0 ]; then
       load_trip "$1"
       case "$T_STATUS" in TRIP_STATUS_ACCEPTED | TRIP_STATUS_IN_PROGRESS) ;; *) return 1 ;; esac
     fi
-  done
+  done <<< "$path"
+  report "$2" "$3"
 }
 
 run_trip() { # <trip id>: follows it to its end
@@ -179,7 +230,7 @@ run_trip() { # <trip id>: follows it to its end
   load_trip "$trip"
   if [ "$T_STATUS" = TRIP_STATUS_ACCEPTED ]; then
     echo "==> ride $trip: driving to the pickup"
-    drive "$trip" "$P_LAT" "$P_LNG" 20 || { echo "==> the ride ended ($T_STATUS)"; return; }
+    drive "$trip" "$P_LAT" "$P_LNG" || { echo "==> the ride ended ($T_STATUS)"; return; }
     api POST "/v1/trips/$trip:arrived" '{}'
     echo "==> at the pickup (arrived: $STATUS); waiting ${WAIT}s"
     for i in $(seq 1 $((WAIT / 2))); do report "$P_LAT" "$P_LNG"; sleep 2; done
@@ -191,7 +242,7 @@ run_trip() { # <trip id>: follows it to its end
   fi
   if [ "$T_STATUS" = TRIP_STATUS_IN_PROGRESS ]; then
     echo "==> driving to the destination"
-    drive "$trip" "$D_LAT" "$D_LNG" 25 || { echo "==> the ride ended ($T_STATUS)"; return; }
+    drive "$trip" "$D_LAT" "$D_LNG" || { echo "==> the ride ended ($T_STATUS)"; return; }
     api POST "/v1/trips/$trip:complete" '{}'
     echo "==> completed ($STATUS). Waiting for the next ride."
   fi
