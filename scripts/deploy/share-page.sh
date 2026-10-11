@@ -48,5 +48,5 @@ docker compose -f infrastructure/deploy/compose.vps.yaml --env-file instance/ins
 echo "==> checks"
 code="$(curl -s -o /dev/null -w '%{http_code}' "https://$API/t/" || true)"
 [ "$code" = 200 ] || die "https://$API/t/ answered $code, not 200"
-curl -s "https://$API/t/" | grep -q "https://$TILES/styles/" || die "the page does not point at the map server"
+curl -s "https://$API/t/" | grep -q "\"https://$TILES\"" || die "the page does not point at the map server"
 echo "PASS: shared trips open at $BASE<token>"
