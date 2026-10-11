@@ -15593,6 +15593,10 @@
         "transaction": {
           "$ref": "#/definitions/v1Transaction",
           "description": "The voucher's ledger row."
+        },
+        "alreadyRedeemed": {
+          "type": "boolean",
+          "description": "True when this rider had redeemed the voucher before: nothing was credited\nnow, the wallet and the row are those of that first time."
         }
       }
     },

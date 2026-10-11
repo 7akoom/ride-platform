@@ -217,11 +217,12 @@ func (h *WalletHandler) RedeemVoucher(
 	}
 
 	return &walletv1.RedeemVoucherResponse{
-		Serial:       redeemed.Serial,
-		Amount:       redeemed.Amount.String(),
-		CurrencyCode: redeemed.CurrencyCode,
-		Wallet:       toProtoWallet(redeemed.Wallet),
-		Transaction:  toProtoTransaction(redeemed.Transaction),
+		Serial:          redeemed.Serial,
+		Amount:          redeemed.Amount.String(),
+		CurrencyCode:    redeemed.CurrencyCode,
+		Wallet:          toProtoWallet(redeemed.Wallet),
+		Transaction:     toProtoTransaction(redeemed.Transaction),
+		AlreadyRedeemed: redeemed.AlreadyRedeemed,
 	}, nil
 }
 

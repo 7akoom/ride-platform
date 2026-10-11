@@ -14,7 +14,8 @@
 #   2. nothing is redeemable before the export; the export gives every code
 #      (and a CSV) once, and never again
 #   3. a rider redeems a code however they type it; the wallet and the ledger
-#      show it; the same rider again gets the same redemption, another rider
+#      show it; the same rider again gets the same redemption (marked as
+#      redeemed before), another rider
 #      is told it is used; staff look the voucher up by its serial
 #   4. a voided voucher and a cancelled batch are not redeemable; the batch
 #      counts what happened
@@ -187,9 +188,11 @@ expect "into another rider's wallet" 403 POST "$REDEEM" "$SECOND" "$(redeem "$CO
 expect "not in the form of a code" 400 POST "$REDEEM" "$RIDER" "$(redeem "hello")"
 expect "typed in lower case with spaces" 200 POST "$REDEEM" "$RIDER" "$(redeem "$TYPED")"
 check "5000, a voucher row, its serial" "$SERIAL1 5000 5000 TRANSACTION_TYPE_VOUCHER" "$(body_field '" ".join((d["serial"], d["amount"], d["wallet"]["balance"], d["transaction"]["type"]))')"
+check "a first redemption" False "$(body_field 'd.get("alreadyRedeemed", False)')"
 TRANSACTION="$(body_field 'd["transaction"]["id"]')"
 expect "the same rider again" 200 POST "$REDEEM" "$RIDER" "$(redeem "$CODE1")"
 check "is the same redemption" "$TRANSACTION" "$(body_field 'd["transaction"]["id"]')"
+check "and says it was redeemed before" True "$(body_field 'd.get("alreadyRedeemed", False)')"
 check "the rider holds 5000" 5000 "$(balance_of "$RIDER_ID" "$RIDER")"
 expect "another rider" 400 POST "/v1/wallets/$SECOND_ID/vouchers:redeem" "$SECOND" "$(redeem "$CODE1")"
 check "is told it is used" "this voucher code was already used" "$(message)"

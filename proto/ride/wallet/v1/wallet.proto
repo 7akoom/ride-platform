@@ -997,6 +997,9 @@ message RedeemVoucherResponse {
   Wallet wallet = 4;
   // The voucher's ledger row.
   Transaction transaction = 5;
+  // True when this rider had redeemed the voucher before: nothing was credited
+  // now, the wallet and the row are those of that first time.
+  bool already_redeemed = 6;
 }
 
 message InspectWalletRequest {

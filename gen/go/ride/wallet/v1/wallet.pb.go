@@ -4979,9 +4979,12 @@ type RedeemVoucherResponse struct {
 	// The rider's wallet after it.
 	Wallet *Wallet `protobuf:"bytes,4,opt,name=wallet,proto3" json:"wallet,omitempty"`
 	// The voucher's ledger row.
-	Transaction   *Transaction `protobuf:"bytes,5,opt,name=transaction,proto3" json:"transaction,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Transaction *Transaction `protobuf:"bytes,5,opt,name=transaction,proto3" json:"transaction,omitempty"`
+	// True when this rider had redeemed the voucher before: nothing was credited
+	// now, the wallet and the row are those of that first time.
+	AlreadyRedeemed bool `protobuf:"varint,6,opt,name=already_redeemed,json=alreadyRedeemed,proto3" json:"already_redeemed,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *RedeemVoucherResponse) Reset() {
@@ -5047,6 +5050,13 @@ func (x *RedeemVoucherResponse) GetTransaction() *Transaction {
 		return x.Transaction
 	}
 	return nil
+}
+
+func (x *RedeemVoucherResponse) GetAlreadyRedeemed() bool {
+	if x != nil {
+		return x.AlreadyRedeemed
+	}
+	return false
 }
 
 type InspectWalletRequest struct {
@@ -8105,13 +8115,14 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\"E\n" +
 	"\x14RedeemVoucherRequest\x12\x19\n" +
 	"\brider_id\x18\x01 \x01(\tR\ariderId\x12\x12\n" +
-	"\x04code\x18\x02 \x01(\tR\x04code\"\xdb\x01\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\"\x86\x02\n" +
 	"\x15RedeemVoucherResponse\x12\x16\n" +
 	"\x06serial\x18\x01 \x01(\tR\x06serial\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\tR\x06amount\x12#\n" +
 	"\rcurrency_code\x18\x03 \x01(\tR\fcurrencyCode\x12.\n" +
 	"\x06wallet\x18\x04 \x01(\v2\x16.ride.wallet.v1.WalletR\x06wallet\x12=\n" +
-	"\vtransaction\x18\x05 \x01(\v2\x1b.ride.wallet.v1.TransactionR\vtransaction\"k\n" +
+	"\vtransaction\x18\x05 \x01(\v2\x1b.ride.wallet.v1.TransactionR\vtransaction\x12)\n" +
+	"\x10already_redeemed\x18\x06 \x01(\bR\x0falreadyRedeemed\"k\n" +
 	"\x14InspectWalletRequest\x128\n" +
 	"\n" +
 	"owner_type\x18\x01 \x01(\x0e2\x19.ride.wallet.v1.OwnerTypeR\townerType\x12\x19\n" +

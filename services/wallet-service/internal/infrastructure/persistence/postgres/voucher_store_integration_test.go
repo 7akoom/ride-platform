@@ -123,13 +123,15 @@ func TestABatchIsExportedOnceAndOnlyThenRedeemable(t *testing.T) {
 
 	redeemed, err := store.Redeem(ctx, riderA, codec.Hash(b.codes[0]), now)
 	if err != nil || redeemed.Wallet.Balance.String() != "5000" || redeemed.Transaction.Type != wallet.TxVoucher ||
-		redeemed.Serial != exported[0].Serial || redeemed.Transaction.Description != "Voucher "+exported[0].Serial {
+		redeemed.Serial != exported[0].Serial || redeemed.Transaction.Description != "Voucher "+exported[0].Serial ||
+		redeemed.AlreadyRedeemed {
 		t.Fatalf("redeemed %+v %v", redeemed, err)
 	}
 
 	// The same rider again: the same redemption, nothing more credited.
 	again, err := store.Redeem(ctx, riderA, codec.Hash(b.codes[0]), now)
-	if err != nil || again.Transaction.ID != redeemed.Transaction.ID || balance(t, repo, riderA) != "5000" {
+	if err != nil || again.Transaction.ID != redeemed.Transaction.ID || balance(t, repo, riderA) != "5000" ||
+		!again.AlreadyRedeemed {
 		t.Fatalf("again %+v %v", again, err)
 	}
 

@@ -456,6 +456,8 @@ func (s *VoucherStore) Redeem(ctx context.Context, riderID string, hash []byte, 
 			return voucher.Redemption{}, err
 		}
 
+		redemption.AlreadyRedeemed = true
+
 		return redemption, nil
 
 	case found.Status == voucher.Redeemed:

@@ -143,6 +143,9 @@ type Redemption struct {
 	CurrencyCode string
 	Wallet       wallet.Wallet
 	Transaction  wallet.Transaction
+	// AlreadyRedeemed: the same rider had redeemed it before; nothing was
+	// credited this time.
+	AlreadyRedeemed bool
 }
 
 // Store keeps batches and vouchers and moves the money.
