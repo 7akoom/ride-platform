@@ -7,7 +7,16 @@
   "protomaps": {
    "type": "vector",
    "url": "pmtiles://__TILES_ORIGIN__/basemap.pmtiles",
-   "attribution": "<a href=\"https://protomaps.com\">Protomaps</a> © <a href=\"https://openstreetmap.org/copyright\">OpenStreetMap</a> · <a href=\"https://overturemaps.org\">Overture Maps</a>"
+   "attribution": "<a href=\"https://protomaps.com\">Protomaps</a> © <a href=\"https://openstreetmap.org/copyright\">OpenStreetMap</a>"
+  },
+  "credits": {
+   "type": "vector",
+   "tiles": [
+    "__TILES_ORIGIN__/credits/{z}/{x}/{y}.pbf"
+   ],
+   "minzoom": 0,
+   "maxzoom": 0,
+   "attribution": "<a href=\"https://protomaps.com\">Protomaps</a> · <a href=\"https://overturemaps.org\">Overture Maps</a>"
   }
  },
  "layers": [

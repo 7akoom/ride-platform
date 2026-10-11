@@ -5,8 +5,8 @@
 //   NODE_PATH=/tmp/tile-styles/node_modules node scripts/tools/gen-tile-styles.mjs
 // __TILES_ORIGIN__ (e.g. https://ride-tiles.example.com) is filled in on the
 // server by scripts/deploy/prepare-tiles.sh.
-// The attribution credits Overture Maps too: place search (location-service)
-// answers with places imported from it.
+// The credits name Protomaps and Overture Maps too: place search
+// (location-service) answers with places imported from Overture.
 import { createRequire } from "node:module";
 import { mkdirSync, writeFileSync } from "node:fs";
 
@@ -15,6 +15,7 @@ const { layers, namedFlavor } = require("@protomaps/basemaps");
 
 const ORIGIN = "__TILES_ORIGIN__";
 const OUT = "infrastructure/tiles/styles";
+const CREDITS = '<a href="https://protomaps.com">Protomaps</a> · <a href="https://overturemaps.org">Overture Maps</a>';
 mkdirSync(OUT, { recursive: true });
 
 for (const flavor of ["light", "dark"]) {
@@ -28,7 +29,17 @@ for (const flavor of ["light", "dark"]) {
         protomaps: {
           type: "vector",
           url: `pmtiles://${ORIGIN}/basemap.pmtiles`,
-          attribution: '<a href="https://protomaps.com">Protomaps</a> © <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> · <a href="https://overturemaps.org">Overture Maps</a>',
+          attribution: '<a href="https://protomaps.com">Protomaps</a> © <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+        },
+        // MapLibre takes a pmtiles source's credits from the file (OpenStreetMap
+        // only), not from the style. This source carries the rest: no layer uses
+        // it, so its tiles are never requested.
+        credits: {
+          type: "vector",
+          tiles: [`${ORIGIN}/credits/{z}/{x}/{y}.pbf`],
+          minzoom: 0,
+          maxzoom: 0,
+          attribution: CREDITS,
         },
       },
       layers: layers("protomaps", namedFlavor(flavor), { lang }),
