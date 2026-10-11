@@ -5,6 +5,8 @@
 //   NODE_PATH=/tmp/tile-styles/node_modules node scripts/tools/gen-tile-styles.mjs
 // __TILES_ORIGIN__ (e.g. https://ride-tiles.example.com) is filled in on the
 // server by scripts/deploy/prepare-tiles.sh.
+// The attribution credits Overture Maps too: place search (location-service)
+// answers with places imported from it.
 import { createRequire } from "node:module";
 import { mkdirSync, writeFileSync } from "node:fs";
 
@@ -26,7 +28,7 @@ for (const flavor of ["light", "dark"]) {
         protomaps: {
           type: "vector",
           url: `pmtiles://${ORIGIN}/basemap.pmtiles`,
-          attribution: '<a href="https://protomaps.com">Protomaps</a> © <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+          attribution: '<a href="https://protomaps.com">Protomaps</a> © <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> · <a href="https://overturemaps.org">Overture Maps</a>',
         },
       },
       layers: layers("protomaps", namedFlavor(flavor), { lang }),

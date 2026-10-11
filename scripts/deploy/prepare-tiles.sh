@@ -7,6 +7,9 @@
 # Run it again to refresh the map; the old one is served until the new one
 # is complete. Only this step downloads anything: the apps then read the map
 # from this server alone.
+#   bash scripts/deploy/prepare-tiles.sh --styles-only
+# writes the four styles again (after a git pull that changed them) and
+# leaves the basemap, fonts and icons as they are; nothing is downloaded.
 #
 # The area is TILES_BBOX in instance/instance.env (west,south,east,north);
 # the first run records Iraq.
@@ -35,12 +38,37 @@ fi
 echo "$BBOX" | grep -Eq '^-?[0-9.]+,-?[0-9.]+,-?[0-9.]+,-?[0-9.]+$' || die "TILES_BBOX must be west,south,east,north"
 
 BUILD=""
+STYLES_ONLY=false
 while [ $# -gt 0 ]; do
   case "$1" in
     --build) BUILD="$2"; shift 2 ;;
+    --styles-only) STYLES_ONLY=true; shift ;;
     *) die "unknown option $1" ;;
   esac
 done
+
+write_styles() {
+  echo "==> styles"
+  mkdir -p "$DIR/styles"
+  for style in infrastructure/tiles/styles/*.json; do
+    sed "s#__TILES_ORIGIN__#https://$DOMAIN#g" "$style" > "$DIR/styles/$(basename "$style").next"
+    python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$DIR/styles/$(basename "$style").next"
+    mv -f "$DIR/styles/$(basename "$style").next" "$DIR/styles/$(basename "$style")"
+  done
+  chmod 644 "$DIR"/styles/*.json
+  ls "$DIR/styles"
+}
+
+code() { curl -s -o /dev/null -w '%{http_code}' "$@" || true; }
+
+if $STYLES_ONLY; then
+  [ -f "$DIR/basemap.pmtiles" ] || die "no basemap yet: run this script once without --styles-only"
+  write_styles
+  [ "$(code "https://$DOMAIN/styles/light-ar.json")" = 200 ] || die "https://$DOMAIN/styles/light-ar.json is not served"
+  echo "PASS: the styles are served from https://$DOMAIN (the basemap is unchanged)"
+  exit 0
+fi
+
 if [ -z "$BUILD" ]; then
   BUILD="$(curl -fsS https://build-metadata.protomaps.dev/builds.json | python3 -c '
 import json, sys
@@ -85,20 +113,11 @@ for part in fonts sprites; do
 done
 chmod -R a+rX "$DIR/fonts" "$DIR/sprites"
 
-echo "==> styles"
-mkdir -p "$DIR/styles"
-for style in infrastructure/tiles/styles/*.json; do
-  sed "s#__TILES_ORIGIN__#https://$DOMAIN#g" "$style" > "$DIR/styles/$(basename "$style").next"
-  python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$DIR/styles/$(basename "$style").next"
-  mv -f "$DIR/styles/$(basename "$style").next" "$DIR/styles/$(basename "$style")"
-done
-chmod 644 "$DIR"/styles/*.json
+write_styles
 printf 'build=%s\nbbox=%s\nassets=%s\n' "$BUILD" "$BBOX" "$ASSETS_COMMIT" > "$DIR/VERSION"
-ls "$DIR/styles"
 
 echo "==> https://$DOMAIN"
 fails=0
-code() { curl -s -o /dev/null -w '%{http_code}' "$@" || true; }
 check() { if [ "$2" = "$3" ]; then printf '  ok    %s -> %s\n' "$1" "$3"; else printf '  FAIL  %s -> expected %s, got %s\n' "$1" "$2" "$3"; fails=$((fails + 1)); fi; }
 check "a style" 200 "$(code "https://$DOMAIN/styles/light-ar.json")"
 check "a piece of the basemap (range request)" 206 "$(code -H 'Range: bytes=0-126' "https://$DOMAIN/basemap.pmtiles")"

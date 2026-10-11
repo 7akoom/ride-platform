@@ -7,7 +7,7 @@
   "protomaps": {
    "type": "vector",
    "url": "pmtiles://__TILES_ORIGIN__/basemap.pmtiles",
-   "attribution": "<a href=\"https://protomaps.com\">Protomaps</a> © <a href=\"https://openstreetmap.org/copyright\">OpenStreetMap</a>"
+   "attribution": "<a href=\"https://protomaps.com\">Protomaps</a> © <a href=\"https://openstreetmap.org/copyright\">OpenStreetMap</a> · <a href=\"https://overturemaps.org\">Overture Maps</a>"
   }
  },
  "layers": [

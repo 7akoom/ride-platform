@@ -150,7 +150,9 @@ area (cut out of the Protomaps daily build of OpenStreetMap), Noto Sans fonts
 3. `bash scripts/deploy/prepare-tiles.sh` (no sudo): the basemap of
    `TILES_BBOX` (Iraq by default, recorded on the first run), fonts, icons,
    styles, then checks them over https. Run it again any time to refresh the
-   map; `--build 20261007` picks a given build.
+   map; `--build 20261007` picks a given build. After a pull that changed
+   only the styles (their attribution, say), `--styles-only` rewrites them in
+   seconds and downloads nothing.
 
 Apps: `kMapStyleUrl = https://ride-tiles.<domain>/styles/light-ar.json`.
 MapLibre Native (maplibre_gl 0.22+) reads `pmtiles://` itself; the admin web
