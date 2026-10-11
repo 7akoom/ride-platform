@@ -72,7 +72,7 @@ save() { (umask 077 && printf 'DRIVER=%s\nREFRESH=%s\n' "$DRIVER" "$REFRESH" > "
 login() { # signs in as the test captain with the code from identity-service's log
   local challenge code="" try
   TOKEN=""
-  call POST /v1/auth/otp:request "{\"identifier\":\"$PHONE\"}"
+  call POST /v1/auth/otp:request "{\"identifier\":{\"type\":\"IDENTIFIER_TYPE_PHONE\",\"value\":\"$PHONE\"}}"
   [ "$STATUS" = 200 ] || die "could not ask for a login code ($STATUS): $BODY"
   challenge="$(echo "$BODY" | field challengeId)"
   for try in 1 2 3 4 5 6; do
