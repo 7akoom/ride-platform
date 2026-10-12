@@ -204,6 +204,11 @@ out of the access log, since the query carries the payment token), sets
 wallet-service. The page tells the customer to go back to the app, in their
 language, and hands the token to the webhook so the top-up is settled at once.
 
+To try it on staging without the app: `bash scripts/dev/try-topup.sh [amount]`
+signs in a test rider (phone `+9647700000992`, code from the log), opens a
+ZainCash payment and prints its page; pay there with a test wallet (or cancel),
+and it waits until the top-up succeeded (balance checked) or failed.
+
 ## A test captain (staging only)
 
 `bash scripts/dev/sim-captain.sh` plays a captain so the Rider app's trip can be
