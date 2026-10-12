@@ -74,7 +74,10 @@ for page in done failed; do
   code="$(curl -s -o /dev/null -w '%{http_code}' "https://$API/pay/$page/" || true)"
   [ "$code" = 200 ] || die "https://$API/pay/$page/ answered $code, not 200"
 done
-curl -s "https://$API/pay/done/" | grep -q "/v1/wallet/zaincash/webhook" || die "https://$API/pay/done/ is not the payment page"
+# Read whole first: grep -q stops at the first match, and curl, cut off, would
+# fail the pipe (pipefail).
+page="$(curl -s "https://$API/pay/done/" || true)"
+grep -qF "/v1/wallet/zaincash/webhook" <<< "$page" || die "https://$API/pay/done/ is not the payment page"
 sleep 5
 state="$(docker logs --since 2m ride-wallet-service 2>&1 | grep -o 'top-ups through ZainCash are [a-z]*' | tail -1 || true)"
 [ -n "$state" ] || die "wallet-service did not say whether ZainCash is on (is it the 5c-1a build? run deploy.sh)"
