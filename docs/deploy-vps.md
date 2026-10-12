@@ -132,8 +132,9 @@ Generate new private key) at `instance/providers/fcm-service-account.json`,
 `FCM_CREDENTIALS_FILE=/app/providers/fcm-service-account.json`. Only
 notification-service sees that folder.
 
-**ZainCash**, `instance/wallet-service.env`; **SOS phones**,
-`SOS_OPERATOR_PHONES` in `instance/notification-service.env`.
+**ZainCash**, `instance/wallet-service.env` (see "Wallet top-ups through
+ZainCash" below); **SOS phones**, `SOS_OPERATOR_PHONES` in
+`instance/notification-service.env`.
 
 ## The map (tiles)
 
@@ -172,6 +173,36 @@ nginx site (asks for sudo once; certbot's lines stay), and sets
 `TRIP_SHARE_URL_BASE=https://<api domain>/t/#` in `instance/trip-service.env`
 (the token goes in the fragment, so no server logs it). Run it again after a
 pull that changed the page. Until it runs, the app says sharing is not available.
+
+## Wallet top-ups through ZainCash
+
+ZainCash (Payment Gateway v2) is on when `instance/wallet-service.env` has
+`ZAINCASH_CLIENT_ID` and `ZAINCASH_CLIENT_SECRET`; otherwise riders top up with
+vouchers only, and the app does not offer it (it reads `GET
+/v1/wallets/{id}/topup-options`). `ZAINCASH_WEBHOOK_SECRET` is ZainCash's API
+key: it checks the signed token on the webhook and on the return pages.
+
+- **Staging:** `ZAINCASH_BASE_URL=https://pg-api-uat.zaincash.iq` and the test
+  credentials from docs.zaincash.iq (Testing > Test Credentials); the test
+  wallets pay with PIN `1111` and OTP `111111`. The test environment sends no
+  webhooks: wallet-service asks ZainCash itself (Transaction Inquiry) when the
+  app asks about a pending top-up, and every 2 minutes.
+- **A real instance:** the investor applies at
+  zaincash.iq/business/business-wallet-registration (service: Bill Payment) in
+  their own company's name, since the money is theirs; ZainCash's business team
+  gives the production base URL and credentials, and registers the webhook
+  `https://<api domain>/v1/wallet/zaincash/webhook` (it must differ from the
+  return pages). Before launch, a real top-up of 1,000 from a real wallet,
+  credited once.
+
+After the map (`prepare-tiles.sh`), and after each change to these settings:
+`bash scripts/deploy/pay-pages.sh`. It copies `web/pay/index.html` next to the
+map files, adds `location ^~ /pay/` to the nginx site (asks for sudo once; kept
+out of the access log, since the query carries the payment token), sets
+`ZAINCASH_SUCCESS_URL=https://<api domain>/pay/done/` and
+`ZAINCASH_FAILURE_URL=https://<api domain>/pay/failed/`, and restarts
+wallet-service. The page tells the customer to go back to the app, in their
+language, and hands the token to the webhook so the top-up is settled at once.
 
 ## A test captain (staging only)
 

@@ -118,7 +118,9 @@ RESEND_API_KEY=
 RESEND_FROM=
 IDENTITY
 cat > instance/wallet-service.env <<'WALLET'
-# ZainCash (see services/wallet-service/.env.example).
+# ZainCash (docs/deploy-vps.md, "Wallet top-ups through ZainCash"). Off until
+# the client ID and secret are set; scripts/deploy/pay-pages.sh adds the return
+# pages (ZAINCASH_SUCCESS_URL, ZAINCASH_FAILURE_URL).
 ZAINCASH_BASE_URL=https://pg-api-uat.zaincash.iq
 ZAINCASH_CLIENT_ID=
 ZAINCASH_CLIENT_SECRET=

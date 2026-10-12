@@ -1,0 +1,112 @@
+<!doctype html>
+<!--
+  The page a payment provider sends the customer back to after a wallet top-up:
+  https://<api domain>/pay/done/?token=<jwt> after a payment, /pay/failed/?token=<jwt>
+  after a failure or a cancel. It hands the provider's signed token to
+  POST /v1/wallet/zaincash/webhook on the same domain, so the top-up is settled at
+  once (wallet-service checks the signature; the token cannot credit anything twice),
+  and tells the customer to go back to the app, which reads how the top-up ended.
+  Nothing here is trusted: the app's answer comes from wallet-service, which also asks
+  ZainCash itself. scripts/deploy/pay-pages.sh puts it in place. No outside script,
+  style or font.
+-->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'">
+<title>Ride</title>
+<style>
+  :root { --ink: #05070F; --surface: #FFFFFF; --muted: #5B6170; --ok: #16794C; --ok-soft: #E7F4EE; --bad: #B42318; --bad-soft: #FDECEA; }
+  html, body { margin: 0; min-height: 100%; font-family: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
+               background: #F4F5F7; color: var(--ink); }
+  main { box-sizing: border-box; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+  .card { width: 100%; max-width: 420px; background: var(--surface); border-radius: 20px; padding: 32px 24px;
+          box-shadow: 0 8px 28px rgba(5, 7, 15, .12); text-align: center; }
+  .mark { width: 72px; height: 72px; margin: 0 auto 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .mark svg { width: 36px; height: 36px; }
+  .done .mark { background: var(--ok-soft); color: var(--ok); }
+  .failed .mark { background: var(--bad-soft); color: var(--bad); }
+  h1 { font-size: 22px; margin: 0 0 10px; line-height: 1.4; }
+  p { color: var(--muted); font-size: 15px; line-height: 1.7; margin: 0; }
+  .ok-only, .bad-only { display: none; }
+  .done .ok-only, .failed .bad-only { display: flex; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card" id="card">
+    <div class="mark ok-only" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+    </div>
+    <div class="mark bad-only" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>
+    </div>
+    <h1 id="title"></h1>
+    <p id="body"></p>
+  </div>
+</main>
+<script>
+(function () {
+  var TEXT = {
+    ar: { dir: "rtl",
+          doneTitle: "تمّت عملية الدفع",
+          doneBody: "سيُضاف المبلغ إلى محفظتك خلال لحظات. يمكنك إغلاق هذه الصفحة والعودة إلى التطبيق.",
+          failedTitle: "لم تكتمل عملية الدفع",
+          failedBody: "لم يُضف أي مبلغ إلى محفظتك. يمكنك إغلاق هذه الصفحة والعودة إلى التطبيق للمحاولة مرة أخرى." },
+    ku: { dir: "rtl",
+          doneTitle: "پارەدان تەواو بوو",
+          doneBody: "بڕەکە لە چەند چرکەیەکدا دەخرێتە سەر جزدانەکەت. دەتوانیت ئەم پەڕەیە دابخەیت و بگەڕێیتەوە بۆ ئەپەکە.",
+          failedTitle: "پارەدان تەواو نەبوو",
+          failedBody: "هیچ بڕێک نەخرایە سەر جزدانەکەت. دەتوانیت ئەم پەڕەیە دابخەیت و بگەڕێیتەوە بۆ ئەپەکە بۆ ئەوەی دووبارە هەوڵ بدەیتەوە." },
+    en: { dir: "ltr",
+          doneTitle: "Payment complete",
+          doneBody: "The amount will reach your wallet in a moment. You can close this page and go back to the app.",
+          failedTitle: "The payment did not go through",
+          failedBody: "Nothing was added to your wallet. You can close this page and go back to the app to try again." }
+  };
+
+  var failed = /\/pay\/failed\/?$/.test(location.pathname);
+  var token = new URLSearchParams(location.search).get("token") || "";
+
+  // The token's own language (data.language), read without trusting it: it only
+  // picks the words. The browser's language otherwise.
+  function languageOf(jwt) {
+    try {
+      var part = jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      var claims = JSON.parse(decodeURIComponent(escape(atob(part))));
+      var lang = claims && claims.data && claims.data.language;
+      if (TEXT[lang]) { return lang; }
+    } catch (e) {}
+    var nav = (navigator.language || "ar").slice(0, 2).toLowerCase();
+    return nav === "ck" ? "ku" : (TEXT[nav] ? nav : "ar");
+  }
+
+  var lang = languageOf(token);
+  var t = TEXT[lang];
+  document.documentElement.lang = lang;
+  document.documentElement.dir = t.dir;
+  document.getElementById("card").className = "card " + (failed ? "failed" : "done");
+  document.getElementById("title").textContent = failed ? t.failedTitle : t.doneTitle;
+  document.getElementById("body").textContent = failed ? t.failedBody : t.doneBody;
+
+  // Settle the top-up now rather than at the next check. Whatever the answer,
+  // the page says the same: the app reads the real outcome from wallet-service.
+  if (token) {
+    fetch("/v1/wallet/zaincash/webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: token }),
+      credentials: "omit",
+      keepalive: true
+    }).catch(function () {});
+  }
+
+  // The token has done its job: keep it out of the history and of a shared screenshot.
+  try { history.replaceState(null, "", location.pathname); } catch (e) {}
+})();
+</script>
+</body>
+</html>
