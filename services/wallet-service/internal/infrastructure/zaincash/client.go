@@ -1,15 +1,20 @@
 // Package zaincash is a thin client for the ZainCash Payment Gateway v2
 // (https://docs.zaincash.iq): OAuth2 client-credentials auth, creating a
-// payment session, and verifying the HS256 JWT ZainCash sends back on
-// both the redirect callback and the webhook. It knows nothing about
-// wallets or drivers — that orchestration lives in
-// internal/application/topup.
+// payment session, asking where a payment stands (Transaction Inquiry), and
+// verifying the HS256 JWT ZainCash sends back on both the redirect callback
+// and the webhook. It knows nothing about wallets or drivers — that
+// orchestration lives in internal/application/topup.
+//
+// The shapes here follow the docs' own examples (checked 12 October 2026):
+// the init answer carries the transaction under transactionDetails, and a
+// callback or webhook token carries it under data.
 package zaincash
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,17 +27,22 @@ import (
 )
 
 type Config struct {
+	// https://pg-api-uat.zaincash.iq for the test environment; the
+	// production address comes with onboarding.
 	BaseURL      string
 	ClientID     string
 	ClientSecret string
 	// Space-separated, e.g. "payment:read payment:write".
 	Scope string
-	// Verifies the HS256 JWT on both the redirect callback and the
-	// webhook. Per ZainCash's docs this is their "API Secret Key" —
-	// confirm with ZainCash's business team at onboarding whether it's
-	// the same value as ClientSecret or a separate one; this is kept
-	// as its own field so the two can differ.
+	// ZainCash's "API Secret Key": it signs the redirect callback's and the
+	// webhook's HS256 JWT. A separate value from ClientSecret.
 	WebhookSecret string
+}
+
+// Configured is true when the client can open payments: the OAuth2 client
+// credentials are set.
+func (c Config) Configured() bool {
+	return strings.TrimSpace(c.ClientID) != "" && strings.TrimSpace(c.ClientSecret) != ""
 }
 
 type Client struct {
@@ -45,6 +55,8 @@ type Client struct {
 }
 
 func NewClient(config Config) *Client {
+	config.BaseURL = strings.TrimRight(strings.TrimSpace(config.BaseURL), "/")
+
 	return &Client{
 		httpClient: &http.Client{Timeout: 15 * time.Second},
 		config:     config,
@@ -91,7 +103,7 @@ func (c *Client) token(ctx context.Context) (string, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("zaincash: oauth2 token request failed: %s: %s", resp.Status, body)
+		return "", fmt.Errorf("zaincash: oauth2 token request failed: %s: %s", resp.Status, snippet(body))
 	}
 
 	var tokenResponse struct {
@@ -102,32 +114,43 @@ func (c *Client) token(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("zaincash: decode oauth2 token response: %w", err)
 	}
 
+	// The body holds the token itself, so it is never quoted here.
+	if tokenResponse.AccessToken == "" {
+		return "", errors.New("zaincash: the oauth2 token response has no access_token")
+	}
+
+	lifetime := time.Duration(tokenResponse.ExpiresIn) * time.Second
+	if lifetime <= time.Minute {
+		// Unknown or very short: ask again next time rather than risk an
+		// expired token.
+		lifetime = time.Minute
+	}
+
 	c.accessToken = tokenResponse.AccessToken
 	// Refresh 30s early so a request in flight never races the actual
 	// expiry.
-	c.expiresAt = time.Now().Add(time.Duration(tokenResponse.ExpiresIn)*time.Second - 30*time.Second)
+	c.expiresAt = time.Now().Add(lifetime - 30*time.Second)
 
 	return c.accessToken, nil
 }
 
 type InitTransactionInput struct {
-	// "en", "ar" or "ku".
+	// "en", "ar" or "ku": the language of ZainCash's payment page.
 	Language string
 
-	// Our own idempotency key — becomes ZainCash's externalReferenceId.
+	// Our own idempotency key — becomes ZainCash's externalReferenceId and
+	// comes back as merchantReferenceId.
 	ExternalReferenceID string
 
-	OrderID     string
+	OrderID string
+	// Shown on the merchant dashboard; no "+" or ",".
 	ServiceType string
 
-	// Whole IQD amount as a decimal string (ZainCash rejects decimals
-	// on some endpoints; keep top-ups whole-unit).
+	// Whole IQD amount as a decimal string.
 	AmountValue string
 
-	// Optional. Omit on a driver's first top-up; ZainCash then prompts
-	// for the wallet number itself and we learn it from the redirect
-	// callback (see docs' "Customer Wallet Management" section) — not
-	// implemented yet, since there's no app UI to capture it into yet.
+	// Optional, international format (9647...). Omitted: ZainCash's page
+	// asks for the wallet number itself.
 	CustomerPhone string
 
 	SuccessURL string
@@ -137,17 +160,14 @@ type InitTransactionInput struct {
 type InitTransactionResult struct {
 	TransactionID string
 	RedirectURL   string
+	// When ZainCash stops taking the payment; zero when it did not say.
+	ExpiresAt time.Time
 }
 
 func (c *Client) InitTransaction(
 	ctx context.Context,
 	input InitTransactionInput,
 ) (InitTransactionResult, error) {
-	accessToken, err := c.token(ctx)
-	if err != nil {
-		return InitTransactionResult{}, fmt.Errorf("zaincash: get access token: %w", err)
-	}
-
 	payload := map[string]any{
 		"language":            input.Language,
 		"externalReferenceId": input.ExternalReferenceID,
@@ -172,90 +192,242 @@ func (c *Client) InitTransaction(
 		return InitTransactionResult{}, fmt.Errorf("zaincash: encode init request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodPost,
-		c.config.BaseURL+"/api/v2/payment-gateway/transaction/init",
-		bytes.NewReader(body),
-	)
+	respBody, err := c.call(ctx, http.MethodPost, "/api/v2/payment-gateway/transaction/init", body)
 	if err != nil {
-		return InitTransactionResult{}, fmt.Errorf("zaincash: build init request: %w", err)
+		return InitTransactionResult{}, fmt.Errorf("zaincash: init: %w", err)
+	}
+
+	return decodeInit(respBody)
+}
+
+// decodeInit reads the init answer:
+//
+//	{"status": "SUCCESS",
+//	 "transactionDetails": {"transactionId": "...", "externalReferenceId": "...", ...},
+//	 "redirectUrl": "https://.../transaction/pay?id=...&token=...",
+//	 "expiryTime": "2025-12-22T08:04:27.402+00:00", ...}
+func decodeInit(body []byte) (InitTransactionResult, error) {
+	var answer struct {
+		TransactionDetails struct {
+			TransactionID string `json:"transactionId"`
+		} `json:"transactionDetails"`
+		RedirectURL string `json:"redirectUrl"`
+		ExpiryTime  string `json:"expiryTime"`
+	}
+	if err := json.Unmarshal(body, &answer); err != nil {
+		return InitTransactionResult{}, fmt.Errorf("zaincash: decode init response: %w", err)
+	}
+
+	result := InitTransactionResult{
+		TransactionID: strings.TrimSpace(answer.TransactionDetails.TransactionID),
+		RedirectURL:   strings.TrimSpace(answer.RedirectURL),
+		ExpiresAt:     parseTime(answer.ExpiryTime),
+	}
+
+	if result.TransactionID == "" || result.RedirectURL == "" {
+		return InitTransactionResult{}, fmt.Errorf("zaincash: the init response has no transaction id or redirect url: %s", snippet(body))
+	}
+
+	return result, nil
+}
+
+// Inquiry is where ZainCash says a payment stands.
+type Inquiry struct {
+	// SUCCESS, FAILED, PENDING, OTP_SENT, CUSTOMER_AUTHENTICATION_REQUIRED,
+	// EXPIRED or REFUNDED.
+	Status              string
+	TransactionID       string
+	ExternalReferenceID string
+}
+
+// Inquire asks ZainCash where the payment with transactionID (from init)
+// stands: Transaction Inquiry, server to server.
+func (c *Client) Inquire(ctx context.Context, transactionID string) (Inquiry, error) {
+	transactionID = strings.TrimSpace(transactionID)
+	if transactionID == "" {
+		return Inquiry{}, errors.New("zaincash: inquiry needs a transaction id")
+	}
+
+	body, err := c.call(ctx, http.MethodGet, "/api/v2/payment-gateway/transaction/inquiry/"+url.PathEscape(transactionID), nil)
+	if err != nil {
+		return Inquiry{}, fmt.Errorf("zaincash: inquiry: %w", err)
+	}
+
+	return decodeInquiry(body)
+}
+
+// decodeInquiry reads the inquiry answer:
+//
+//	{"status": "OTP_SENT",
+//	 "transactionDetails": {"transactionId": "...", "externalReferenceId": "...", ...}, ...}
+func decodeInquiry(body []byte) (Inquiry, error) {
+	var answer struct {
+		Status             string `json:"status"`
+		TransactionDetails struct {
+			TransactionID       string `json:"transactionId"`
+			ExternalReferenceID string `json:"externalReferenceId"`
+		} `json:"transactionDetails"`
+	}
+	if err := json.Unmarshal(body, &answer); err != nil {
+		return Inquiry{}, fmt.Errorf("zaincash: decode inquiry response: %w", err)
+	}
+
+	if strings.TrimSpace(answer.Status) == "" {
+		return Inquiry{}, fmt.Errorf("zaincash: the inquiry response has no status: %s", snippet(body))
+	}
+
+	return Inquiry{
+		Status:              strings.ToUpper(strings.TrimSpace(answer.Status)),
+		TransactionID:       answer.TransactionDetails.TransactionID,
+		ExternalReferenceID: answer.TransactionDetails.ExternalReferenceID,
+	}, nil
+}
+
+// call sends an authorized request and returns the body of a 2xx answer.
+func (c *Client) call(ctx context.Context, method, path string, body []byte) ([]byte, error) {
+	accessToken, err := c.token(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get access token: %w", err)
+	}
+
+	var reader io.Reader
+	if body != nil {
+		reader = bytes.NewReader(body)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, c.config.BaseURL+path, reader)
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-	req.Header.Set("Content-Type", "application/json")
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return InitTransactionResult{}, fmt.Errorf("zaincash: init request: %w", err)
+		return nil, fmt.Errorf("request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return InitTransactionResult{}, fmt.Errorf("zaincash: read init response: %w", err)
+		return nil, fmt.Errorf("read response: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return InitTransactionResult{}, fmt.Errorf("zaincash: init failed: %s: %s", resp.Status, respBody)
+	if resp.StatusCode == http.StatusUnauthorized {
+		// The token may have been revoked early: fetch a new one next time.
+		c.mu.Lock()
+		c.accessToken = ""
+		c.mu.Unlock()
 	}
 
-	var initResponse struct {
-		TransactionID string `json:"transactionId"`
-		RedirectURL   string `json:"redirectUrl"`
-	}
-	if err := json.Unmarshal(respBody, &initResponse); err != nil {
-		return InitTransactionResult{}, fmt.Errorf("zaincash: decode init response: %w", err)
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return nil, fmt.Errorf("%s: %s", resp.Status, snippet(respBody))
 	}
 
-	return InitTransactionResult{
-		TransactionID: initResponse.TransactionID,
-		RedirectURL:   initResponse.RedirectURL,
-	}, nil
+	return respBody, nil
 }
 
-// WebhookClaims is the subset of a verified ZainCash JWT (webhook or
-// redirect callback) this service actually needs. Field names for
-// transactionId/merchantReferenceId/orderId/currentStatus/
-// previousStatus/eventId/eventType come straight from ZainCash's docs
-// prose; the docs' own rendered JSON examples weren't machine-readable
-// when this was written, so treat these as best-effort until confirmed
-// against a real captured payload.
-type WebhookClaims struct {
-	EventID             string `json:"eventId"`
-	EventType           string `json:"eventType"`
-	TransactionID       string `json:"transactionId"`
-	MerchantReferenceID string `json:"merchantReferenceId"`
-	OrderID             string `json:"orderId"`
-	CurrentStatus       string `json:"currentStatus"`
-	PreviousStatus      string `json:"previousStatus"`
+// TokenData is what a verified ZainCash JWT (webhook or redirect callback)
+// says about the payment:
+//
+//	{"eventType": "STATUS_CHANGED", "eventId": "...", "timestamp": "...",
+//	 "data": {"transactionId": "...", "merchantReferenceId": "...",
+//	          "orderId": "...", "currentStatus": "SUCCESS", "errorMessage": null, ...}}
+type TokenData struct {
+	EventID             string
+	EventType           string
+	TransactionID       string
+	MerchantReferenceID string
+	OrderID             string
+	CurrentStatus       string
+	PreviousStatus      string
+	ErrorMessage        string
+}
+
+type tokenClaims struct {
+	EventID   string `json:"eventId"`
+	EventType string `json:"eventType"`
+	Data      struct {
+		TransactionID       string  `json:"transactionId"`
+		MerchantReferenceID string  `json:"merchantReferenceId"`
+		OrderID             string  `json:"orderId"`
+		CurrentStatus       string  `json:"currentStatus"`
+		PreviousStatus      string  `json:"previousStatus"`
+		ErrorMessage        *string `json:"errorMessage"`
+	} `json:"data"`
 
 	jwt.RegisteredClaims
 }
 
-// VerifyToken checks an HS256 signature against WebhookSecret and
-// returns the decoded claims. Used for both the webhook's
+// VerifyToken checks an HS256 signature against WebhookSecret (the API
+// key) and returns what the token says. Used for both the webhook's
 // webhook_token and the redirect callback's ?token=.
-func (c *Client) VerifyToken(tokenString string) (WebhookClaims, error) {
-	var claims WebhookClaims
+func (c *Client) VerifyToken(tokenString string) (TokenData, error) {
+	if c.config.WebhookSecret == "" {
+		return TokenData{}, errors.New("zaincash: ZAINCASH_WEBHOOK_SECRET (the API key) is not set")
+	}
+
+	var claims tokenClaims
 
 	parsed, err := jwt.ParseWithClaims(
 		tokenString,
 		&claims,
 		func(token *jwt.Token) (any, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-
 			return []byte(c.config.WebhookSecret), nil
 		},
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
 	)
 	if err != nil {
-		return WebhookClaims{}, fmt.Errorf("zaincash: verify token: %w", err)
+		return TokenData{}, fmt.Errorf("zaincash: verify token: %w", err)
 	}
 
 	if !parsed.Valid {
-		return WebhookClaims{}, fmt.Errorf("zaincash: token is not valid")
+		return TokenData{}, errors.New("zaincash: token is not valid")
 	}
 
-	return claims, nil
+	data := TokenData{
+		EventID:             claims.EventID,
+		EventType:           claims.EventType,
+		TransactionID:       claims.Data.TransactionID,
+		MerchantReferenceID: claims.Data.MerchantReferenceID,
+		OrderID:             claims.Data.OrderID,
+		CurrentStatus:       strings.ToUpper(strings.TrimSpace(claims.Data.CurrentStatus)),
+		PreviousStatus:      claims.Data.PreviousStatus,
+	}
+
+	if claims.Data.ErrorMessage != nil {
+		data.ErrorMessage = *claims.Data.ErrorMessage
+	}
+
+	if data.MerchantReferenceID == "" || data.CurrentStatus == "" {
+		return TokenData{}, errors.New("zaincash: the token names no payment (data.merchantReferenceId, data.currentStatus)")
+	}
+
+	return data, nil
+}
+
+func parseTime(value string) time.Time {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}
+	}
+
+	parsed, err := time.Parse(time.RFC3339Nano, value)
+	if err != nil {
+		return time.Time{}
+	}
+
+	return parsed
+}
+
+// snippet is a short, single-line piece of an answer for an error message.
+func snippet(body []byte) string {
+	text := []rune(strings.Join(strings.Fields(string(body)), " "))
+	if len(text) > 300 {
+		return string(text[:300]) + "…"
+	}
+
+	return string(text)
 }

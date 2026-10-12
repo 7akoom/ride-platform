@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -68,6 +69,38 @@ func (r *TopUpRepository) FindForOwner(ctx context.Context, ownerType wallet.Own
 		`SELECT `+topUpColumns+` FROM provider_topups WHERE id = $1 AND owner_type = $2 AND owner_id = $3`,
 		id, string(ownerType), ownerID,
 	)
+}
+
+func (r *TopUpRepository) ListPending(ctx context.Context, since, before time.Time, limit int) ([]topup.TopUp, error) {
+	rows, err := r.pool.Query(
+		ctx,
+		`SELECT `+topUpColumns+` FROM provider_topups
+		 WHERE status = 'pending' AND created_at >= $1 AND created_at < $2
+		 ORDER BY created_at
+		 LIMIT $3`,
+		since, before, limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("select pending top-ups: %w", err)
+	}
+	defer rows.Close()
+
+	var pending []topup.TopUp
+
+	for rows.Next() {
+		t, err := scanTopUp(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan pending top-up: %w", err)
+		}
+
+		pending = append(pending, t)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read pending top-ups: %w", err)
+	}
+
+	return pending, nil
 }
 
 func (r *TopUpRepository) SetProviderTransactionID(ctx context.Context, externalReferenceID, providerTransactionID string) (topup.TopUp, error) {

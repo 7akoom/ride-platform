@@ -34,6 +34,8 @@ func TestTopUpsAndTipsReachOnlyTheCallersOwnWallet(t *testing.T) {
 		{"a rider names a driver wallet with their id", "identity-rider-a", "InitiateTopUp", &walletv1.InitiateTopUpRequest{OwnerType: driver, OwnerId: "rider-a"}, codes.PermissionDenied},
 		{"a rider reads their top-up", "identity-rider-a", "GetTopUp", &walletv1.GetTopUpRequest{OwnerType: rider, OwnerId: "rider-a"}, codes.OK},
 		{"another rider's top-up", "identity-rider-a", "GetTopUp", &walletv1.GetTopUpRequest{OwnerType: rider, OwnerId: "rider-b"}, codes.PermissionDenied},
+		{"a rider reads their top-up options", "identity-rider-a", "GetTopUpOptions", &walletv1.GetTopUpOptionsRequest{OwnerType: rider, OwnerId: "rider-a"}, codes.OK},
+		{"another rider's top-up options", "identity-rider-a", "GetTopUpOptions", &walletv1.GetTopUpOptionsRequest{OwnerType: rider, OwnerId: "rider-b"}, codes.PermissionDenied},
 		{"a rider tips", "identity-rider-a", "TipDriver", &walletv1.TipDriverRequest{RiderId: "rider-a"}, codes.OK},
 		{"from another rider's wallet", "identity-rider-a", "TipDriver", &walletv1.TipDriverRequest{RiderId: "rider-b"}, codes.PermissionDenied},
 		{"a driver tips", "identity-driver-a", "TipDriver", &walletv1.TipDriverRequest{RiderId: "driver-a"}, codes.PermissionDenied},

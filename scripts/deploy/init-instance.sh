@@ -119,7 +119,7 @@ RESEND_FROM=
 IDENTITY
 cat > instance/wallet-service.env <<'WALLET'
 # ZainCash (see services/wallet-service/.env.example).
-ZAINCASH_BASE_URL=https://test.zaincash.iq
+ZAINCASH_BASE_URL=https://pg-api-uat.zaincash.iq
 ZAINCASH_CLIENT_ID=
 ZAINCASH_CLIENT_SECRET=
 ZAINCASH_WEBHOOK_SECRET=

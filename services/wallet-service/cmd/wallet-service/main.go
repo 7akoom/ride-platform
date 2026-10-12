@@ -41,6 +41,10 @@ const (
 	// fareCalculatedDurable is this service's own durable consumer name. It
 	// must stay stable across restarts so redelivery resumes where it left off.
 	fareCalculatedDurable = "wallet-fare-calculated"
+
+	// topUpSweepInterval is how often pending top-ups are checked with
+	// their providers.
+	topUpSweepInterval = 2 * time.Minute
 )
 
 func main() {
@@ -282,17 +286,25 @@ func run() int {
 	walletRepository := postgresrepo.NewWalletRepository(pool)
 	walletService := wallet.NewService(walletRepository)
 
-	zainCashClient := zaincashinfra.NewClient(zaincashinfra.Config{
+	// Payment providers for top-ups, by name: only those set up. A provider
+	// has a hosted payment page; a card processor joins this map as one
+	// more adapter. None set up turns top-ups through a provider off (the
+	// app reads that from GetTopUpOptions); vouchers still work.
+	paymentProviders := map[string]topupapp.Provider{}
+
+	zainCashConfig := zaincashinfra.Config{
 		BaseURL:       cfg.ZainCashBaseURL,
 		ClientID:      cfg.ZainCashClientID,
 		ClientSecret:  cfg.ZainCashClientSecret,
 		Scope:         cfg.ZainCashScope,
 		WebhookSecret: cfg.ZainCashWebhookSecret,
-	})
-	// Payment providers for top-ups, by name. A provider has a hosted
-	// payment page: a card processor joins this map as one more adapter.
-	paymentProviders := map[string]topupapp.Provider{
-		topupapp.ProviderZainCash: zaincashinfra.NewAdapter(zainCashClient),
+	}
+
+	if zainCashConfig.Configured() {
+		paymentProviders[topupapp.ProviderZainCash] = zaincashinfra.NewAdapter(zaincashinfra.NewClient(zainCashConfig))
+		logger.Info("top-ups through ZainCash are on", "base_url", cfg.ZainCashBaseURL)
+	} else {
+		logger.Info("top-ups through ZainCash are off: ZAINCASH_CLIENT_ID and ZAINCASH_CLIENT_SECRET are not set")
 	}
 
 	topupService := topupapp.NewService(
@@ -302,6 +314,7 @@ func run() int {
 		walletService,
 		cfg.ZainCashSuccessURL,
 		cfg.ZainCashFailureURL,
+		logger,
 	)
 
 	transferStore := postgresrepo.NewTransferStore(walletRepository)
@@ -427,6 +440,16 @@ func run() int {
 		incentivesapp.NewWorker(incentiveService, incentiveConfig.CheckInterval, logger).Run(ctx)
 	}()
 
+	// Settles pending top-ups by asking their providers (a lost
+	// notification, or ZainCash's test environment, which sends none).
+	topupsDone := make(chan struct{})
+
+	go func() {
+		defer close(topupsDone)
+
+		topupapp.NewWorker(topupService, topUpSweepInterval, logger).Run(ctx)
+	}()
+
 	serverErrors := make(chan error, 1)
 
 	go func() {
@@ -451,6 +474,7 @@ func run() int {
 			stop()
 			<-outboxDone
 			<-incentivesDone
+			<-topupsDone
 
 			return 1
 		}
@@ -484,6 +508,7 @@ func run() int {
 
 	<-outboxDone
 	<-incentivesDone
+	<-topupsDone
 
 	return 0
 }

@@ -216,6 +216,7 @@ func (h *WalletHandler) InitiateTopUp(
 		OwnerID:   ownerID,
 		Amount:    amount,
 		Provider:  request.GetProvider(),
+		Language:  request.GetLanguage(),
 	})
 	if err != nil {
 		return nil, h.mapTopUpError(err)
@@ -257,6 +258,29 @@ func (h *WalletHandler) GetTopUp(
 		CurrencyCode: found.CurrencyCode,
 		CreatedAt:    timestamppb.New(found.CreatedAt),
 		UpdatedAt:    timestamppb.New(found.UpdatedAt),
+	}, nil
+}
+
+// GetTopUpOptions tells the app what a top-up may be here: the limits, the
+// currency, and the providers set up (none: the app offers vouchers only).
+func (h *WalletHandler) GetTopUpOptions(
+	ctx context.Context,
+	request *walletv1.GetTopUpOptionsRequest,
+) (*walletv1.GetTopUpOptionsResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	options, err := h.topupService.Options(ctx)
+	if err != nil {
+		return nil, h.mapTopUpError(err)
+	}
+
+	return &walletv1.GetTopUpOptionsResponse{
+		MinAmount:    options.MinAmount.String(),
+		MaxAmount:    options.MaxAmount.String(),
+		CurrencyCode: options.CurrencyCode,
+		Providers:    options.Providers,
 	}, nil
 }
 

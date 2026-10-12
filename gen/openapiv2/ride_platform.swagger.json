@@ -8968,6 +8968,49 @@
         ]
       }
     },
+    "/v1/wallets/{ownerId}/topup-options": {
+      "get": {
+        "summary": "GetTopUpOptions is what a top-up of the owner's wallet may be in this\ndeployment: the least and the most, the currency, and the payment\nproviders set up. No provider means top-ups through a provider are off\n(the app hides them); vouchers still work.",
+        "operationId": "WalletService_GetTopUpOptions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTopUpOptionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ownerId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ownerType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "OWNER_TYPE_UNSPECIFIED",
+              "OWNER_TYPE_RIDER",
+              "OWNER_TYPE_DRIVER"
+            ],
+            "default": "OWNER_TYPE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/wallets/{ownerId}/topups": {
       "post": {
         "summary": "InitiateTopUp starts a top-up of the caller's own wallet (a rider's or\na driver's) through a payment provider (zaincash, the default): a\npending record and a payment session on the provider's own page, whose\nURL the app opens. The customer pays there, so a card number or a\nwallet PIN never reaches the platform. The wallet is credited when the\nprovider's notification says the payment succeeded; GetTopUp tells the\napp how it ended. Within the deployment's top-up limits.",
@@ -9009,6 +9052,7 @@
     },
     "/v1/wallets/{ownerId}/topups/{topUpId}": {
       "get": {
+        "summary": "GetTopUp tells the app how the owner's top-up stands. A pending one is\nchecked with the provider first (ZainCash: Transaction Inquiry), so the\nanswer is the provider's latest; a provider not answering leaves it\npending, never an error.",
         "operationId": "WalletService_GetTopUp",
         "responses": {
           "200": {
@@ -10709,6 +10753,10 @@
         "provider": {
           "type": "string",
           "description": "The payment provider; empty means zaincash."
+        },
+        "language": {
+          "type": "string",
+          "description": "The app's language for the provider's page: ar, ku or en; empty is ar."
         }
       }
     },
@@ -13418,6 +13466,28 @@
         }
       }
     },
+    "v1GetTopUpOptionsResponse": {
+      "type": "object",
+      "properties": {
+        "minAmount": {
+          "type": "string",
+          "description": "Decimal strings in currency_code."
+        },
+        "maxAmount": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "providers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The providers set up (e.g. zaincash), in a stable order; empty when\nnone is."
+        }
+      }
+    },
     "v1GetTopUpResponse": {
       "type": "object",
       "properties": {
@@ -13904,6 +13974,10 @@
         "provider": {
           "type": "string",
           "description": "The payment provider; empty means zaincash."
+        },
+        "language": {
+          "type": "string",
+          "description": "The app's language for the provider's page: ar, ku or en; empty is ar."
         }
       }
     },

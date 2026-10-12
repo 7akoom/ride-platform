@@ -98,9 +98,22 @@ service WalletService {
       }
     };
   }
+  // GetTopUp tells the app how the owner's top-up stands. A pending one is
+  // checked with the provider first (ZainCash: Transaction Inquiry), so the
+  // answer is the provider's latest; a provider not answering leaves it
+  // pending, never an error.
   rpc GetTopUp(GetTopUpRequest) returns (GetTopUpResponse) {
     option (google.api.http) = {
       get: "/v1/wallets/{owner_id}/topups/{top_up_id}"
+    };
+  }
+  // GetTopUpOptions is what a top-up of the owner's wallet may be in this
+  // deployment: the least and the most, the currency, and the payment
+  // providers set up. No provider means top-ups through a provider are off
+  // (the app hides them); vouchers still work.
+  rpc GetTopUpOptions(GetTopUpOptionsRequest) returns (GetTopUpOptionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/wallets/{owner_id}/topup-options"
     };
   }
 
@@ -617,6 +630,8 @@ message InitiateTopUpRequest {
   string owner_id = 4;
   // The payment provider; empty means zaincash.
   string provider = 5;
+  // The app's language for the provider's page: ar, ku or en; empty is ar.
+  string language = 6;
 }
 
 message InitiateTopUpResponse {
@@ -624,6 +639,21 @@ message InitiateTopUpResponse {
   // pending | succeeded | failed
   string status = 2;
   string redirect_url = 3;
+}
+
+message GetTopUpOptionsRequest {
+  OwnerType owner_type = 1;
+  string owner_id = 2;
+}
+
+message GetTopUpOptionsResponse {
+  // Decimal strings in currency_code.
+  string min_amount = 1;
+  string max_amount = 2;
+  string currency_code = 3;
+  // The providers set up (e.g. zaincash), in a stable order; empty when
+  // none is.
+  repeated string providers = 4;
 }
 
 message GetTopUpRequest {

@@ -58,19 +58,22 @@ type Config struct {
 	RateLimitRequestsPerSecond string
 	RateLimitBurst             string
 
-	// ZainCash Payment Gateway v2 (driver wallet top-ups). BaseURL/
-	// ClientID/ClientSecret/Scope come from ZainCash onboarding.
-	// WebhookSecret verifies the HS256 JWT ZainCash sends on both the
-	// webhook and the redirect callback — confirm at onboarding whether
-	// it's the same value as ClientSecret or a separate one.
+	// ZainCash Payment Gateway v2 (wallet top-ups). BaseURL is the test
+	// environment (https://pg-api-uat.zaincash.iq) until onboarding gives
+	// the production one with the merchant's ClientID/ClientSecret; the
+	// test credentials are on docs.zaincash.iq (Testing > Test
+	// Credentials). Without ClientID and ClientSecret, top-ups through
+	// ZainCash are off. WebhookSecret is ZainCash's "API Secret Key", a
+	// separate value: it verifies the HS256 JWT on both the webhook and the
+	// redirect callback.
 	ZainCashBaseURL       string
 	ZainCashClientID      string
 	ZainCashClientSecret  string
 	ZainCashScope         string
 	ZainCashWebhookSecret string
 
-	// Where ZainCash redirects the driver's browser after payment.
-	// Placeholder pages until the driver app exists.
+	// Where ZainCash sends the customer's browser after the payment: pages
+	// on the instance's API domain (scripts/deploy/pay-pages.sh).
 	ZainCashSuccessURL string
 	ZainCashFailureURL string
 
@@ -202,7 +205,7 @@ func Load() Config {
 
 		ZainCashBaseURL: getEnv(
 			"ZAINCASH_BASE_URL",
-			"https://test.zaincash.iq",
+			"https://pg-api-uat.zaincash.iq",
 		),
 
 		ZainCashClientID: getEnv("ZAINCASH_CLIENT_ID", ""),

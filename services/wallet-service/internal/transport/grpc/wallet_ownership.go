@@ -61,6 +61,14 @@ var ownerChecks = map[string]ownerCheck{
 
 		return ownsWallet(ctx, c, r.GetOwnerType(), r.GetOwnerId())
 	},
+	"/ride.wallet.v1.WalletService/GetTopUpOptions": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.GetTopUpOptionsRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return ownsWallet(ctx, c, r.GetOwnerType(), r.GetOwnerId())
+	},
 	"/ride.wallet.v1.WalletService/GetTripSettlement": func(ctx context.Context, c caller, request any) (bool, error) {
 		r, ok := request.(*walletv1.GetTripSettlementRequest)
 		if !ok {

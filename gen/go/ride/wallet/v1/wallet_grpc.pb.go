@@ -34,6 +34,7 @@ const (
 	WalletService_RecordTripChange_FullMethodName        = "/ride.wallet.v1.WalletService/RecordTripChange"
 	WalletService_InitiateTopUp_FullMethodName           = "/ride.wallet.v1.WalletService/InitiateTopUp"
 	WalletService_GetTopUp_FullMethodName                = "/ride.wallet.v1.WalletService/GetTopUp"
+	WalletService_GetTopUpOptions_FullMethodName         = "/ride.wallet.v1.WalletService/GetTopUpOptions"
 	WalletService_TipDriver_FullMethodName               = "/ride.wallet.v1.WalletService/TipDriver"
 	WalletService_SendTransfer_FullMethodName            = "/ride.wallet.v1.WalletService/SendTransfer"
 	WalletService_ListTransfers_FullMethodName           = "/ride.wallet.v1.WalletService/ListTransfers"
@@ -122,7 +123,16 @@ type WalletServiceClient interface {
 	// provider's notification says the payment succeeded; GetTopUp tells the
 	// app how it ended. Within the deployment's top-up limits.
 	InitiateTopUp(ctx context.Context, in *InitiateTopUpRequest, opts ...grpc.CallOption) (*InitiateTopUpResponse, error)
+	// GetTopUp tells the app how the owner's top-up stands. A pending one is
+	// checked with the provider first (ZainCash: Transaction Inquiry), so the
+	// answer is the provider's latest; a provider not answering leaves it
+	// pending, never an error.
 	GetTopUp(ctx context.Context, in *GetTopUpRequest, opts ...grpc.CallOption) (*GetTopUpResponse, error)
+	// GetTopUpOptions is what a top-up of the owner's wallet may be in this
+	// deployment: the least and the most, the currency, and the payment
+	// providers set up. No provider means top-ups through a provider are off
+	// (the app hides them); vouchers still work.
+	GetTopUpOptions(ctx context.Context, in *GetTopUpOptionsRequest, opts ...grpc.CallOption) (*GetTopUpOptionsResponse, error)
 	// TipDriver gives the trip's driver a tip from the rider's wallet: once
 	// per trip, within 72 hours of a completed (settled) trip, within the
 	// deployment's tip limits; the driver gets all of it (no commission). The
@@ -383,6 +393,16 @@ func (c *walletServiceClient) GetTopUp(ctx context.Context, in *GetTopUpRequest,
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetTopUpResponse)
 	err := c.cc.Invoke(ctx, WalletService_GetTopUp_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) GetTopUpOptions(ctx context.Context, in *GetTopUpOptionsRequest, opts ...grpc.CallOption) (*GetTopUpOptionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTopUpOptionsResponse)
+	err := c.cc.Invoke(ctx, WalletService_GetTopUpOptions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -799,7 +819,16 @@ type WalletServiceServer interface {
 	// provider's notification says the payment succeeded; GetTopUp tells the
 	// app how it ended. Within the deployment's top-up limits.
 	InitiateTopUp(context.Context, *InitiateTopUpRequest) (*InitiateTopUpResponse, error)
+	// GetTopUp tells the app how the owner's top-up stands. A pending one is
+	// checked with the provider first (ZainCash: Transaction Inquiry), so the
+	// answer is the provider's latest; a provider not answering leaves it
+	// pending, never an error.
 	GetTopUp(context.Context, *GetTopUpRequest) (*GetTopUpResponse, error)
+	// GetTopUpOptions is what a top-up of the owner's wallet may be in this
+	// deployment: the least and the most, the currency, and the payment
+	// providers set up. No provider means top-ups through a provider are off
+	// (the app hides them); vouchers still work.
+	GetTopUpOptions(context.Context, *GetTopUpOptionsRequest) (*GetTopUpOptionsResponse, error)
 	// TipDriver gives the trip's driver a tip from the rider's wallet: once
 	// per trip, within 72 hours of a completed (settled) trip, within the
 	// deployment's tip limits; the driver gets all of it (no commission). The
@@ -967,6 +996,9 @@ func (UnimplementedWalletServiceServer) InitiateTopUp(context.Context, *Initiate
 }
 func (UnimplementedWalletServiceServer) GetTopUp(context.Context, *GetTopUpRequest) (*GetTopUpResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTopUp not implemented")
+}
+func (UnimplementedWalletServiceServer) GetTopUpOptions(context.Context, *GetTopUpOptionsRequest) (*GetTopUpOptionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTopUpOptions not implemented")
 }
 func (UnimplementedWalletServiceServer) TipDriver(context.Context, *TipDriverRequest) (*TipDriverResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TipDriver not implemented")
@@ -1345,6 +1377,24 @@ func _WalletService_GetTopUp_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WalletServiceServer).GetTopUp(ctx, req.(*GetTopUpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_GetTopUpOptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTopUpOptionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetTopUpOptions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetTopUpOptions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetTopUpOptions(ctx, req.(*GetTopUpOptionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2059,6 +2109,10 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTopUp",
 			Handler:    _WalletService_GetTopUp_Handler,
+		},
+		{
+			MethodName: "GetTopUpOptions",
+			Handler:    _WalletService_GetTopUpOptions_Handler,
 		},
 		{
 			MethodName: "TipDriver",

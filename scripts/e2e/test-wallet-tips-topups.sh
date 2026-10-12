@@ -7,16 +7,21 @@
 # scripts/tools/devtoken), grpcurl, and wallet-service with migration 00016.
 # No payment is started at ZainCash: the top-up checks stop before it, and a
 # ZainCash notification is played with ZAINCASH_WEBHOOK_SECRET from
-# services/wallet-service/.env (skipped when it is empty).
+# services/wallet-service/.env. The ZainCash steps need ZainCash set up
+# there (ZAINCASH_CLIENT_ID and ZAINCASH_CLIENT_SECRET, any values, and
+# ZAINCASH_WEBHOOK_SECRET); without it they check that top-ups through
+# ZainCash are off instead.
 #
 # What it proves:
 #   1. a rider tips the driver of their completed trip from their wallet,
 #      once, within the limits; the driver gets all of it; the trip's
 #      settlement shows it; nobody else tips that trip
-#   2. a top-up is checked before any provider is asked: the owner's own
-#      wallet, the limits, a known provider, an amount it takes
-#   3. the provider's notification credits the rider's wallet once, and the
-#      app reads how the top-up ended
+#   2. the app reads the top-up options (limits, providers set up); a top-up
+#      is checked before any provider is asked: the owner's own wallet, the
+#      limits, a known provider, an amount it takes
+#   3. the provider's notification (shaped like ZainCash's: the payment
+#      under data) credits the rider's wallet once, and the app reads how
+#      the top-up ended
 #
 # It creates two riders and a driver, settles a made-up trip with the
 # internal token, and removes it all again.
@@ -135,7 +140,7 @@ import base64, hashlib, hmac, json, sys
 secret, reference, transaction, status = sys.argv[1:5]
 b64 = lambda raw: base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
 head = b64(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
-body = b64(json.dumps({"transactionId": transaction, "merchantReferenceId": reference, "currentStatus": status}).encode())
+body = b64(json.dumps({"eventType": "STATUS_CHANGED", "eventId": reference + "-" + status, "data": {"transactionId": transaction, "merchantReferenceId": reference, "currentStatus": status, "errorMessage": None}}).encode())
 sig = b64(hmac.new(secret.encode(), f"{head}.{body}".encode(), hashlib.sha256).digest())
 print(f"{head}.{body}.{sig}")
 PY
@@ -185,15 +190,24 @@ check "the driver will be told" 1 "$(sql ride-wallet-postgres "select count(*) f
 
 echo "==> [2/3] starting a top-up"
 TOPUPS="/v1/wallets/$RIDER_ID/topups"
+expect "another rider's top-up options" 403 GET "/v1/wallets/$RIDER_ID/topup-options?owner_type=OWNER_TYPE_RIDER" "$OTHER"
+expect "the rider's top-up options" 200 GET "/v1/wallets/$RIDER_ID/topup-options?owner_type=OWNER_TYPE_RIDER" "$RIDER"
+check "say the limits and the currency" True "$(body_field 'bool(d.get("minAmount")) and bool(d.get("maxAmount")) and bool(d.get("currencyCode"))')"
+ZAINCASH_ON="$(body_field '"zaincash" in d.get("providers", [])')"
 expect "into another rider's wallet" 403 POST "$TOPUPS" "$OTHER" "$(topup 5000)"
-expect "below the least" 400 POST "$TOPUPS" "$RIDER" "$(topup 500)"
 expect "an unknown provider" 400 POST "$TOPUPS" "$RIDER" "$(topup 5000 paypal)"
-expect "a fraction of a dinar" 400 POST "$TOPUPS" "$RIDER" "$(topup 5000.5)"
-check "is refused before ZainCash is asked" True "$(message | grep -q 'whole units' && echo True || echo False)"
+if [ "$ZAINCASH_ON" = True ]; then
+  expect "below the least" 400 POST "$TOPUPS" "$RIDER" "$(topup 500)"
+  expect "a fraction of a dinar" 400 POST "$TOPUPS" "$RIDER" "$(topup 5000.5)"
+  check "is refused before ZainCash is asked" True "$(message | grep -q 'whole units' && echo True || echo False)"
+else
+  expect "ZainCash is not set up" 400 POST "$TOPUPS" "$RIDER" "$(topup 5000)"
+  check "so it is not offered" True "$(message | grep -q 'not available' && echo True || echo False)"
+fi
 
 echo "==> [3/3] ZainCash says it is paid"
-if [ -z "$WEBHOOK_SECRET" ]; then
-  echo "  skip  ZAINCASH_WEBHOOK_SECRET is empty in services/wallet-service/.env (set any value and restart wallet-service to play a notification)"
+if [ "$ZAINCASH_ON" != True ] || [ -z "$WEBHOOK_SECRET" ]; then
+  echo "  skip  ZainCash is not set up in services/wallet-service/.env (ZAINCASH_CLIENT_ID, ZAINCASH_CLIENT_SECRET and ZAINCASH_WEBHOOK_SECRET, any values; restart wallet-service)"
 else
   REFERENCE="$(sql ride-wallet-postgres "insert into provider_topups (owner_type, owner_id, provider, amount, currency_code, status, provider_transaction_id) values ('rider', '$RIDER_ID', 'zaincash', 5000, 'IQD', 'pending', 'e2e-zc-$RUN') returning external_reference_id" | head -1)"
   TOPUP_ID="$(sql ride-wallet-postgres "select id from provider_topups where external_reference_id = '$REFERENCE'")"
