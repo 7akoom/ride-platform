@@ -93,6 +93,64 @@ func (h *WalletHandler) ListTransfers(
 	return response, nil
 }
 
+// GetTransferOptions tells the app the transfer limits and what the rider
+// sent in the last 24 hours.
+func (h *WalletHandler) GetTransferOptions(
+	ctx context.Context,
+	request *walletv1.GetTransferOptionsRequest,
+) (*walletv1.GetTransferOptionsResponse, error) {
+	if h.transfers == nil {
+		return nil, status.Error(codes.Unimplemented, "transfers are not available")
+	}
+
+	options, err := h.transfers.Options(ctx, request.GetRiderId())
+	if err != nil {
+		return nil, h.mapTransferError(err)
+	}
+
+	return &walletv1.GetTransferOptionsResponse{
+		CurrencyCode: options.CurrencyCode,
+		MinAmount:    options.MinAmount.String(),
+		MaxAmount:    options.MaxAmount.String(),
+		DailyAmount:  options.DailyAmount.String(),
+		DailyCount:   int32(options.DailyCount),
+		SentAmount:   options.SentAmount.String(),
+		SentCount:    int32(options.SentCount),
+	}, nil
+}
+
+// LookupTransferRecipient says whether a transfer to the phone would reach a
+// rider, with the rider's short name.
+func (h *WalletHandler) LookupTransferRecipient(
+	ctx context.Context,
+	request *walletv1.LookupTransferRecipientRequest,
+) (*walletv1.LookupTransferRecipientResponse, error) {
+	if h.transfers == nil {
+		return nil, status.Error(codes.Unimplemented, "transfers are not available")
+	}
+
+	// Lookups are counted per person: the internal token, which is no
+	// person, never looks up.
+	principal, ok := authenticatedPrincipalFromContext(ctx)
+	if !ok || principal.IdentityID == internalServicePrincipalID {
+		return nil, status.Error(codes.PermissionDenied, "a recipient is looked up by a person")
+	}
+
+	recipient, err := h.transfers.Lookup(ctx, transfer.LookupInput{
+		RiderID:    request.GetRiderId(),
+		IdentityID: principal.IdentityID,
+		Phone:      request.GetPhone(),
+	})
+	if err != nil {
+		return nil, h.mapTransferError(err)
+	}
+
+	return &walletv1.LookupTransferRecipientResponse{
+		Result:      string(recipient.Result),
+		DisplayName: recipient.DisplayName,
+	}, nil
+}
+
 func (h *WalletHandler) mapTransferError(err error) error {
 	var (
 		wrong  *transfer.WrongPINError
@@ -142,6 +200,12 @@ func (h *WalletHandler) mapTransferError(err error) error {
 
 	case errors.Is(err, transfer.ErrIdentityRequired):
 		return status.Error(codes.PermissionDenied, err.Error())
+
+	case errors.Is(err, transfer.ErrLookupLimit):
+		return status.Error(codes.ResourceExhausted, err.Error())
+
+	case errors.Is(err, transfer.ErrLookupsUnavailable):
+		return status.Error(codes.Unimplemented, err.Error())
 
 	case upstreamUnavailable(err):
 		h.logger.Warn("identity-service or rider-service is unavailable", "error", err)

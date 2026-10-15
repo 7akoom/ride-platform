@@ -83,6 +83,10 @@ type Config struct {
 	VoucherRedeemMaxFailures string
 	VoucherRedeemWindow      string
 
+	// Recipient lookups before a transfer (see config/transfers.go).
+	TransferLookupMaxPerHour string
+	TransferLookupMaxPerDay  string
+
 	// Earnings and incentives (see config/incentives.go).
 	WalletTimeZone         string
 	IncentiveSettleDelay   string
@@ -232,6 +236,9 @@ func Load() Config {
 		VoucherCodeKey:           getEnv("VOUCHER_CODE_KEY", developmentVoucherCodeKey),
 		VoucherRedeemMaxFailures: getEnv("VOUCHER_REDEEM_MAX_FAILURES", "5"),
 		VoucherRedeemWindow:      getEnv("VOUCHER_REDEEM_WINDOW", "1h"),
+
+		TransferLookupMaxPerHour: getEnv("TRANSFER_LOOKUP_MAX_PER_HOUR", "30"),
+		TransferLookupMaxPerDay:  getEnv("TRANSFER_LOOKUP_MAX_PER_DAY", "100"),
 
 		WalletTimeZone:         getEnv("WALLET_TIME_ZONE", "UTC"),
 		IncentiveSettleDelay:   getEnv("INCENTIVE_SETTLE_DELAY", "30m"),

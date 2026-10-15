@@ -149,6 +149,28 @@ service WalletService {
     };
   }
 
+  // GetTransferOptions is what a transfer may be for the rider now: the least
+  // and most one transfer may move, how much and how many may go out in any
+  // 24 hours, and how much and how many went out in the last 24 hours.
+  rpc GetTransferOptions(GetTransferOptionsRequest) returns (GetTransferOptionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/wallets/{rider_id}/transfer-options"
+    };
+  }
+
+  // LookupTransferRecipient says, before sending, whether a transfer to the
+  // phone would reach a rider (exactly whom SendTransfer would: an active
+  // account with a rider profile), with that rider's short name ("Haidar
+  // K."). The phone is never returned. Lookups are counted per rider (an
+  // hour and a day, wallet-service config); past either limit it answers
+  // RESOURCE_EXHAUSTED.
+  rpc LookupTransferRecipient(LookupTransferRecipientRequest) returns (LookupTransferRecipientResponse) {
+    option (google.api.http) = {
+      post: "/v1/wallets/{rider_id}/transfer-recipients:lookup"
+      body: "*"
+    };
+  }
+
   // Money requests: a rider asks for money, from one registered rider (by
   // phone: they are told) or from whoever opens its code (a link or a QR
   // code built from the code). Paying one is a transfer from the payer with
@@ -772,6 +794,38 @@ message ListTransfersRequest {
 message ListTransfersResponse {
   repeated Transfer transfers = 1;
   string next_page_token = 2;
+}
+
+message GetTransferOptionsRequest {
+  string rider_id = 1;
+}
+
+message GetTransferOptionsResponse {
+  string currency_code = 1;
+  // Decimal strings in currency_code.
+  string min_amount = 2;
+  string max_amount = 3;
+  // How much and how many transfers may go out in any 24 hours.
+  string daily_amount = 4;
+  int32 daily_count = 5;
+  // How much and how many went out in the last 24 hours.
+  string sent_amount = 6;
+  int32 sent_count = 7;
+}
+
+message LookupTransferRecipientRequest {
+  // The sender: the caller's own rider profile.
+  string rider_id = 1;
+  // E.164, e.g. +9647701234567.
+  string phone = 2;
+}
+
+message LookupTransferRecipientResponse {
+  // found (a rider a transfer can reach), not_found (nobody a transfer can
+  // reach), or self (the caller's own phone).
+  string result = 1;
+  // The first name and the initial of the last one; set when found.
+  string display_name = 2;
 }
 
 message CreateMoneyRequestRequest {

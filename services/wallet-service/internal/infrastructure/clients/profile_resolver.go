@@ -52,3 +52,18 @@ func (r *ProfileResolver) DriverID(ctx context.Context, identityID string) (stri
 
 	return response.GetDriver().GetId(), nil
 }
+
+// RiderByIdentity is the person's rider profile id and the name it shows;
+// empty when they have none.
+func (r *ProfileResolver) RiderByIdentity(ctx context.Context, identityID string) (string, string, error) {
+	response, err := r.riders.GetRiderByIdentity(ctx, &riderv1.GetRiderByIdentityRequest{IdentityId: identityID})
+	if status.Code(err) == codes.NotFound {
+		return "", "", nil
+	}
+
+	if err != nil {
+		return "", "", fmt.Errorf("call rider-service GetRiderByIdentity: %w", err)
+	}
+
+	return response.GetRider().GetId(), response.GetRider().GetDisplayName(), nil
+}

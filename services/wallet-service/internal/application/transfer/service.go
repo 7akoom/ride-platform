@@ -29,6 +29,10 @@ type Service struct {
 	riders   Riders
 	requests Requests
 	now      func() time.Time
+
+	preflight    Preflight
+	directory    Directory
+	lookupLimits LookupLimits
 }
 
 func NewService(store Store, identity Identity, riders Riders) *Service {

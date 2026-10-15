@@ -38,6 +38,8 @@ const (
 	WalletService_TipDriver_FullMethodName               = "/ride.wallet.v1.WalletService/TipDriver"
 	WalletService_SendTransfer_FullMethodName            = "/ride.wallet.v1.WalletService/SendTransfer"
 	WalletService_ListTransfers_FullMethodName           = "/ride.wallet.v1.WalletService/ListTransfers"
+	WalletService_GetTransferOptions_FullMethodName      = "/ride.wallet.v1.WalletService/GetTransferOptions"
+	WalletService_LookupTransferRecipient_FullMethodName = "/ride.wallet.v1.WalletService/LookupTransferRecipient"
 	WalletService_CreateMoneyRequest_FullMethodName      = "/ride.wallet.v1.WalletService/CreateMoneyRequest"
 	WalletService_ListMoneyRequests_FullMethodName       = "/ride.wallet.v1.WalletService/ListMoneyRequests"
 	WalletService_GetMoneyRequest_FullMethodName         = "/ride.wallet.v1.WalletService/GetMoneyRequest"
@@ -148,6 +150,17 @@ type WalletServiceClient interface {
 	SendTransfer(ctx context.Context, in *SendTransferRequest, opts ...grpc.CallOption) (*SendTransferResponse, error)
 	// ListTransfers is the rider's transfers, sent and received, newest first.
 	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersResponse, error)
+	// GetTransferOptions is what a transfer may be for the rider now: the least
+	// and most one transfer may move, how much and how many may go out in any
+	// 24 hours, and how much and how many went out in the last 24 hours.
+	GetTransferOptions(ctx context.Context, in *GetTransferOptionsRequest, opts ...grpc.CallOption) (*GetTransferOptionsResponse, error)
+	// LookupTransferRecipient says, before sending, whether a transfer to the
+	// phone would reach a rider (exactly whom SendTransfer would: an active
+	// account with a rider profile), with that rider's short name ("Haidar
+	// K."). The phone is never returned. Lookups are counted per rider (an
+	// hour and a day, wallet-service config); past either limit it answers
+	// RESOURCE_EXHAUSTED.
+	LookupTransferRecipient(ctx context.Context, in *LookupTransferRecipientRequest, opts ...grpc.CallOption) (*LookupTransferRecipientResponse, error)
 	// Money requests: a rider asks for money, from one registered rider (by
 	// phone: they are told) or from whoever opens its code (a link or a QR
 	// code built from the code). Paying one is a transfer from the payer with
@@ -433,6 +446,26 @@ func (c *walletServiceClient) ListTransfers(ctx context.Context, in *ListTransfe
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListTransfersResponse)
 	err := c.cc.Invoke(ctx, WalletService_ListTransfers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) GetTransferOptions(ctx context.Context, in *GetTransferOptionsRequest, opts ...grpc.CallOption) (*GetTransferOptionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTransferOptionsResponse)
+	err := c.cc.Invoke(ctx, WalletService_GetTransferOptions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) LookupTransferRecipient(ctx context.Context, in *LookupTransferRecipientRequest, opts ...grpc.CallOption) (*LookupTransferRecipientResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LookupTransferRecipientResponse)
+	err := c.cc.Invoke(ctx, WalletService_LookupTransferRecipient_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -844,6 +877,17 @@ type WalletServiceServer interface {
 	SendTransfer(context.Context, *SendTransferRequest) (*SendTransferResponse, error)
 	// ListTransfers is the rider's transfers, sent and received, newest first.
 	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error)
+	// GetTransferOptions is what a transfer may be for the rider now: the least
+	// and most one transfer may move, how much and how many may go out in any
+	// 24 hours, and how much and how many went out in the last 24 hours.
+	GetTransferOptions(context.Context, *GetTransferOptionsRequest) (*GetTransferOptionsResponse, error)
+	// LookupTransferRecipient says, before sending, whether a transfer to the
+	// phone would reach a rider (exactly whom SendTransfer would: an active
+	// account with a rider profile), with that rider's short name ("Haidar
+	// K."). The phone is never returned. Lookups are counted per rider (an
+	// hour and a day, wallet-service config); past either limit it answers
+	// RESOURCE_EXHAUSTED.
+	LookupTransferRecipient(context.Context, *LookupTransferRecipientRequest) (*LookupTransferRecipientResponse, error)
 	// Money requests: a rider asks for money, from one registered rider (by
 	// phone: they are told) or from whoever opens its code (a link or a QR
 	// code built from the code). Paying one is a transfer from the payer with
@@ -1008,6 +1052,12 @@ func (UnimplementedWalletServiceServer) SendTransfer(context.Context, *SendTrans
 }
 func (UnimplementedWalletServiceServer) ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTransfers not implemented")
+}
+func (UnimplementedWalletServiceServer) GetTransferOptions(context.Context, *GetTransferOptionsRequest) (*GetTransferOptionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTransferOptions not implemented")
+}
+func (UnimplementedWalletServiceServer) LookupTransferRecipient(context.Context, *LookupTransferRecipientRequest) (*LookupTransferRecipientResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method LookupTransferRecipient not implemented")
 }
 func (UnimplementedWalletServiceServer) CreateMoneyRequest(context.Context, *CreateMoneyRequestRequest) (*MoneyRequestResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateMoneyRequest not implemented")
@@ -1449,6 +1499,42 @@ func _WalletService_ListTransfers_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WalletServiceServer).ListTransfers(ctx, req.(*ListTransfersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_GetTransferOptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransferOptionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetTransferOptions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetTransferOptions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetTransferOptions(ctx, req.(*GetTransferOptionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_LookupTransferRecipient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LookupTransferRecipientRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).LookupTransferRecipient(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_LookupTransferRecipient_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).LookupTransferRecipient(ctx, req.(*LookupTransferRecipientRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2125,6 +2211,14 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTransfers",
 			Handler:    _WalletService_ListTransfers_Handler,
+		},
+		{
+			MethodName: "GetTransferOptions",
+			Handler:    _WalletService_GetTransferOptions_Handler,
+		},
+		{
+			MethodName: "LookupTransferRecipient",
+			Handler:    _WalletService_LookupTransferRecipient_Handler,
 		},
 		{
 			MethodName: "CreateMoneyRequest",

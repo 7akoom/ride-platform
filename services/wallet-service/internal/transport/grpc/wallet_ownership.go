@@ -106,6 +106,23 @@ var ownerChecks = map[string]ownerCheck{
 
 		return c.ownsRider(ctx, r.GetRiderId())
 	},
+	"/ride.wallet.v1.WalletService/GetTransferOptions": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.GetTransferOptionsRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
+	"/ride.wallet.v1.WalletService/LookupTransferRecipient": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*walletv1.LookupTransferRecipientRequest)
+		if !ok {
+			return false, nil
+		}
+
+		// Only a rider looks up, and only for their own wallet's transfers.
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
 	"/ride.wallet.v1.WalletService/CreateMoneyRequest": func(ctx context.Context, c caller, request any) (bool, error) {
 		r, ok := request.(*walletv1.CreateMoneyRequestRequest)
 		if !ok {

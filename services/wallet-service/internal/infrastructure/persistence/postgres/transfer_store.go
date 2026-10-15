@@ -255,3 +255,55 @@ func (r *TransferStore) List(ctx context.Context, riderID string, offset, limit 
 
 	return transfers, nil
 }
+
+var _ transfer.Preflight = (*TransferStore)(nil)
+
+// SentLastDay sums the rider's transfers of the last 24 hours, as sendTx
+// checks them against the daily limits.
+func (r *TransferStore) SentLastDay(ctx context.Context, riderID string) (wallet.Money, int, error) {
+	var (
+		amount decimal.Decimal
+		count  int
+	)
+
+	if err := r.wallets.pool.QueryRow(
+		ctx,
+		`SELECT COALESCE(SUM(amount), 0), COUNT(*)
+		 FROM wallet_transfers
+		 WHERE sender_rider_id = $1 AND created_at > CURRENT_TIMESTAMP - interval '24 hours'`,
+		riderID,
+	).Scan(&amount, &count); err != nil {
+		return decimal.Zero, 0, fmt.Errorf("sum the last day's transfers: %w", err)
+	}
+
+	return amount, count, nil
+}
+
+func (r *TransferStore) Lookups(ctx context.Context, riderID string, since time.Time) (int, error) {
+	var count int
+
+	if err := r.wallets.pool.QueryRow(
+		ctx,
+		`SELECT count(*) FROM transfer_recipient_lookups WHERE rider_id = $1 AND looked_up_at > $2`,
+		riderID, since,
+	).Scan(&count); err != nil {
+		return 0, fmt.Errorf("count recipient lookups: %w", err)
+	}
+
+	return count, nil
+}
+
+func (r *TransferStore) RecordLookup(ctx context.Context, riderID string, at, forgetBefore time.Time) error {
+	if _, err := r.wallets.pool.Exec(
+		ctx,
+		`WITH forgotten AS (
+		     DELETE FROM transfer_recipient_lookups WHERE rider_id = $1 AND looked_up_at <= $3
+		 )
+		 INSERT INTO transfer_recipient_lookups (rider_id, looked_up_at) VALUES ($1, $2)`,
+		riderID, at, forgetBefore,
+	); err != nil {
+		return fmt.Errorf("record a recipient lookup: %w", err)
+	}
+
+	return nil
+}

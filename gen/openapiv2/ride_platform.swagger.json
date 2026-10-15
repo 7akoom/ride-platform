@@ -9493,6 +9493,77 @@
         ]
       }
     },
+    "/v1/wallets/{riderId}/transfer-options": {
+      "get": {
+        "summary": "GetTransferOptions is what a transfer may be for the rider now: the least\nand most one transfer may move, how much and how many may go out in any\n24 hours, and how much and how many went out in the last 24 hours.",
+        "operationId": "WalletService_GetTransferOptions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTransferOptionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/wallets/{riderId}/transfer-recipients:lookup": {
+      "post": {
+        "summary": "LookupTransferRecipient says, before sending, whether a transfer to the\nphone would reach a rider (exactly whom SendTransfer would: an active\naccount with a rider profile), with that rider's short name (\"Haidar\nK.\"). The phone is never returned. Lookups are counted per rider (an\nhour and a day, wallet-service config); past either limit it answers\nRESOURCE_EXHAUSTED.",
+        "operationId": "WalletService_LookupTransferRecipient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LookupTransferRecipientResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "description": "The sender: the caller's own rider profile.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceLookupTransferRecipientBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/wallets/{riderId}/transfers": {
       "get": {
         "summary": "ListTransfers is the rider's transfers, sent and received, newest first.",
@@ -10757,6 +10828,15 @@
         "language": {
           "type": "string",
           "description": "The app's language for the provider's page: ar, ku or en; empty is ar."
+        }
+      }
+    },
+    "WalletServiceLookupTransferRecipientBody": {
+      "type": "object",
+      "properties": {
+        "phone": {
+          "type": "string",
+          "description": "E.164, e.g. +9647701234567."
         }
       }
     },
@@ -13517,6 +13597,37 @@
         }
       }
     },
+    "v1GetTransferOptionsResponse": {
+      "type": "object",
+      "properties": {
+        "currencyCode": {
+          "type": "string"
+        },
+        "minAmount": {
+          "type": "string",
+          "description": "Decimal strings in currency_code."
+        },
+        "maxAmount": {
+          "type": "string"
+        },
+        "dailyAmount": {
+          "type": "string",
+          "description": "How much and how many transfers may go out in any 24 hours."
+        },
+        "dailyCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sentAmount": {
+          "type": "string",
+          "description": "How much and how many went out in the last 24 hours."
+        },
+        "sentCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "v1GetTripDriverResponse": {
       "type": "object",
       "properties": {
@@ -14696,6 +14807,19 @@
     },
     "v1LogoutResponse": {
       "type": "object"
+    },
+    "v1LookupTransferRecipientResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string",
+          "description": "found (a rider a transfer can reach), not_found (nobody a transfer can\nreach), or self (the caller's own phone)."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The first name and the initial of the last one; set when found."
+        }
+      }
     },
     "v1Macro": {
       "type": "object",

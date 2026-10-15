@@ -96,6 +96,13 @@ func run() int {
 		return 1
 	}
 
+	transferLookups, err := config.ParseTransferLookups(cfg)
+	if err != nil {
+		logger.Error("invalid transfer lookup configuration", "error", err)
+
+		return 1
+	}
+
 	voucherCodec, err := voucherapp.NewCodec(voucherConfig.CodeKey)
 	if err != nil {
 		logger.Error("invalid voucher configuration", "error", err)
@@ -191,7 +198,8 @@ func run() int {
 	}
 	defer driverConn.Close()
 
-	profileResolver := grpcserver.NewCachingResolver(clients.NewProfileResolver(riderConn, driverConn))
+	profiles := clients.NewProfileResolver(riderConn, driverConn)
+	profileResolver := grpcserver.NewCachingResolver(profiles)
 
 	// identity-service is dialled lazily: wallet-service starts without it,
 	// and only transfers need it.
@@ -339,7 +347,11 @@ func run() int {
 				transferStore,
 				clients.NewIdentityClient(identityConn),
 				profileResolver,
-			).WithRequests(transferStore),
+			).WithRequests(transferStore).
+				WithLookups(transferStore, profiles, transferapp.LookupLimits{
+					PerHour: transferLookups.PerHour,
+					PerDay:  transferLookups.PerDay,
+				}),
 		).
 		WithStatements(walletRepository).
 		WithVouchers(voucherapp.NewService(
