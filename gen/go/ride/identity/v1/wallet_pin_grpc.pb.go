@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	WalletPinService_GetWalletPinStatus_FullMethodName = "/ride.identity.v1.WalletPinService/GetWalletPinStatus"
 	WalletPinService_SetWalletPin_FullMethodName       = "/ride.identity.v1.WalletPinService/SetWalletPin"
+	WalletPinService_VerifyMyWalletPin_FullMethodName  = "/ride.identity.v1.WalletPinService/VerifyMyWalletPin"
 	WalletPinService_VerifyWalletPin_FullMethodName    = "/ride.identity.v1.WalletPinService/VerifyWalletPin"
 )
 
@@ -44,6 +45,11 @@ type WalletPinServiceClient interface {
 	// within 10 minutes of signing in without current_pin; this also lifts a
 	// lock.
 	SetWalletPin(ctx context.Context, in *SetWalletPinRequest, opts ...grpc.CallOption) (*WalletPinStatusResponse, error)
+	// VerifyMyWalletPin checks the caller's own PIN, for the app to say at
+	// once whether the current PIN is right before a change. A wrong PIN counts
+	// like any other (the same attempts and locks as a transfer's), so it is no
+	// easier way to guess.
+	VerifyMyWalletPin(ctx context.Context, in *VerifyMyWalletPinRequest, opts ...grpc.CallOption) (*VerifyWalletPinResponse, error)
 	// VerifyWalletPin checks a person's PIN (internal: wallet-service, with
 	// the internal service token; no route from outside).
 	VerifyWalletPin(ctx context.Context, in *VerifyWalletPinRequest, opts ...grpc.CallOption) (*VerifyWalletPinResponse, error)
@@ -71,6 +77,16 @@ func (c *walletPinServiceClient) SetWalletPin(ctx context.Context, in *SetWallet
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(WalletPinStatusResponse)
 	err := c.cc.Invoke(ctx, WalletPinService_SetWalletPin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletPinServiceClient) VerifyMyWalletPin(ctx context.Context, in *VerifyMyWalletPinRequest, opts ...grpc.CallOption) (*VerifyWalletPinResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyWalletPinResponse)
+	err := c.cc.Invoke(ctx, WalletPinService_VerifyMyWalletPin_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +123,11 @@ type WalletPinServiceServer interface {
 	// within 10 minutes of signing in without current_pin; this also lifts a
 	// lock.
 	SetWalletPin(context.Context, *SetWalletPinRequest) (*WalletPinStatusResponse, error)
+	// VerifyMyWalletPin checks the caller's own PIN, for the app to say at
+	// once whether the current PIN is right before a change. A wrong PIN counts
+	// like any other (the same attempts and locks as a transfer's), so it is no
+	// easier way to guess.
+	VerifyMyWalletPin(context.Context, *VerifyMyWalletPinRequest) (*VerifyWalletPinResponse, error)
 	// VerifyWalletPin checks a person's PIN (internal: wallet-service, with
 	// the internal service token; no route from outside).
 	VerifyWalletPin(context.Context, *VerifyWalletPinRequest) (*VerifyWalletPinResponse, error)
@@ -125,6 +146,9 @@ func (UnimplementedWalletPinServiceServer) GetWalletPinStatus(context.Context, *
 }
 func (UnimplementedWalletPinServiceServer) SetWalletPin(context.Context, *SetWalletPinRequest) (*WalletPinStatusResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetWalletPin not implemented")
+}
+func (UnimplementedWalletPinServiceServer) VerifyMyWalletPin(context.Context, *VerifyMyWalletPinRequest) (*VerifyWalletPinResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyMyWalletPin not implemented")
 }
 func (UnimplementedWalletPinServiceServer) VerifyWalletPin(context.Context, *VerifyWalletPinRequest) (*VerifyWalletPinResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VerifyWalletPin not implemented")
@@ -186,6 +210,24 @@ func _WalletPinService_SetWalletPin_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WalletPinService_VerifyMyWalletPin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyMyWalletPinRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletPinServiceServer).VerifyMyWalletPin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletPinService_VerifyMyWalletPin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletPinServiceServer).VerifyMyWalletPin(ctx, req.(*VerifyMyWalletPinRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WalletPinService_VerifyWalletPin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(VerifyWalletPinRequest)
 	if err := dec(in); err != nil {
@@ -218,6 +260,10 @@ var WalletPinService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetWalletPin",
 			Handler:    _WalletPinService_SetWalletPin_Handler,
+		},
+		{
+			MethodName: "VerifyMyWalletPin",
+			Handler:    _WalletPinService_VerifyMyWalletPin_Handler,
 		},
 		{
 			MethodName: "VerifyWalletPin",

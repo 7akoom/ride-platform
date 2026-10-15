@@ -103,6 +103,28 @@ func (h *WalletPinHandler) VerifyWalletPin(
 		return nil, h.mapError(err)
 	}
 
+	return toProtoVerifyResult(result), nil
+}
+
+// VerifyMyWalletPin checks the caller's own PIN; a wrong one counts.
+func (h *WalletPinHandler) VerifyMyWalletPin(
+	ctx context.Context,
+	request *identityv1.VerifyMyWalletPinRequest,
+) (*identityv1.VerifyWalletPinResponse, error) {
+	principal, ok := authenticatedPrincipalFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "valid access token is required")
+	}
+
+	result, err := h.pins.Verify(ctx, principal.IdentityID, request.GetPin())
+	if err != nil {
+		return nil, h.mapError(err)
+	}
+
+	return toProtoVerifyResult(result), nil
+}
+
+func toProtoVerifyResult(result walletpin.VerifyResult) *identityv1.VerifyWalletPinResponse {
 	response := &identityv1.VerifyWalletPinResponse{
 		Result:       toProtoPinCheck(result.Check),
 		AttemptsLeft: int32(result.AttemptsLeft),
@@ -112,7 +134,7 @@ func (h *WalletPinHandler) VerifyWalletPin(
 		response.LockedUntil = timestamppb.New(*result.LockedUntil)
 	}
 
-	return response, nil
+	return response
 }
 
 func (d *DirectoryHandler) FindIdentityByPhone(

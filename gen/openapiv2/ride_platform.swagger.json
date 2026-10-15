@@ -6296,6 +6296,39 @@
         ]
       }
     },
+    "/v1/me/wallet-pin:verify": {
+      "post": {
+        "summary": "VerifyMyWalletPin checks the caller's own PIN, for the app to say at\nonce whether the current PIN is right before a change. A wrong PIN counts\nlike any other (the same attempts and locks as a transfer's), so it is no\neasier way to guess.",
+        "operationId": "WalletPinService_VerifyMyWalletPin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VerifyWalletPinResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1VerifyMyWalletPinRequest"
+            }
+          }
+        ],
+        "tags": [
+          "WalletPinService"
+        ]
+      }
+    },
     "/v1/media/{mediaId}": {
       "get": {
         "summary": "GetMedia reads a file's details. Its owner, staff with media.read, or a service.",
@@ -15431,6 +15464,17 @@
         }
       }
     },
+    "v1PinCheck": {
+      "type": "string",
+      "enum": [
+        "PIN_CHECK_UNSPECIFIED",
+        "PIN_CHECK_OK",
+        "PIN_CHECK_WRONG",
+        "PIN_CHECK_LOCKED",
+        "PIN_CHECK_NOT_SET"
+      ],
+      "default": "PIN_CHECK_UNSPECIFIED"
+    },
     "v1Place": {
       "type": "object",
       "properties": {
@@ -17867,6 +17911,30 @@
         "accessTokenExpiresInSeconds": {
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "v1VerifyMyWalletPinRequest": {
+      "type": "object",
+      "properties": {
+        "pin": {
+          "type": "string"
+        }
+      }
+    },
+    "v1VerifyWalletPinResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/v1PinCheck"
+        },
+        "attemptsLeft": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lockedUntil": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

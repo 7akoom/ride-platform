@@ -236,6 +236,50 @@ func (x *SetWalletPinRequest) GetCurrentPin() string {
 	return ""
 }
 
+type VerifyMyWalletPinRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pin           string                 `protobuf:"bytes,1,opt,name=pin,proto3" json:"pin,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyMyWalletPinRequest) Reset() {
+	*x = VerifyMyWalletPinRequest{}
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyMyWalletPinRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyMyWalletPinRequest) ProtoMessage() {}
+
+func (x *VerifyMyWalletPinRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyMyWalletPinRequest.ProtoReflect.Descriptor instead.
+func (*VerifyMyWalletPinRequest) Descriptor() ([]byte, []int) {
+	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *VerifyMyWalletPinRequest) GetPin() string {
+	if x != nil {
+		return x.Pin
+	}
+	return ""
+}
+
 type VerifyWalletPinRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	IdentityId    string                 `protobuf:"bytes,1,opt,name=identity_id,json=identityId,proto3" json:"identity_id,omitempty"`
@@ -246,7 +290,7 @@ type VerifyWalletPinRequest struct {
 
 func (x *VerifyWalletPinRequest) Reset() {
 	*x = VerifyWalletPinRequest{}
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[3]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -258,7 +302,7 @@ func (x *VerifyWalletPinRequest) String() string {
 func (*VerifyWalletPinRequest) ProtoMessage() {}
 
 func (x *VerifyWalletPinRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[3]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -271,7 +315,7 @@ func (x *VerifyWalletPinRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyWalletPinRequest.ProtoReflect.Descriptor instead.
 func (*VerifyWalletPinRequest) Descriptor() ([]byte, []int) {
-	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{3}
+	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *VerifyWalletPinRequest) GetIdentityId() string {
@@ -299,7 +343,7 @@ type VerifyWalletPinResponse struct {
 
 func (x *VerifyWalletPinResponse) Reset() {
 	*x = VerifyWalletPinResponse{}
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[4]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -311,7 +355,7 @@ func (x *VerifyWalletPinResponse) String() string {
 func (*VerifyWalletPinResponse) ProtoMessage() {}
 
 func (x *VerifyWalletPinResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[4]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -324,7 +368,7 @@ func (x *VerifyWalletPinResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyWalletPinResponse.ProtoReflect.Descriptor instead.
 func (*VerifyWalletPinResponse) Descriptor() ([]byte, []int) {
-	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{4}
+	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *VerifyWalletPinResponse) GetResult() PinCheck {
@@ -358,7 +402,7 @@ type FindIdentityByPhoneRequest struct {
 
 func (x *FindIdentityByPhoneRequest) Reset() {
 	*x = FindIdentityByPhoneRequest{}
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[5]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -370,7 +414,7 @@ func (x *FindIdentityByPhoneRequest) String() string {
 func (*FindIdentityByPhoneRequest) ProtoMessage() {}
 
 func (x *FindIdentityByPhoneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[5]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -383,7 +427,7 @@ func (x *FindIdentityByPhoneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FindIdentityByPhoneRequest.ProtoReflect.Descriptor instead.
 func (*FindIdentityByPhoneRequest) Descriptor() ([]byte, []int) {
-	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{5}
+	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *FindIdentityByPhoneRequest) GetPhoneNumber() string {
@@ -403,7 +447,7 @@ type FindIdentityByPhoneResponse struct {
 
 func (x *FindIdentityByPhoneResponse) Reset() {
 	*x = FindIdentityByPhoneResponse{}
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[6]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -415,7 +459,7 @@ func (x *FindIdentityByPhoneResponse) String() string {
 func (*FindIdentityByPhoneResponse) ProtoMessage() {}
 
 func (x *FindIdentityByPhoneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[6]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -428,7 +472,7 @@ func (x *FindIdentityByPhoneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FindIdentityByPhoneResponse.ProtoReflect.Descriptor instead.
 func (*FindIdentityByPhoneResponse) Descriptor() ([]byte, []int) {
-	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{6}
+	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *FindIdentityByPhoneResponse) GetFound() bool {
@@ -454,7 +498,7 @@ type GetIdentityPhoneRequest struct {
 
 func (x *GetIdentityPhoneRequest) Reset() {
 	*x = GetIdentityPhoneRequest{}
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[7]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -466,7 +510,7 @@ func (x *GetIdentityPhoneRequest) String() string {
 func (*GetIdentityPhoneRequest) ProtoMessage() {}
 
 func (x *GetIdentityPhoneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[7]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -479,7 +523,7 @@ func (x *GetIdentityPhoneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetIdentityPhoneRequest.ProtoReflect.Descriptor instead.
 func (*GetIdentityPhoneRequest) Descriptor() ([]byte, []int) {
-	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{7}
+	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetIdentityPhoneRequest) GetIdentityId() string {
@@ -499,7 +543,7 @@ type GetIdentityPhoneResponse struct {
 
 func (x *GetIdentityPhoneResponse) Reset() {
 	*x = GetIdentityPhoneResponse{}
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[8]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -511,7 +555,7 @@ func (x *GetIdentityPhoneResponse) String() string {
 func (*GetIdentityPhoneResponse) ProtoMessage() {}
 
 func (x *GetIdentityPhoneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[8]
+	mi := &file_ride_identity_v1_wallet_pin_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -524,7 +568,7 @@ func (x *GetIdentityPhoneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetIdentityPhoneResponse.ProtoReflect.Descriptor instead.
 func (*GetIdentityPhoneResponse) Descriptor() ([]byte, []int) {
-	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{8}
+	return file_ride_identity_v1_wallet_pin_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetIdentityPhoneResponse) GetPhoneNumber() string {
@@ -548,7 +592,9 @@ const file_ride_identity_v1_wallet_pin_proto_rawDesc = "" +
 	"\x13SetWalletPinRequest\x12\x17\n" +
 	"\anew_pin\x18\x01 \x01(\tR\x06newPin\x12\x1f\n" +
 	"\vcurrent_pin\x18\x02 \x01(\tR\n" +
-	"currentPin\"K\n" +
+	"currentPin\",\n" +
+	"\x18VerifyMyWalletPinRequest\x12\x10\n" +
+	"\x03pin\x18\x01 \x01(\tR\x03pin\"K\n" +
 	"\x16VerifyWalletPinRequest\x12\x1f\n" +
 	"\videntity_id\x18\x01 \x01(\tR\n" +
 	"identityId\x12\x10\n" +
@@ -573,10 +619,11 @@ const file_ride_identity_v1_wallet_pin_proto_rawDesc = "" +
 	"\fPIN_CHECK_OK\x10\x01\x12\x13\n" +
 	"\x0fPIN_CHECK_WRONG\x10\x02\x12\x14\n" +
 	"\x10PIN_CHECK_LOCKED\x10\x03\x12\x15\n" +
-	"\x11PIN_CHECK_NOT_SET\x10\x042\x84\x03\n" +
+	"\x11PIN_CHECK_NOT_SET\x10\x042\x96\x04\n" +
 	"\x10WalletPinService\x12\x87\x01\n" +
 	"\x12GetWalletPinStatus\x12+.ride.identity.v1.GetWalletPinStatusRequest\x1a).ride.identity.v1.WalletPinStatusResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/me/wallet-pin\x12~\n" +
-	"\fSetWalletPin\x12%.ride.identity.v1.SetWalletPinRequest\x1a).ride.identity.v1.WalletPinStatusResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\x1a\x11/v1/me/wallet-pin\x12f\n" +
+	"\fSetWalletPin\x12%.ride.identity.v1.SetWalletPinRequest\x1a).ride.identity.v1.WalletPinStatusResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\x1a\x11/v1/me/wallet-pin\x12\x8f\x01\n" +
+	"\x11VerifyMyWalletPin\x12*.ride.identity.v1.VerifyMyWalletPinRequest\x1a).ride.identity.v1.VerifyWalletPinResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/v1/me/wallet-pin:verify\x12f\n" +
 	"\x0fVerifyWalletPin\x12(.ride.identity.v1.VerifyWalletPinRequest\x1a).ride.identity.v1.VerifyWalletPinResponse2\xf9\x01\n" +
 	"\x18IdentityDirectoryService\x12r\n" +
 	"\x13FindIdentityByPhone\x12,.ride.identity.v1.FindIdentityByPhoneRequest\x1a-.ride.identity.v1.FindIdentityByPhoneResponse\x12i\n" +
@@ -595,37 +642,40 @@ func file_ride_identity_v1_wallet_pin_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_identity_v1_wallet_pin_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ride_identity_v1_wallet_pin_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_ride_identity_v1_wallet_pin_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_ride_identity_v1_wallet_pin_proto_goTypes = []any{
 	(PinCheck)(0),                       // 0: ride.identity.v1.PinCheck
 	(*GetWalletPinStatusRequest)(nil),   // 1: ride.identity.v1.GetWalletPinStatusRequest
 	(*WalletPinStatusResponse)(nil),     // 2: ride.identity.v1.WalletPinStatusResponse
 	(*SetWalletPinRequest)(nil),         // 3: ride.identity.v1.SetWalletPinRequest
-	(*VerifyWalletPinRequest)(nil),      // 4: ride.identity.v1.VerifyWalletPinRequest
-	(*VerifyWalletPinResponse)(nil),     // 5: ride.identity.v1.VerifyWalletPinResponse
-	(*FindIdentityByPhoneRequest)(nil),  // 6: ride.identity.v1.FindIdentityByPhoneRequest
-	(*FindIdentityByPhoneResponse)(nil), // 7: ride.identity.v1.FindIdentityByPhoneResponse
-	(*GetIdentityPhoneRequest)(nil),     // 8: ride.identity.v1.GetIdentityPhoneRequest
-	(*GetIdentityPhoneResponse)(nil),    // 9: ride.identity.v1.GetIdentityPhoneResponse
-	(*timestamppb.Timestamp)(nil),       // 10: google.protobuf.Timestamp
+	(*VerifyMyWalletPinRequest)(nil),    // 4: ride.identity.v1.VerifyMyWalletPinRequest
+	(*VerifyWalletPinRequest)(nil),      // 5: ride.identity.v1.VerifyWalletPinRequest
+	(*VerifyWalletPinResponse)(nil),     // 6: ride.identity.v1.VerifyWalletPinResponse
+	(*FindIdentityByPhoneRequest)(nil),  // 7: ride.identity.v1.FindIdentityByPhoneRequest
+	(*FindIdentityByPhoneResponse)(nil), // 8: ride.identity.v1.FindIdentityByPhoneResponse
+	(*GetIdentityPhoneRequest)(nil),     // 9: ride.identity.v1.GetIdentityPhoneRequest
+	(*GetIdentityPhoneResponse)(nil),    // 10: ride.identity.v1.GetIdentityPhoneResponse
+	(*timestamppb.Timestamp)(nil),       // 11: google.protobuf.Timestamp
 }
 var file_ride_identity_v1_wallet_pin_proto_depIdxs = []int32{
-	10, // 0: ride.identity.v1.WalletPinStatusResponse.set_at:type_name -> google.protobuf.Timestamp
-	10, // 1: ride.identity.v1.WalletPinStatusResponse.locked_until:type_name -> google.protobuf.Timestamp
+	11, // 0: ride.identity.v1.WalletPinStatusResponse.set_at:type_name -> google.protobuf.Timestamp
+	11, // 1: ride.identity.v1.WalletPinStatusResponse.locked_until:type_name -> google.protobuf.Timestamp
 	0,  // 2: ride.identity.v1.VerifyWalletPinResponse.result:type_name -> ride.identity.v1.PinCheck
-	10, // 3: ride.identity.v1.VerifyWalletPinResponse.locked_until:type_name -> google.protobuf.Timestamp
+	11, // 3: ride.identity.v1.VerifyWalletPinResponse.locked_until:type_name -> google.protobuf.Timestamp
 	1,  // 4: ride.identity.v1.WalletPinService.GetWalletPinStatus:input_type -> ride.identity.v1.GetWalletPinStatusRequest
 	3,  // 5: ride.identity.v1.WalletPinService.SetWalletPin:input_type -> ride.identity.v1.SetWalletPinRequest
-	4,  // 6: ride.identity.v1.WalletPinService.VerifyWalletPin:input_type -> ride.identity.v1.VerifyWalletPinRequest
-	6,  // 7: ride.identity.v1.IdentityDirectoryService.FindIdentityByPhone:input_type -> ride.identity.v1.FindIdentityByPhoneRequest
-	8,  // 8: ride.identity.v1.IdentityDirectoryService.GetIdentityPhone:input_type -> ride.identity.v1.GetIdentityPhoneRequest
-	2,  // 9: ride.identity.v1.WalletPinService.GetWalletPinStatus:output_type -> ride.identity.v1.WalletPinStatusResponse
-	2,  // 10: ride.identity.v1.WalletPinService.SetWalletPin:output_type -> ride.identity.v1.WalletPinStatusResponse
-	5,  // 11: ride.identity.v1.WalletPinService.VerifyWalletPin:output_type -> ride.identity.v1.VerifyWalletPinResponse
-	7,  // 12: ride.identity.v1.IdentityDirectoryService.FindIdentityByPhone:output_type -> ride.identity.v1.FindIdentityByPhoneResponse
-	9,  // 13: ride.identity.v1.IdentityDirectoryService.GetIdentityPhone:output_type -> ride.identity.v1.GetIdentityPhoneResponse
-	9,  // [9:14] is the sub-list for method output_type
-	4,  // [4:9] is the sub-list for method input_type
+	4,  // 6: ride.identity.v1.WalletPinService.VerifyMyWalletPin:input_type -> ride.identity.v1.VerifyMyWalletPinRequest
+	5,  // 7: ride.identity.v1.WalletPinService.VerifyWalletPin:input_type -> ride.identity.v1.VerifyWalletPinRequest
+	7,  // 8: ride.identity.v1.IdentityDirectoryService.FindIdentityByPhone:input_type -> ride.identity.v1.FindIdentityByPhoneRequest
+	9,  // 9: ride.identity.v1.IdentityDirectoryService.GetIdentityPhone:input_type -> ride.identity.v1.GetIdentityPhoneRequest
+	2,  // 10: ride.identity.v1.WalletPinService.GetWalletPinStatus:output_type -> ride.identity.v1.WalletPinStatusResponse
+	2,  // 11: ride.identity.v1.WalletPinService.SetWalletPin:output_type -> ride.identity.v1.WalletPinStatusResponse
+	6,  // 12: ride.identity.v1.WalletPinService.VerifyMyWalletPin:output_type -> ride.identity.v1.VerifyWalletPinResponse
+	6,  // 13: ride.identity.v1.WalletPinService.VerifyWalletPin:output_type -> ride.identity.v1.VerifyWalletPinResponse
+	8,  // 14: ride.identity.v1.IdentityDirectoryService.FindIdentityByPhone:output_type -> ride.identity.v1.FindIdentityByPhoneResponse
+	10, // 15: ride.identity.v1.IdentityDirectoryService.GetIdentityPhone:output_type -> ride.identity.v1.GetIdentityPhoneResponse
+	10, // [10:16] is the sub-list for method output_type
+	4,  // [4:10] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -642,7 +692,7 @@ func file_ride_identity_v1_wallet_pin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_identity_v1_wallet_pin_proto_rawDesc), len(file_ride_identity_v1_wallet_pin_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

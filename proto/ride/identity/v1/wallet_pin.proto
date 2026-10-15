@@ -33,6 +33,16 @@ service WalletPinService {
     };
   }
 
+  // VerifyMyWalletPin checks the caller's own PIN, for the app to say at
+  // once whether the current PIN is right before a change. A wrong PIN counts
+  // like any other (the same attempts and locks as a transfer's), so it is no
+  // easier way to guess.
+  rpc VerifyMyWalletPin(VerifyMyWalletPinRequest) returns (VerifyWalletPinResponse) {
+    option (google.api.http) = {
+      post: "/v1/me/wallet-pin:verify"
+      body: "*"
+    };
+  }
   // VerifyWalletPin checks a person's PIN (internal: wallet-service, with
   // the internal service token; no route from outside).
   rpc VerifyWalletPin(VerifyWalletPinRequest) returns (VerifyWalletPinResponse);
@@ -68,6 +78,10 @@ enum PinCheck {
   PIN_CHECK_WRONG = 2;
   PIN_CHECK_LOCKED = 3;
   PIN_CHECK_NOT_SET = 4;
+}
+
+message VerifyMyWalletPinRequest {
+  string pin = 1;
 }
 
 message VerifyWalletPinRequest {

@@ -64,6 +64,7 @@ func TestOtherMethodsAreNotInternal(t *testing.T) {
 	for _, method := range []string{
 		identityv1.WalletPinService_SetWalletPin_FullMethodName,
 		identityv1.WalletPinService_GetWalletPinStatus_FullMethodName,
+		identityv1.WalletPinService_VerifyMyWalletPin_FullMethodName,
 		identityv1.IdentityService_GetMyIdentity_FullMethodName,
 	} {
 		if !requiresAuthentication(method) {
