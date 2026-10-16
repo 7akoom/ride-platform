@@ -24,13 +24,13 @@ func dec(v int64) decimal.Decimal { return decimal.NewFromInt(v) }
 
 func moneyRequest(code, key string, open bool, amount int64) transfer.MoneyRequest {
 	r := transfer.MoneyRequest{
-		Code: code, RequesterRiderID: riderA, RequesterPhone: "+9647500000001", Open: open,
+		Code: code, RequesterRiderID: riderA, RequesterPhone: "+9647500000001", RequesterName: "Haidar K.", Open: open,
 		CurrencyCode: "IQD", Amount: dec(amount), Note: "lunch", IdempotencyKey: key,
 		ExpiresAt: time.Now().Add(time.Hour),
 	}
 
 	if !open {
-		r.PayerRiderID, r.PayerPhone = riderB, "+9647500000002"
+		r.PayerRiderID, r.PayerPhone, r.PayerName = riderB, "+9647500000002", "Sara"
 	}
 
 	return r
@@ -46,12 +46,13 @@ func TestAMoneyRequestIsStoredWithItsEvent(t *testing.T) {
 	store := NewTransferStore(NewWalletRepository(pool))
 
 	targeted, err := store.CreateRequest(ctx, moneyRequest("CODEAAAAA2", "k1", false, 3000))
-	if err != nil || targeted.ID == "" || targeted.Status != transfer.RequestPending || targeted.PayerRiderID != riderB {
+	if err != nil || targeted.ID == "" || targeted.Status != transfer.RequestPending || targeted.PayerRiderID != riderB ||
+		targeted.RequesterName != "Haidar K." || targeted.PayerName != "Sara" {
 		t.Fatalf("created %+v %v", targeted, err)
 	}
 
 	open, err := store.CreateRequest(ctx, moneyRequest("CODEBBBBB2", "k2", true, 3000))
-	if err != nil || !open.Open || open.PayerRiderID != "" {
+	if err != nil || !open.Open || open.PayerRiderID != "" || open.RequesterName != "Haidar K." || open.PayerName != "" {
 		t.Fatalf("created %+v %v", open, err)
 	}
 
@@ -132,7 +133,7 @@ func TestAnOpenRequestIsPaidOnceWhoeverRushesToPayIt(t *testing.T) {
 				payer = riderC
 			}
 
-			done, _, _, err := store.PayRequest(ctx, request.ID, payment(payer, "request:"+request.ID, 3000), time.Now())
+			done, _, _, err := store.PayRequest(ctx, request.ID, payment(payer, "request:"+request.ID, 3000), "Payer "+payer, time.Now())
 
 			mu.Lock()
 			defer mu.Unlock()
@@ -168,7 +169,8 @@ func TestAnOpenRequestIsPaidOnceWhoeverRushesToPayIt(t *testing.T) {
 	}
 
 	found, ok, err := store.FindRequestByCode(ctx, "CODEOPEN22")
-	if err != nil || !ok || found.Status != transfer.RequestPaid || found.PayerRiderID != paid[0] || found.TransferID == "" {
+	if err != nil || !ok || found.Status != transfer.RequestPaid || found.PayerRiderID != paid[0] || found.TransferID == "" ||
+		found.PayerName != "Payer "+paid[0] {
 		t.Fatalf("found %+v %v %v", found, ok, err)
 	}
 
@@ -192,7 +194,7 @@ func TestPayingARequestWithoutTheMoneyMovesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, _, err := store.PayRequest(ctx, request.ID, payment(riderB, "request:"+request.ID, 3000), time.Now()); !errors.Is(err, wallet.ErrInsufficientFunds) {
+	if _, _, _, err := store.PayRequest(ctx, request.ID, payment(riderB, "request:"+request.ID, 3000), "", time.Now()); !errors.Is(err, wallet.ErrInsufficientFunds) {
 		t.Fatalf("got %v", err)
 	}
 
@@ -201,7 +203,7 @@ func TestPayingARequestWithoutTheMoneyMovesNothing(t *testing.T) {
 		t.Fatalf("found %+v", found)
 	}
 
-	if _, _, _, err := store.PayRequest(ctx, request.ID, payment(riderB, "request:"+request.ID, 3000), time.Now().Add(2*time.Hour)); !errors.Is(err, transfer.ErrRequestNotPending) {
+	if _, _, _, err := store.PayRequest(ctx, request.ID, payment(riderB, "request:"+request.ID, 3000), "", time.Now().Add(2*time.Hour)); !errors.Is(err, transfer.ErrRequestNotPending) {
 		t.Fatalf("an expired request: %v", err)
 	}
 }

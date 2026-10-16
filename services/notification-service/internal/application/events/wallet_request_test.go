@@ -20,6 +20,19 @@ func TestTheRiderAskedHearsOfTheRequest(t *testing.T) {
 	}
 }
 
+func TestTheRequesterIsNamedWhenTheNameIsKnown(t *testing.T) {
+	h := newHarness()
+
+	payload := envelopeWithPayload("evt-r3", `{"request_id":"request-1","code":"ABCD234XYZ","payer_rider_id":"rider-2","requester_phone":"+964770***4567","requester_name":"Haidar K.","amount":"2500","currency_code":"IQD"}`)
+	if err := h.handler().Dispatch(context.Background(), "wallet.money_requested", payload); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := h.notifications.sendCalls[0].Variables["requester"]; got != "Haidar K." {
+		t.Fatalf("requester %q", got)
+	}
+}
+
 func TestARequestEventWithoutAPayerIsSkipped(t *testing.T) {
 	h := newHarness()
 

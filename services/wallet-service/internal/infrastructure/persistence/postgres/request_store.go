@@ -17,8 +17,8 @@ import (
 var _ transfer.Requests = (*TransferStore)(nil)
 
 // requestColumns is every money request column, in scanRequest's order.
-const requestColumns = `id, code, requester_rider_id, requester_phone,
-        COALESCE(payer_rider_id::text, ''), COALESCE(payer_phone, ''),
+const requestColumns = `id, code, requester_rider_id, requester_phone, requester_name,
+        COALESCE(payer_rider_id::text, ''), COALESCE(payer_phone, ''), payer_name,
         is_open, currency_code, amount, note, status,
         COALESCE(transfer_id::text, ''), idempotency_key, expires_at, created_at, closed_at`
 
@@ -33,8 +33,10 @@ func scanRequest(row pgx.Row) (transfer.MoneyRequest, error) {
 		&r.Code,
 		&r.RequesterRiderID,
 		&r.RequesterPhone,
+		&r.RequesterName,
 		&r.PayerRiderID,
 		&r.PayerPhone,
+		&r.PayerName,
 		&r.Open,
 		&r.CurrencyCode,
 		&r.Amount,
@@ -59,22 +61,25 @@ func (r *TransferStore) CreateRequest(ctx context.Context, request transfer.Mone
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	var payerRider, payerPhone any
+	payerName := ""
 	if !request.Open {
-		payerRider, payerPhone = request.PayerRiderID, request.PayerPhone
+		payerRider, payerPhone, payerName = request.PayerRiderID, request.PayerPhone, request.PayerName
 	}
 
 	created, err := scanRequest(tx.QueryRow(
 		ctx,
 		`INSERT INTO money_requests
-		    (code, requester_rider_id, requester_phone, payer_rider_id, payer_phone, is_open,
-		     currency_code, amount, note, idempotency_key, expires_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		    (code, requester_rider_id, requester_phone, requester_name, payer_rider_id, payer_phone,
+		     payer_name, is_open, currency_code, amount, note, idempotency_key, expires_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		 RETURNING `+requestColumns,
 		request.Code,
 		request.RequesterRiderID,
 		request.RequesterPhone,
+		request.RequesterName,
 		payerRider,
 		payerPhone,
+		payerName,
 		request.Open,
 		request.CurrencyCode,
 		request.Amount,
@@ -102,6 +107,7 @@ func (r *TransferStore) CreateRequest(ctx context.Context, request transfer.Mone
 			"code":            created.Code,
 			"payer_rider_id":  created.PayerRiderID,
 			"requester_phone": transfer.MaskPhone(created.RequesterPhone),
+			"requester_name":  created.RequesterName,
 			"amount":          created.Amount.String(),
 			"currency_code":   created.CurrencyCode,
 			"note":            created.Note,
@@ -220,6 +226,7 @@ func (r *TransferStore) PayRequest(
 	ctx context.Context,
 	requestID string,
 	payment transfer.Record,
+	payerName string,
 	now time.Time,
 ) (transfer.MoneyRequest, transfer.Transfer, wallet.Wallet, error) {
 	tx, err := r.wallets.pool.Begin(ctx)
@@ -253,10 +260,11 @@ func (r *TransferStore) PayRequest(
 	paid, err := scanRequest(tx.QueryRow(
 		ctx,
 		`UPDATE money_requests
-		 SET status = 'paid', payer_rider_id = $2, payer_phone = $3, transfer_id = $4, closed_at = $5
+		 SET status = 'paid', payer_rider_id = $2, payer_phone = $3, transfer_id = $4, closed_at = $5,
+		     payer_name = COALESCE(NULLIF($6, ''), payer_name)
 		 WHERE id = $1
 		 RETURNING `+requestColumns,
-		requestID, sent.SenderRiderID, sent.SenderPhone, sent.ID, now,
+		requestID, sent.SenderRiderID, sent.SenderPhone, sent.ID, now, payerName,
 	))
 	if err != nil {
 		return transfer.MoneyRequest{}, transfer.Transfer{}, wallet.Wallet{}, fmt.Errorf("mark money request paid: %w", err)

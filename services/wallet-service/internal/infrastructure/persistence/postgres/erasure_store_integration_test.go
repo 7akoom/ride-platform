@@ -29,9 +29,9 @@ func TestErasureStoreClosesTheWallets(t *testing.T) {
 	}
 
 	if _, err := pool.Exec(ctx,
-		`INSERT INTO money_requests (code, requester_rider_id, requester_phone, payer_rider_id, payer_phone,
-		     currency_code, amount, idempotency_key, expires_at)
-		 VALUES ('ABC123', $2, '+9647500000002', $1, '+9647500000001', 'IQD', 500, 'm1', now() + interval '1 day')`,
+		`INSERT INTO money_requests (code, requester_rider_id, requester_phone, requester_name, payer_rider_id, payer_phone,
+		     payer_name, currency_code, amount, idempotency_key, expires_at)
+		 VALUES ('ABC123', $2, '+9647500000002', 'Sara', $1, '+9647500000001', 'Haidar K.', 'IQD', 500, 'm1', now() + interval '1 day')`,
 		riderA, riderB); err != nil {
 		t.Fatal(err)
 	}
@@ -75,6 +75,10 @@ func TestErasureStoreClosesTheWallets(t *testing.T) {
 
 	if count(`SELECT count(*) FROM money_requests WHERE status = 'cancelled' AND (payer_phone = '' OR payer_phone IS NULL) AND requester_phone <> ''`) != 1 {
 		t.Fatal("the money request was not cancelled, or the wrong phone was erased")
+	}
+
+	if count(`SELECT count(*) FROM money_requests WHERE payer_name = '' AND requester_name = 'Sara'`) != 1 {
+		t.Fatal("the erased rider's name is still on the request, or the other rider's was erased")
 	}
 
 	if w, _ := repo.FindWallet(ctx, wallet.OwnerRider, riderB); w.Balance.String() != "4000" || w.Blocked {

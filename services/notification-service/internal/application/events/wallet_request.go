@@ -21,9 +21,12 @@ type moneyRequestedPayload struct {
 	PayerRiderID string `json:"payer_rider_id"`
 	// RequesterPhone is masked by wallet-service (+964770***4567).
 	RequesterPhone string `json:"requester_phone"`
-	Amount         string `json:"amount"`
-	CurrencyCode   string `json:"currency_code"`
-	Note           string `json:"note"`
+	// RequesterName is the requester's short rider name ("Haidar K."); empty
+	// when wallet-service could not read it (and in events from before it).
+	RequesterName string `json:"requester_name"`
+	Amount        string `json:"amount"`
+	CurrencyCode  string `json:"currency_code"`
+	Note          string `json:"note"`
 }
 
 // handleMoneyRequested tells the rider asked. The notification's data
@@ -48,7 +51,12 @@ func (h *Handler) handleMoneyRequested(ctx context.Context, envelope Envelope) e
 		return nil
 	}
 
-	requester := payload.RequesterPhone
+	// Who asks: the name, else the masked phone.
+	requester := payload.RequesterName
+	if requester == "" {
+		requester = payload.RequesterPhone
+	}
+
 	if requester == "" {
 		requester = "another rider"
 	}

@@ -66,10 +66,12 @@ func (s *ErasureStore) Erase(ctx context.Context, account erasure.Account) error
 			struct{ what, sql, arg string }{"money requests", `UPDATE money_requests
 				SET status = 'cancelled', closed_at = CURRENT_TIMESTAMP
 				WHERE status = 'pending' AND (requester_rider_id = $1 OR payer_rider_id = $1)`, account.RiderID},
-			struct{ what, sql, arg string }{"requester phones", `UPDATE money_requests SET requester_phone = ''
-				WHERE requester_rider_id = $1 AND requester_phone <> ''`, account.RiderID},
-			struct{ what, sql, arg string }{"payer phones", `UPDATE money_requests SET payer_phone = ''
-				WHERE payer_rider_id = $1 AND payer_phone <> ''`, account.RiderID},
+			struct{ what, sql, arg string }{"requester phones and names", `UPDATE money_requests
+				SET requester_phone = '', requester_name = ''
+				WHERE requester_rider_id = $1 AND (requester_phone <> '' OR requester_name <> '')`, account.RiderID},
+			struct{ what, sql, arg string }{"payer phones and names", `UPDATE money_requests
+				SET payer_phone = '', payer_name = ''
+				WHERE payer_rider_id = $1 AND (payer_phone <> '' OR payer_name <> '')`, account.RiderID},
 			struct{ what, sql, arg string }{"sender phones", `UPDATE wallet_transfers SET sender_phone = ''
 				WHERE sender_rider_id = $1 AND sender_phone <> ''`, account.RiderID},
 			struct{ what, sql, arg string }{"recipient phones", `UPDATE wallet_transfers SET recipient_phone = ''

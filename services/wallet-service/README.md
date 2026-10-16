@@ -195,6 +195,14 @@ may pay it, which is what a link or a QR code carries. The code is 10
 characters without 0/O/1/I/L; a request lives 1-168 hours (72 by default) and
 asks for what a transfer may move. A request for a rider writes
 `wallet.money_requested` (outbox): that rider gets a push with the code.
+Asking a phone counts as a recipient lookup (the same hourly and daily
+limits), so it cannot list riders' phones either.
+
+A request keeps the short rider names (`requester_name`, `payer_name`:
+"Haidar K."), read from rider-service when it is made (an open request's
+payer when it is paid). They are only shown: when rider-service does not
+answer the request goes on without them. A stranger opening an open request
+sees who asks (the name, the phone masked), never who paid it.
 
 Paying it (`…/{code}:pay`, the payer's PIN) is a transfer from the payer to
 the requester with the key `request:<id>`, in the transaction that locks the

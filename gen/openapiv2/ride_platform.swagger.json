@@ -9318,7 +9318,7 @@
         ]
       },
       "post": {
-        "summary": "Money requests: a rider asks for money, from one registered rider (by\nphone: they are told) or from whoever opens its code (a link or a QR\ncode built from the code). Paying one is a transfer from the payer with\ntheir PIN, within the transfer limits. It stays pending until paid,\ndeclined (by the rider it is for), cancelled (by the requester) or it\nexpires (72 hours by default, 1-168).",
+        "summary": "Money requests: a rider asks for money, from one registered rider (by\nphone: they are told; asking a phone counts as a recipient lookup) or\nfrom whoever opens its code (a link or a QR code built from the code).\nPaying one is a transfer from the payer with their PIN, within the\ntransfer limits. It stays pending until paid, declined (by the rider it\nis for), cancelled (by the requester) or it expires (72 hours by\ndefault, 1-168).",
         "operationId": "WalletService_CreateMoneyRequest",
         "responses": {
           "200": {
@@ -15181,6 +15181,14 @@
         "closedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "requesterName": {
+          "type": "string",
+          "description": "The requester's short rider name (\"Haidar K.\"): the one asked sees who\nasks. Empty when it could not be read."
+        },
+        "payerName": {
+          "type": "string",
+          "description": "The short name of the rider asked, or of whoever paid an open request;\nnot shown to a viewer."
         }
       },
       "description": "MoneyRequest is seen from one rider's side: role is requester or payer (the\nrider it is for, or who paid it), or viewer for an open request someone\nelse asked for."

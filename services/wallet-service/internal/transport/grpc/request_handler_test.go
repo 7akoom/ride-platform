@@ -64,18 +64,21 @@ func TestAStrangerSeesAnOpenRequestMasked(t *testing.T) {
 	now := time.Date(2026, 9, 24, 12, 0, 0, 0, time.UTC)
 	request := transfer.MoneyRequest{
 		ID: "request-1", Code: "ABCD234XYZ", RequesterRiderID: "rider-a", RequesterPhone: "+9647701234567",
-		PayerRiderID: "rider-b", PayerPhone: "+9647509876543", Open: true, Amount: decimal.NewFromInt(2500),
+		RequesterName: "Haidar K.", PayerRiderID: "rider-b", PayerPhone: "+9647509876543", PayerName: "Sara",
+		Open: true, Amount: decimal.NewFromInt(2500),
 		Status: transfer.RequestPaid, TransferID: "transfer-1", ExpiresAt: now.Add(time.Hour),
 	}
 
 	stranger := toProtoMoneyRequest(request, "rider-c", now)
 	if stranger.GetRole() != "viewer" || stranger.GetRequesterPhone() != "+964770***4567" ||
-		stranger.GetPayerPhone() != "" || stranger.GetTransferId() != "" {
+		stranger.GetRequesterName() != "Haidar K." || stranger.GetPayerPhone() != "" ||
+		stranger.GetPayerName() != "" || stranger.GetTransferId() != "" {
 		t.Fatalf("stranger sees %+v", stranger)
 	}
 
 	payer := toProtoMoneyRequest(request, "rider-b", now)
-	if payer.GetRole() != "payer" || payer.GetRequesterPhone() != "+9647701234567" || payer.GetTransferId() != "transfer-1" {
+	if payer.GetRole() != "payer" || payer.GetRequesterPhone() != "+9647701234567" || payer.GetTransferId() != "transfer-1" ||
+		payer.GetRequesterName() != "Haidar K." || payer.GetPayerName() != "Sara" {
 		t.Fatalf("payer sees %+v", payer)
 	}
 

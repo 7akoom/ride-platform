@@ -54,10 +54,16 @@ type MoneyRequest struct {
 	Code             string
 	RequesterRiderID string
 	RequesterPhone   string
+	// RequesterName is the requester's short name ("Haidar K."), kept when
+	// the request is made: the one asked sees who asks.
+	RequesterName string
 	// PayerRiderID is the rider it is for (Open false), or for an open
 	// request whoever paid it.
-	PayerRiderID   string
-	PayerPhone     string
+	PayerRiderID string
+	PayerPhone   string
+	// PayerName is the short name of the rider asked, or of whoever paid an
+	// open request.
+	PayerName      string
 	Open           bool
 	CurrencyCode   string
 	Amount         wallet.Money
@@ -115,8 +121,8 @@ type Requests interface {
 	// PayRequest pays a pending request that has not expired, with the
 	// transfer in the record, in one transaction: the request is locked, so
 	// it is paid once. ErrRequestNotPending otherwise, and the transfer's
-	// errors.
-	PayRequest(ctx context.Context, requestID string, payment Record, now time.Time) (MoneyRequest, Transfer, wallet.Wallet, error)
+	// errors. payerName, when set, is kept as the payer's name.
+	PayRequest(ctx context.Context, requestID string, payment Record, payerName string, now time.Time) (MoneyRequest, Transfer, wallet.Wallet, error)
 }
 
 // WithRequests gives the service money requests.
@@ -212,21 +218,31 @@ func (s *Service) CreateRequest(ctx context.Context, input RequestInput) (MoneyR
 	}
 
 	if phone != "" {
-		payer, err := s.riderByPhone(ctx, phone)
+		// Asking a phone says whether it is a rider's: it counts as a
+		// recipient lookup, so riders' phones cannot be listed this way
+		// either.
+		if err := s.countLookup(ctx, requester); err != nil {
+			return MoneyRequest{}, err
+		}
+
+		payer, payerIdentity, err := s.riderByPhone(ctx, phone)
 		if err != nil {
 			return MoneyRequest{}, err
 		}
 
-		if payer == requester {
+		if payer == requester || payerIdentity == identityID {
 			return MoneyRequest{}, ErrToSelf
 		}
 
 		request.PayerRiderID, request.PayerPhone = payer, phone
+		request.PayerName = s.shortNameOf(ctx, payerIdentity)
 	}
 
 	if request.RequesterPhone, err = s.identity.PhoneOf(ctx, identityID); err != nil {
 		return MoneyRequest{}, fmt.Errorf("read the requester's phone: %w", err)
 	}
+
+	request.RequesterName = s.shortNameOf(ctx, identityID)
 
 	for attempt := 0; attempt < 5; attempt++ {
 		if request.Code, err = newCode(); err != nil {
@@ -411,7 +427,7 @@ func (s *Service) PayRequest(ctx context.Context, input PayInput) (MoneyRequest,
 		},
 		DailyAmount: config.TransferDailyAmount,
 		DailyCount:  config.TransferDailyCount,
-	}, s.now())
+	}, s.shortNameOf(ctx, identityID), s.now())
 	if err != nil {
 		return MoneyRequest{}, Transfer{}, wallet.Wallet{}, err
 	}
@@ -461,27 +477,72 @@ func (s *Service) close(ctx context.Context, request MoneyRequest, status Reques
 	return s.requests.CloseRequest(ctx, request.ID, status, now)
 }
 
-// riderByPhone is the registered rider who signs in with the phone.
-func (s *Service) riderByPhone(ctx context.Context, phone string) (string, error) {
+// riderByPhone is the registered rider who signs in with the phone, and
+// their identity.
+func (s *Service) riderByPhone(ctx context.Context, phone string) (string, string, error) {
 	identityID, found, err := s.identity.FindByPhone(ctx, phone)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if !found {
-		return "", ErrRecipientNotFound
+		return "", "", ErrRecipientNotFound
 	}
 
 	riderID, err := s.riders.RiderID(ctx, identityID)
 	if err != nil {
-		return "", fmt.Errorf("find the rider profile: %w", err)
+		return "", "", fmt.Errorf("find the rider profile: %w", err)
 	}
 
 	if riderID == "" {
-		return "", ErrRecipientNotFound
+		return "", "", ErrRecipientNotFound
 	}
 
-	return riderID, nil
+	return riderID, identityID, nil
+}
+
+// maxNameLength bounds a kept name (the column holds 60).
+const maxNameLength = 60
+
+// shortNameOf is the person's rider name, shortened ("Haidar K."), to show
+// on a request. It is only shown: when it cannot be read (no rider
+// directory, rider-service not answering) the request goes on without it.
+func (s *Service) shortNameOf(ctx context.Context, identityID string) string {
+	if s.directory == nil || identityID == "" {
+		return ""
+	}
+
+	_, name, err := s.directory.RiderByIdentity(ctx, identityID)
+	if err != nil {
+		return ""
+	}
+
+	short := []rune(ShortName(name))
+	if len(short) > maxNameLength {
+		short = short[:maxNameLength]
+	}
+
+	return string(short)
+}
+
+// countLookup counts a phone checked by the rider against the lookup limits
+// (when the service has them).
+func (s *Service) countLookup(ctx context.Context, riderID string) error {
+	if s.preflight == nil {
+		return nil
+	}
+
+	now := s.now()
+
+	if err := s.checkLookupLimits(ctx, riderID, now); err != nil {
+		return err
+	}
+
+	if err := s.preflight.RecordLookup(ctx, riderID, now, now.Add(-24*time.Hour)); err != nil {
+		return fmt.Errorf("count the lookup: %w", err)
+	}
+
+	return nil
 }
 
 func newCode() (string, error) {

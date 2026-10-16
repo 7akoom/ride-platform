@@ -289,8 +289,8 @@ func (h *WalletHandler) GetRiderDues(
 }
 
 // toProtoMoneyRequest is the request as the viewer sees it. A rider opening
-// someone else's open request sees the requester's phone masked, and not who
-// paid it.
+// someone else's open request sees who asks (the name, the phone masked),
+// and not who paid it.
 func toProtoMoneyRequest(r transfer.MoneyRequest, viewer string, now time.Time) *walletv1.MoneyRequest {
 	role := r.Role(viewer)
 
@@ -300,7 +300,9 @@ func toProtoMoneyRequest(r transfer.MoneyRequest, viewer string, now time.Time) 
 		Role:           role,
 		Open:           r.Open,
 		RequesterPhone: r.RequesterPhone,
+		RequesterName:  r.RequesterName,
 		PayerPhone:     r.PayerPhone,
+		PayerName:      r.PayerName,
 		Amount:         r.Amount.String(),
 		CurrencyCode:   r.CurrencyCode,
 		Note:           r.Note,
@@ -317,6 +319,7 @@ func toProtoMoneyRequest(r transfer.MoneyRequest, viewer string, now time.Time) 
 	if role == "viewer" {
 		out.RequesterPhone = transfer.MaskPhone(r.RequesterPhone)
 		out.PayerPhone = ""
+		out.PayerName = ""
 		out.TransferId = ""
 	}
 

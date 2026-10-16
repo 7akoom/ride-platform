@@ -18,6 +18,7 @@ type fakeRequests struct {
 	createErr []error // returned by the next creates, in order
 	closed    []RequestStatus
 	paid      []Record
+	payNames  []string
 	payErr    error
 	listArgs  []any
 	list      []MoneyRequest
@@ -81,8 +82,9 @@ func (f *fakeRequests) CloseRequest(_ context.Context, id string, status Request
 	return MoneyRequest{}, ErrRequestNotPending
 }
 
-func (f *fakeRequests) PayRequest(_ context.Context, id string, payment Record, now time.Time) (MoneyRequest, Transfer, wallet.Wallet, error) {
+func (f *fakeRequests) PayRequest(_ context.Context, id string, payment Record, payerName string, now time.Time) (MoneyRequest, Transfer, wallet.Wallet, error) {
 	f.paid = append(f.paid, payment)
+	f.payNames = append(f.payNames, payerName)
 	if f.payErr != nil {
 		return MoneyRequest{}, Transfer{}, wallet.Wallet{}, f.payErr
 	}
@@ -90,6 +92,9 @@ func (f *fakeRequests) PayRequest(_ context.Context, id string, payment Record, 
 	for code, r := range f.byCode {
 		if r.ID == id {
 			r.Status, r.PayerRiderID, r.TransferID, r.ClosedAt = RequestPaid, payment.Transfer.SenderRiderID, "transfer-9", &now
+			if payerName != "" {
+				r.PayerName = payerName
+			}
 			f.byCode[code] = r
 
 			sent := payment.Transfer
@@ -480,5 +485,95 @@ func TestAPendingRequestPastItsEndIsExpired(t *testing.T) {
 	r.Status = RequestPaid
 	if r.StatusAt(requestNow.Add(time.Hour)) != RequestPaid {
 		t.Fatal("a paid request never expires")
+	}
+}
+
+// newNamedRequestService has the rider directory and the lookup limits, as
+// the service runs: the recipient of these tests is "Haidar A.", the
+// sender "Me".
+func newNamedRequestService(limits LookupLimits) (*Service, *fakePreflight, *fakeRequests) {
+	service, _, _, requests := newRequestService()
+	preflight := &fakePreflight{}
+	service.WithLookups(preflight, fakeDirectory{
+		recipientIdentity: {recipientRider, "  Haidar  Kamal Ali "},
+		senderIdentity:    {senderRider, "Me"},
+	}, limits)
+
+	return service, preflight, requests
+}
+
+func TestARequestKeepsWhoAsksAndWhoIsAsked(t *testing.T) {
+	service, _, requests := newNamedRequestService(LookupLimits{PerHour: 5, PerDay: 10})
+
+	targeted := createdRequest(t, service, false)
+	if targeted.RequesterName != "Haidar A." || targeted.PayerName != "Me" {
+		t.Fatalf("targeted %+v", targeted)
+	}
+
+	// An open one knows who pays it only when it is paid.
+	open := createdRequest(t, service, true)
+	if open.RequesterName != "Haidar A." || open.PayerName != "" {
+		t.Fatalf("open %+v", open)
+	}
+
+	paid, _, _, err := service.PayRequest(context.Background(), PayInput{
+		PayerRiderID: senderRider, PayerIdentityID: senderIdentity, Code: open.Code, PIN: "2580",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if requests.payNames[0] != "Me" || paid.PayerName != "Me" {
+		t.Fatalf("pay names %v, paid %+v", requests.payNames, paid)
+	}
+}
+
+type brokenDirectory struct{}
+
+func (brokenDirectory) RiderByIdentity(context.Context, string) (string, string, error) {
+	return "", "", errors.New("rider-service is not answering")
+}
+
+func TestARequestGoesOnWithoutNames(t *testing.T) {
+	service, _, _, _ := newRequestService()
+	service.WithLookups(&fakePreflight{}, brokenDirectory{}, LookupLimits{PerHour: 5, PerDay: 10})
+
+	created := createdRequest(t, service, false)
+	if created.RequesterName != "" || created.PayerName != "" || created.PayerRiderID != senderRider {
+		t.Fatalf("created %+v", created)
+	}
+}
+
+func TestAskingAPhoneCountsAsALookup(t *testing.T) {
+	service, preflight, requests := newNamedRequestService(LookupLimits{PerHour: 2, PerDay: 3})
+
+	createdRequest(t, service, false)
+	createdRequest(t, service, true)
+
+	// A retry is the same request: nothing is looked up again.
+	if _, err := service.CreateRequest(context.Background(), validRequest()); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(preflight.lookups) != 1 {
+		t.Fatalf("lookups %d: only asking a phone counts", len(preflight.lookups))
+	}
+
+	second := validRequest()
+	second.IdempotencyKey = "req-2"
+
+	if _, err := service.CreateRequest(context.Background(), second); err != nil {
+		t.Fatal(err)
+	}
+
+	third := validRequest()
+	third.IdempotencyKey = "req-3"
+
+	if _, err := service.CreateRequest(context.Background(), third); !errors.Is(err, ErrLookupLimit) {
+		t.Fatalf("past the hourly limit: %v", err)
+	}
+
+	if len(requests.created) != 3 || len(preflight.lookups) != 2 {
+		t.Fatalf("created %d, lookups %d", len(requests.created), len(preflight.lookups))
 	}
 }

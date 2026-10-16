@@ -172,11 +172,12 @@ service WalletService {
   }
 
   // Money requests: a rider asks for money, from one registered rider (by
-  // phone: they are told) or from whoever opens its code (a link or a QR
-  // code built from the code). Paying one is a transfer from the payer with
-  // their PIN, within the transfer limits. It stays pending until paid,
-  // declined (by the rider it is for), cancelled (by the requester) or it
-  // expires (72 hours by default, 1-168).
+  // phone: they are told; asking a phone counts as a recipient lookup) or
+  // from whoever opens its code (a link or a QR code built from the code).
+  // Paying one is a transfer from the payer with their PIN, within the
+  // transfer limits. It stays pending until paid, declined (by the rider it
+  // is for), cancelled (by the requester) or it expires (72 hours by
+  // default, 1-168).
   rpc CreateMoneyRequest(CreateMoneyRequestRequest) returns (MoneyRequestResponse) {
     option (google.api.http) = {
       post: "/v1/wallets/{rider_id}/money-requests"
@@ -862,6 +863,12 @@ message MoneyRequest {
   google.protobuf.Timestamp expires_at = 12;
   google.protobuf.Timestamp created_at = 13;
   google.protobuf.Timestamp closed_at = 14;
+  // The requester's short rider name ("Haidar K."): the one asked sees who
+  // asks. Empty when it could not be read.
+  string requester_name = 15;
+  // The short name of the rider asked, or of whoever paid an open request;
+  // not shown to a viewer.
+  string payer_name = 16;
 }
 
 message MoneyRequestResponse {

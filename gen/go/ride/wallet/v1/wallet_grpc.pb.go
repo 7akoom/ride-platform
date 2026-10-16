@@ -162,11 +162,12 @@ type WalletServiceClient interface {
 	// RESOURCE_EXHAUSTED.
 	LookupTransferRecipient(ctx context.Context, in *LookupTransferRecipientRequest, opts ...grpc.CallOption) (*LookupTransferRecipientResponse, error)
 	// Money requests: a rider asks for money, from one registered rider (by
-	// phone: they are told) or from whoever opens its code (a link or a QR
-	// code built from the code). Paying one is a transfer from the payer with
-	// their PIN, within the transfer limits. It stays pending until paid,
-	// declined (by the rider it is for), cancelled (by the requester) or it
-	// expires (72 hours by default, 1-168).
+	// phone: they are told; asking a phone counts as a recipient lookup) or
+	// from whoever opens its code (a link or a QR code built from the code).
+	// Paying one is a transfer from the payer with their PIN, within the
+	// transfer limits. It stays pending until paid, declined (by the rider it
+	// is for), cancelled (by the requester) or it expires (72 hours by
+	// default, 1-168).
 	CreateMoneyRequest(ctx context.Context, in *CreateMoneyRequestRequest, opts ...grpc.CallOption) (*MoneyRequestResponse, error)
 	// ListMoneyRequests: role outgoing (asked by this rider) or incoming (for
 	// this rider, or paid by them); status pending, paid, declined, cancelled
@@ -889,11 +890,12 @@ type WalletServiceServer interface {
 	// RESOURCE_EXHAUSTED.
 	LookupTransferRecipient(context.Context, *LookupTransferRecipientRequest) (*LookupTransferRecipientResponse, error)
 	// Money requests: a rider asks for money, from one registered rider (by
-	// phone: they are told) or from whoever opens its code (a link or a QR
-	// code built from the code). Paying one is a transfer from the payer with
-	// their PIN, within the transfer limits. It stays pending until paid,
-	// declined (by the rider it is for), cancelled (by the requester) or it
-	// expires (72 hours by default, 1-168).
+	// phone: they are told; asking a phone counts as a recipient lookup) or
+	// from whoever opens its code (a link or a QR code built from the code).
+	// Paying one is a transfer from the payer with their PIN, within the
+	// transfer limits. It stays pending until paid, declined (by the rider it
+	// is for), cancelled (by the requester) or it expires (72 hours by
+	// default, 1-168).
 	CreateMoneyRequest(context.Context, *CreateMoneyRequestRequest) (*MoneyRequestResponse, error)
 	// ListMoneyRequests: role outgoing (asked by this rider) or incoming (for
 	// this rider, or paid by them); status pending, paid, declined, cancelled

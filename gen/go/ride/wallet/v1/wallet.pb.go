@@ -3414,11 +3414,17 @@ type MoneyRequest struct {
 	CurrencyCode   string `protobuf:"bytes,8,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
 	Note           string `protobuf:"bytes,9,opt,name=note,proto3" json:"note,omitempty"`
 	// pending, paid, declined, cancelled or expired.
-	Status        string                 `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
-	TransferId    string                 `protobuf:"bytes,11,opt,name=transfer_id,json=transferId,proto3" json:"transfer_id,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	ClosedAt      *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=closed_at,json=closedAt,proto3" json:"closed_at,omitempty"`
+	Status     string                 `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
+	TransferId string                 `protobuf:"bytes,11,opt,name=transfer_id,json=transferId,proto3" json:"transfer_id,omitempty"`
+	ExpiresAt  *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ClosedAt   *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=closed_at,json=closedAt,proto3" json:"closed_at,omitempty"`
+	// The requester's short rider name ("Haidar K."): the one asked sees who
+	// asks. Empty when it could not be read.
+	RequesterName string `protobuf:"bytes,15,opt,name=requester_name,json=requesterName,proto3" json:"requester_name,omitempty"`
+	// The short name of the rider asked, or of whoever paid an open request;
+	// not shown to a viewer.
+	PayerName     string `protobuf:"bytes,16,opt,name=payer_name,json=payerName,proto3" json:"payer_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3549,6 +3555,20 @@ func (x *MoneyRequest) GetClosedAt() *timestamppb.Timestamp {
 		return x.ClosedAt
 	}
 	return nil
+}
+
+func (x *MoneyRequest) GetRequesterName() string {
+	if x != nil {
+		return x.RequesterName
+	}
+	return ""
+}
+
+func (x *MoneyRequest) GetPayerName() string {
+	if x != nil {
+		return x.PayerName
+	}
+	return ""
 }
 
 type MoneyRequestResponse struct {
@@ -8363,7 +8383,7 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x06amount\x18\x03 \x01(\tR\x06amount\x12\x12\n" +
 	"\x04note\x18\x04 \x01(\tR\x04note\x12(\n" +
 	"\x10expires_in_hours\x18\x05 \x01(\x05R\x0eexpiresInHours\x12'\n" +
-	"\x0fidempotency_key\x18\x06 \x01(\tR\x0eidempotencyKey\"\xdd\x03\n" +
+	"\x0fidempotency_key\x18\x06 \x01(\tR\x0eidempotencyKey\"\xa3\x04\n" +
 	"\fMoneyRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\tR\x04code\x12\x12\n" +
@@ -8383,7 +8403,10 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"expires_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x129\n" +
 	"\n" +
 	"created_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x127\n" +
-	"\tclosed_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\bclosedAt\"Y\n" +
+	"\tclosed_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\bclosedAt\x12%\n" +
+	"\x0erequester_name\x18\x0f \x01(\tR\rrequesterName\x12\x1d\n" +
+	"\n" +
+	"payer_name\x18\x10 \x01(\tR\tpayerName\"Y\n" +
 	"\x14MoneyRequestResponse\x12A\n" +
 	"\rmoney_request\x18\x01 \x01(\v2\x1c.ride.wallet.v1.MoneyRequestR\fmoneyRequest\"\x9d\x01\n" +
 	"\x18ListMoneyRequestsRequest\x12\x19\n" +
