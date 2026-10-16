@@ -158,6 +158,7 @@ func (s *Service) CreateCoupon(ctx context.Context, input CouponInput, staffID s
 		ZoneID:            zoneID,
 		VehicleClasses:    classes,
 		NewRidersOnly:     input.NewRidersOnly,
+		Featured:          input.Featured,
 		Active:            true,
 		CreatedBy:         staffID,
 		UpdatedBy:         staffID,

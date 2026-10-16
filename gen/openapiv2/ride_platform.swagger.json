@@ -7194,6 +7194,76 @@
         ]
       }
     },
+    "/v1/riders/{riderId}/offers": {
+      "get": {
+        "summary": "Offers (the rider, for their own profile): what the app's home shows.\nListRiderOffers is the featured coupons this rider may still use, the\nfirst-ride discount (a rider who never completed a trip) and how far\nthe next loyalty discount is. Where a coupon applies (area, class,\nminimum fare) is checked when the rider asks for quotes.",
+        "operationId": "PricingService_ListRiderOffers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListRiderOffersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/riders/{riderId}/offers:check": {
+      "post": {
+        "summary": "CheckRiderCoupon says whether a code the rider typed is one they may use\nnow (COUPON_STATUS_APPLIED: they may), and what it gives. It needs no\ntrip: area, class and minimum fare come with the quote.",
+        "operationId": "PricingService_CheckRiderCoupon",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CheckRiderCouponResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PricingServiceCheckRiderCouponBody"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
     "/v1/riders/{riderId}/photo": {
       "get": {
         "summary": "GetRiderPhoto: a short-lived link to the picture, for the rider (and for\nservices). NOT_FOUND without one.",
@@ -10171,6 +10241,14 @@
     "MediaServiceCompleteUploadBody": {
       "type": "object"
     },
+    "PricingServiceCheckRiderCouponBody": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        }
+      }
+    },
     "PricingServiceEndZoneSurgeBody": {
       "type": "object"
     },
@@ -10204,6 +10282,9 @@
           "type": "string"
         },
         "active": {
+          "type": "boolean"
+        },
+        "featured": {
           "type": "boolean"
         }
       },
@@ -11409,6 +11490,19 @@
       "default": "AUDIT_OUTCOME_UNSPECIFIED",
       "description": " - AUDIT_OUTCOME_PENDING: Allowed, and the service has not reported how it ended (yet)."
     },
+    "v1AutomaticOffer": {
+      "type": "object",
+      "properties": {
+        "percent": {
+          "type": "string"
+        },
+        "maxAmount": {
+          "type": "string",
+          "description": "Empty for no cap."
+        }
+      },
+      "description": "AutomaticOffer is a discount the rider gets without a code."
+    },
     "v1AvailabilityStatus": {
       "type": "string",
       "enum": [
@@ -11489,6 +11583,19 @@
         }
       },
       "description": "A driver works on a prepaid commission balance: they deposit money up\nfront, commission is drawn from it, and once the balance falls to the\nsuspension threshold their account stops receiving trips entirely\nuntil they top up again."
+    },
+    "v1CheckRiderCouponResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v1CouponStatus",
+          "description": "COUPON_STATUS_APPLIED: the rider may use it; otherwise why not\n(NOT_FOUND, ENDED, NOT_STARTED, EXPIRED, USED_UP, ALREADY_USED,\nNEW_RIDERS_ONLY)."
+        },
+        "coupon": {
+          "$ref": "#/definitions/v1CouponOffer",
+          "description": "Set when the rider may use it."
+        }
+      }
     },
     "v1CheckServiceZoneResponse": {
       "type": "object",
@@ -11670,8 +11777,61 @@
         },
         "discountGiven": {
           "type": "string"
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Shown to riders among the offers on the app's home."
         }
       }
+    },
+    "v1CouponOffer": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "discountType": {
+          "$ref": "#/definitions/v1DiscountType"
+        },
+        "discountValue": {
+          "type": "string",
+          "description": "A percent (DISCOUNT_TYPE_PERCENTAGE) or an amount."
+        },
+        "maxDiscountAmount": {
+          "type": "string",
+          "description": "A percentage's cap; empty for none."
+        },
+        "minimumFareAmount": {
+          "type": "string"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "vehicleClasses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Empty: every class."
+        },
+        "limitedArea": {
+          "type": "boolean",
+          "description": "Only in one city or zone (the quote says whether a pickup is in it)."
+        },
+        "usesLeft": {
+          "type": "integer",
+          "format": "int32",
+          "description": "How many more trips of this rider it may take off."
+        },
+        "newRidersOnly": {
+          "type": "boolean"
+        }
+      },
+      "description": "CouponOffer is a coupon as a rider sees it: what it gives and its\nconditions, never how much it was used."
     },
     "v1CouponRedemption": {
       "type": "object",
@@ -11797,6 +11957,10 @@
         "newRidersOnly": {
           "type": "boolean",
           "description": "Only riders who never completed a trip."
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Shown to riders among the offers on the app's home."
         }
       },
       "description": "CreateCouponRequest: code is 3-40 letters, digits, \"-\" or \"_\" (stored\nupper-case). A percentage is 0-100 (at most 2 decimals) and may have a\nmax_discount_amount; a fixed amount is money off. valid_from defaults to\nnow; valid_until is required. max_redemptions 0 means unlimited;\nper_rider_limit defaults to 1. city_id or zone_id (not both) limit where\nthe pickup may be; vehicle_classes (empty: all) which classes."
@@ -14595,6 +14759,27 @@
         }
       }
     },
+    "v1ListRiderOffersResponse": {
+      "type": "object",
+      "properties": {
+        "coupons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1CouponOffer"
+          },
+          "description": "Newest first."
+        },
+        "firstRide": {
+          "$ref": "#/definitions/v1AutomaticOffer",
+          "description": "Set for a rider who never completed a trip, while the discount is on."
+        },
+        "loyalty": {
+          "$ref": "#/definitions/v1LoyaltyOffer",
+          "description": "Set for a rider with a completed trip, while the discount is on."
+        }
+      }
+    },
     "v1ListRolesResponse": {
       "type": "object",
       "properties": {
@@ -14853,6 +15038,31 @@
           "description": "The first name and the initial of the last one; set when found."
         }
       }
+    },
+    "v1LoyaltyOffer": {
+      "type": "object",
+      "properties": {
+        "every": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "percent": {
+          "type": "string"
+        },
+        "maxAmount": {
+          "type": "string"
+        },
+        "completedTrips": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "tripsToGo": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Trips until the discounted one, counting it: 1 means the next trip."
+        }
+      },
+      "description": "LoyaltyOffer: every Nth completed trip is discounted."
     },
     "v1Macro": {
       "type": "object",

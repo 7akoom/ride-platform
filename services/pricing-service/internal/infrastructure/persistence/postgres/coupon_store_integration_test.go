@@ -336,3 +336,52 @@ func TestThePromotionSettings(t *testing.T) {
 		t.Fatalf("without a row: %+v %v", fallback, err)
 	}
 }
+
+func TestOnlyRunningFeaturedCouponsAreListedForRiders(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	repo := NewPricingRepository(pool)
+	now := time.Now().UTC()
+
+	shown := testCoupon("SHOWN", nil)
+	shown.Featured = true
+	notFeatured := testCoupon("TYPED", nil)
+	ended := testCoupon("ENDED", nil)
+	ended.Featured = true
+	later := testCoupon("LATER", nil)
+	later.Featured = true
+	later.ValidFrom = now.Add(time.Hour)
+	full := testCoupon("FULL", ptrInt(1))
+	full.Featured = true
+
+	for _, c := range []pricing.Coupon{shown, notFeatured, ended, later, full} {
+		if _, err := repo.CreateCoupon(ctx, c); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	off := false
+	if _, err := repo.UpdateCoupon(ctx, "ENDED", promotions.CouponChange{Active: &off}, testStaff); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := pool.Exec(ctx, `UPDATE coupons SET redemption_count = 1 WHERE code = 'FULL'`); err != nil {
+		t.Fatal(err)
+	}
+
+	listed, err := repo.ListFeaturedCoupons(ctx, now, 20)
+	if err != nil || len(listed) != 1 || listed[0].Code != "SHOWN" || !listed[0].Featured {
+		t.Fatalf("listed %+v %v", listed, err)
+	}
+
+	// Staff take it off the home.
+	if _, err := repo.UpdateCoupon(ctx, "SHOWN", promotions.CouponChange{Featured: &off}, testStaff); err != nil {
+		t.Fatal(err)
+	}
+
+	if listed, err := repo.ListFeaturedCoupons(ctx, now, 20); err != nil || len(listed) != 0 {
+		t.Fatalf("after: %+v %v", listed, err)
+	}
+}
+
+func ptrInt(v int) *int { return &v }

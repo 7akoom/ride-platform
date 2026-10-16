@@ -155,6 +155,26 @@ service PricingService {
       body: "*"
     };
   }
+
+  // Offers (the rider, for their own profile): what the app's home shows.
+  // ListRiderOffers is the featured coupons this rider may still use, the
+  // first-ride discount (a rider who never completed a trip) and how far
+  // the next loyalty discount is. Where a coupon applies (area, class,
+  // minimum fare) is checked when the rider asks for quotes.
+  rpc ListRiderOffers(ListRiderOffersRequest) returns (ListRiderOffersResponse) {
+    option (google.api.http) = {
+      get: "/v1/riders/{rider_id}/offers"
+    };
+  }
+  // CheckRiderCoupon says whether a code the rider typed is one they may use
+  // now (COUPON_STATUS_APPLIED: they may), and what it gives. It needs no
+  // trip: area, class and minimum fare come with the quote.
+  rpc CheckRiderCoupon(CheckRiderCouponRequest) returns (CheckRiderCouponResponse) {
+    option (google.api.http) = {
+      post: "/v1/riders/{rider_id}/offers:check"
+      body: "*"
+    };
+  }
 }
 
 enum DiscountType {
@@ -311,6 +331,8 @@ message CreateCouponRequest {
   repeated string vehicle_classes = 13;
   // Only riders who never completed a trip.
   bool new_riders_only = 14;
+  // Shown to riders among the offers on the app's home.
+  bool featured = 15;
 }
 
 message Coupon {
@@ -342,6 +364,8 @@ message Coupon {
   // they got in total.
   int32 redeemed_count = 23;
   string discount_given = 24;
+  // Shown to riders among the offers on the app's home.
+  bool featured = 25;
 }
 
 message CreateCouponResponse {
@@ -381,6 +405,7 @@ message UpdateCouponRequest {
   optional int32 per_rider_limit = 5;
   optional string minimum_fare_amount = 6;
   optional bool active = 7;
+  optional bool featured = 8;
 }
 
 message ListCouponRedemptionsRequest {
@@ -434,6 +459,73 @@ message UpdatePromotionSettingsRequest {
 
 message PromotionSettingsResponse {
   PromotionSettings settings = 1;
+}
+
+// --- Offers (the rider) --------------------------------------------------------
+
+message ListRiderOffersRequest {
+  string rider_id = 1;
+}
+
+// CouponOffer is a coupon as a rider sees it: what it gives and its
+// conditions, never how much it was used.
+message CouponOffer {
+  string code = 1;
+  string description = 2;
+  DiscountType discount_type = 3;
+  // A percent (DISCOUNT_TYPE_PERCENTAGE) or an amount.
+  string discount_value = 4;
+  // A percentage's cap; empty for none.
+  string max_discount_amount = 5;
+  string minimum_fare_amount = 6;
+  google.protobuf.Timestamp valid_until = 7;
+  // Empty: every class.
+  repeated string vehicle_classes = 8;
+  // Only in one city or zone (the quote says whether a pickup is in it).
+  bool limited_area = 9;
+  // How many more trips of this rider it may take off.
+  int32 uses_left = 10;
+  bool new_riders_only = 11;
+}
+
+// AutomaticOffer is a discount the rider gets without a code.
+message AutomaticOffer {
+  string percent = 1;
+  // Empty for no cap.
+  string max_amount = 2;
+}
+
+// LoyaltyOffer: every Nth completed trip is discounted.
+message LoyaltyOffer {
+  int32 every = 1;
+  string percent = 2;
+  string max_amount = 3;
+  int32 completed_trips = 4;
+  // Trips until the discounted one, counting it: 1 means the next trip.
+  int32 trips_to_go = 5;
+}
+
+message ListRiderOffersResponse {
+  // Newest first.
+  repeated CouponOffer coupons = 1;
+  // Set for a rider who never completed a trip, while the discount is on.
+  AutomaticOffer first_ride = 2;
+  // Set for a rider with a completed trip, while the discount is on.
+  LoyaltyOffer loyalty = 3;
+}
+
+message CheckRiderCouponRequest {
+  string rider_id = 1;
+  string code = 2;
+}
+
+message CheckRiderCouponResponse {
+  // COUPON_STATUS_APPLIED: the rider may use it; otherwise why not
+  // (NOT_FOUND, ENDED, NOT_STARTED, EXPIRED, USED_UP, ALREADY_USED,
+  // NEW_RIDERS_ONLY).
+  CouponStatus status = 1;
+  // Set when the rider may use it.
+  CouponOffer coupon = 2;
 }
 
 // --- Quotes ----------------------------------------------------------------

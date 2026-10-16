@@ -37,9 +37,13 @@ var methodAccess = map[string]accessLevel{
 	"/ride.pricing.v1.PricingService/EstimateFare":  accessOwner,
 	"/ride.pricing.v1.PricingService/CalculateFare": accessInternal,
 
-	"/ride.pricing.v1.PricingService/QuoteTrip":    accessOwner,
-	"/ride.pricing.v1.PricingService/ClaimQuote":   accessInternal,
-	"/ride.pricing.v1.PricingService/ReleaseQuote": accessInternal,
+	"/ride.pricing.v1.PricingService/QuoteTrip": accessOwner,
+
+	// A rider's own offers: they depend on the rider's trips and coupon uses.
+	"/ride.pricing.v1.PricingService/ListRiderOffers":  accessOwner,
+	"/ride.pricing.v1.PricingService/CheckRiderCoupon": accessOwner,
+	"/ride.pricing.v1.PricingService/ClaimQuote":       accessInternal,
+	"/ride.pricing.v1.PricingService/ReleaseQuote":     accessInternal,
 
 	"/ride.pricing.v1.PricingService/ListRateCards":      accessStaff,
 	"/ride.pricing.v1.PricingService/SetRateCard":        accessStaff,

@@ -145,11 +145,13 @@ type Coupon struct {
 	VehicleClasses []string
 	// NewRidersOnly: only riders who never completed a trip.
 	NewRidersOnly bool
-	Active        bool
-	CreatedBy     string
-	UpdatedBy     string
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	// Featured: shown to riders among the offers on the app's home.
+	Featured  bool
+	Active    bool
+	CreatedBy string
+	UpdatedBy string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // Coupon states, as staff see them.

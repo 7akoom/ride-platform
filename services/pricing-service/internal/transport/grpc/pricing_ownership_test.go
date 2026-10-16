@@ -131,3 +131,20 @@ func TestInternalCallerEstimatesForAnyRiderWithoutALookup(t *testing.T) {
 		t.Errorf("the internal caller caused %d profile lookup(s), expected none", resolver.lookups)
 	}
 }
+
+func TestARiderReadsOnlyTheirOwnOffers(t *testing.T) {
+	resolver := newOwnershipResolver()
+
+	for method, request := range map[string]func(string) any{
+		"ListRiderOffers":  func(rider string) any { return &pricingv1.ListRiderOffersRequest{RiderId: rider} },
+		"CheckRiderCoupon": func(rider string) any { return &pricingv1.CheckRiderCouponRequest{RiderId: rider, Code: "SAVE30"} },
+	} {
+		if code := callOwnershipAs(t, "id-rider-a", resolver, method, request("rider-a")); code != codes.OK {
+			t.Errorf("%s for themselves: expected OK, got %v", method, code)
+		}
+
+		if code := callOwnershipAs(t, "id-rider-b", resolver, method, request("rider-a")); code != codes.PermissionDenied {
+			t.Errorf("%s for another rider: expected PermissionDenied, got %v", method, code)
+		}
+	}
+}

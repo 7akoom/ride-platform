@@ -41,6 +41,8 @@ const (
 	PricingService_ListCouponRedemptions_FullMethodName   = "/ride.pricing.v1.PricingService/ListCouponRedemptions"
 	PricingService_GetPromotionSettings_FullMethodName    = "/ride.pricing.v1.PricingService/GetPromotionSettings"
 	PricingService_UpdatePromotionSettings_FullMethodName = "/ride.pricing.v1.PricingService/UpdatePromotionSettings"
+	PricingService_ListRiderOffers_FullMethodName         = "/ride.pricing.v1.PricingService/ListRiderOffers"
+	PricingService_CheckRiderCoupon_FullMethodName        = "/ride.pricing.v1.PricingService/CheckRiderCoupon"
 )
 
 // PricingServiceClient is the client API for PricingService service.
@@ -101,6 +103,16 @@ type PricingServiceClient interface {
 	// automatic, never two.
 	GetPromotionSettings(ctx context.Context, in *GetPromotionSettingsRequest, opts ...grpc.CallOption) (*PromotionSettingsResponse, error)
 	UpdatePromotionSettings(ctx context.Context, in *UpdatePromotionSettingsRequest, opts ...grpc.CallOption) (*PromotionSettingsResponse, error)
+	// Offers (the rider, for their own profile): what the app's home shows.
+	// ListRiderOffers is the featured coupons this rider may still use, the
+	// first-ride discount (a rider who never completed a trip) and how far
+	// the next loyalty discount is. Where a coupon applies (area, class,
+	// minimum fare) is checked when the rider asks for quotes.
+	ListRiderOffers(ctx context.Context, in *ListRiderOffersRequest, opts ...grpc.CallOption) (*ListRiderOffersResponse, error)
+	// CheckRiderCoupon says whether a code the rider typed is one they may use
+	// now (COUPON_STATUS_APPLIED: they may), and what it gives. It needs no
+	// trip: area, class and minimum fare come with the quote.
+	CheckRiderCoupon(ctx context.Context, in *CheckRiderCouponRequest, opts ...grpc.CallOption) (*CheckRiderCouponResponse, error)
 }
 
 type pricingServiceClient struct {
@@ -331,6 +343,26 @@ func (c *pricingServiceClient) UpdatePromotionSettings(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *pricingServiceClient) ListRiderOffers(ctx context.Context, in *ListRiderOffersRequest, opts ...grpc.CallOption) (*ListRiderOffersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRiderOffersResponse)
+	err := c.cc.Invoke(ctx, PricingService_ListRiderOffers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) CheckRiderCoupon(ctx context.Context, in *CheckRiderCouponRequest, opts ...grpc.CallOption) (*CheckRiderCouponResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckRiderCouponResponse)
+	err := c.cc.Invoke(ctx, PricingService_CheckRiderCoupon_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PricingServiceServer is the server API for PricingService service.
 // All implementations must embed UnimplementedPricingServiceServer
 // for forward compatibility.
@@ -389,6 +421,16 @@ type PricingServiceServer interface {
 	// automatic, never two.
 	GetPromotionSettings(context.Context, *GetPromotionSettingsRequest) (*PromotionSettingsResponse, error)
 	UpdatePromotionSettings(context.Context, *UpdatePromotionSettingsRequest) (*PromotionSettingsResponse, error)
+	// Offers (the rider, for their own profile): what the app's home shows.
+	// ListRiderOffers is the featured coupons this rider may still use, the
+	// first-ride discount (a rider who never completed a trip) and how far
+	// the next loyalty discount is. Where a coupon applies (area, class,
+	// minimum fare) is checked when the rider asks for quotes.
+	ListRiderOffers(context.Context, *ListRiderOffersRequest) (*ListRiderOffersResponse, error)
+	// CheckRiderCoupon says whether a code the rider typed is one they may use
+	// now (COUPON_STATUS_APPLIED: they may), and what it gives. It needs no
+	// trip: area, class and minimum fare come with the quote.
+	CheckRiderCoupon(context.Context, *CheckRiderCouponRequest) (*CheckRiderCouponResponse, error)
 	mustEmbedUnimplementedPricingServiceServer()
 }
 
@@ -464,6 +506,12 @@ func (UnimplementedPricingServiceServer) GetPromotionSettings(context.Context, *
 }
 func (UnimplementedPricingServiceServer) UpdatePromotionSettings(context.Context, *UpdatePromotionSettingsRequest) (*PromotionSettingsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdatePromotionSettings not implemented")
+}
+func (UnimplementedPricingServiceServer) ListRiderOffers(context.Context, *ListRiderOffersRequest) (*ListRiderOffersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListRiderOffers not implemented")
+}
+func (UnimplementedPricingServiceServer) CheckRiderCoupon(context.Context, *CheckRiderCouponRequest) (*CheckRiderCouponResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckRiderCoupon not implemented")
 }
 func (UnimplementedPricingServiceServer) mustEmbedUnimplementedPricingServiceServer() {}
 func (UnimplementedPricingServiceServer) testEmbeddedByValue()                        {}
@@ -882,6 +930,42 @@ func _PricingService_UpdatePromotionSettings_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PricingService_ListRiderOffers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRiderOffersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).ListRiderOffers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_ListRiderOffers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).ListRiderOffers(ctx, req.(*ListRiderOffersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_CheckRiderCoupon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckRiderCouponRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).CheckRiderCoupon(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_CheckRiderCoupon_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).CheckRiderCoupon(ctx, req.(*CheckRiderCouponRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PricingService_ServiceDesc is the grpc.ServiceDesc for PricingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -976,6 +1060,14 @@ var PricingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdatePromotionSettings",
 			Handler:    _PricingService_UpdatePromotionSettings_Handler,
+		},
+		{
+			MethodName: "ListRiderOffers",
+			Handler:    _PricingService_ListRiderOffers_Handler,
+		},
+		{
+			MethodName: "CheckRiderCoupon",
+			Handler:    _PricingService_CheckRiderCoupon_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

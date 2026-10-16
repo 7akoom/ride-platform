@@ -71,6 +71,7 @@ type CouponChange struct {
 	PerRiderLimit     *int
 	MinimumFareAmount *decimal.Decimal
 	Active            *bool
+	Featured          *bool
 }
 
 // Redemption is one trip's hold on a coupon.
@@ -99,6 +100,17 @@ type Repository interface {
 
 	GetPromotionSettings(ctx context.Context) (pricing.PromotionSettings, error)
 	SetPromotionSettings(ctx context.Context, settings pricing.PromotionSettings) (pricing.PromotionSettings, error)
+
+	// For a rider's offers.
+
+	// FindCouponByCode returns pricing.ErrCouponNotFound for an unknown code.
+	FindCouponByCode(ctx context.Context, code string) (pricing.Coupon, error)
+	// ListFeaturedCoupons is the featured coupons running at now, newest
+	// first, at most limit.
+	ListFeaturedCoupons(ctx context.Context, now time.Time, limit int) ([]pricing.Coupon, error)
+	// RiderRedemptionCount is how many uses of the coupon the rider holds.
+	RiderRedemptionCount(ctx context.Context, couponID, riderID string) (int, error)
+	GetRiderCompletedTripCount(ctx context.Context, riderID string) (int, error)
 }
 
 // CouponInput is a new coupon. ValidFrom zero means now; MaxRedemptions 0
@@ -119,6 +131,7 @@ type CouponInput struct {
 	ZoneID            string
 	VehicleClasses    []string
 	NewRidersOnly     bool
+	Featured          bool
 }
 
 // SettingsInput replaces the automatic discounts.

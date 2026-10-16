@@ -52,6 +52,7 @@ func (h *PricingHandler) CreateCoupon(
 		ZoneID:         request.GetZoneId(),
 		VehicleClasses: request.GetVehicleClasses(),
 		NewRidersOnly:  request.GetNewRidersOnly(),
+		Featured:       request.GetFeatured(),
 	}
 
 	if request.GetValidFrom() != nil {
@@ -107,6 +108,7 @@ func (h *PricingHandler) UpdateCoupon(
 	change := promotions.CouponChange{
 		Description: request.Description,
 		Active:      request.Active,
+		Featured:    request.Featured,
 	}
 
 	if request.GetValidUntil() != nil {
@@ -300,6 +302,7 @@ func toProtoCoupon(c pricing.Coupon, now time.Time) *pricingv1.Coupon {
 		ZoneId:            c.ZoneID,
 		VehicleClasses:    c.VehicleClasses,
 		NewRidersOnly:     c.NewRidersOnly,
+		Featured:          c.Featured,
 		CreatedBy:         c.CreatedBy,
 		UpdatedBy:         c.UpdatedBy,
 		State:             c.State(now),

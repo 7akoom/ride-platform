@@ -192,6 +192,20 @@ cap, every how many completed trips the loyalty discount comes and its
 percent and cap. A percent of 0 (or `loyalty_every` 0) turns one off.
 Defaults: 50% off the first ride, 20% off every 10th, no caps.
 
+### A rider's offers (the app's home)
+
+Staff mark a coupon `featured` to show it to riders. `GET
+/v1/riders/{riderId}/offers` (the rider, for their own profile) lists the
+featured coupons running now that this rider may still use (uses left for
+them; a new-riders-only one only before their first completed trip), at
+most 20, newest first, with the first-ride discount (no completed trip yet)
+or how far the next loyalty discount is (`tripsToGo`, 1 = the next trip),
+each only while it is on. `POST /v1/riders/{riderId}/offers:check {code}`
+says whether a typed code (featured or not) is theirs to use now
+(`COUPON_STATUS_APPLIED`) or why not. Neither looks at a trip: the area,
+class and minimum fare are checked with the quote, as before. A rider never
+sees how much a coupon was used or who made it.
+
 ## Staff endpoints (`pricing.manage`)
 
 | | |
@@ -247,6 +261,7 @@ Migration `00012` adds city cards, fees, quotes and zone surges; existing
 cards keep working with no minimum and no fees until staff set them.
 Migration `00014` adds coupon scopes, caps and the use log statuses, and
 the promotion settings (seeded with the discounts that were built in).
+Migration `00016` adds `featured` to coupons (off for the existing ones).
 
 ## Tests
 

@@ -27,7 +27,7 @@ const couponColumns = `id, code, description, discount_type, discount_value, max
         valid_from, valid_until, max_redemptions, redemption_count, per_rider_limit,
         minimum_fare_amount, COALESCE(city_id::text, ''), COALESCE(zone_id::text, ''),
         vehicle_classes, new_riders_only, active,
-        COALESCE(created_by::text, ''), COALESCE(updated_by::text, ''), created_at, updated_at`
+        COALESCE(created_by::text, ''), COALESCE(updated_by::text, ''), created_at, updated_at, featured`
 
 func scanCoupon(row pgx.Row) (pricing.Coupon, error) {
 	var (
@@ -59,6 +59,7 @@ func scanCoupon(row pgx.Row) (pricing.Coupon, error) {
 		&coupon.UpdatedBy,
 		&coupon.CreatedAt,
 		&coupon.UpdatedAt,
+		&coupon.Featured,
 	); err != nil {
 		return pricing.Coupon{}, err
 	}
@@ -248,8 +249,8 @@ func (r *PricingRepository) CreateCoupon(ctx context.Context, c pricing.Coupon) 
 		`INSERT INTO coupons
 		    (code, description, discount_type, discount_value, max_discount_amount,
 		     valid_from, valid_until, max_redemptions, per_rider_limit, minimum_fare_amount,
-		     city_id, zone_id, vehicle_classes, new_riders_only, active, created_by, updated_by)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $16)
+		     city_id, zone_id, vehicle_classes, new_riders_only, active, created_by, updated_by, featured)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $16, $17)
 		 RETURNING `+couponColumns,
 		c.Code,
 		c.Description,
@@ -267,6 +268,7 @@ func (r *PricingRepository) CreateCoupon(ctx context.Context, c pricing.Coupon) 
 		c.NewRidersOnly,
 		c.Active,
 		nullableUUID(c.CreatedBy),
+		c.Featured,
 	))
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -363,6 +365,7 @@ func (r *PricingRepository) UpdateCoupon(
 		     per_rider_limit = COALESCE($5::integer, per_rider_limit),
 		     minimum_fare_amount = COALESCE($6, minimum_fare_amount),
 		     active = COALESCE($7, active),
+		     featured = COALESCE($9, featured),
 		     updated_by = $8,
 		     updated_at = CURRENT_TIMESTAMP
 		 WHERE code = $1
@@ -375,6 +378,7 @@ func (r *PricingRepository) UpdateCoupon(
 		nullableDecimal(change.MinimumFareAmount),
 		change.Active,
 		nullableUUID(staffID),
+		change.Featured,
 	))
 	if err != nil {
 		if isNoRows(err) {
@@ -385,6 +389,33 @@ func (r *PricingRepository) UpdateCoupon(
 	}
 
 	return updated, nil
+}
+
+// ListFeaturedCoupons is the featured coupons running at now (on, started,
+// not ended, not used up), newest first.
+func (r *PricingRepository) ListFeaturedCoupons(ctx context.Context, now time.Time, limit int) ([]pricing.Coupon, error) {
+	rows, err := r.pool.Query(
+		ctx,
+		`SELECT `+couponColumns+`
+		 FROM coupons
+		 WHERE featured AND active AND valid_from <= $1 AND valid_until >= $1
+		   AND (max_redemptions IS NULL OR redemption_count < max_redemptions)
+		 ORDER BY created_at DESC, id
+		 LIMIT $2`,
+		now, limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("select featured coupons: %w", err)
+	}
+
+	coupons, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (pricing.Coupon, error) {
+		return scanCoupon(row)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("read featured coupons: %w", err)
+	}
+
+	return coupons, nil
 }
 
 func (r *PricingRepository) ListRedemptions(

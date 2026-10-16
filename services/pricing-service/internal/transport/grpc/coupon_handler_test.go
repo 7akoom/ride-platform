@@ -8,6 +8,7 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
+	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/promotions"
 )
 
 func TestEveryCouponStatusHasAWireValue(t *testing.T) {
@@ -57,5 +58,26 @@ func TestACouponOnTheWire(t *testing.T) {
 	if unlimited := toProtoCoupon(pricing.Coupon{Active: true, ValidUntil: now.Add(time.Hour)}, now); unlimited.GetMaxRedemptions() != 0 ||
 		unlimited.GetMaxDiscountAmount() != "" || unlimited.GetState() != "running" {
 		t.Fatalf("got %+v", unlimited)
+	}
+}
+
+func TestACouponOfferShowsWhatItGivesNotItsUse(t *testing.T) {
+	limit := decimal.NewFromInt(3000)
+	until := time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
+
+	got := toProtoCouponOffer(promotions.CouponOffer{Coupon: pricing.Coupon{
+		Code: "SAVE30", Description: "Weekend", DiscountType: pricing.DiscountPercentage, DiscountValue: decimal.NewFromInt(30),
+		MaxDiscountAmount: &limit, MinimumFareAmount: decimal.NewFromInt(2000), ValidUntil: until,
+		ZoneID: "22222222-2222-4222-8222-222222222222", RedemptionCount: 41, Featured: true,
+	}, UsesLeft: 2})
+
+	if got.GetCode() != "SAVE30" || got.GetDiscountValue() != "30" || got.GetMaxDiscountAmount() != "3000" ||
+		got.GetMinimumFareAmount() != "2000" || !got.GetLimitedArea() || got.GetUsesLeft() != 2 ||
+		!got.GetValidUntil().AsTime().Equal(until) {
+		t.Fatalf("got %+v", got)
+	}
+
+	if featured := toProtoCoupon(pricing.Coupon{Featured: true, Active: true}, until); !featured.GetFeatured() {
+		t.Fatal("featured lost on the staff side")
 	}
 }

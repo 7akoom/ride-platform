@@ -28,6 +28,11 @@ type fakeRepository struct {
 	settings pricing.PromotionSettings
 	redeemed []Redemption
 	offsets  [2]int
+
+	// For a rider's offers.
+	featured  []pricing.Coupon
+	uses      map[string]int // coupon id -> the rider's uses
+	completed int
 }
 
 func newFakeRepository() *fakeRepository {
@@ -81,6 +86,31 @@ func (r *fakeRepository) SetPromotionSettings(_ context.Context, s pricing.Promo
 	r.settings = s
 
 	return s, nil
+}
+
+func (r *fakeRepository) FindCouponByCode(_ context.Context, code string) (pricing.Coupon, error) {
+	c, ok := r.coupons[code]
+	if !ok {
+		return pricing.Coupon{}, pricing.ErrCouponNotFound
+	}
+
+	return c, nil
+}
+
+func (r *fakeRepository) ListFeaturedCoupons(_ context.Context, _ time.Time, limit int) ([]pricing.Coupon, error) {
+	if len(r.featured) > limit {
+		return r.featured[:limit], nil
+	}
+
+	return r.featured, nil
+}
+
+func (r *fakeRepository) RiderRedemptionCount(_ context.Context, couponID, _ string) (int, error) {
+	return r.uses[couponID], nil
+}
+
+func (r *fakeRepository) GetRiderCompletedTripCount(_ context.Context, _ string) (int, error) {
+	return r.completed, nil
 }
 
 type fakePlaces struct {
