@@ -14,7 +14,7 @@ func TestParseDesk(t *testing.T) {
 	}
 
 	if desk.FirstResponse["urgent"] != 15*time.Minute || desk.FirstResponse["low"] != 24*time.Hour ||
-		desk.AutoResolveAfter != 72*time.Hour || desk.AutoCloseAfter != 168*time.Hour {
+		desk.AutoResolveAfter != 72*time.Hour || desk.AutoCloseAfter != 24*time.Hour {
 		t.Fatalf("defaults: %+v", desk)
 	}
 

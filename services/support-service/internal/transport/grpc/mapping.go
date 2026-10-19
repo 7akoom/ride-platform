@@ -179,8 +179,9 @@ func sourceToProto(source string) supportv1.TicketSource {
 }
 
 // ticketToProto is the ticket as the person in it sees it. The driver of a
-// lost-item ticket does not see the rider's transaction.
-func ticketToProto(t support.Ticket, role support.Role) *supportv1.Ticket {
+// lost-item ticket does not see the rider's transaction. closeAfter is
+// SUPPORT_AUTO_CLOSE_AFTER, for when a resolved ticket closes on its own.
+func ticketToProto(t support.Ticket, role support.Role, closeAfter time.Duration) *supportv1.Ticket {
 	out := &supportv1.Ticket{
 		Id:            t.ID,
 		Number:        support.TicketNumber(t.Number),
@@ -204,6 +205,7 @@ func ticketToProto(t support.Ticket, role support.Role) *supportv1.Ticket {
 		Rating:             int32(t.Rating),
 		RatingComment:      t.RatingComment,
 		RatedAt:            timestamp(t.RatedAt),
+		AutoClosesAt:       timestamp(t.AutoClosesAt(closeAfter)),
 	}
 
 	switch role {
@@ -217,9 +219,9 @@ func ticketToProto(t support.Ticket, role support.Role) *supportv1.Ticket {
 	return out
 }
 
-func staffTicketToProto(t support.Ticket) *supportv1.StaffTicket {
+func staffTicketToProto(t support.Ticket, closeAfter time.Duration) *supportv1.StaffTicket {
 	return &supportv1.StaffTicket{
-		Ticket:               ticketToProto(t, ""),
+		Ticket:               ticketToProto(t, "", closeAfter),
 		RequesterIdentityId:  t.RequesterIdentityID,
 		RequesterProfileId:   t.RequesterProfileID,
 		CounterpartProfileId: t.CounterpartProfileID,
@@ -296,17 +298,17 @@ func actionsToProto(actions []support.Action) []*supportv1.TicketAction {
 	return out
 }
 
-func staffDetail(view support.StaffTicketView) *supportv1.StaffTicketDetailResponse {
+func staffDetail(view support.StaffTicketView, closeAfter time.Duration) *supportv1.StaffTicketDetailResponse {
 	return &supportv1.StaffTicketDetailResponse{
-		Ticket:   staffTicketToProto(view.Ticket),
+		Ticket:   staffTicketToProto(view.Ticket, closeAfter),
 		Messages: messagesToProto(view.Messages, true),
 		Actions:  actionsToProto(view.Actions),
 	}
 }
 
-func userDetail(view support.TicketView) *supportv1.TicketDetailResponse {
+func userDetail(view support.TicketView, closeAfter time.Duration) *supportv1.TicketDetailResponse {
 	return &supportv1.TicketDetailResponse{
-		Ticket:   ticketToProto(view.Ticket, view.Role),
+		Ticket:   ticketToProto(view.Ticket, view.Role, closeAfter),
 		Messages: messagesToProto(view.Messages, false),
 	}
 }

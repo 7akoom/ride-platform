@@ -2,6 +2,7 @@ package notification
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"strings"
 )
@@ -70,9 +71,17 @@ func (s *service) Send(
 		channels = template.DefaultChannels
 	}
 
-	deliveries := s.deliver(ctx, channels, devices, input, title, body)
+	// The id is chosen before the push goes out, so the push can carry it: the app
+	// marks this notification read when it is opened from the phone's tray.
+	id, err := newNotificationID()
+	if err != nil {
+		return SendResult{}, err
+	}
+
+	deliveries := s.deliver(ctx, channels, devices, input, id, title, body)
 
 	persisted, err := s.repository.Persist(ctx, PersistInput{
+		ID:             id,
 		RecipientType:  input.RecipientType,
 		RecipientID:    recipientID,
 		EventKey:       eventKey,
@@ -97,7 +106,7 @@ func (s *service) deliver(
 	channels []Channel,
 	devices []Device,
 	input SendInput,
-	title, body string,
+	id, title, body string,
 ) []Delivery {
 	deliveries := make([]Delivery, 0, len(channels))
 
@@ -112,7 +121,7 @@ func (s *service) deliver(
 			})
 
 		case ChannelPush:
-			deliveries = append(deliveries, s.deliverPush(ctx, devices, input, title, body))
+			deliveries = append(deliveries, s.deliverPush(ctx, devices, input, id, title, body))
 
 		case ChannelSMS:
 			delivery := Delivery{Channel: ChannelSMS, Status: StatusSent}
@@ -133,7 +142,7 @@ func (s *service) deliverPush(
 	ctx context.Context,
 	devices []Device,
 	input SendInput,
-	title, body string,
+	id, title, body string,
 ) Delivery {
 	if len(devices) == 0 {
 		return Delivery{
@@ -143,7 +152,7 @@ func (s *service) deliverPush(
 		}
 	}
 
-	result, err := s.pushSender.Send(ctx, devices, title, body, pushData(input.EventKey, input.Data))
+	result, err := s.pushSender.Send(ctx, devices, title, body, pushData(input.EventKey, id, input.Data))
 	if err != nil {
 		return Delivery{
 			Channel: ChannelPush,
@@ -206,13 +215,28 @@ func localeChain(requested string, devices []Device) []string {
 // pushData is what a push carries besides its title and body: the event's own data
 // plus "event_key", so the app knows which screen a tap opens without guessing from
 // the other keys. The caller's map is not changed.
-func pushData(eventKey string, data map[string]string) map[string]string {
-	out := make(map[string]string, len(data)+1)
+func pushData(eventKey, notificationID string, data map[string]string) map[string]string {
+	out := make(map[string]string, len(data)+2)
 	for key, value := range data {
 		out[key] = value
 	}
 
 	out["event_key"] = strings.TrimSpace(eventKey)
+	out["notification_id"] = notificationID
 
 	return out
+}
+
+// newNotificationID is a random (version 4) UUID, the notifications table's id.
+func newNotificationID() (string, error) {
+	var b [16]byte
+
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", fmt.Errorf("make notification id: %w", err)
+	}
+
+	b[6] = b[6]&0x0f | 0x40
+	b[8] = b[8]&0x3f | 0x80
+
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16]), nil
 }

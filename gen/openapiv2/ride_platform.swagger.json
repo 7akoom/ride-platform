@@ -17475,6 +17475,11 @@
         "ratedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "autoClosesAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "A resolved ticket closes on its own at this time unless the person writes\nin it (which opens it again) or closes it first; empty otherwise."
         }
       }
     },

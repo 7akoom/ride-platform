@@ -107,7 +107,7 @@ func Load() Config {
 
 		FirstResponseTargets: getEnv("SUPPORT_FIRST_RESPONSE", "urgent=15m,high=1h,normal=4h,low=24h"),
 		AutoResolveAfter:     getEnv("SUPPORT_AUTO_RESOLVE_AFTER", "72h"),
-		AutoCloseAfter:       getEnv("SUPPORT_AUTO_CLOSE_AFTER", "168h"),
+		AutoCloseAfter:       getEnv("SUPPORT_AUTO_CLOSE_AFTER", "24h"),
 
 		InternalServiceToken: getEnv("INTERNAL_SERVICE_TOKEN", "dev-internal-service-token-change-me"),
 

@@ -160,6 +160,19 @@ func (t Ticket) FirstResponseLate(now time.Time) bool {
 	return t.Status.Active() && now.After(t.FirstResponseDueAt)
 }
 
+// AutoClosesAt is when a resolved ticket closes on its own, after closeAfter
+// (SUPPORT_AUTO_CLOSE_AFTER) without a word; nil when it is not resolved or nothing
+// closes tickets.
+func (t Ticket) AutoClosesAt(closeAfter time.Duration) *time.Time {
+	if t.Status != StatusResolved || closeAfter <= 0 {
+		return nil
+	}
+
+	at := t.StatusChangedAt.Add(closeAfter)
+
+	return &at
+}
+
 type Message struct {
 	ID                 string
 	TicketID           string

@@ -89,7 +89,7 @@ func (h *SupportHandler) RateTicket(ctx context.Context, request *supportv1.Rate
 		return nil, h.helpError(ctx, err)
 	}
 
-	return userDetail(view), nil
+	return userDetail(view, h.service.AutoCloseAfter()), nil
 }
 
 func (h *SupportHandler) AdminListHelpSections(ctx context.Context, _ *supportv1.AdminListHelpSectionsRequest) (*supportv1.ListHelpSectionsResponse, error) {

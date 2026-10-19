@@ -119,7 +119,7 @@ func (h *SupportHandler) CreateTicket(
 	}
 
 	return &supportv1.CreateTicketResponse{
-		Ticket:   ticketToProto(view.Ticket, view.Role),
+		Ticket:   ticketToProto(view.Ticket, view.Role, h.service.AutoCloseAfter()),
 		Messages: messagesToProto(view.Messages, false),
 		Existing: view.Existing,
 	}, nil
@@ -152,7 +152,7 @@ func (h *SupportHandler) ListMyTickets(
 			role = support.RoleRequester
 		}
 
-		out = append(out, ticketToProto(t, role))
+		out = append(out, ticketToProto(t, role, h.service.AutoCloseAfter()))
 	}
 
 	return &supportv1.ListMyTicketsResponse{Tickets: out, NextPageToken: next}, nil
@@ -172,7 +172,7 @@ func (h *SupportHandler) GetMyTicket(
 		return nil, h.mapError(ctx, err)
 	}
 
-	return userDetail(view), nil
+	return userDetail(view, h.service.AutoCloseAfter()), nil
 }
 
 func (h *SupportHandler) AddTicketMessage(
@@ -189,7 +189,7 @@ func (h *SupportHandler) AddTicketMessage(
 		return nil, h.mapError(ctx, err)
 	}
 
-	return userDetail(view), nil
+	return userDetail(view, h.service.AutoCloseAfter()), nil
 }
 
 func (h *SupportHandler) CloseMyTicket(
@@ -206,7 +206,7 @@ func (h *SupportHandler) CloseMyTicket(
 		return nil, h.mapError(ctx, err)
 	}
 
-	return userDetail(view), nil
+	return userDetail(view, h.service.AutoCloseAfter()), nil
 }
 
 func (h *SupportHandler) GetAttachmentURL(
@@ -255,7 +255,7 @@ func (h *SupportHandler) listQueue(ctx context.Context, request *supportv1.ListS
 
 	out := make([]*supportv1.StaffTicket, 0, len(tickets))
 	for _, t := range tickets {
-		out = append(out, staffTicketToProto(t))
+		out = append(out, staffTicketToProto(t, h.service.AutoCloseAfter()))
 	}
 
 	return &supportv1.ListSupportQueueResponse{Tickets: out, NextPageToken: next}, nil
@@ -283,7 +283,7 @@ func (h *SupportHandler) staffTicketCall(
 		return nil, h.mapError(ctx, err)
 	}
 
-	return staffDetail(view), nil
+	return staffDetail(view, h.service.AutoCloseAfter()), nil
 }
 
 func (h *SupportHandler) GetTicketForStaff(ctx context.Context, request *supportv1.GetTicketForStaffRequest) (*supportv1.StaffTicketDetailResponse, error) {

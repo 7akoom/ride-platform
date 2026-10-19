@@ -424,6 +424,9 @@ message Ticket {
   int32 rating = 20;
   string rating_comment = 21;
   google.protobuf.Timestamp rated_at = 22;
+  // A resolved ticket closes on its own at this time unless the person writes
+  // in it (which opens it again) or closes it first; empty otherwise.
+  google.protobuf.Timestamp auto_closes_at = 23;
 }
 
 // StaffTicket is a ticket with what only staff see.

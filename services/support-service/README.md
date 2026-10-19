@@ -24,7 +24,8 @@ closed ticket is final.
 
 A ticket waiting for the person for `SUPPORT_AUTO_RESOLVE_AFTER` (72h) is
 resolved automatically, and they are told; one resolved for
-`SUPPORT_AUTO_CLOSE_AFTER` (7 days) is closed. The worker does it every
+`SUPPORT_AUTO_CLOSE_AFTER` (24h) is closed. The ticket says when
+(`auto_closes_at`), so the apps can ask the person to close it themselves. The worker does it every
 `SUPPORT_WORKER_INTERVAL`.
 
 ## First-response times (SLA) and ratings

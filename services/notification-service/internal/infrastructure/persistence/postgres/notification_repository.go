@@ -355,9 +355,10 @@ func (r *NotificationRepository) Persist(
 	row := tx.QueryRow(
 		ctx,
 		`INSERT INTO notifications
-		    (recipient_type, recipient_id, event_key, title, body, locale,
+		    (id, recipient_type, recipient_id, event_key, title, body, locale,
 		     data, idempotency_key)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		 VALUES (COALESCE(NULLIF($9, '')::uuid, gen_random_uuid()),
+		         $1, $2, $3, $4, $5, $6, $7, $8)
 		 RETURNING id, recipient_type, recipient_id, event_key, title, body,
 		           locale, data, (read_at IS NOT NULL), created_at`,
 		string(input.RecipientType),
@@ -368,6 +369,7 @@ func (r *NotificationRepository) Persist(
 		input.Locale,
 		dataJSON,
 		idempotencyKey,
+		input.ID,
 	)
 
 	persisted, err := scanNotification(row)

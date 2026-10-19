@@ -83,6 +83,11 @@ type Dependencies struct {
 	Clock      Clock
 }
 
+// AutoCloseAfter is how long a resolved ticket stays open before it is closed.
+func (s *Service) AutoCloseAfter() time.Duration {
+	return s.config.AutoCloseAfter
+}
+
 func NewService(deps Dependencies, config Config, logger *slog.Logger) *Service {
 	switch {
 	case deps.Repository == nil:

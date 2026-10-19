@@ -6,6 +6,8 @@ import (
 )
 
 type PersistInput struct {
+	// Chosen by the service (it goes out in the push); empty lets the database choose.
+	ID             string
 	RecipientType  RecipientType
 	RecipientID    string
 	EventKey       string
