@@ -157,6 +157,8 @@ func run() int {
 		cfg.TripServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		observability.GRPCClientOption(),
+		observability.LookUpOnEveryConnect(),
+		observability.QuickReconnect(),
 		grpc.WithUnaryInterceptor(
 			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
 		),
@@ -172,6 +174,8 @@ func run() int {
 		cfg.RiderServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		observability.GRPCClientOption(),
+		observability.LookUpOnEveryConnect(),
+		observability.QuickReconnect(),
 		grpc.WithUnaryInterceptor(
 			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
 		),
@@ -187,6 +191,8 @@ func run() int {
 		cfg.DriverServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		observability.GRPCClientOption(),
+		observability.LookUpOnEveryConnect(),
+		observability.QuickReconnect(),
 		grpc.WithUnaryInterceptor(
 			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
 		),
@@ -207,6 +213,8 @@ func run() int {
 		cfg.IdentityServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		observability.GRPCClientOption(),
+		observability.LookUpOnEveryConnect(),
+		observability.QuickReconnect(),
 		grpc.WithUnaryInterceptor(
 			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
 		),
@@ -225,6 +233,8 @@ func run() int {
 		cfg.StaffServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		observability.GRPCClientOption(),
+		observability.LookUpOnEveryConnect(),
+		observability.QuickReconnect(),
 		grpc.WithUnaryInterceptor(
 			clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken),
 		),

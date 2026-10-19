@@ -119,6 +119,8 @@ func run() int {
 			address,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			observability.GRPCClientOption(),
+			observability.LookUpOnEveryConnect(),
+			observability.QuickReconnect(),
 			grpc.WithUnaryInterceptor(clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken)),
 		)
 		if err != nil {

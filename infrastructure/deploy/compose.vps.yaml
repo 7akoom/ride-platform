@@ -1173,6 +1173,13 @@
         "timeout": "5s"
       },
       "image": "postgis/postgis:17-3.5-alpine",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
       "networks": {
         "default": {
           "aliases": [
@@ -1191,6 +1198,7 @@
           ]
         }
       },
+      "restart": "unless-stopped",
       "volumes": [
         {
           "source": "ride-postgres-data",

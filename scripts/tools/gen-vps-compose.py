@@ -126,6 +126,11 @@ def main():
             "interval": "5s", "timeout": "5s", "retries": 20,
         },
         "networks": {"default": {"aliases": databases}},
+        # Back by itself after a crash or a server reboot, like every other service.
+        # Without it a reboot on 18 Oct 2026 left the database stopped, and every
+        # service with it, for 20 hours.
+        "restart": "unless-stopped",
+        "logging": LOGGING,
     }
     out["volumes"]["ride-postgres-data"] = {}
 

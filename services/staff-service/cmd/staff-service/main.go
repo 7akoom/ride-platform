@@ -86,6 +86,8 @@ func run() int {
 		cfg.IdentityServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		observability.GRPCClientOption(),
+		observability.LookUpOnEveryConnect(),
+		observability.QuickReconnect(),
 	)
 	if err != nil {
 		logger.Error("failed to connect to identity-service", "error", err)

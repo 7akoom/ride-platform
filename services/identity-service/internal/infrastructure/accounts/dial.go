@@ -25,6 +25,8 @@ func Dial(address, internalServiceToken string) (*grpc.ClientConn, error) {
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		observability.GRPCClientOption(),
+		observability.LookUpOnEveryConnect(),
+		observability.QuickReconnect(),
 		grpc.WithUnaryInterceptor(func(
 			ctx context.Context,
 			method string,

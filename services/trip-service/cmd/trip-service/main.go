@@ -418,6 +418,8 @@ func dialService(address string, internalServiceToken string) (*grpc.ClientConn,
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		observability.GRPCClientOption(),
+		observability.LookUpOnEveryConnect(),
+		observability.QuickReconnect(),
 		grpc.WithUnaryInterceptor(
 			clients.ServiceAuthUnaryClientInterceptor(internalServiceToken),
 		),

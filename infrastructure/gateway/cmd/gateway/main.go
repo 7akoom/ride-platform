@@ -306,6 +306,8 @@ func dialBackend(address string) (*grpc.ClientConn, error) {
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		observability.GRPCClientOption(),
+		observability.LookUpOnEveryConnect(),
+		observability.QuickReconnect(),
 	)
 }
 

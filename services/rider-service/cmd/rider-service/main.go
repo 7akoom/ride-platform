@@ -166,6 +166,8 @@ func run() int {
 		cfg.MediaServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		observability.GRPCClientOption(),
+		observability.LookUpOnEveryConnect(),
+		observability.QuickReconnect(),
 		grpc.WithUnaryInterceptor(clients.ServiceAuthUnaryClientInterceptor(cfg.InternalServiceToken)),
 	)
 	if err != nil {
