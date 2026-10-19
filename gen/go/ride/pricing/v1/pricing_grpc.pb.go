@@ -44,6 +44,7 @@ const (
 	PricingService_ListRiderOffers_FullMethodName         = "/ride.pricing.v1.PricingService/ListRiderOffers"
 	PricingService_CheckRiderCoupon_FullMethodName        = "/ride.pricing.v1.PricingService/CheckRiderCoupon"
 	PricingService_GetTripFare_FullMethodName             = "/ride.pricing.v1.PricingService/GetTripFare"
+	PricingService_ListTripFares_FullMethodName           = "/ride.pricing.v1.PricingService/ListTripFares"
 )
 
 // PricingServiceClient is the client API for PricingService service.
@@ -121,6 +122,10 @@ type PricingServiceClient interface {
 	// NOT_FOUND when the trip has no fare (not ended, owed nothing, or not this
 	// rider's: the two are not told apart).
 	GetTripFare(ctx context.Context, in *GetTripFareRequest, opts ...grpc.CallOption) (*GetTripFareResponse, error)
+	// ListTripFares is the recorded total of each trip named (a trip's cost, or the fee
+	// a cancelled trip owed), for trip-service's trip lists and activity page. Trips
+	// with no fare are left out. Internal: trip-service only; at most 100 trips.
+	ListTripFares(ctx context.Context, in *ListTripFaresRequest, opts ...grpc.CallOption) (*ListTripFaresResponse, error)
 }
 
 type pricingServiceClient struct {
@@ -381,6 +386,16 @@ func (c *pricingServiceClient) GetTripFare(ctx context.Context, in *GetTripFareR
 	return out, nil
 }
 
+func (c *pricingServiceClient) ListTripFares(ctx context.Context, in *ListTripFaresRequest, opts ...grpc.CallOption) (*ListTripFaresResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTripFaresResponse)
+	err := c.cc.Invoke(ctx, PricingService_ListTripFares_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PricingServiceServer is the server API for PricingService service.
 // All implementations must embed UnimplementedPricingServiceServer
 // for forward compatibility.
@@ -456,6 +471,10 @@ type PricingServiceServer interface {
 	// NOT_FOUND when the trip has no fare (not ended, owed nothing, or not this
 	// rider's: the two are not told apart).
 	GetTripFare(context.Context, *GetTripFareRequest) (*GetTripFareResponse, error)
+	// ListTripFares is the recorded total of each trip named (a trip's cost, or the fee
+	// a cancelled trip owed), for trip-service's trip lists and activity page. Trips
+	// with no fare are left out. Internal: trip-service only; at most 100 trips.
+	ListTripFares(context.Context, *ListTripFaresRequest) (*ListTripFaresResponse, error)
 	mustEmbedUnimplementedPricingServiceServer()
 }
 
@@ -540,6 +559,9 @@ func (UnimplementedPricingServiceServer) CheckRiderCoupon(context.Context, *Chec
 }
 func (UnimplementedPricingServiceServer) GetTripFare(context.Context, *GetTripFareRequest) (*GetTripFareResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTripFare not implemented")
+}
+func (UnimplementedPricingServiceServer) ListTripFares(context.Context, *ListTripFaresRequest) (*ListTripFaresResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTripFares not implemented")
 }
 func (UnimplementedPricingServiceServer) mustEmbedUnimplementedPricingServiceServer() {}
 func (UnimplementedPricingServiceServer) testEmbeddedByValue()                        {}
@@ -1012,6 +1034,24 @@ func _PricingService_GetTripFare_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PricingService_ListTripFares_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTripFaresRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).ListTripFares(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_ListTripFares_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).ListTripFares(ctx, req.(*ListTripFaresRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PricingService_ServiceDesc is the grpc.ServiceDesc for PricingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1118,6 +1158,10 @@ var PricingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTripFare",
 			Handler:    _PricingService_GetTripFare_Handler,
+		},
+		{
+			MethodName: "ListTripFares",
+			Handler:    _PricingService_ListTripFares_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

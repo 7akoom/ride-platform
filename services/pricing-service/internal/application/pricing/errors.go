@@ -28,6 +28,9 @@ var (
 	// owed nothing, or is another rider's).
 	ErrFareNotFound = errors.New("fare not found")
 
+	// ErrTooManyTrips: ListTripFares takes at most MaxTripFares trips.
+	ErrTooManyTrips = errors.New("too many trips in one request")
+
 	ErrQuoteIDRequired  = errors.New("quote id is required")
 	ErrQuoteNotFound    = errors.New("quote not found")
 	ErrQuoteExpired     = errors.New("the quote has expired; ask for a new one")

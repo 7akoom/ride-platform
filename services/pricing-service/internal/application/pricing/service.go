@@ -99,6 +99,9 @@ type Service interface {
 	// TripFare is the fare recorded for one of the rider's trips, or
 	// ErrFareNotFound.
 	TripFare(ctx context.Context, riderID, tripID string) (Fare, error)
+
+	// TripFares is the recorded fares of the trips named that have one.
+	TripFares(ctx context.Context, tripIDs []string) ([]Fare, error)
 }
 
 // DefaultQuoteTTL is how long a quote holds its price.

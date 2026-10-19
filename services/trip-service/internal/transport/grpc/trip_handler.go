@@ -34,6 +34,9 @@ type TripHandler struct {
 	shares    *share.Service
 	activity  *activity.Service
 	feed      *feed.Service
+
+	// finalFares adds what each listed trip cost; nil until WithFinalFares.
+	finalFares trip.FinalFares
 }
 
 // HandlerOption customises a TripHandler.

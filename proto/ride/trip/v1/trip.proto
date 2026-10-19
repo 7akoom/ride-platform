@@ -363,6 +363,13 @@ message Trip {
   bool scheduled = 28;
   // Where the trip stops on the way from pickup to dropoff, in order.
   repeated TripStop stops = 29;
+  // What the trip cost as recorded when it ended, or the fee a cancelled trip owed (a
+  // decimal string); empty when there is none. Only ListTrips and ListActivityFeed
+  // fill these three, from pricing-service; empty too when pricing did not answer.
+  string final_fare = 30;
+  // "trip", or the kind of fee (cancellation, no_show).
+  string final_fare_kind = 31;
+  string final_fare_currency_code = 32;
 }
 
 // A stop on the way. reached_at is set once the driver marks it.

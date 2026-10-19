@@ -17878,6 +17878,17 @@
             "$ref": "#/definitions/v1TripStop"
           },
           "description": "Where the trip stops on the way from pickup to dropoff, in order."
+        },
+        "finalFare": {
+          "type": "string",
+          "description": "What the trip cost as recorded when it ended, or the fee a cancelled trip owed (a\ndecimal string); empty when there is none. Only ListTrips and ListActivityFeed\nfill these three, from pricing-service; empty too when pricing did not answer."
+        },
+        "finalFareKind": {
+          "type": "string",
+          "description": "\"trip\", or the kind of fee (cancellation, no_show)."
+        },
+        "finalFareCurrencyCode": {
+          "type": "string"
         }
       }
     },

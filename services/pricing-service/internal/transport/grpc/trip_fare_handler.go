@@ -31,3 +31,31 @@ func (h *PricingHandler) GetTripFare(
 
 	return &pricingv1.GetTripFareResponse{Fare: breakdown}, nil
 }
+
+// ListTripFares is the recorded totals of the trips named, for trip-service's lists.
+func (h *PricingHandler) ListTripFares(
+	ctx context.Context,
+	request *pricingv1.ListTripFaresRequest,
+) (*pricingv1.ListTripFaresResponse, error) {
+	fares, err := h.pricingService.TripFares(ctx, request.GetTripIds())
+	if err != nil {
+		if errors.Is(err, pricing.ErrTooManyTrips) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+
+		return nil, h.mapPricingError(err)
+	}
+
+	response := &pricingv1.ListTripFaresResponse{Fares: make([]*pricingv1.TripFareTotal, 0, len(fares))}
+
+	for _, fare := range fares {
+		response.Fares = append(response.Fares, &pricingv1.TripFareTotal{
+			TripId:       fare.TripID,
+			Kind:         string(fare.Kind),
+			Total:        fare.Breakdown.Total.String(),
+			CurrencyCode: fare.Breakdown.CurrencyCode,
+		})
+	}
+
+	return response, nil
+}

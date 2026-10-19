@@ -328,9 +328,16 @@ type Trip struct {
 	// The scheduled trip it came from (the same id), when it was booked ahead.
 	Scheduled bool `protobuf:"varint,28,opt,name=scheduled,proto3" json:"scheduled,omitempty"`
 	// Where the trip stops on the way from pickup to dropoff, in order.
-	Stops         []*TripStop `protobuf:"bytes,29,rep,name=stops,proto3" json:"stops,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Stops []*TripStop `protobuf:"bytes,29,rep,name=stops,proto3" json:"stops,omitempty"`
+	// What the trip cost as recorded when it ended, or the fee a cancelled trip owed (a
+	// decimal string); empty when there is none. Only ListTrips and ListActivityFeed
+	// fill these three, from pricing-service; empty too when pricing did not answer.
+	FinalFare string `protobuf:"bytes,30,opt,name=final_fare,json=finalFare,proto3" json:"final_fare,omitempty"`
+	// "trip", or the kind of fee (cancellation, no_show).
+	FinalFareKind         string `protobuf:"bytes,31,opt,name=final_fare_kind,json=finalFareKind,proto3" json:"final_fare_kind,omitempty"`
+	FinalFareCurrencyCode string `protobuf:"bytes,32,opt,name=final_fare_currency_code,json=finalFareCurrencyCode,proto3" json:"final_fare_currency_code,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *Trip) Reset() {
@@ -564,6 +571,27 @@ func (x *Trip) GetStops() []*TripStop {
 		return x.Stops
 	}
 	return nil
+}
+
+func (x *Trip) GetFinalFare() string {
+	if x != nil {
+		return x.FinalFare
+	}
+	return ""
+}
+
+func (x *Trip) GetFinalFareKind() string {
+	if x != nil {
+		return x.FinalFareKind
+	}
+	return ""
+}
+
+func (x *Trip) GetFinalFareCurrencyCode() string {
+	if x != nil {
+		return x.FinalFareCurrencyCode
+	}
+	return ""
 }
 
 // A stop on the way. reached_at is set once the driver marks it.
@@ -5091,7 +5119,8 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x17ride/trip/v1/trip.proto\x12\fride.trip.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a$ride/dataexport/v1/data_export.proto\x1a\x1cgoogle/api/annotations.proto\"G\n" +
 	"\vCoordinates\x12\x1a\n" +
 	"\blatitude\x18\x01 \x01(\x01R\blatitude\x12\x1c\n" +
-	"\tlongitude\x18\x02 \x01(\x01R\tlongitude\"\xdb\t\n" +
+	"\tlongitude\x18\x02 \x01(\x01R\tlongitude\"\xdb\n" +
+	"\n" +
 	"\x04Trip\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\brider_id\x18\x02 \x01(\tR\ariderId\x12\x1b\n" +
@@ -5127,7 +5156,11 @@ const file_ride_trip_v1_trip_proto_rawDesc = "" +
 	"\x0epassenger_name\x18\x1a \x01(\tR\rpassengerName\x12'\n" +
 	"\x0fpassenger_phone\x18\x1b \x01(\tR\x0epassengerPhone\x12\x1c\n" +
 	"\tscheduled\x18\x1c \x01(\bR\tscheduled\x12,\n" +
-	"\x05stops\x18\x1d \x03(\v2\x16.ride.trip.v1.TripStopR\x05stops\"\x9c\x01\n" +
+	"\x05stops\x18\x1d \x03(\v2\x16.ride.trip.v1.TripStopR\x05stops\x12\x1d\n" +
+	"\n" +
+	"final_fare\x18\x1e \x01(\tR\tfinalFare\x12&\n" +
+	"\x0ffinal_fare_kind\x18\x1f \x01(\tR\rfinalFareKind\x127\n" +
+	"\x18final_fare_currency_code\x18  \x01(\tR\x15finalFareCurrencyCode\"\x9c\x01\n" +
 	"\bTripStop\x12;\n" +
 	"\vcoordinates\x18\x01 \x01(\v2\x19.ride.trip.v1.CoordinatesR\vcoordinates\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\tR\aaddress\x129\n" +

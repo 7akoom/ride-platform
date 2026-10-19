@@ -16,6 +16,9 @@ import (
 // --- test doubles -----------------------------------------------------
 
 type fakeRepository struct {
+	// listedFareIDs is every trip id ListFaresByTripIDs was asked for.
+	listedFareIDs []string
+
 	config    Config
 	configErr error
 
@@ -176,6 +179,19 @@ func (r *fakeRepository) FindFareByTripID(_ context.Context, _ string) (Fare, bo
 		return Fare{}, false, r.findFareErr
 	}
 	return r.existingFare, r.fareFound, nil
+}
+
+func (r *fakeRepository) ListFaresByTripIDs(_ context.Context, tripIDs []string) ([]Fare, error) {
+	r.listedFareIDs = append(r.listedFareIDs, tripIDs...)
+
+	var out []Fare
+	for _, id := range tripIDs {
+		if r.fareFound && r.existingFare.TripID == id {
+			out = append(out, r.existingFare)
+		}
+	}
+
+	return out, nil
 }
 
 func (r *fakeRepository) PersistFare(_ context.Context, input PersistFareInput) (Fare, error) {

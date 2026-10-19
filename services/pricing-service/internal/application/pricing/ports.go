@@ -83,6 +83,10 @@ type Repository interface {
 	// already exists for this trip, return it instead of recalculating.
 	FindFareByTripID(ctx context.Context, tripID string) (Fare, bool, error)
 
+	// ListFaresByTripIDs is the fares of the trips named that have one, in no
+	// particular order.
+	ListFaresByTripIDs(ctx context.Context, tripIDs []string) ([]Fare, error)
+
 	// PersistFare returns ErrFareAlreadyRecorded when the trip already has a
 	// fare (a concurrent call recorded it first). A fare with a coupon turns
 	// the trip's reservation into a use, or takes a use when the trip holds

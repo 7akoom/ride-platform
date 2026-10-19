@@ -293,6 +293,7 @@ func run() int {
 		grpcserver.WithActivity(activity.NewService(postgresrepo.NewActivityStore(pool))),
 		grpcserver.WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export),
 		grpcserver.WithFeed(feed.NewService(tripRepository, clients.NewWalletFeed(walletConn))),
+		grpcserver.WithFinalFares(clients.NewFinalFares(pricingConn)),
 	)
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(

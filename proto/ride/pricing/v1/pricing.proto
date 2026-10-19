@@ -187,6 +187,11 @@ service PricingService {
       get: "/v1/riders/{rider_id}/trips/{trip_id}/fare"
     };
   }
+
+  // ListTripFares is the recorded total of each trip named (a trip's cost, or the fee
+  // a cancelled trip owed), for trip-service's trip lists and activity page. Trips
+  // with no fare are left out. Internal: trip-service only; at most 100 trips.
+  rpc ListTripFares(ListTripFaresRequest) returns (ListTripFaresResponse);
 }
 
 enum DiscountType {
@@ -783,4 +788,21 @@ message GetTripFareRequest {
 message GetTripFareResponse {
   // kind is "trip" for a trip that ended, or the kind of fee a cancelled trip owed.
   FareBreakdown fare = 1;
+}
+
+message ListTripFaresRequest {
+  repeated string trip_ids = 1;
+}
+
+message TripFareTotal {
+  string trip_id = 1;
+  // "trip", or the kind of fee a cancelled trip owed (cancellation, no_show).
+  string kind = 2;
+  // A decimal string.
+  string total = 3;
+  string currency_code = 4;
+}
+
+message ListTripFaresResponse {
+  repeated TripFareTotal fares = 1;
 }

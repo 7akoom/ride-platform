@@ -58,3 +58,29 @@ func TestTripFareChecksItsInput(t *testing.T) {
 		t.Fatalf("not a uuid: got %v", err)
 	}
 }
+
+func TestTripFaresAsksOnceForEachRealTripID(t *testing.T) {
+	h := newHarness()
+	h.repo.existingFare = Fare{TripID: tripFareTrip, RiderID: tripFareRider, Breakdown: FareBreakdown{Total: decimal.NewFromInt(3500)}}
+	h.repo.fareFound = true
+
+	fares, err := h.service().TripFares(context.Background(), []string{tripFareTrip, " " + tripFareTrip, "nope", ""})
+	if err != nil || len(fares) != 1 || !fares[0].Breakdown.Total.Equal(decimal.NewFromInt(3500)) {
+		t.Fatalf("fares %+v, err %v", fares, err)
+	}
+
+	if len(h.repo.listedFareIDs) != 1 || h.repo.listedFareIDs[0] != tripFareTrip {
+		t.Fatalf("asked for %v, want only %s", h.repo.listedFareIDs, tripFareTrip)
+	}
+}
+
+func TestTripFaresRefusesTooManyTrips(t *testing.T) {
+	ids := make([]string, MaxTripFares+1)
+	for i := range ids {
+		ids[i] = tripFareTrip
+	}
+
+	if _, err := newHarness().service().TripFares(context.Background(), ids); !errors.Is(err, ErrTooManyTrips) {
+		t.Fatalf("got %v, want ErrTooManyTrips", err)
+	}
+}

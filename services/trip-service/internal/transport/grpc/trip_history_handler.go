@@ -87,5 +87,7 @@ func (h *TripHandler) ListTrips(
 		trips = append(trips, toProtoTrip(item))
 	}
 
+	h.addFinalFares(ctx, trips)
+
 	return &tripv1.ListTripsResponse{Trips: trips, NextPageToken: page.NextPageToken}, nil
 }

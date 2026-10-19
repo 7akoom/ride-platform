@@ -147,6 +147,40 @@ func (r *PricingRepository) FindFareByTripID(
 	return fare, true, nil
 }
 
+func (r *PricingRepository) ListFaresByTripIDs(
+	ctx context.Context,
+	tripIDs []string,
+) ([]pricing.Fare, error) {
+	rows, err := r.pool.Query(
+		ctx,
+		`SELECT `+fareColumns+`
+		 FROM fares
+		 WHERE trip_id = ANY($1::uuid[])`,
+		tripIDs,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("select fares by trip ids: %w", err)
+	}
+	defer rows.Close()
+
+	var fares []pricing.Fare
+
+	for rows.Next() {
+		fare, err := scanFare(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan fare: %w", err)
+		}
+
+		fares = append(fares, fare)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read fares: %w", err)
+	}
+
+	return fares, nil
+}
+
 // PersistFare writes the fare row, bumps the rider's completed-trip
 // counter, records the coupon redemption (if any), and emits the outbox
 // event — all in one transaction, so a fare can never exist without its

@@ -42,6 +42,7 @@ func (h *TripHandler) ListActivityFeed(
 	}
 
 	response := &tripv1.ListActivityFeedResponse{NextPageToken: page.NextPageToken}
+	var trips []*tripv1.Trip
 
 	for _, it := range page.Items {
 		item := &tripv1.ActivityItem{Id: it.ID, OccurredAt: timestamppb.New(it.At)}
@@ -50,6 +51,7 @@ func (h *TripHandler) ListActivityFeed(
 		case feed.KindTrip:
 			item.Kind = tripv1.ActivityItemKind_ACTIVITY_ITEM_KIND_TRIP
 			item.Trip = toProtoTrip(*it.Trip)
+			trips = append(trips, item.Trip)
 		case feed.KindWallet:
 			m := it.Movement
 			item.Kind = tripv1.ActivityItemKind_ACTIVITY_ITEM_KIND_WALLET
@@ -61,6 +63,8 @@ func (h *TripHandler) ListActivityFeed(
 
 		response.Items = append(response.Items, item)
 	}
+
+	h.addFinalFares(ctx, trips)
 
 	return response, nil
 }
