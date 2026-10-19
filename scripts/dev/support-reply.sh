@@ -31,18 +31,26 @@ PHONE="${SIM_STAFF_PHONE:-+9647700000991}"
 # shellcheck source=scripts/dev/sim-staff-lib.sh
 source "$(dirname "$0")/sim-staff-lib.sh"
 
-call GET "/v1/admin/support/tickets?pageSize=100"
-[ "$STATUS" = 200 ] || die "the queue could not be read ($STATUS): $BODY"
-PICKED="$(echo "$BODY" | python3 -c '
+# The open tickets of both queues: safety tickets (safety, accidents) have their own.
+QUEUE="[]"
+for path in /v1/admin/support/tickets /v1/admin/support/safety-tickets; do
+  call GET "$path?pageSize=100"
+  [ "$STATUS" = 200 ] || die "the queue $path could not be read ($STATUS): $BODY"
+  QUEUE="$(printf '%s\n%s' "$QUEUE" "$BODY" | python3 -c '
+import json, sys
+first, second = sys.stdin.read().split("\n", 1)
+print(json.dumps(json.loads(first) + json.loads(second).get("tickets", [])))')"
+done
+PICKED="$(echo "$QUEUE" | python3 -c '
 import json, sys
 number = sys.argv[1]
-tickets = [t.get("ticket", {}) for t in json.load(sys.stdin).get("tickets", [])]
+tickets = [t.get("ticket", {}) for t in json.load(sys.stdin)]
 if number:
     tickets = [t for t in tickets if t.get("number") == number]
 tickets.sort(key=lambda t: t.get("lastMessageAt") or t.get("createdAt") or "", reverse=True)
 if tickets:
     print(tickets[0]["id"] + " " + tickets[0].get("number", ""))' "$NUMBER")"
-[ -n "$PICKED" ] || die "no open ticket${NUMBER:+ numbered $NUMBER} in the queue"
+[ -n "$PICKED" ] || die "no open ticket${NUMBER:+ numbered $NUMBER} in the queues (open one in the app first; resolved and closed ones are not listed)"
 ID="${PICKED%% *}"; SHOWN="${PICKED#* }"
 
 STATUS_AFTER="TICKET_STATUS_WAITING_USER"
