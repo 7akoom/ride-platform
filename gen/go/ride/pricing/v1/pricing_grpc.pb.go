@@ -43,6 +43,7 @@ const (
 	PricingService_UpdatePromotionSettings_FullMethodName = "/ride.pricing.v1.PricingService/UpdatePromotionSettings"
 	PricingService_ListRiderOffers_FullMethodName         = "/ride.pricing.v1.PricingService/ListRiderOffers"
 	PricingService_CheckRiderCoupon_FullMethodName        = "/ride.pricing.v1.PricingService/CheckRiderCoupon"
+	PricingService_GetTripFare_FullMethodName             = "/ride.pricing.v1.PricingService/GetTripFare"
 )
 
 // PricingServiceClient is the client API for PricingService service.
@@ -113,6 +114,13 @@ type PricingServiceClient interface {
 	// now (COUPON_STATUS_APPLIED: they may), and what it gives. It needs no
 	// trip: area, class and minimum fare come with the quote.
 	CheckRiderCoupon(ctx context.Context, in *CheckRiderCouponRequest, opts ...grpc.CallOption) (*CheckRiderCouponResponse, error)
+	// GetTripFare is what one of the rider's trips cost, line by line, as it was
+	// recorded when the trip ended: the base fare, distance and time, waiting, the
+	// demand surcharge, the discount and the total. For a cancelled trip that owed a
+	// fee it is the fee (kind says which). The caller's own rider profile only;
+	// NOT_FOUND when the trip has no fare (not ended, owed nothing, or not this
+	// rider's: the two are not told apart).
+	GetTripFare(ctx context.Context, in *GetTripFareRequest, opts ...grpc.CallOption) (*GetTripFareResponse, error)
 }
 
 type pricingServiceClient struct {
@@ -363,6 +371,16 @@ func (c *pricingServiceClient) CheckRiderCoupon(ctx context.Context, in *CheckRi
 	return out, nil
 }
 
+func (c *pricingServiceClient) GetTripFare(ctx context.Context, in *GetTripFareRequest, opts ...grpc.CallOption) (*GetTripFareResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTripFareResponse)
+	err := c.cc.Invoke(ctx, PricingService_GetTripFare_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PricingServiceServer is the server API for PricingService service.
 // All implementations must embed UnimplementedPricingServiceServer
 // for forward compatibility.
@@ -431,6 +449,13 @@ type PricingServiceServer interface {
 	// now (COUPON_STATUS_APPLIED: they may), and what it gives. It needs no
 	// trip: area, class and minimum fare come with the quote.
 	CheckRiderCoupon(context.Context, *CheckRiderCouponRequest) (*CheckRiderCouponResponse, error)
+	// GetTripFare is what one of the rider's trips cost, line by line, as it was
+	// recorded when the trip ended: the base fare, distance and time, waiting, the
+	// demand surcharge, the discount and the total. For a cancelled trip that owed a
+	// fee it is the fee (kind says which). The caller's own rider profile only;
+	// NOT_FOUND when the trip has no fare (not ended, owed nothing, or not this
+	// rider's: the two are not told apart).
+	GetTripFare(context.Context, *GetTripFareRequest) (*GetTripFareResponse, error)
 	mustEmbedUnimplementedPricingServiceServer()
 }
 
@@ -512,6 +537,9 @@ func (UnimplementedPricingServiceServer) ListRiderOffers(context.Context, *ListR
 }
 func (UnimplementedPricingServiceServer) CheckRiderCoupon(context.Context, *CheckRiderCouponRequest) (*CheckRiderCouponResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CheckRiderCoupon not implemented")
+}
+func (UnimplementedPricingServiceServer) GetTripFare(context.Context, *GetTripFareRequest) (*GetTripFareResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTripFare not implemented")
 }
 func (UnimplementedPricingServiceServer) mustEmbedUnimplementedPricingServiceServer() {}
 func (UnimplementedPricingServiceServer) testEmbeddedByValue()                        {}
@@ -966,6 +994,24 @@ func _PricingService_CheckRiderCoupon_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PricingService_GetTripFare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTripFareRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).GetTripFare(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_GetTripFare_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).GetTripFare(ctx, req.(*GetTripFareRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PricingService_ServiceDesc is the grpc.ServiceDesc for PricingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1068,6 +1114,10 @@ var PricingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckRiderCoupon",
 			Handler:    _PricingService_CheckRiderCoupon_Handler,
+		},
+		{
+			MethodName: "GetTripFare",
+			Handler:    _PricingService_GetTripFare_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

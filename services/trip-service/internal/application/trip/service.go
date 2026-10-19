@@ -98,6 +98,8 @@ type Service interface {
 
 	// RateTrip records one side's rating of the other after a completed trip.
 	RateTrip(ctx context.Context, input RateTripInput) (Rating, error)
+	// TripRating is one side's own rating of a trip and whether it can still be given.
+	TripRating(ctx context.Context, tripID string, ratedBy RatedBy) (RatingStatus, error)
 }
 
 type service struct {

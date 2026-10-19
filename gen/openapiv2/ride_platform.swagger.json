@@ -7436,6 +7436,43 @@
         ]
       }
     },
+    "/v1/riders/{riderId}/trips/{tripId}/fare": {
+      "get": {
+        "summary": "GetTripFare is what one of the rider's trips cost, line by line, as it was\nrecorded when the trip ended: the base fare, distance and time, waiting, the\ndemand surcharge, the discount and the total. For a cancelled trip that owed a\nfee it is the fee (kind says which). The caller's own rider profile only;\nNOT_FOUND when the trip has no fare (not ended, owed nothing, or not this\nrider's: the two are not told apart).",
+        "operationId": "PricingService_GetTripFare",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTripFareResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
     "/v1/routes:compute": {
       "post": {
         "summary": "GetRoute returns the best route by road between two points: how far, how long, and\nthe line to draw on a map. Any signed-in user may ask.",
@@ -8324,6 +8361,49 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}/rating": {
+      "get": {
+        "summary": "GetTripRating is one side's own rating of a trip, for the trip's details: whether\nit was given and its stars, and whether it can still be given (the trip completed\nless than 24 hours ago and this side has not rated). rated_by must be the caller's\nown side of the trip, as for RateTrip. The comment is never returned.",
+        "operationId": "TripService_GetTripRating",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTripRatingResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ratedBy",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "RATED_BY_UNSPECIFIED",
+              "RATED_BY_RIDER",
+              "RATED_BY_DRIVER"
+            ],
+            "default": "RATED_BY_UNSPECIFIED"
           }
         ],
         "tags": [
@@ -13833,6 +13913,15 @@
         }
       }
     },
+    "v1GetTripFareResponse": {
+      "type": "object",
+      "properties": {
+        "fare": {
+          "$ref": "#/definitions/v1FareBreakdown",
+          "description": "kind is \"trip\" for a trip that ended, or the kind of fee a cancelled trip owed."
+        }
+      }
+    },
     "v1GetTripFunnelResponse": {
       "type": "object",
       "properties": {
@@ -13866,6 +13955,28 @@
             "type": "object",
             "$ref": "#/definitions/v1Waypoint"
           }
+        }
+      }
+    },
+    "v1GetTripRatingResponse": {
+      "type": "object",
+      "properties": {
+        "rated": {
+          "type": "boolean"
+        },
+        "stars": {
+          "type": "integer",
+          "format": "int32",
+          "description": "1 to 5 when rated, else 0."
+        },
+        "canRate": {
+          "type": "boolean",
+          "description": "Not rated yet and still in time: RateTrip would take it now."
+        },
+        "canRateUntil": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Until when it can be rated; set when can_rate."
         }
       }
     },

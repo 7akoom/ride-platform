@@ -19,6 +19,14 @@ type ratingRepoFake struct {
 
 	asked   []string
 	created []trip.CreateRatingInput
+
+	// What FindRating answers.
+	rating trip.Rating
+	rated  bool
+}
+
+func (r *ratingRepoFake) FindRating(context.Context, string, trip.RatedBy) (trip.Rating, bool, error) {
+	return r.rating, r.rated, nil
 }
 
 func (r *ratingRepoFake) Create(context.Context, trip.CreateInput) (trip.Trip, error) {

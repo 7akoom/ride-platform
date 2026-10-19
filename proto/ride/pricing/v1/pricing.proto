@@ -175,6 +175,18 @@ service PricingService {
       body: "*"
     };
   }
+
+  // GetTripFare is what one of the rider's trips cost, line by line, as it was
+  // recorded when the trip ended: the base fare, distance and time, waiting, the
+  // demand surcharge, the discount and the total. For a cancelled trip that owed a
+  // fee it is the fee (kind says which). The caller's own rider profile only;
+  // NOT_FOUND when the trip has no fare (not ended, owed nothing, or not this
+  // rider's: the two are not told apart).
+  rpc GetTripFare(GetTripFareRequest) returns (GetTripFareResponse) {
+    option (google.api.http) = {
+      get: "/v1/riders/{rider_id}/trips/{trip_id}/fare"
+    };
+  }
 }
 
 enum DiscountType {
@@ -761,4 +773,14 @@ message EndZoneSurgeRequest {
 
 message ZoneSurgeResponse {
   ZoneSurge zone_surge = 1;
+}
+
+message GetTripFareRequest {
+  string rider_id = 1;
+  string trip_id = 2;
+}
+
+message GetTripFareResponse {
+  // kind is "trip" for a trip that ended, or the kind of fee a cancelled trip owed.
+  FareBreakdown fare = 1;
 }

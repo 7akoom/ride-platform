@@ -24,6 +24,10 @@ var (
 	// CalculateFare recorded it first).
 	ErrFareAlreadyRecorded = errors.New("the trip already has a fare")
 
+	// ErrFareNotFound: the trip has no fare for this rider (it has not ended,
+	// owed nothing, or is another rider's).
+	ErrFareNotFound = errors.New("fare not found")
+
 	ErrQuoteIDRequired  = errors.New("quote id is required")
 	ErrQuoteNotFound    = errors.New("quote not found")
 	ErrQuoteExpired     = errors.New("the quote has expired; ask for a new one")

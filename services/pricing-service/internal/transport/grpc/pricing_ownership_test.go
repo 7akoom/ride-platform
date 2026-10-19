@@ -138,6 +138,9 @@ func TestARiderReadsOnlyTheirOwnOffers(t *testing.T) {
 	for method, request := range map[string]func(string) any{
 		"ListRiderOffers":  func(rider string) any { return &pricingv1.ListRiderOffersRequest{RiderId: rider} },
 		"CheckRiderCoupon": func(rider string) any { return &pricingv1.CheckRiderCouponRequest{RiderId: rider, Code: "SAVE30"} },
+		"GetTripFare": func(rider string) any {
+			return &pricingv1.GetTripFareRequest{RiderId: rider, TripId: "6f0c2a1e-0b7d-4c55-9a3e-1f2d3c4b5a69"}
+		},
 	} {
 		if code := callOwnershipAs(t, "id-rider-a", resolver, method, request("rider-a")); code != codes.OK {
 			t.Errorf("%s for themselves: expected OK, got %v", method, code)

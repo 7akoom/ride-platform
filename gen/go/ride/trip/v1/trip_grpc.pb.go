@@ -44,6 +44,7 @@ const (
 	TripService_GetPickupPhoto_FullMethodName         = "/ride.trip.v1.TripService/GetPickupPhoto"
 	TripService_ListRecentDestinations_FullMethodName = "/ride.trip.v1.TripService/ListRecentDestinations"
 	TripService_RateTrip_FullMethodName               = "/ride.trip.v1.TripService/RateTrip"
+	TripService_GetTripRating_FullMethodName          = "/ride.trip.v1.TripService/GetTripRating"
 	TripService_ScheduleTrip_FullMethodName           = "/ride.trip.v1.TripService/ScheduleTrip"
 	TripService_ListScheduledTrips_FullMethodName     = "/ride.trip.v1.TripService/ListScheduledTrips"
 	TripService_CancelScheduledTrip_FullMethodName    = "/ride.trip.v1.TripService/CancelScheduledTrip"
@@ -164,6 +165,11 @@ type TripServiceClient interface {
 	// numbers from 1 to 5; the comment is optional (500 characters at most) and is kept for
 	// the operating company only: the person rated never sees it.
 	RateTrip(ctx context.Context, in *RateTripRequest, opts ...grpc.CallOption) (*RateTripResponse, error)
+	// GetTripRating is one side's own rating of a trip, for the trip's details: whether
+	// it was given and its stars, and whether it can still be given (the trip completed
+	// less than 24 hours ago and this side has not rated). rated_by must be the caller's
+	// own side of the trip, as for RateTrip. The comment is never returned.
+	GetTripRating(ctx context.Context, in *GetTripRatingRequest, opts ...grpc.CallOption) (*GetTripRatingResponse, error)
 	// Scheduled trips: a rider books a trip for later (30 minutes to 7 days
 	// ahead, at most 3 upcoming). It becomes a real trip, with the same id,
 	// 10 minutes before the time and is dispatched like any other; if it
@@ -445,6 +451,16 @@ func (c *tripServiceClient) RateTrip(ctx context.Context, in *RateTripRequest, o
 	return out, nil
 }
 
+func (c *tripServiceClient) GetTripRating(ctx context.Context, in *GetTripRatingRequest, opts ...grpc.CallOption) (*GetTripRatingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTripRatingResponse)
+	err := c.cc.Invoke(ctx, TripService_GetTripRating_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tripServiceClient) ScheduleTrip(ctx context.Context, in *ScheduleTripRequest, opts ...grpc.CallOption) (*ScheduledTripResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ScheduledTripResponse)
@@ -635,6 +651,11 @@ type TripServiceServer interface {
 	// numbers from 1 to 5; the comment is optional (500 characters at most) and is kept for
 	// the operating company only: the person rated never sees it.
 	RateTrip(context.Context, *RateTripRequest) (*RateTripResponse, error)
+	// GetTripRating is one side's own rating of a trip, for the trip's details: whether
+	// it was given and its stars, and whether it can still be given (the trip completed
+	// less than 24 hours ago and this side has not rated). rated_by must be the caller's
+	// own side of the trip, as for RateTrip. The comment is never returned.
+	GetTripRating(context.Context, *GetTripRatingRequest) (*GetTripRatingResponse, error)
 	// Scheduled trips: a rider books a trip for later (30 minutes to 7 days
 	// ahead, at most 3 upcoming). It becomes a real trip, with the same id,
 	// 10 minutes before the time and is dispatched like any other; if it
@@ -747,6 +768,9 @@ func (UnimplementedTripServiceServer) ListRecentDestinations(context.Context, *L
 }
 func (UnimplementedTripServiceServer) RateTrip(context.Context, *RateTripRequest) (*RateTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RateTrip not implemented")
+}
+func (UnimplementedTripServiceServer) GetTripRating(context.Context, *GetTripRatingRequest) (*GetTripRatingResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTripRating not implemented")
 }
 func (UnimplementedTripServiceServer) ScheduleTrip(context.Context, *ScheduleTripRequest) (*ScheduledTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ScheduleTrip not implemented")
@@ -1225,6 +1249,24 @@ func _TripService_RateTrip_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_GetTripRating_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTripRatingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetTripRating(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetTripRating_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetTripRating(ctx, req.(*GetTripRatingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TripService_ScheduleTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ScheduleTripRequest)
 	if err := dec(in); err != nil {
@@ -1471,6 +1513,10 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RateTrip",
 			Handler:    _TripService_RateTrip_Handler,
+		},
+		{
+			MethodName: "GetTripRating",
+			Handler:    _TripService_GetTripRating_Handler,
 		},
 		{
 			MethodName: "ScheduleTrip",

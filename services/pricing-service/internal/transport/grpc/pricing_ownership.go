@@ -38,6 +38,14 @@ var ownerChecks = map[string]ownerCheck{
 
 		return c.ownsRider(ctx, r.GetRiderId())
 	},
+	pricingRPCPrefix + "GetTripFare": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*pricingv1.GetTripFareRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
 	pricingRPCPrefix + "EstimateFare": func(ctx context.Context, c caller, request any) (bool, error) {
 		r, ok := request.(*pricingv1.EstimateFareRequest)
 		if !ok {

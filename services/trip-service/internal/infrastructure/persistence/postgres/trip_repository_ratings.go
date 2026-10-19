@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
@@ -79,4 +80,32 @@ func (r *TripRepository) CreateRating(
 		Comment:   input.Comment,
 		CreatedAt: createdAt,
 	}, nil
+}
+
+// FindRating is one side's rating of a trip. The comment is not read: it stays with
+// the operating company.
+func (r *TripRepository) FindRating(
+	ctx context.Context,
+	tripID string,
+	ratedBy trip.RatedBy,
+) (trip.Rating, bool, error) {
+	rating := trip.Rating{TripID: tripID, RatedBy: ratedBy}
+
+	err := r.pool.QueryRow(
+		ctx,
+		`SELECT id::text, rater_id::text, ratee_id::text, stars, created_at
+           FROM trip_ratings
+          WHERE trip_id = $1 AND rated_by = $2`,
+		tripID,
+		string(ratedBy),
+	).Scan(&rating.ID, &rating.RaterID, &rating.RateeID, &rating.Stars, &rating.CreatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return trip.Rating{}, false, nil
+		}
+
+		return trip.Rating{}, false, fmt.Errorf("select trip rating: %w", err)
+	}
+
+	return rating, true, nil
 }

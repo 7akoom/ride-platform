@@ -7,6 +7,7 @@ import (
 	"github.com/7akoom/ride-platform/services/trip-service/internal/application/trip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // RateTrip records one side's rating of the other. Which side is speaking is named in
@@ -30,6 +31,34 @@ func (h *TripHandler) RateTrip(
 	}
 
 	return &tripv1.RateTripResponse{}, nil
+}
+
+// GetTripRating is one side's own rating of a trip and whether it can still be given.
+// The side is checked against the trip by the authorization layer, as for RateTrip.
+func (h *TripHandler) GetTripRating(
+	ctx context.Context,
+	request *tripv1.GetTripRatingRequest,
+) (*tripv1.GetTripRatingResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	got, err := h.tripService.TripRating(ctx, request.GetTripId(), toDomainRatedBy(request.GetRatedBy()))
+	if err != nil {
+		return nil, h.mapTripError(err)
+	}
+
+	response := &tripv1.GetTripRatingResponse{
+		Rated:   got.Rated,
+		Stars:   int32(got.Stars),
+		CanRate: got.CanRate,
+	}
+
+	if got.CanRateUntil != nil {
+		response.CanRateUntil = timestamppb.New(*got.CanRateUntil)
+	}
+
+	return response, nil
 }
 
 func toDomainRatedBy(r tripv1.RatedBy) trip.RatedBy {

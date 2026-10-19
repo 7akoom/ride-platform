@@ -229,6 +229,16 @@ service TripService {
     };
   }
 
+  // GetTripRating is one side's own rating of a trip, for the trip's details: whether
+  // it was given and its stars, and whether it can still be given (the trip completed
+  // less than 24 hours ago and this side has not rated). rated_by must be the caller's
+  // own side of the trip, as for RateTrip. The comment is never returned.
+  rpc GetTripRating(GetTripRatingRequest) returns (GetTripRatingResponse) {
+    option (google.api.http) = {
+      get: "/v1/trips/{trip_id}/rating"
+    };
+  }
+
   // Scheduled trips: a rider books a trip for later (30 minutes to 7 days
   // ahead, at most 3 upcoming). It becomes a real trip, with the same id,
   // 10 minutes before the time and is dispatched like any other; if it
@@ -629,6 +639,21 @@ message RateTripRequest {
 }
 
 message RateTripResponse {}
+
+message GetTripRatingRequest {
+  string trip_id = 1;
+  RatedBy rated_by = 2;
+}
+
+message GetTripRatingResponse {
+  bool rated = 1;
+  // 1 to 5 when rated, else 0.
+  int32 stars = 2;
+  // Not rated yet and still in time: RateTrip would take it now.
+  bool can_rate = 3;
+  // Until when it can be rated; set when can_rate.
+  google.protobuf.Timestamp can_rate_until = 4;
+}
 
 // --- Rider view of the driver ---------------------------------------------
 

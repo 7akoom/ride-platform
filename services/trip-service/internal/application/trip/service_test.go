@@ -585,3 +585,7 @@ func (r *fakeRepository) CreateRating(
 ) (trip.Rating, error) {
 	return trip.Rating{}, nil
 }
+
+func (r *fakeRepository) FindRating(context.Context, string, trip.RatedBy) (trip.Rating, bool, error) {
+	return trip.Rating{}, false, nil
+}

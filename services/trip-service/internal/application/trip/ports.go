@@ -131,6 +131,10 @@ type Repository interface {
 	// CreateRating stores a rating and its trip.rated event in one transaction.
 	// It returns ErrAlreadyRated when that side already rated the trip.
 	CreateRating(ctx context.Context, input CreateRatingInput) (Rating, error)
+
+	// FindRating is one side's rating of a trip; found is false when that side has
+	// not rated it.
+	FindRating(ctx context.Context, tripID string, ratedBy RatedBy) (rating Rating, found bool, err error)
 }
 
 type IDGenerator interface {

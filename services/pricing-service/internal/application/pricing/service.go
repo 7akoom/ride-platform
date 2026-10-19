@@ -95,6 +95,10 @@ type Service interface {
 	// ChargeCancellation records the fee of a cancelled trip, if it owes
 	// one; charged is false when it does not. A trip is charged once.
 	ChargeCancellation(ctx context.Context, input CancellationInput) (fare Fare, charged bool, err error)
+
+	// TripFare is the fare recorded for one of the rider's trips, or
+	// ErrFareNotFound.
+	TripFare(ctx context.Context, riderID, tripID string) (Fare, error)
 }
 
 // DefaultQuoteTTL is how long a quote holds its price.

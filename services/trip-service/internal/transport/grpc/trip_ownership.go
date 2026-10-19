@@ -98,22 +98,35 @@ var ownerChecks = map[string]ownerCheck{
 			return false, nil
 		}
 
-		p, err := c.participation(ctx, r.GetTripId())
-		if err != nil {
-			return false, err
-		}
-
-		// The side named in the request must be the caller's own side of this trip: a
-		// rider cannot rate as the driver, and a stranger cannot rate at all.
-		switch r.GetRatedBy() {
-		case tripv1.RatedBy_RATED_BY_RIDER:
-			return p.rider, nil
-		case tripv1.RatedBy_RATED_BY_DRIVER:
-			return p.driver, nil
-		default:
+		return c.isRatingSide(ctx, r.GetTripId(), r.GetRatedBy())
+	},
+	tripRPCPrefix + "GetTripRating": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*tripv1.GetTripRatingRequest)
+		if !ok {
 			return false, nil
 		}
+
+		return c.isRatingSide(ctx, r.GetTripId(), r.GetRatedBy())
 	},
+}
+
+// isRatingSide reports whether the side named in a rating request is the caller's own
+// side of the trip: a rider cannot rate (or read the rating) as the driver, and a
+// stranger has no side at all.
+func (c caller) isRatingSide(ctx context.Context, tripID string, side tripv1.RatedBy) (bool, error) {
+	p, err := c.participation(ctx, tripID)
+	if err != nil {
+		return false, err
+	}
+
+	switch side {
+	case tripv1.RatedBy_RATED_BY_RIDER:
+		return p.rider, nil
+	case tripv1.RatedBy_RATED_BY_DRIVER:
+		return p.driver, nil
+	default:
+		return false, nil
+	}
 }
 
 func driverOfTrip(ctx context.Context, c caller, request any) (bool, error) {
