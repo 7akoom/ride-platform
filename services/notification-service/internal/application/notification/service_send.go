@@ -143,7 +143,7 @@ func (s *service) deliverPush(
 		}
 	}
 
-	result, err := s.pushSender.Send(ctx, devices, title, body, input.Data)
+	result, err := s.pushSender.Send(ctx, devices, title, body, pushData(input.EventKey, input.Data))
 	if err != nil {
 		return Delivery{
 			Channel: ChannelPush,
@@ -201,4 +201,18 @@ func localeChain(requested string, devices []Device) []string {
 	add(DefaultLocale)
 
 	return chain
+}
+
+// pushData is what a push carries besides its title and body: the event's own data
+// plus "event_key", so the app knows which screen a tap opens without guessing from
+// the other keys. The caller's map is not changed.
+func pushData(eventKey string, data map[string]string) map[string]string {
+	out := make(map[string]string, len(data)+1)
+	for key, value := range data {
+		out[key] = value
+	}
+
+	out["event_key"] = strings.TrimSpace(eventKey)
+
+	return out
 }
