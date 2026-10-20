@@ -40,6 +40,14 @@ var ownerChecks = map[string]ownerCheck{
 
 		return c.ownsRider(ctx, r.GetRiderId())
 	},
+	tripRPCPrefix + "GetRiderTripStats": func(ctx context.Context, c caller, request any) (bool, error) {
+		r, ok := request.(*tripv1.GetRiderTripStatsRequest)
+		if !ok {
+			return false, nil
+		}
+
+		return c.ownsRider(ctx, r.GetRiderId())
+	},
 	// Trips booked ahead: only the rider, as themselves; that a booking is
 	// theirs is checked by the store against the rider_id.
 	tripRPCPrefix + "ScheduleTrip": func(ctx context.Context, c caller, request any) (bool, error) {

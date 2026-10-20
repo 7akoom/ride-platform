@@ -42,6 +42,7 @@ const (
 	SupportService_RejectTicketAction_FullMethodName         = "/ride.support.v1.SupportService/RejectTicketAction"
 	SupportService_AdminListSupportCategories_FullMethodName = "/ride.support.v1.SupportService/AdminListSupportCategories"
 	SupportService_UpsertSupportCategory_FullMethodName      = "/ride.support.v1.SupportService/UpsertSupportCategory"
+	SupportService_GetInstanceInfo_FullMethodName            = "/ride.support.v1.SupportService/GetInstanceInfo"
 	SupportService_ListHelpSections_FullMethodName           = "/ride.support.v1.SupportService/ListHelpSections"
 	SupportService_ListHelpArticles_FullMethodName           = "/ride.support.v1.SupportService/ListHelpArticles"
 	SupportService_GetHelpArticle_FullMethodName             = "/ride.support.v1.SupportService/GetHelpArticle"
@@ -140,6 +141,12 @@ type SupportServiceClient interface {
 	// Categories. Needs support.configure.
 	AdminListSupportCategories(ctx context.Context, in *AdminListSupportCategoriesRequest, opts ...grpc.CallOption) (*ListSupportCategoriesResponse, error)
 	UpsertSupportCategory(ctx context.Context, in *UpsertSupportCategoryRequest, opts ...grpc.CallOption) (*SupportCategoryResponse, error)
+	// GetInstanceInfo is what the apps show about this copy of the platform:
+	// its terms and privacy pages (empty when not set), and the emergency
+	// numbers of its country for the safety center (none when not set). Set per
+	// instance (SUPPORT_TERMS_URL, SUPPORT_PRIVACY_URL,
+	// SUPPORT_EMERGENCY_NUMBERS), so they change without a new app build.
+	GetInstanceInfo(ctx context.Context, in *GetInstanceInfoRequest, opts ...grpc.CallOption) (*GetInstanceInfoResponse, error)
 	// Help centre. Riders and drivers read published articles for them, by
 	// section or by a search over the three languages, and say whether one
 	// helped (once per person; a second vote replaces the first). An article
@@ -396,6 +403,16 @@ func (c *supportServiceClient) UpsertSupportCategory(ctx context.Context, in *Up
 	return out, nil
 }
 
+func (c *supportServiceClient) GetInstanceInfo(ctx context.Context, in *GetInstanceInfoRequest, opts ...grpc.CallOption) (*GetInstanceInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetInstanceInfoResponse)
+	err := c.cc.Invoke(ctx, SupportService_GetInstanceInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *supportServiceClient) ListHelpSections(ctx context.Context, in *ListHelpSectionsRequest, opts ...grpc.CallOption) (*ListHelpSectionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListHelpSectionsResponse)
@@ -609,6 +626,12 @@ type SupportServiceServer interface {
 	// Categories. Needs support.configure.
 	AdminListSupportCategories(context.Context, *AdminListSupportCategoriesRequest) (*ListSupportCategoriesResponse, error)
 	UpsertSupportCategory(context.Context, *UpsertSupportCategoryRequest) (*SupportCategoryResponse, error)
+	// GetInstanceInfo is what the apps show about this copy of the platform:
+	// its terms and privacy pages (empty when not set), and the emergency
+	// numbers of its country for the safety center (none when not set). Set per
+	// instance (SUPPORT_TERMS_URL, SUPPORT_PRIVACY_URL,
+	// SUPPORT_EMERGENCY_NUMBERS), so they change without a new app build.
+	GetInstanceInfo(context.Context, *GetInstanceInfoRequest) (*GetInstanceInfoResponse, error)
 	// Help centre. Riders and drivers read published articles for them, by
 	// section or by a search over the three languages, and say whether one
 	// helped (once per person; a second vote replaces the first). An article
@@ -710,6 +733,9 @@ func (UnimplementedSupportServiceServer) AdminListSupportCategories(context.Cont
 }
 func (UnimplementedSupportServiceServer) UpsertSupportCategory(context.Context, *UpsertSupportCategoryRequest) (*SupportCategoryResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpsertSupportCategory not implemented")
+}
+func (UnimplementedSupportServiceServer) GetInstanceInfo(context.Context, *GetInstanceInfoRequest) (*GetInstanceInfoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetInstanceInfo not implemented")
 }
 func (UnimplementedSupportServiceServer) ListHelpSections(context.Context, *ListHelpSectionsRequest) (*ListHelpSectionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListHelpSections not implemented")
@@ -1167,6 +1193,24 @@ func _SupportService_UpsertSupportCategory_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SupportService_GetInstanceInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInstanceInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).GetInstanceInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_GetInstanceInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).GetInstanceInfo(ctx, req.(*GetInstanceInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SupportService_ListHelpSections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListHelpSectionsRequest)
 	if err := dec(in); err != nil {
@@ -1495,6 +1539,10 @@ var SupportService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpsertSupportCategory",
 			Handler:    _SupportService_UpsertSupportCategory_Handler,
+		},
+		{
+			MethodName: "GetInstanceInfo",
+			Handler:    _SupportService_GetInstanceInfo_Handler,
 		},
 		{
 			MethodName: "ListHelpSections",

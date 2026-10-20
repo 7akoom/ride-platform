@@ -6548,6 +6548,22 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "group",
+            "description": "One tab of the inbox; unspecified lists them all. The unread count stays\nthe whole inbox's.\n\n - NOTIFICATION_GROUP_TRIPS: trip.*\n - NOTIFICATION_GROUP_WALLET: wallet.*\n - NOTIFICATION_GROUP_OFFERS: promo.*, offer.*\n - NOTIFICATION_GROUP_SUPPORT: support.*\n - NOTIFICATION_GROUP_OTHER: Everything else (account.*, ...).",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "NOTIFICATION_GROUP_UNSPECIFIED",
+              "NOTIFICATION_GROUP_TRIPS",
+              "NOTIFICATION_GROUP_WALLET",
+              "NOTIFICATION_GROUP_OFFERS",
+              "NOTIFICATION_GROUP_SUPPORT",
+              "NOTIFICATION_GROUP_OTHER"
+            ],
+            "default": "NOTIFICATION_GROUP_UNSPECIFIED"
           }
         ],
         "tags": [
@@ -7436,6 +7452,37 @@
         ]
       }
     },
+    "/v1/riders/{riderId}/trip-stats": {
+      "get": {
+        "summary": "GetRiderTripStats counts the rider's own completed trips (the account\nheader). Only the rider themselves.",
+        "operationId": "TripService_GetRiderTripStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetRiderTripStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/riders/{riderId}/trips/{tripId}/fare": {
       "get": {
         "summary": "GetTripFare is what one of the rider's trips cost, line by line, as it was\nrecorded when the trip ended: the base fare, distance and time, waiting, the\ndemand surcharge, the discount and the total. For a cancelled trip that owed a\nfee it is the fee (kind says which). The caller's own rider profile only;\nNOT_FOUND when the trip has no fare (not ended, owed nothing, or not this\nrider's: the two are not told apart).",
@@ -7852,6 +7899,29 @@
             "default": "AUDIENCE_UNSPECIFIED"
           }
         ],
+        "tags": [
+          "SupportService"
+        ]
+      }
+    },
+    "/v1/support/instance-info": {
+      "get": {
+        "summary": "GetInstanceInfo is what the apps show about this copy of the platform:\nits terms and privacy pages (empty when not set), and the emergency\nnumbers of its country for the safety center (none when not set). Set per\ninstance (SUPPORT_TERMS_URL, SUPPORT_PRIVACY_URL,\nSUPPORT_EMERGENCY_NUMBERS), so they change without a new app build.",
+        "operationId": "SupportService_GetInstanceInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetInstanceInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
         "tags": [
           "SupportService"
         ]
@@ -13057,6 +13127,30 @@
       },
       "description": "Amounts are decimal strings in the wallet currency."
     },
+    "v1EmergencyKind": {
+      "type": "string",
+      "enum": [
+        "EMERGENCY_KIND_UNSPECIFIED",
+        "EMERGENCY_KIND_GENERAL",
+        "EMERGENCY_KIND_POLICE",
+        "EMERGENCY_KIND_AMBULANCE",
+        "EMERGENCY_KIND_FIRE"
+      ],
+      "default": "EMERGENCY_KIND_UNSPECIFIED",
+      "description": " - EMERGENCY_KIND_GENERAL: The country's one number for everything (112)."
+    },
+    "v1EmergencyNumber": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/v1EmergencyKind"
+        },
+        "number": {
+          "type": "string",
+          "description": "As dialled: digits, maybe with a leading +."
+        }
+      }
+    },
     "v1EntityType": {
       "type": "string",
       "enum": [
@@ -13391,6 +13485,25 @@
         }
       }
     },
+    "v1GetInstanceInfoResponse": {
+      "type": "object",
+      "properties": {
+        "termsUrl": {
+          "type": "string"
+        },
+        "privacyUrl": {
+          "type": "string"
+        },
+        "emergencyNumbers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1EmergencyNumber"
+          },
+          "description": "In the order the instance lists them; the apps name each kind in the\nperson's language."
+        }
+      }
+    },
     "v1GetLiveOverviewResponse": {
       "type": "object",
       "properties": {
@@ -13655,6 +13768,15 @@
       "properties": {
         "rider": {
           "$ref": "#/definitions/v1Rider"
+        }
+      }
+    },
+    "v1GetRiderTripStatsResponse": {
+      "type": "object",
+      "properties": {
+        "completedTrips": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -15613,6 +15735,19 @@
           "format": "date-time"
         }
       }
+    },
+    "v1NotificationGroup": {
+      "type": "string",
+      "enum": [
+        "NOTIFICATION_GROUP_UNSPECIFIED",
+        "NOTIFICATION_GROUP_TRIPS",
+        "NOTIFICATION_GROUP_WALLET",
+        "NOTIFICATION_GROUP_OFFERS",
+        "NOTIFICATION_GROUP_SUPPORT",
+        "NOTIFICATION_GROUP_OTHER"
+      ],
+      "default": "NOTIFICATION_GROUP_UNSPECIFIED",
+      "description": "The inbox's tabs, by the first part of the event key (\"trip.started\").\n\n - NOTIFICATION_GROUP_TRIPS: trip.*\n - NOTIFICATION_GROUP_WALLET: wallet.*\n - NOTIFICATION_GROUP_OFFERS: promo.*, offer.*\n - NOTIFICATION_GROUP_SUPPORT: support.*\n - NOTIFICATION_GROUP_OTHER: Everything else (account.*, ...)."
     },
     "v1OTPDeliveryChannel": {
       "type": "string",
@@ -17935,6 +18070,11 @@
         "photoUrlExpiresAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "completedTrips": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The driver's completed trips, all time; 0 when it could not be read."
         }
       }
     },

@@ -59,6 +59,7 @@ var methodAccess = map[string]accessLevel{
 
 	"/ride.trip.v1.TripService/GetPickupPhoto":         accessOwner,
 	"/ride.trip.v1.TripService/ListRecentDestinations": accessOwner,
+	"/ride.trip.v1.TripService/GetRiderTripStats":      accessOwner,
 	"/ride.trip.v1.TripService/ScheduleTrip":           accessOwner,
 	"/ride.trip.v1.TripService/ListScheduledTrips":     accessOwner,
 	"/ride.trip.v1.TripService/CancelScheduledTrip":    accessOwner,

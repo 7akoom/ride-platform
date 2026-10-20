@@ -54,8 +54,9 @@ func (h *TripHandler) GetTripDriver(
 			PlateNumber:  summary.PlateNumber,
 			VehicleClass: summary.VehicleClass,
 		},
-		RatingAverage: summary.RatingAverage,
-		RatingCount:   summary.RatingCount,
+		RatingAverage:  summary.RatingAverage,
+		RatingCount:    summary.RatingCount,
+		CompletedTrips: h.driverCompletedTrips(ctx, request.GetTripId()),
 	}
 
 	if summary.PhotoURL != "" {

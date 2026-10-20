@@ -266,8 +266,10 @@ func (h *IdentityHandler) VerifyIdentifierLinkOTP(
 
 		case errors.Is(err, auth.ErrInvalidOTP):
 			return nil, status.Error(
-				codes.Unauthenticated,
-				"invalid OTP",
+				codes.InvalidArgument,
+				// Not Unauthenticated: the app would take a wrong code for an
+				// expired session, refresh it and send the same code again.
+				"the code is wrong",
 			)
 
 		case errors.Is(

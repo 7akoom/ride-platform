@@ -216,6 +216,14 @@ service TripService {
     };
   }
 
+  // GetRiderTripStats counts the rider's own completed trips (the account
+  // header). Only the rider themselves.
+  rpc GetRiderTripStats(GetRiderTripStatsRequest) returns (GetRiderTripStatsResponse) {
+    option (google.api.http) = {
+      get: "/v1/riders/{rider_id}/trip-stats"
+    };
+  }
+
   // RateTrip is how one side rates the other after a trip: the rider rates the driver and
   // the driver rates the rider. rated_by names who is speaking and must be the caller's
   // own side of that trip. Only a COMPLETED trip, within 24 hours of completing, once per
@@ -680,6 +688,8 @@ message TripDriver {
   // A short-lived link to the driver's approved photo; empty without one.
   string photo_url = 5;
   google.protobuf.Timestamp photo_url_expires_at = 6;
+  // The driver's completed trips, all time; 0 when it could not be read.
+  int32 completed_trips = 7;
 }
 
 message TripVehicle {
@@ -703,6 +713,14 @@ message ListRecentDestinationsRequest {
   string rider_id = 1;
   // 5 by default, at most 10.
   int32 limit = 2;
+}
+
+message GetRiderTripStatsRequest {
+  string rider_id = 1;
+}
+
+message GetRiderTripStatsResponse {
+  int32 completed_trips = 1;
 }
 
 message RecentDestination {

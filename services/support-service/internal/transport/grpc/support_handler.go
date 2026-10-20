@@ -19,6 +19,9 @@ type SupportHandler struct {
 	// personalData answers ExportPersonalData; nil until WithPersonalData.
 	personalData PersonalDataFunc
 
+	// instance answers GetInstanceInfo; empty until WithInstanceInfo.
+	instance InstanceInfo
+
 	service *support.Service
 	logger  *slog.Logger
 }

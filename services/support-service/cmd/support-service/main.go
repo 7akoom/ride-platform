@@ -74,6 +74,13 @@ func run() int {
 		return 1
 	}
 
+	instance, err := config.ParseInstanceInfo(cfg)
+	if err != nil {
+		logger.Error("invalid instance information", "error", err)
+
+		return 1
+	}
+
 	rateLimitConfig, err := config.ParseRateLimit(cfg)
 	if err != nil {
 		logger.Error("invalid rate limit configuration", "error", err)
@@ -238,7 +245,8 @@ func run() int {
 		grpcserver.NewAuthorizationUnaryInterceptor(staffAuthorizer),
 	)
 	server.RegisterSupportService(grpcserver.NewSupportHandler(supportService, logger).
-		WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export))
+		WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export).
+		WithInstanceInfo(instanceInfo(instance)))
 
 	outboxDone := make(chan struct{})
 
@@ -318,6 +326,15 @@ func firstResponseTargets(byName map[string]time.Duration) map[support.Priority]
 	out := make(map[support.Priority]time.Duration, len(byName))
 	for name, d := range byName {
 		out[support.Priority(name)] = d
+	}
+
+	return out
+}
+
+func instanceInfo(info config.InstanceInfo) grpcserver.InstanceInfo {
+	out := grpcserver.InstanceInfo{TermsURL: info.TermsURL, PrivacyURL: info.PrivacyURL}
+	for _, n := range info.Emergency {
+		out.Emergency = append(out.Emergency, grpcserver.EmergencyNumber{Kind: n.Kind, Number: n.Number})
 	}
 
 	return out

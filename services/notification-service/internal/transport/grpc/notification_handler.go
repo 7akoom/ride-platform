@@ -121,6 +121,7 @@ func (h *NotificationHandler) ListNotifications(
 		UnreadOnly:    request.GetUnreadOnly(),
 		PageToken:     request.GetPageToken(),
 		Locale:        readerLocale(ctx),
+		Group:         toDomainGroup(request.GetGroup()),
 	})
 	if err != nil {
 		return nil, h.mapNotificationError(err)
@@ -346,4 +347,21 @@ func toProtoDeliveries(deliveries []notification.Delivery) []*notificationv1.Del
 	}
 
 	return protoDeliveries
+}
+
+func toDomainGroup(group notificationv1.NotificationGroup) notification.Group {
+	switch group {
+	case notificationv1.NotificationGroup_NOTIFICATION_GROUP_TRIPS:
+		return notification.GroupTrips
+	case notificationv1.NotificationGroup_NOTIFICATION_GROUP_WALLET:
+		return notification.GroupWallet
+	case notificationv1.NotificationGroup_NOTIFICATION_GROUP_OFFERS:
+		return notification.GroupOffers
+	case notificationv1.NotificationGroup_NOTIFICATION_GROUP_SUPPORT:
+		return notification.GroupSupport
+	case notificationv1.NotificationGroup_NOTIFICATION_GROUP_OTHER:
+		return notification.GroupOther
+	default:
+		return notification.GroupAll
+	}
 }

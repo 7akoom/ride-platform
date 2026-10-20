@@ -542,7 +542,7 @@ func TestIdentityHandlerVerifyIdentifierUnlinkOTPMapsErrors(
 		{
 			name:         "invalid OTP",
 			serviceErr:   auth.ErrInvalidOTP,
-			expectedCode: codes.Unauthenticated,
+			expectedCode: codes.InvalidArgument,
 		},
 		{
 			name:         "identity not found",

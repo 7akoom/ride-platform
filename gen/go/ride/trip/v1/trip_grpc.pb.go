@@ -43,6 +43,7 @@ const (
 	TripService_RejectOffer_FullMethodName            = "/ride.trip.v1.TripService/RejectOffer"
 	TripService_GetPickupPhoto_FullMethodName         = "/ride.trip.v1.TripService/GetPickupPhoto"
 	TripService_ListRecentDestinations_FullMethodName = "/ride.trip.v1.TripService/ListRecentDestinations"
+	TripService_GetRiderTripStats_FullMethodName      = "/ride.trip.v1.TripService/GetRiderTripStats"
 	TripService_RateTrip_FullMethodName               = "/ride.trip.v1.TripService/RateTrip"
 	TripService_GetTripRating_FullMethodName          = "/ride.trip.v1.TripService/GetTripRating"
 	TripService_ScheduleTrip_FullMethodName           = "/ride.trip.v1.TripService/ScheduleTrip"
@@ -158,6 +159,9 @@ type TripServiceClient interface {
 	// ListRecentDestinations lists where the rider's completed trips ended,
 	// most recent first, each place once.
 	ListRecentDestinations(ctx context.Context, in *ListRecentDestinationsRequest, opts ...grpc.CallOption) (*ListRecentDestinationsResponse, error)
+	// GetRiderTripStats counts the rider's own completed trips (the account
+	// header). Only the rider themselves.
+	GetRiderTripStats(ctx context.Context, in *GetRiderTripStatsRequest, opts ...grpc.CallOption) (*GetRiderTripStatsResponse, error)
 	// RateTrip is how one side rates the other after a trip: the rider rates the driver and
 	// the driver rates the rider. rated_by names who is speaking and must be the caller's
 	// own side of that trip. Only a COMPLETED trip, within 24 hours of completing, once per
@@ -441,6 +445,16 @@ func (c *tripServiceClient) ListRecentDestinations(ctx context.Context, in *List
 	return out, nil
 }
 
+func (c *tripServiceClient) GetRiderTripStats(ctx context.Context, in *GetRiderTripStatsRequest, opts ...grpc.CallOption) (*GetRiderTripStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRiderTripStatsResponse)
+	err := c.cc.Invoke(ctx, TripService_GetRiderTripStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tripServiceClient) RateTrip(ctx context.Context, in *RateTripRequest, opts ...grpc.CallOption) (*RateTripResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RateTripResponse)
@@ -644,6 +658,9 @@ type TripServiceServer interface {
 	// ListRecentDestinations lists where the rider's completed trips ended,
 	// most recent first, each place once.
 	ListRecentDestinations(context.Context, *ListRecentDestinationsRequest) (*ListRecentDestinationsResponse, error)
+	// GetRiderTripStats counts the rider's own completed trips (the account
+	// header). Only the rider themselves.
+	GetRiderTripStats(context.Context, *GetRiderTripStatsRequest) (*GetRiderTripStatsResponse, error)
 	// RateTrip is how one side rates the other after a trip: the rider rates the driver and
 	// the driver rates the rider. rated_by names who is speaking and must be the caller's
 	// own side of that trip. Only a COMPLETED trip, within 24 hours of completing, once per
@@ -765,6 +782,9 @@ func (UnimplementedTripServiceServer) GetPickupPhoto(context.Context, *GetPickup
 }
 func (UnimplementedTripServiceServer) ListRecentDestinations(context.Context, *ListRecentDestinationsRequest) (*ListRecentDestinationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListRecentDestinations not implemented")
+}
+func (UnimplementedTripServiceServer) GetRiderTripStats(context.Context, *GetRiderTripStatsRequest) (*GetRiderTripStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRiderTripStats not implemented")
 }
 func (UnimplementedTripServiceServer) RateTrip(context.Context, *RateTripRequest) (*RateTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RateTrip not implemented")
@@ -1231,6 +1251,24 @@ func _TripService_ListRecentDestinations_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_GetRiderTripStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRiderTripStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetRiderTripStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetRiderTripStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetRiderTripStats(ctx, req.(*GetRiderTripStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TripService_RateTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RateTripRequest)
 	if err := dec(in); err != nil {
@@ -1509,6 +1547,10 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRecentDestinations",
 			Handler:    _TripService_ListRecentDestinations_Handler,
+		},
+		{
+			MethodName: "GetRiderTripStats",
+			Handler:    _TripService_GetRiderTripStats_Handler,
 		},
 		{
 			MethodName: "RateTrip",

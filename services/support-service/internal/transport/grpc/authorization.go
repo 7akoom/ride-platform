@@ -29,6 +29,7 @@ var userMethods = map[string]struct{}{
 	supportRPCPrefix + "GetHelpArticle":        {},
 	supportRPCPrefix + "RateHelpArticle":       {},
 	supportRPCPrefix + "RateTicket":            {},
+	supportRPCPrefix + "GetInstanceInfo":       {},
 }
 
 // internalMethods take only the internal service token (identity-service

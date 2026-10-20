@@ -61,6 +61,11 @@ type Config struct {
 	AutoResolveAfter string
 	AutoCloseAfter   string
 
+	// What the apps show about this copy (see ParseInstanceInfo).
+	TermsURL         string
+	PrivacyURL       string
+	EmergencyNumbers string
+
 	InternalServiceToken string
 
 	RateLimitRequestsPerSecond string
@@ -108,6 +113,10 @@ func Load() Config {
 		FirstResponseTargets: getEnv("SUPPORT_FIRST_RESPONSE", "urgent=15m,high=1h,normal=4h,low=24h"),
 		AutoResolveAfter:     getEnv("SUPPORT_AUTO_RESOLVE_AFTER", "72h"),
 		AutoCloseAfter:       getEnv("SUPPORT_AUTO_CLOSE_AFTER", "24h"),
+
+		TermsURL:         getEnv("SUPPORT_TERMS_URL", ""),
+		PrivacyURL:       getEnv("SUPPORT_PRIVACY_URL", ""),
+		EmergencyNumbers: getEnv("SUPPORT_EMERGENCY_NUMBERS", ""),
 
 		InternalServiceToken: getEnv("INTERNAL_SERVICE_TOKEN", "dev-internal-service-token-change-me"),
 

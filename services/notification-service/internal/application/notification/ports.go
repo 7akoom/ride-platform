@@ -44,6 +44,8 @@ type ListInput struct {
 	// Locale is the language the reader wants ("ar"); each notification is
 	// written again in it when its template has it. Empty: as stored.
 	Locale string
+	// Group is the inbox tab; GroupAll lists every notification.
+	Group Group
 	// Before is the decoded PageToken the repository pages from: notifications
 	// older than it, newest first. Nil for the first page.
 	Before *PageCursor

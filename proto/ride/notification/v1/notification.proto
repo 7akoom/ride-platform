@@ -56,6 +56,21 @@ enum RecipientType {
   RECIPIENT_TYPE_DRIVER = 2;
 }
 
+// The inbox's tabs, by the first part of the event key ("trip.started").
+enum NotificationGroup {
+  NOTIFICATION_GROUP_UNSPECIFIED = 0;
+  // trip.*
+  NOTIFICATION_GROUP_TRIPS = 1;
+  // wallet.*
+  NOTIFICATION_GROUP_WALLET = 2;
+  // promo.*, offer.*
+  NOTIFICATION_GROUP_OFFERS = 3;
+  // support.*
+  NOTIFICATION_GROUP_SUPPORT = 4;
+  // Everything else (account.*, ...).
+  NOTIFICATION_GROUP_OTHER = 5;
+}
+
 enum Channel {
   CHANNEL_UNSPECIFIED = 0;
   CHANNEL_IN_APP = 1;
@@ -147,6 +162,9 @@ message ListNotificationsRequest {
   bool unread_only = 4;
   // From a previous response, for the next (older) page.
   string page_token = 5;
+  // One tab of the inbox; unspecified lists them all. The unread count stays
+  // the whole inbox's.
+  NotificationGroup group = 6;
 }
 
 message ListNotificationsResponse {

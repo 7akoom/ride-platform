@@ -100,6 +100,7 @@ func (s *service) List(
 		RecipientID:   recipientID,
 		Limit:         limit + 1,
 		UnreadOnly:    input.UnreadOnly,
+		Group:         input.Group,
 		Before:        before,
 	})
 	if err != nil {

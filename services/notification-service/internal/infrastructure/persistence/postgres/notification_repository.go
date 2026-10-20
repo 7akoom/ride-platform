@@ -432,6 +432,16 @@ func (r *NotificationRepository) List(
 		args = append(args, input.Before.CreatedAt, input.Before.ID)
 	}
 
+	if families, exclude := input.Group.Families(); len(families) > 0 {
+		match := fmt.Sprintf(`split_part(event_key, '.', 1) = ANY($%d)`, len(args)+1)
+		if exclude {
+			match = `NOT ` + match
+		}
+
+		query += ` AND ` + match
+		args = append(args, families)
+	}
+
 	query += ` ORDER BY created_at DESC, id::text DESC LIMIT $3`
 
 	rows, err := r.pool.Query(ctx, query, args...)

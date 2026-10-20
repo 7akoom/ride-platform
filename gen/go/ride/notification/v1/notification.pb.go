@@ -73,6 +73,70 @@ func (RecipientType) EnumDescriptor() ([]byte, []int) {
 	return file_ride_notification_v1_notification_proto_rawDescGZIP(), []int{0}
 }
 
+// The inbox's tabs, by the first part of the event key ("trip.started").
+type NotificationGroup int32
+
+const (
+	NotificationGroup_NOTIFICATION_GROUP_UNSPECIFIED NotificationGroup = 0
+	// trip.*
+	NotificationGroup_NOTIFICATION_GROUP_TRIPS NotificationGroup = 1
+	// wallet.*
+	NotificationGroup_NOTIFICATION_GROUP_WALLET NotificationGroup = 2
+	// promo.*, offer.*
+	NotificationGroup_NOTIFICATION_GROUP_OFFERS NotificationGroup = 3
+	// support.*
+	NotificationGroup_NOTIFICATION_GROUP_SUPPORT NotificationGroup = 4
+	// Everything else (account.*, ...).
+	NotificationGroup_NOTIFICATION_GROUP_OTHER NotificationGroup = 5
+)
+
+// Enum value maps for NotificationGroup.
+var (
+	NotificationGroup_name = map[int32]string{
+		0: "NOTIFICATION_GROUP_UNSPECIFIED",
+		1: "NOTIFICATION_GROUP_TRIPS",
+		2: "NOTIFICATION_GROUP_WALLET",
+		3: "NOTIFICATION_GROUP_OFFERS",
+		4: "NOTIFICATION_GROUP_SUPPORT",
+		5: "NOTIFICATION_GROUP_OTHER",
+	}
+	NotificationGroup_value = map[string]int32{
+		"NOTIFICATION_GROUP_UNSPECIFIED": 0,
+		"NOTIFICATION_GROUP_TRIPS":       1,
+		"NOTIFICATION_GROUP_WALLET":      2,
+		"NOTIFICATION_GROUP_OFFERS":      3,
+		"NOTIFICATION_GROUP_SUPPORT":     4,
+		"NOTIFICATION_GROUP_OTHER":       5,
+	}
+)
+
+func (x NotificationGroup) Enum() *NotificationGroup {
+	p := new(NotificationGroup)
+	*p = x
+	return p
+}
+
+func (x NotificationGroup) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (NotificationGroup) Descriptor() protoreflect.EnumDescriptor {
+	return file_ride_notification_v1_notification_proto_enumTypes[1].Descriptor()
+}
+
+func (NotificationGroup) Type() protoreflect.EnumType {
+	return &file_ride_notification_v1_notification_proto_enumTypes[1]
+}
+
+func (x NotificationGroup) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use NotificationGroup.Descriptor instead.
+func (NotificationGroup) EnumDescriptor() ([]byte, []int) {
+	return file_ride_notification_v1_notification_proto_rawDescGZIP(), []int{1}
+}
+
 type Channel int32
 
 const (
@@ -109,11 +173,11 @@ func (x Channel) String() string {
 }
 
 func (Channel) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_notification_v1_notification_proto_enumTypes[1].Descriptor()
+	return file_ride_notification_v1_notification_proto_enumTypes[2].Descriptor()
 }
 
 func (Channel) Type() protoreflect.EnumType {
-	return &file_ride_notification_v1_notification_proto_enumTypes[1]
+	return &file_ride_notification_v1_notification_proto_enumTypes[2]
 }
 
 func (x Channel) Number() protoreflect.EnumNumber {
@@ -122,7 +186,7 @@ func (x Channel) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Channel.Descriptor instead.
 func (Channel) EnumDescriptor() ([]byte, []int) {
-	return file_ride_notification_v1_notification_proto_rawDescGZIP(), []int{1}
+	return file_ride_notification_v1_notification_proto_rawDescGZIP(), []int{2}
 }
 
 type DeliveryStatus int32
@@ -164,11 +228,11 @@ func (x DeliveryStatus) String() string {
 }
 
 func (DeliveryStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_notification_v1_notification_proto_enumTypes[2].Descriptor()
+	return file_ride_notification_v1_notification_proto_enumTypes[3].Descriptor()
 }
 
 func (DeliveryStatus) Type() protoreflect.EnumType {
-	return &file_ride_notification_v1_notification_proto_enumTypes[2]
+	return &file_ride_notification_v1_notification_proto_enumTypes[3]
 }
 
 func (x DeliveryStatus) Number() protoreflect.EnumNumber {
@@ -177,7 +241,7 @@ func (x DeliveryStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DeliveryStatus.Descriptor instead.
 func (DeliveryStatus) EnumDescriptor() ([]byte, []int) {
-	return file_ride_notification_v1_notification_proto_rawDescGZIP(), []int{2}
+	return file_ride_notification_v1_notification_proto_rawDescGZIP(), []int{3}
 }
 
 type Platform int32
@@ -216,11 +280,11 @@ func (x Platform) String() string {
 }
 
 func (Platform) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_notification_v1_notification_proto_enumTypes[3].Descriptor()
+	return file_ride_notification_v1_notification_proto_enumTypes[4].Descriptor()
 }
 
 func (Platform) Type() protoreflect.EnumType {
-	return &file_ride_notification_v1_notification_proto_enumTypes[3]
+	return &file_ride_notification_v1_notification_proto_enumTypes[4]
 }
 
 func (x Platform) Number() protoreflect.EnumNumber {
@@ -229,7 +293,7 @@ func (x Platform) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Platform.Descriptor instead.
 func (Platform) EnumDescriptor() ([]byte, []int) {
-	return file_ride_notification_v1_notification_proto_rawDescGZIP(), []int{3}
+	return file_ride_notification_v1_notification_proto_rawDescGZIP(), []int{4}
 }
 
 type Notification struct {
@@ -782,7 +846,10 @@ type ListNotificationsRequest struct {
 	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	UnreadOnly    bool                   `protobuf:"varint,4,opt,name=unread_only,json=unreadOnly,proto3" json:"unread_only,omitempty"`
 	// From a previous response, for the next (older) page.
-	PageToken     string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	PageToken string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	// One tab of the inbox; unspecified lists them all. The unread count stays
+	// the whole inbox's.
+	Group         NotificationGroup `protobuf:"varint,6,opt,name=group,proto3,enum=ride.notification.v1.NotificationGroup" json:"group,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -850,6 +917,13 @@ func (x *ListNotificationsRequest) GetPageToken() string {
 		return x.PageToken
 	}
 	return ""
+}
+
+func (x *ListNotificationsRequest) GetGroup() NotificationGroup {
+	if x != nil {
+		return x.Group
+	}
+	return NotificationGroup_NOTIFICATION_GROUP_UNSPECIFIED
 }
 
 type ListNotificationsResponse struct {
@@ -1342,7 +1416,7 @@ const file_ride_notification_v1_notification_proto_rawDesc = "" +
 	"\x17UnregisterDeviceRequest\x12!\n" +
 	"\fdevice_token\x18\x01 \x01(\tR\vdeviceToken\"4\n" +
 	"\x18UnregisterDeviceResponse\x12\x18\n" +
-	"\aremoved\x18\x01 \x01(\bR\aremoved\"\xdf\x01\n" +
+	"\aremoved\x18\x01 \x01(\bR\aremoved\"\x9e\x02\n" +
 	"\x18ListNotificationsRequest\x12J\n" +
 	"\x0erecipient_type\x18\x01 \x01(\x0e2#.ride.notification.v1.RecipientTypeR\rrecipientType\x12!\n" +
 	"\frecipient_id\x18\x02 \x01(\tR\vrecipientId\x12\x14\n" +
@@ -1350,7 +1424,8 @@ const file_ride_notification_v1_notification_proto_rawDesc = "" +
 	"\vunread_only\x18\x04 \x01(\bR\n" +
 	"unreadOnly\x12\x1d\n" +
 	"\n" +
-	"page_token\x18\x05 \x01(\tR\tpageToken\"\xb0\x01\n" +
+	"page_token\x18\x05 \x01(\tR\tpageToken\x12=\n" +
+	"\x05group\x18\x06 \x01(\x0e2'.ride.notification.v1.NotificationGroupR\x05group\"\xb0\x01\n" +
 	"\x19ListNotificationsResponse\x12H\n" +
 	"\rnotifications\x18\x01 \x03(\v2\".ride.notification.v1.NotificationR\rnotifications\x12!\n" +
 	"\funread_count\x18\x02 \x01(\x05R\vunreadCount\x12&\n" +
@@ -1380,7 +1455,14 @@ const file_ride_notification_v1_notification_proto_rawDesc = "" +
 	"\rRecipientType\x12\x1e\n" +
 	"\x1aRECIPIENT_TYPE_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14RECIPIENT_TYPE_RIDER\x10\x01\x12\x19\n" +
-	"\x15RECIPIENT_TYPE_DRIVER\x10\x02*Y\n" +
+	"\x15RECIPIENT_TYPE_DRIVER\x10\x02*\xd1\x01\n" +
+	"\x11NotificationGroup\x12\"\n" +
+	"\x1eNOTIFICATION_GROUP_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18NOTIFICATION_GROUP_TRIPS\x10\x01\x12\x1d\n" +
+	"\x19NOTIFICATION_GROUP_WALLET\x10\x02\x12\x1d\n" +
+	"\x19NOTIFICATION_GROUP_OFFERS\x10\x03\x12\x1e\n" +
+	"\x1aNOTIFICATION_GROUP_SUPPORT\x10\x04\x12\x1c\n" +
+	"\x18NOTIFICATION_GROUP_OTHER\x10\x05*Y\n" +
 	"\aChannel\x12\x17\n" +
 	"\x13CHANNEL_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eCHANNEL_IN_APP\x10\x01\x12\x10\n" +
@@ -1420,78 +1502,80 @@ func file_ride_notification_v1_notification_proto_rawDescGZIP() []byte {
 	return file_ride_notification_v1_notification_proto_rawDescData
 }
 
-var file_ride_notification_v1_notification_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_ride_notification_v1_notification_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_ride_notification_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_ride_notification_v1_notification_proto_goTypes = []any{
 	(RecipientType)(0),                    // 0: ride.notification.v1.RecipientType
-	(Channel)(0),                          // 1: ride.notification.v1.Channel
-	(DeliveryStatus)(0),                   // 2: ride.notification.v1.DeliveryStatus
-	(Platform)(0),                         // 3: ride.notification.v1.Platform
-	(*Notification)(nil),                  // 4: ride.notification.v1.Notification
-	(*Delivery)(nil),                      // 5: ride.notification.v1.Delivery
-	(*SendRequest)(nil),                   // 6: ride.notification.v1.SendRequest
-	(*SendResponse)(nil),                  // 7: ride.notification.v1.SendResponse
-	(*RegisterDeviceRequest)(nil),         // 8: ride.notification.v1.RegisterDeviceRequest
-	(*RegisterDeviceResponse)(nil),        // 9: ride.notification.v1.RegisterDeviceResponse
-	(*UnregisterDeviceRequest)(nil),       // 10: ride.notification.v1.UnregisterDeviceRequest
-	(*UnregisterDeviceResponse)(nil),      // 11: ride.notification.v1.UnregisterDeviceResponse
-	(*ListNotificationsRequest)(nil),      // 12: ride.notification.v1.ListNotificationsRequest
-	(*ListNotificationsResponse)(nil),     // 13: ride.notification.v1.ListNotificationsResponse
-	(*GetUnreadCountRequest)(nil),         // 14: ride.notification.v1.GetUnreadCountRequest
-	(*GetUnreadCountResponse)(nil),        // 15: ride.notification.v1.GetUnreadCountResponse
-	(*MarkAsReadRequest)(nil),             // 16: ride.notification.v1.MarkAsReadRequest
-	(*MarkAsReadResponse)(nil),            // 17: ride.notification.v1.MarkAsReadResponse
-	(*TemplateTranslation)(nil),           // 18: ride.notification.v1.TemplateTranslation
-	(*UpsertTemplateRequest)(nil),         // 19: ride.notification.v1.UpsertTemplateRequest
-	(*UpsertTemplateResponse)(nil),        // 20: ride.notification.v1.UpsertTemplateResponse
-	nil,                                   // 21: ride.notification.v1.Notification.DataEntry
-	nil,                                   // 22: ride.notification.v1.SendRequest.VariablesEntry
-	nil,                                   // 23: ride.notification.v1.SendRequest.DataEntry
-	(*timestamppb.Timestamp)(nil),         // 24: google.protobuf.Timestamp
-	(*v1.ExportPersonalDataRequest)(nil),  // 25: ride.dataexport.v1.ExportPersonalDataRequest
-	(*v1.ExportPersonalDataResponse)(nil), // 26: ride.dataexport.v1.ExportPersonalDataResponse
+	(NotificationGroup)(0),                // 1: ride.notification.v1.NotificationGroup
+	(Channel)(0),                          // 2: ride.notification.v1.Channel
+	(DeliveryStatus)(0),                   // 3: ride.notification.v1.DeliveryStatus
+	(Platform)(0),                         // 4: ride.notification.v1.Platform
+	(*Notification)(nil),                  // 5: ride.notification.v1.Notification
+	(*Delivery)(nil),                      // 6: ride.notification.v1.Delivery
+	(*SendRequest)(nil),                   // 7: ride.notification.v1.SendRequest
+	(*SendResponse)(nil),                  // 8: ride.notification.v1.SendResponse
+	(*RegisterDeviceRequest)(nil),         // 9: ride.notification.v1.RegisterDeviceRequest
+	(*RegisterDeviceResponse)(nil),        // 10: ride.notification.v1.RegisterDeviceResponse
+	(*UnregisterDeviceRequest)(nil),       // 11: ride.notification.v1.UnregisterDeviceRequest
+	(*UnregisterDeviceResponse)(nil),      // 12: ride.notification.v1.UnregisterDeviceResponse
+	(*ListNotificationsRequest)(nil),      // 13: ride.notification.v1.ListNotificationsRequest
+	(*ListNotificationsResponse)(nil),     // 14: ride.notification.v1.ListNotificationsResponse
+	(*GetUnreadCountRequest)(nil),         // 15: ride.notification.v1.GetUnreadCountRequest
+	(*GetUnreadCountResponse)(nil),        // 16: ride.notification.v1.GetUnreadCountResponse
+	(*MarkAsReadRequest)(nil),             // 17: ride.notification.v1.MarkAsReadRequest
+	(*MarkAsReadResponse)(nil),            // 18: ride.notification.v1.MarkAsReadResponse
+	(*TemplateTranslation)(nil),           // 19: ride.notification.v1.TemplateTranslation
+	(*UpsertTemplateRequest)(nil),         // 20: ride.notification.v1.UpsertTemplateRequest
+	(*UpsertTemplateResponse)(nil),        // 21: ride.notification.v1.UpsertTemplateResponse
+	nil,                                   // 22: ride.notification.v1.Notification.DataEntry
+	nil,                                   // 23: ride.notification.v1.SendRequest.VariablesEntry
+	nil,                                   // 24: ride.notification.v1.SendRequest.DataEntry
+	(*timestamppb.Timestamp)(nil),         // 25: google.protobuf.Timestamp
+	(*v1.ExportPersonalDataRequest)(nil),  // 26: ride.dataexport.v1.ExportPersonalDataRequest
+	(*v1.ExportPersonalDataResponse)(nil), // 27: ride.dataexport.v1.ExportPersonalDataResponse
 }
 var file_ride_notification_v1_notification_proto_depIdxs = []int32{
 	0,  // 0: ride.notification.v1.Notification.recipient_type:type_name -> ride.notification.v1.RecipientType
-	21, // 1: ride.notification.v1.Notification.data:type_name -> ride.notification.v1.Notification.DataEntry
-	24, // 2: ride.notification.v1.Notification.created_at:type_name -> google.protobuf.Timestamp
-	1,  // 3: ride.notification.v1.Delivery.channel:type_name -> ride.notification.v1.Channel
-	2,  // 4: ride.notification.v1.Delivery.status:type_name -> ride.notification.v1.DeliveryStatus
+	22, // 1: ride.notification.v1.Notification.data:type_name -> ride.notification.v1.Notification.DataEntry
+	25, // 2: ride.notification.v1.Notification.created_at:type_name -> google.protobuf.Timestamp
+	2,  // 3: ride.notification.v1.Delivery.channel:type_name -> ride.notification.v1.Channel
+	3,  // 4: ride.notification.v1.Delivery.status:type_name -> ride.notification.v1.DeliveryStatus
 	0,  // 5: ride.notification.v1.SendRequest.recipient_type:type_name -> ride.notification.v1.RecipientType
-	22, // 6: ride.notification.v1.SendRequest.variables:type_name -> ride.notification.v1.SendRequest.VariablesEntry
-	23, // 7: ride.notification.v1.SendRequest.data:type_name -> ride.notification.v1.SendRequest.DataEntry
-	1,  // 8: ride.notification.v1.SendRequest.channels:type_name -> ride.notification.v1.Channel
-	4,  // 9: ride.notification.v1.SendResponse.notification:type_name -> ride.notification.v1.Notification
-	5,  // 10: ride.notification.v1.SendResponse.deliveries:type_name -> ride.notification.v1.Delivery
+	23, // 6: ride.notification.v1.SendRequest.variables:type_name -> ride.notification.v1.SendRequest.VariablesEntry
+	24, // 7: ride.notification.v1.SendRequest.data:type_name -> ride.notification.v1.SendRequest.DataEntry
+	2,  // 8: ride.notification.v1.SendRequest.channels:type_name -> ride.notification.v1.Channel
+	5,  // 9: ride.notification.v1.SendResponse.notification:type_name -> ride.notification.v1.Notification
+	6,  // 10: ride.notification.v1.SendResponse.deliveries:type_name -> ride.notification.v1.Delivery
 	0,  // 11: ride.notification.v1.RegisterDeviceRequest.recipient_type:type_name -> ride.notification.v1.RecipientType
-	3,  // 12: ride.notification.v1.RegisterDeviceRequest.platform:type_name -> ride.notification.v1.Platform
+	4,  // 12: ride.notification.v1.RegisterDeviceRequest.platform:type_name -> ride.notification.v1.Platform
 	0,  // 13: ride.notification.v1.ListNotificationsRequest.recipient_type:type_name -> ride.notification.v1.RecipientType
-	4,  // 14: ride.notification.v1.ListNotificationsResponse.notifications:type_name -> ride.notification.v1.Notification
-	0,  // 15: ride.notification.v1.GetUnreadCountRequest.recipient_type:type_name -> ride.notification.v1.RecipientType
-	0,  // 16: ride.notification.v1.MarkAsReadRequest.recipient_type:type_name -> ride.notification.v1.RecipientType
-	1,  // 17: ride.notification.v1.UpsertTemplateRequest.default_channels:type_name -> ride.notification.v1.Channel
-	18, // 18: ride.notification.v1.UpsertTemplateRequest.translations:type_name -> ride.notification.v1.TemplateTranslation
-	25, // 19: ride.notification.v1.NotificationService.ExportPersonalData:input_type -> ride.dataexport.v1.ExportPersonalDataRequest
-	6,  // 20: ride.notification.v1.NotificationService.Send:input_type -> ride.notification.v1.SendRequest
-	8,  // 21: ride.notification.v1.NotificationService.RegisterDevice:input_type -> ride.notification.v1.RegisterDeviceRequest
-	10, // 22: ride.notification.v1.NotificationService.UnregisterDevice:input_type -> ride.notification.v1.UnregisterDeviceRequest
-	12, // 23: ride.notification.v1.NotificationService.ListNotifications:input_type -> ride.notification.v1.ListNotificationsRequest
-	16, // 24: ride.notification.v1.NotificationService.MarkAsRead:input_type -> ride.notification.v1.MarkAsReadRequest
-	14, // 25: ride.notification.v1.NotificationService.GetUnreadCount:input_type -> ride.notification.v1.GetUnreadCountRequest
-	19, // 26: ride.notification.v1.NotificationService.UpsertTemplate:input_type -> ride.notification.v1.UpsertTemplateRequest
-	26, // 27: ride.notification.v1.NotificationService.ExportPersonalData:output_type -> ride.dataexport.v1.ExportPersonalDataResponse
-	7,  // 28: ride.notification.v1.NotificationService.Send:output_type -> ride.notification.v1.SendResponse
-	9,  // 29: ride.notification.v1.NotificationService.RegisterDevice:output_type -> ride.notification.v1.RegisterDeviceResponse
-	11, // 30: ride.notification.v1.NotificationService.UnregisterDevice:output_type -> ride.notification.v1.UnregisterDeviceResponse
-	13, // 31: ride.notification.v1.NotificationService.ListNotifications:output_type -> ride.notification.v1.ListNotificationsResponse
-	17, // 32: ride.notification.v1.NotificationService.MarkAsRead:output_type -> ride.notification.v1.MarkAsReadResponse
-	15, // 33: ride.notification.v1.NotificationService.GetUnreadCount:output_type -> ride.notification.v1.GetUnreadCountResponse
-	20, // 34: ride.notification.v1.NotificationService.UpsertTemplate:output_type -> ride.notification.v1.UpsertTemplateResponse
-	27, // [27:35] is the sub-list for method output_type
-	19, // [19:27] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	1,  // 14: ride.notification.v1.ListNotificationsRequest.group:type_name -> ride.notification.v1.NotificationGroup
+	5,  // 15: ride.notification.v1.ListNotificationsResponse.notifications:type_name -> ride.notification.v1.Notification
+	0,  // 16: ride.notification.v1.GetUnreadCountRequest.recipient_type:type_name -> ride.notification.v1.RecipientType
+	0,  // 17: ride.notification.v1.MarkAsReadRequest.recipient_type:type_name -> ride.notification.v1.RecipientType
+	2,  // 18: ride.notification.v1.UpsertTemplateRequest.default_channels:type_name -> ride.notification.v1.Channel
+	19, // 19: ride.notification.v1.UpsertTemplateRequest.translations:type_name -> ride.notification.v1.TemplateTranslation
+	26, // 20: ride.notification.v1.NotificationService.ExportPersonalData:input_type -> ride.dataexport.v1.ExportPersonalDataRequest
+	7,  // 21: ride.notification.v1.NotificationService.Send:input_type -> ride.notification.v1.SendRequest
+	9,  // 22: ride.notification.v1.NotificationService.RegisterDevice:input_type -> ride.notification.v1.RegisterDeviceRequest
+	11, // 23: ride.notification.v1.NotificationService.UnregisterDevice:input_type -> ride.notification.v1.UnregisterDeviceRequest
+	13, // 24: ride.notification.v1.NotificationService.ListNotifications:input_type -> ride.notification.v1.ListNotificationsRequest
+	17, // 25: ride.notification.v1.NotificationService.MarkAsRead:input_type -> ride.notification.v1.MarkAsReadRequest
+	15, // 26: ride.notification.v1.NotificationService.GetUnreadCount:input_type -> ride.notification.v1.GetUnreadCountRequest
+	20, // 27: ride.notification.v1.NotificationService.UpsertTemplate:input_type -> ride.notification.v1.UpsertTemplateRequest
+	27, // 28: ride.notification.v1.NotificationService.ExportPersonalData:output_type -> ride.dataexport.v1.ExportPersonalDataResponse
+	8,  // 29: ride.notification.v1.NotificationService.Send:output_type -> ride.notification.v1.SendResponse
+	10, // 30: ride.notification.v1.NotificationService.RegisterDevice:output_type -> ride.notification.v1.RegisterDeviceResponse
+	12, // 31: ride.notification.v1.NotificationService.UnregisterDevice:output_type -> ride.notification.v1.UnregisterDeviceResponse
+	14, // 32: ride.notification.v1.NotificationService.ListNotifications:output_type -> ride.notification.v1.ListNotificationsResponse
+	18, // 33: ride.notification.v1.NotificationService.MarkAsRead:output_type -> ride.notification.v1.MarkAsReadResponse
+	16, // 34: ride.notification.v1.NotificationService.GetUnreadCount:output_type -> ride.notification.v1.GetUnreadCountResponse
+	21, // 35: ride.notification.v1.NotificationService.UpsertTemplate:output_type -> ride.notification.v1.UpsertTemplateResponse
+	28, // [28:36] is the sub-list for method output_type
+	20, // [20:28] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_ride_notification_v1_notification_proto_init() }
@@ -1504,7 +1588,7 @@ func file_ride_notification_v1_notification_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_notification_v1_notification_proto_rawDesc), len(file_ride_notification_v1_notification_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,

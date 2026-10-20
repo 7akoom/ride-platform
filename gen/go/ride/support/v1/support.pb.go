@@ -24,6 +24,62 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type EmergencyKind int32
+
+const (
+	EmergencyKind_EMERGENCY_KIND_UNSPECIFIED EmergencyKind = 0
+	// The country's one number for everything (112).
+	EmergencyKind_EMERGENCY_KIND_GENERAL   EmergencyKind = 1
+	EmergencyKind_EMERGENCY_KIND_POLICE    EmergencyKind = 2
+	EmergencyKind_EMERGENCY_KIND_AMBULANCE EmergencyKind = 3
+	EmergencyKind_EMERGENCY_KIND_FIRE      EmergencyKind = 4
+)
+
+// Enum value maps for EmergencyKind.
+var (
+	EmergencyKind_name = map[int32]string{
+		0: "EMERGENCY_KIND_UNSPECIFIED",
+		1: "EMERGENCY_KIND_GENERAL",
+		2: "EMERGENCY_KIND_POLICE",
+		3: "EMERGENCY_KIND_AMBULANCE",
+		4: "EMERGENCY_KIND_FIRE",
+	}
+	EmergencyKind_value = map[string]int32{
+		"EMERGENCY_KIND_UNSPECIFIED": 0,
+		"EMERGENCY_KIND_GENERAL":     1,
+		"EMERGENCY_KIND_POLICE":      2,
+		"EMERGENCY_KIND_AMBULANCE":   3,
+		"EMERGENCY_KIND_FIRE":        4,
+	}
+)
+
+func (x EmergencyKind) Enum() *EmergencyKind {
+	p := new(EmergencyKind)
+	*p = x
+	return p
+}
+
+func (x EmergencyKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EmergencyKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_ride_support_v1_support_proto_enumTypes[0].Descriptor()
+}
+
+func (EmergencyKind) Type() protoreflect.EnumType {
+	return &file_ride_support_v1_support_proto_enumTypes[0]
+}
+
+func (x EmergencyKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use EmergencyKind.Descriptor instead.
+func (EmergencyKind) EnumDescriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{0}
+}
+
 type Audience int32
 
 const (
@@ -57,11 +113,11 @@ func (x Audience) String() string {
 }
 
 func (Audience) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_support_v1_support_proto_enumTypes[0].Descriptor()
+	return file_ride_support_v1_support_proto_enumTypes[1].Descriptor()
 }
 
 func (Audience) Type() protoreflect.EnumType {
-	return &file_ride_support_v1_support_proto_enumTypes[0]
+	return &file_ride_support_v1_support_proto_enumTypes[1]
 }
 
 func (x Audience) Number() protoreflect.EnumNumber {
@@ -70,7 +126,7 @@ func (x Audience) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Audience.Descriptor instead.
 func (Audience) EnumDescriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{0}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{1}
 }
 
 type CategoryAudience int32
@@ -109,11 +165,11 @@ func (x CategoryAudience) String() string {
 }
 
 func (CategoryAudience) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_support_v1_support_proto_enumTypes[1].Descriptor()
+	return file_ride_support_v1_support_proto_enumTypes[2].Descriptor()
 }
 
 func (CategoryAudience) Type() protoreflect.EnumType {
-	return &file_ride_support_v1_support_proto_enumTypes[1]
+	return &file_ride_support_v1_support_proto_enumTypes[2]
 }
 
 func (x CategoryAudience) Number() protoreflect.EnumNumber {
@@ -122,7 +178,7 @@ func (x CategoryAudience) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CategoryAudience.Descriptor instead.
 func (CategoryAudience) EnumDescriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{1}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{2}
 }
 
 type TicketStatus int32
@@ -172,11 +228,11 @@ func (x TicketStatus) String() string {
 }
 
 func (TicketStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_support_v1_support_proto_enumTypes[2].Descriptor()
+	return file_ride_support_v1_support_proto_enumTypes[3].Descriptor()
 }
 
 func (TicketStatus) Type() protoreflect.EnumType {
-	return &file_ride_support_v1_support_proto_enumTypes[2]
+	return &file_ride_support_v1_support_proto_enumTypes[3]
 }
 
 func (x TicketStatus) Number() protoreflect.EnumNumber {
@@ -185,7 +241,7 @@ func (x TicketStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TicketStatus.Descriptor instead.
 func (TicketStatus) EnumDescriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{2}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{3}
 }
 
 type TicketPriority int32
@@ -227,11 +283,11 @@ func (x TicketPriority) String() string {
 }
 
 func (TicketPriority) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_support_v1_support_proto_enumTypes[3].Descriptor()
+	return file_ride_support_v1_support_proto_enumTypes[4].Descriptor()
 }
 
 func (TicketPriority) Type() protoreflect.EnumType {
-	return &file_ride_support_v1_support_proto_enumTypes[3]
+	return &file_ride_support_v1_support_proto_enumTypes[4]
 }
 
 func (x TicketPriority) Number() protoreflect.EnumNumber {
@@ -240,7 +296,7 @@ func (x TicketPriority) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TicketPriority.Descriptor instead.
 func (TicketPriority) EnumDescriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{3}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{4}
 }
 
 type TicketSource int32
@@ -276,11 +332,11 @@ func (x TicketSource) String() string {
 }
 
 func (TicketSource) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_support_v1_support_proto_enumTypes[4].Descriptor()
+	return file_ride_support_v1_support_proto_enumTypes[5].Descriptor()
 }
 
 func (TicketSource) Type() protoreflect.EnumType {
-	return &file_ride_support_v1_support_proto_enumTypes[4]
+	return &file_ride_support_v1_support_proto_enumTypes[5]
 }
 
 func (x TicketSource) Number() protoreflect.EnumNumber {
@@ -289,7 +345,7 @@ func (x TicketSource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TicketSource.Descriptor instead.
 func (TicketSource) EnumDescriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{4}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{5}
 }
 
 // How the caller is in a ticket.
@@ -327,11 +383,11 @@ func (x TicketRole) String() string {
 }
 
 func (TicketRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_support_v1_support_proto_enumTypes[5].Descriptor()
+	return file_ride_support_v1_support_proto_enumTypes[6].Descriptor()
 }
 
 func (TicketRole) Type() protoreflect.EnumType {
-	return &file_ride_support_v1_support_proto_enumTypes[5]
+	return &file_ride_support_v1_support_proto_enumTypes[6]
 }
 
 func (x TicketRole) Number() protoreflect.EnumNumber {
@@ -340,7 +396,7 @@ func (x TicketRole) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TicketRole.Descriptor instead.
 func (TicketRole) EnumDescriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{5}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{6}
 }
 
 type MessageAuthor int32
@@ -383,11 +439,11 @@ func (x MessageAuthor) String() string {
 }
 
 func (MessageAuthor) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_support_v1_support_proto_enumTypes[6].Descriptor()
+	return file_ride_support_v1_support_proto_enumTypes[7].Descriptor()
 }
 
 func (MessageAuthor) Type() protoreflect.EnumType {
-	return &file_ride_support_v1_support_proto_enumTypes[6]
+	return &file_ride_support_v1_support_proto_enumTypes[7]
 }
 
 func (x MessageAuthor) Number() protoreflect.EnumNumber {
@@ -396,7 +452,7 @@ func (x MessageAuthor) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MessageAuthor.Descriptor instead.
 func (MessageAuthor) EnumDescriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{6}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{7}
 }
 
 type ActionKind int32
@@ -444,11 +500,11 @@ func (x ActionKind) String() string {
 }
 
 func (ActionKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_support_v1_support_proto_enumTypes[7].Descriptor()
+	return file_ride_support_v1_support_proto_enumTypes[8].Descriptor()
 }
 
 func (ActionKind) Type() protoreflect.EnumType {
-	return &file_ride_support_v1_support_proto_enumTypes[7]
+	return &file_ride_support_v1_support_proto_enumTypes[8]
 }
 
 func (x ActionKind) Number() protoreflect.EnumNumber {
@@ -457,7 +513,7 @@ func (x ActionKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ActionKind.Descriptor instead.
 func (ActionKind) EnumDescriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{7}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{8}
 }
 
 type ActionStatus int32
@@ -505,11 +561,11 @@ func (x ActionStatus) String() string {
 }
 
 func (ActionStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_support_v1_support_proto_enumTypes[8].Descriptor()
+	return file_ride_support_v1_support_proto_enumTypes[9].Descriptor()
 }
 
 func (ActionStatus) Type() protoreflect.EnumType {
-	return &file_ride_support_v1_support_proto_enumTypes[8]
+	return &file_ride_support_v1_support_proto_enumTypes[9]
 }
 
 func (x ActionStatus) Number() protoreflect.EnumNumber {
@@ -518,7 +574,7 @@ func (x ActionStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ActionStatus.Descriptor instead.
 func (ActionStatus) EnumDescriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{8}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{9}
 }
 
 // Whose account a suspend or reactivate is about.
@@ -557,11 +613,11 @@ func (x ActionTarget) String() string {
 }
 
 func (ActionTarget) Descriptor() protoreflect.EnumDescriptor {
-	return file_ride_support_v1_support_proto_enumTypes[9].Descriptor()
+	return file_ride_support_v1_support_proto_enumTypes[10].Descriptor()
 }
 
 func (ActionTarget) Type() protoreflect.EnumType {
-	return &file_ride_support_v1_support_proto_enumTypes[9]
+	return &file_ride_support_v1_support_proto_enumTypes[10]
 }
 
 func (x ActionTarget) Number() protoreflect.EnumNumber {
@@ -570,7 +626,158 @@ func (x ActionTarget) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ActionTarget.Descriptor instead.
 func (ActionTarget) EnumDescriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{9}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{10}
+}
+
+type GetInstanceInfoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetInstanceInfoRequest) Reset() {
+	*x = GetInstanceInfoRequest{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetInstanceInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetInstanceInfoRequest) ProtoMessage() {}
+
+func (x *GetInstanceInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetInstanceInfoRequest.ProtoReflect.Descriptor instead.
+func (*GetInstanceInfoRequest) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{0}
+}
+
+type GetInstanceInfoResponse struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	TermsUrl   string                 `protobuf:"bytes,1,opt,name=terms_url,json=termsUrl,proto3" json:"terms_url,omitempty"`
+	PrivacyUrl string                 `protobuf:"bytes,2,opt,name=privacy_url,json=privacyUrl,proto3" json:"privacy_url,omitempty"`
+	// In the order the instance lists them; the apps name each kind in the
+	// person's language.
+	EmergencyNumbers []*EmergencyNumber `protobuf:"bytes,3,rep,name=emergency_numbers,json=emergencyNumbers,proto3" json:"emergency_numbers,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *GetInstanceInfoResponse) Reset() {
+	*x = GetInstanceInfoResponse{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetInstanceInfoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetInstanceInfoResponse) ProtoMessage() {}
+
+func (x *GetInstanceInfoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetInstanceInfoResponse.ProtoReflect.Descriptor instead.
+func (*GetInstanceInfoResponse) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetInstanceInfoResponse) GetTermsUrl() string {
+	if x != nil {
+		return x.TermsUrl
+	}
+	return ""
+}
+
+func (x *GetInstanceInfoResponse) GetPrivacyUrl() string {
+	if x != nil {
+		return x.PrivacyUrl
+	}
+	return ""
+}
+
+func (x *GetInstanceInfoResponse) GetEmergencyNumbers() []*EmergencyNumber {
+	if x != nil {
+		return x.EmergencyNumbers
+	}
+	return nil
+}
+
+type EmergencyNumber struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Kind  EmergencyKind          `protobuf:"varint,1,opt,name=kind,proto3,enum=ride.support.v1.EmergencyKind" json:"kind,omitempty"`
+	// As dialled: digits, maybe with a leading +.
+	Number        string `protobuf:"bytes,2,opt,name=number,proto3" json:"number,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EmergencyNumber) Reset() {
+	*x = EmergencyNumber{}
+	mi := &file_ride_support_v1_support_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EmergencyNumber) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EmergencyNumber) ProtoMessage() {}
+
+func (x *EmergencyNumber) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_support_v1_support_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EmergencyNumber.ProtoReflect.Descriptor instead.
+func (*EmergencyNumber) Descriptor() ([]byte, []int) {
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *EmergencyNumber) GetKind() EmergencyKind {
+	if x != nil {
+		return x.Kind
+	}
+	return EmergencyKind_EMERGENCY_KIND_UNSPECIFIED
+}
+
+func (x *EmergencyNumber) GetNumber() string {
+	if x != nil {
+		return x.Number
+	}
+	return ""
 }
 
 type SupportCategory struct {
@@ -595,7 +802,7 @@ type SupportCategory struct {
 
 func (x *SupportCategory) Reset() {
 	*x = SupportCategory{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[0]
+	mi := &file_ride_support_v1_support_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -607,7 +814,7 @@ func (x *SupportCategory) String() string {
 func (*SupportCategory) ProtoMessage() {}
 
 func (x *SupportCategory) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[0]
+	mi := &file_ride_support_v1_support_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -620,7 +827,7 @@ func (x *SupportCategory) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SupportCategory.ProtoReflect.Descriptor instead.
 func (*SupportCategory) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{0}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SupportCategory) GetKey() string {
@@ -710,7 +917,7 @@ type Attachment struct {
 
 func (x *Attachment) Reset() {
 	*x = Attachment{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[1]
+	mi := &file_ride_support_v1_support_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -722,7 +929,7 @@ func (x *Attachment) String() string {
 func (*Attachment) ProtoMessage() {}
 
 func (x *Attachment) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[1]
+	mi := &file_ride_support_v1_support_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -735,7 +942,7 @@ func (x *Attachment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Attachment.ProtoReflect.Descriptor instead.
 func (*Attachment) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{1}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Attachment) GetMediaId() string {
@@ -769,7 +976,7 @@ type TicketMessage struct {
 
 func (x *TicketMessage) Reset() {
 	*x = TicketMessage{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[2]
+	mi := &file_ride_support_v1_support_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -781,7 +988,7 @@ func (x *TicketMessage) String() string {
 func (*TicketMessage) ProtoMessage() {}
 
 func (x *TicketMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[2]
+	mi := &file_ride_support_v1_support_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -794,7 +1001,7 @@ func (x *TicketMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TicketMessage.ProtoReflect.Descriptor instead.
 func (*TicketMessage) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{2}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TicketMessage) GetId() string {
@@ -884,7 +1091,7 @@ type Ticket struct {
 
 func (x *Ticket) Reset() {
 	*x = Ticket{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[3]
+	mi := &file_ride_support_v1_support_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -896,7 +1103,7 @@ func (x *Ticket) String() string {
 func (*Ticket) ProtoMessage() {}
 
 func (x *Ticket) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[3]
+	mi := &file_ride_support_v1_support_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -909,7 +1116,7 @@ func (x *Ticket) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Ticket.ProtoReflect.Descriptor instead.
 func (*Ticket) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{3}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Ticket) GetId() string {
@@ -1094,7 +1301,7 @@ type StaffTicket struct {
 
 func (x *StaffTicket) Reset() {
 	*x = StaffTicket{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[4]
+	mi := &file_ride_support_v1_support_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1106,7 +1313,7 @@ func (x *StaffTicket) String() string {
 func (*StaffTicket) ProtoMessage() {}
 
 func (x *StaffTicket) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[4]
+	mi := &file_ride_support_v1_support_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1119,7 +1326,7 @@ func (x *StaffTicket) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StaffTicket.ProtoReflect.Descriptor instead.
 func (*StaffTicket) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{4}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *StaffTicket) GetTicket() *Ticket {
@@ -1205,7 +1412,7 @@ type TicketAction struct {
 
 func (x *TicketAction) Reset() {
 	*x = TicketAction{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[5]
+	mi := &file_ride_support_v1_support_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1217,7 +1424,7 @@ func (x *TicketAction) String() string {
 func (*TicketAction) ProtoMessage() {}
 
 func (x *TicketAction) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[5]
+	mi := &file_ride_support_v1_support_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1230,7 +1437,7 @@ func (x *TicketAction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TicketAction.ProtoReflect.Descriptor instead.
 func (*TicketAction) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{5}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *TicketAction) GetId() string {
@@ -1361,7 +1568,7 @@ type ListSupportCategoriesRequest struct {
 
 func (x *ListSupportCategoriesRequest) Reset() {
 	*x = ListSupportCategoriesRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[6]
+	mi := &file_ride_support_v1_support_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1373,7 +1580,7 @@ func (x *ListSupportCategoriesRequest) String() string {
 func (*ListSupportCategoriesRequest) ProtoMessage() {}
 
 func (x *ListSupportCategoriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[6]
+	mi := &file_ride_support_v1_support_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1386,7 +1593,7 @@ func (x *ListSupportCategoriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSupportCategoriesRequest.ProtoReflect.Descriptor instead.
 func (*ListSupportCategoriesRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{6}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListSupportCategoriesRequest) GetAudience() Audience {
@@ -1405,7 +1612,7 @@ type ListSupportCategoriesResponse struct {
 
 func (x *ListSupportCategoriesResponse) Reset() {
 	*x = ListSupportCategoriesResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[7]
+	mi := &file_ride_support_v1_support_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1417,7 +1624,7 @@ func (x *ListSupportCategoriesResponse) String() string {
 func (*ListSupportCategoriesResponse) ProtoMessage() {}
 
 func (x *ListSupportCategoriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[7]
+	mi := &file_ride_support_v1_support_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1430,7 +1637,7 @@ func (x *ListSupportCategoriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSupportCategoriesResponse.ProtoReflect.Descriptor instead.
 func (*ListSupportCategoriesResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{7}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ListSupportCategoriesResponse) GetCategories() []*SupportCategory {
@@ -1459,7 +1666,7 @@ type CreateTicketRequest struct {
 
 func (x *CreateTicketRequest) Reset() {
 	*x = CreateTicketRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[8]
+	mi := &file_ride_support_v1_support_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1471,7 +1678,7 @@ func (x *CreateTicketRequest) String() string {
 func (*CreateTicketRequest) ProtoMessage() {}
 
 func (x *CreateTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[8]
+	mi := &file_ride_support_v1_support_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1484,7 +1691,7 @@ func (x *CreateTicketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTicketRequest.ProtoReflect.Descriptor instead.
 func (*CreateTicketRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{8}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CreateTicketRequest) GetAudience() Audience {
@@ -1547,7 +1754,7 @@ type CreateTicketResponse struct {
 
 func (x *CreateTicketResponse) Reset() {
 	*x = CreateTicketResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[9]
+	mi := &file_ride_support_v1_support_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1559,7 +1766,7 @@ func (x *CreateTicketResponse) String() string {
 func (*CreateTicketResponse) ProtoMessage() {}
 
 func (x *CreateTicketResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[9]
+	mi := &file_ride_support_v1_support_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1572,7 +1779,7 @@ func (x *CreateTicketResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTicketResponse.ProtoReflect.Descriptor instead.
 func (*CreateTicketResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{9}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *CreateTicketResponse) GetTicket() *Ticket {
@@ -1609,7 +1816,7 @@ type ListMyTicketsRequest struct {
 
 func (x *ListMyTicketsRequest) Reset() {
 	*x = ListMyTicketsRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[10]
+	mi := &file_ride_support_v1_support_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1621,7 +1828,7 @@ func (x *ListMyTicketsRequest) String() string {
 func (*ListMyTicketsRequest) ProtoMessage() {}
 
 func (x *ListMyTicketsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[10]
+	mi := &file_ride_support_v1_support_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1634,7 +1841,7 @@ func (x *ListMyTicketsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMyTicketsRequest.ProtoReflect.Descriptor instead.
 func (*ListMyTicketsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{10}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ListMyTicketsRequest) GetAudience() Audience {
@@ -1675,7 +1882,7 @@ type ListMyTicketsResponse struct {
 
 func (x *ListMyTicketsResponse) Reset() {
 	*x = ListMyTicketsResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[11]
+	mi := &file_ride_support_v1_support_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1687,7 +1894,7 @@ func (x *ListMyTicketsResponse) String() string {
 func (*ListMyTicketsResponse) ProtoMessage() {}
 
 func (x *ListMyTicketsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[11]
+	mi := &file_ride_support_v1_support_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1700,7 +1907,7 @@ func (x *ListMyTicketsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMyTicketsResponse.ProtoReflect.Descriptor instead.
 func (*ListMyTicketsResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{11}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ListMyTicketsResponse) GetTickets() []*Ticket {
@@ -1726,7 +1933,7 @@ type GetMyTicketRequest struct {
 
 func (x *GetMyTicketRequest) Reset() {
 	*x = GetMyTicketRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[12]
+	mi := &file_ride_support_v1_support_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1738,7 +1945,7 @@ func (x *GetMyTicketRequest) String() string {
 func (*GetMyTicketRequest) ProtoMessage() {}
 
 func (x *GetMyTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[12]
+	mi := &file_ride_support_v1_support_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1751,7 +1958,7 @@ func (x *GetMyTicketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMyTicketRequest.ProtoReflect.Descriptor instead.
 func (*GetMyTicketRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{12}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetMyTicketRequest) GetTicketId() string {
@@ -1771,7 +1978,7 @@ type TicketDetailResponse struct {
 
 func (x *TicketDetailResponse) Reset() {
 	*x = TicketDetailResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[13]
+	mi := &file_ride_support_v1_support_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1783,7 +1990,7 @@ func (x *TicketDetailResponse) String() string {
 func (*TicketDetailResponse) ProtoMessage() {}
 
 func (x *TicketDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[13]
+	mi := &file_ride_support_v1_support_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1796,7 +2003,7 @@ func (x *TicketDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TicketDetailResponse.ProtoReflect.Descriptor instead.
 func (*TicketDetailResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{13}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *TicketDetailResponse) GetTicket() *Ticket {
@@ -1824,7 +2031,7 @@ type AddTicketMessageRequest struct {
 
 func (x *AddTicketMessageRequest) Reset() {
 	*x = AddTicketMessageRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[14]
+	mi := &file_ride_support_v1_support_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1836,7 +2043,7 @@ func (x *AddTicketMessageRequest) String() string {
 func (*AddTicketMessageRequest) ProtoMessage() {}
 
 func (x *AddTicketMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[14]
+	mi := &file_ride_support_v1_support_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1849,7 +2056,7 @@ func (x *AddTicketMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddTicketMessageRequest.ProtoReflect.Descriptor instead.
 func (*AddTicketMessageRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{14}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *AddTicketMessageRequest) GetTicketId() string {
@@ -1882,7 +2089,7 @@ type CloseMyTicketRequest struct {
 
 func (x *CloseMyTicketRequest) Reset() {
 	*x = CloseMyTicketRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[15]
+	mi := &file_ride_support_v1_support_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1894,7 +2101,7 @@ func (x *CloseMyTicketRequest) String() string {
 func (*CloseMyTicketRequest) ProtoMessage() {}
 
 func (x *CloseMyTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[15]
+	mi := &file_ride_support_v1_support_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1907,7 +2114,7 @@ func (x *CloseMyTicketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CloseMyTicketRequest.ProtoReflect.Descriptor instead.
 func (*CloseMyTicketRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{15}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *CloseMyTicketRequest) GetTicketId() string {
@@ -1927,7 +2134,7 @@ type GetAttachmentURLRequest struct {
 
 func (x *GetAttachmentURLRequest) Reset() {
 	*x = GetAttachmentURLRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[16]
+	mi := &file_ride_support_v1_support_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1939,7 +2146,7 @@ func (x *GetAttachmentURLRequest) String() string {
 func (*GetAttachmentURLRequest) ProtoMessage() {}
 
 func (x *GetAttachmentURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[16]
+	mi := &file_ride_support_v1_support_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1952,7 +2159,7 @@ func (x *GetAttachmentURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAttachmentURLRequest.ProtoReflect.Descriptor instead.
 func (*GetAttachmentURLRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{16}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetAttachmentURLRequest) GetTicketId() string {
@@ -1979,7 +2186,7 @@ type GetAttachmentURLResponse struct {
 
 func (x *GetAttachmentURLResponse) Reset() {
 	*x = GetAttachmentURLResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[17]
+	mi := &file_ride_support_v1_support_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1991,7 +2198,7 @@ func (x *GetAttachmentURLResponse) String() string {
 func (*GetAttachmentURLResponse) ProtoMessage() {}
 
 func (x *GetAttachmentURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[17]
+	mi := &file_ride_support_v1_support_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2004,7 +2211,7 @@ func (x *GetAttachmentURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAttachmentURLResponse.ProtoReflect.Descriptor instead.
 func (*GetAttachmentURLResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{17}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetAttachmentURLResponse) GetUrl() string {
@@ -2038,7 +2245,7 @@ type ListSupportQueueRequest struct {
 
 func (x *ListSupportQueueRequest) Reset() {
 	*x = ListSupportQueueRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[18]
+	mi := &file_ride_support_v1_support_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2050,7 +2257,7 @@ func (x *ListSupportQueueRequest) String() string {
 func (*ListSupportQueueRequest) ProtoMessage() {}
 
 func (x *ListSupportQueueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[18]
+	mi := &file_ride_support_v1_support_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2063,7 +2270,7 @@ func (x *ListSupportQueueRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSupportQueueRequest.ProtoReflect.Descriptor instead.
 func (*ListSupportQueueRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{18}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ListSupportQueueRequest) GetStatus() TicketStatus {
@@ -2132,7 +2339,7 @@ type ListSupportQueueResponse struct {
 
 func (x *ListSupportQueueResponse) Reset() {
 	*x = ListSupportQueueResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[19]
+	mi := &file_ride_support_v1_support_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2144,7 +2351,7 @@ func (x *ListSupportQueueResponse) String() string {
 func (*ListSupportQueueResponse) ProtoMessage() {}
 
 func (x *ListSupportQueueResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[19]
+	mi := &file_ride_support_v1_support_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2157,7 +2364,7 @@ func (x *ListSupportQueueResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSupportQueueResponse.ProtoReflect.Descriptor instead.
 func (*ListSupportQueueResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{19}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ListSupportQueueResponse) GetTickets() []*StaffTicket {
@@ -2183,7 +2390,7 @@ type GetTicketForStaffRequest struct {
 
 func (x *GetTicketForStaffRequest) Reset() {
 	*x = GetTicketForStaffRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[20]
+	mi := &file_ride_support_v1_support_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2195,7 +2402,7 @@ func (x *GetTicketForStaffRequest) String() string {
 func (*GetTicketForStaffRequest) ProtoMessage() {}
 
 func (x *GetTicketForStaffRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[20]
+	mi := &file_ride_support_v1_support_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2208,7 +2415,7 @@ func (x *GetTicketForStaffRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTicketForStaffRequest.ProtoReflect.Descriptor instead.
 func (*GetTicketForStaffRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{20}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetTicketForStaffRequest) GetTicketId() string {
@@ -2229,7 +2436,7 @@ type StaffTicketDetailResponse struct {
 
 func (x *StaffTicketDetailResponse) Reset() {
 	*x = StaffTicketDetailResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[21]
+	mi := &file_ride_support_v1_support_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2241,7 +2448,7 @@ func (x *StaffTicketDetailResponse) String() string {
 func (*StaffTicketDetailResponse) ProtoMessage() {}
 
 func (x *StaffTicketDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[21]
+	mi := &file_ride_support_v1_support_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2254,7 +2461,7 @@ func (x *StaffTicketDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StaffTicketDetailResponse.ProtoReflect.Descriptor instead.
 func (*StaffTicketDetailResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{21}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *StaffTicketDetailResponse) GetTicket() *StaffTicket {
@@ -2287,7 +2494,7 @@ type ClaimTicketRequest struct {
 
 func (x *ClaimTicketRequest) Reset() {
 	*x = ClaimTicketRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[22]
+	mi := &file_ride_support_v1_support_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2299,7 +2506,7 @@ func (x *ClaimTicketRequest) String() string {
 func (*ClaimTicketRequest) ProtoMessage() {}
 
 func (x *ClaimTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[22]
+	mi := &file_ride_support_v1_support_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2312,7 +2519,7 @@ func (x *ClaimTicketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClaimTicketRequest.ProtoReflect.Descriptor instead.
 func (*ClaimTicketRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{22}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ClaimTicketRequest) GetTicketId() string {
@@ -2332,7 +2539,7 @@ type AssignTicketRequest struct {
 
 func (x *AssignTicketRequest) Reset() {
 	*x = AssignTicketRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[23]
+	mi := &file_ride_support_v1_support_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2344,7 +2551,7 @@ func (x *AssignTicketRequest) String() string {
 func (*AssignTicketRequest) ProtoMessage() {}
 
 func (x *AssignTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[23]
+	mi := &file_ride_support_v1_support_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2357,7 +2564,7 @@ func (x *AssignTicketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssignTicketRequest.ProtoReflect.Descriptor instead.
 func (*AssignTicketRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{23}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *AssignTicketRequest) GetTicketId() string {
@@ -2391,7 +2598,7 @@ type ReplyToTicketRequest struct {
 
 func (x *ReplyToTicketRequest) Reset() {
 	*x = ReplyToTicketRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[24]
+	mi := &file_ride_support_v1_support_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2403,7 +2610,7 @@ func (x *ReplyToTicketRequest) String() string {
 func (*ReplyToTicketRequest) ProtoMessage() {}
 
 func (x *ReplyToTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[24]
+	mi := &file_ride_support_v1_support_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2416,7 +2623,7 @@ func (x *ReplyToTicketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplyToTicketRequest.ProtoReflect.Descriptor instead.
 func (*ReplyToTicketRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{24}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ReplyToTicketRequest) GetTicketId() string {
@@ -2464,7 +2671,7 @@ type SetTicketStatusRequest struct {
 
 func (x *SetTicketStatusRequest) Reset() {
 	*x = SetTicketStatusRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[25]
+	mi := &file_ride_support_v1_support_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2476,7 +2683,7 @@ func (x *SetTicketStatusRequest) String() string {
 func (*SetTicketStatusRequest) ProtoMessage() {}
 
 func (x *SetTicketStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[25]
+	mi := &file_ride_support_v1_support_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2489,7 +2696,7 @@ func (x *SetTicketStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetTicketStatusRequest.ProtoReflect.Descriptor instead.
 func (*SetTicketStatusRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{25}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *SetTicketStatusRequest) GetTicketId() string {
@@ -2516,7 +2723,7 @@ type SetTicketPriorityRequest struct {
 
 func (x *SetTicketPriorityRequest) Reset() {
 	*x = SetTicketPriorityRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[26]
+	mi := &file_ride_support_v1_support_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2528,7 +2735,7 @@ func (x *SetTicketPriorityRequest) String() string {
 func (*SetTicketPriorityRequest) ProtoMessage() {}
 
 func (x *SetTicketPriorityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[26]
+	mi := &file_ride_support_v1_support_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2541,7 +2748,7 @@ func (x *SetTicketPriorityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetTicketPriorityRequest.ProtoReflect.Descriptor instead.
 func (*SetTicketPriorityRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{26}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *SetTicketPriorityRequest) GetTicketId() string {
@@ -2578,7 +2785,7 @@ type RequestTicketActionRequest struct {
 
 func (x *RequestTicketActionRequest) Reset() {
 	*x = RequestTicketActionRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[27]
+	mi := &file_ride_support_v1_support_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2590,7 +2797,7 @@ func (x *RequestTicketActionRequest) String() string {
 func (*RequestTicketActionRequest) ProtoMessage() {}
 
 func (x *RequestTicketActionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[27]
+	mi := &file_ride_support_v1_support_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2603,7 +2810,7 @@ func (x *RequestTicketActionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestTicketActionRequest.ProtoReflect.Descriptor instead.
 func (*RequestTicketActionRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{27}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *RequestTicketActionRequest) GetTicketId() string {
@@ -2664,7 +2871,7 @@ type TicketActionResponse struct {
 
 func (x *TicketActionResponse) Reset() {
 	*x = TicketActionResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[28]
+	mi := &file_ride_support_v1_support_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2676,7 +2883,7 @@ func (x *TicketActionResponse) String() string {
 func (*TicketActionResponse) ProtoMessage() {}
 
 func (x *TicketActionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[28]
+	mi := &file_ride_support_v1_support_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2689,7 +2896,7 @@ func (x *TicketActionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TicketActionResponse.ProtoReflect.Descriptor instead.
 func (*TicketActionResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{28}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *TicketActionResponse) GetAction() *TicketAction {
@@ -2709,7 +2916,7 @@ type ListPendingTicketActionsRequest struct {
 
 func (x *ListPendingTicketActionsRequest) Reset() {
 	*x = ListPendingTicketActionsRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[29]
+	mi := &file_ride_support_v1_support_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2721,7 +2928,7 @@ func (x *ListPendingTicketActionsRequest) String() string {
 func (*ListPendingTicketActionsRequest) ProtoMessage() {}
 
 func (x *ListPendingTicketActionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[29]
+	mi := &file_ride_support_v1_support_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2734,7 +2941,7 @@ func (x *ListPendingTicketActionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPendingTicketActionsRequest.ProtoReflect.Descriptor instead.
 func (*ListPendingTicketActionsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{29}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ListPendingTicketActionsRequest) GetPageSize() int32 {
@@ -2761,7 +2968,7 @@ type ListPendingTicketActionsResponse struct {
 
 func (x *ListPendingTicketActionsResponse) Reset() {
 	*x = ListPendingTicketActionsResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[30]
+	mi := &file_ride_support_v1_support_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2773,7 +2980,7 @@ func (x *ListPendingTicketActionsResponse) String() string {
 func (*ListPendingTicketActionsResponse) ProtoMessage() {}
 
 func (x *ListPendingTicketActionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[30]
+	mi := &file_ride_support_v1_support_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2786,7 +2993,7 @@ func (x *ListPendingTicketActionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPendingTicketActionsResponse.ProtoReflect.Descriptor instead.
 func (*ListPendingTicketActionsResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{30}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ListPendingTicketActionsResponse) GetActions() []*TicketAction {
@@ -2813,7 +3020,7 @@ type ApproveTicketActionRequest struct {
 
 func (x *ApproveTicketActionRequest) Reset() {
 	*x = ApproveTicketActionRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[31]
+	mi := &file_ride_support_v1_support_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2825,7 +3032,7 @@ func (x *ApproveTicketActionRequest) String() string {
 func (*ApproveTicketActionRequest) ProtoMessage() {}
 
 func (x *ApproveTicketActionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[31]
+	mi := &file_ride_support_v1_support_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2838,7 +3045,7 @@ func (x *ApproveTicketActionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApproveTicketActionRequest.ProtoReflect.Descriptor instead.
 func (*ApproveTicketActionRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{31}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ApproveTicketActionRequest) GetActionId() string {
@@ -2866,7 +3073,7 @@ type RejectTicketActionRequest struct {
 
 func (x *RejectTicketActionRequest) Reset() {
 	*x = RejectTicketActionRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[32]
+	mi := &file_ride_support_v1_support_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2878,7 +3085,7 @@ func (x *RejectTicketActionRequest) String() string {
 func (*RejectTicketActionRequest) ProtoMessage() {}
 
 func (x *RejectTicketActionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[32]
+	mi := &file_ride_support_v1_support_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2891,7 +3098,7 @@ func (x *RejectTicketActionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RejectTicketActionRequest.ProtoReflect.Descriptor instead.
 func (*RejectTicketActionRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{32}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *RejectTicketActionRequest) GetActionId() string {
@@ -2916,7 +3123,7 @@ type AdminListSupportCategoriesRequest struct {
 
 func (x *AdminListSupportCategoriesRequest) Reset() {
 	*x = AdminListSupportCategoriesRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[33]
+	mi := &file_ride_support_v1_support_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2928,7 +3135,7 @@ func (x *AdminListSupportCategoriesRequest) String() string {
 func (*AdminListSupportCategoriesRequest) ProtoMessage() {}
 
 func (x *AdminListSupportCategoriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[33]
+	mi := &file_ride_support_v1_support_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2941,7 +3148,7 @@ func (x *AdminListSupportCategoriesRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use AdminListSupportCategoriesRequest.ProtoReflect.Descriptor instead.
 func (*AdminListSupportCategoriesRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{33}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{36}
 }
 
 type UpsertSupportCategoryRequest struct {
@@ -2953,7 +3160,7 @@ type UpsertSupportCategoryRequest struct {
 
 func (x *UpsertSupportCategoryRequest) Reset() {
 	*x = UpsertSupportCategoryRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[34]
+	mi := &file_ride_support_v1_support_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2965,7 +3172,7 @@ func (x *UpsertSupportCategoryRequest) String() string {
 func (*UpsertSupportCategoryRequest) ProtoMessage() {}
 
 func (x *UpsertSupportCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[34]
+	mi := &file_ride_support_v1_support_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2978,7 +3185,7 @@ func (x *UpsertSupportCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertSupportCategoryRequest.ProtoReflect.Descriptor instead.
 func (*UpsertSupportCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{34}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *UpsertSupportCategoryRequest) GetCategory() *SupportCategory {
@@ -2997,7 +3204,7 @@ type SupportCategoryResponse struct {
 
 func (x *SupportCategoryResponse) Reset() {
 	*x = SupportCategoryResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[35]
+	mi := &file_ride_support_v1_support_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3009,7 +3216,7 @@ func (x *SupportCategoryResponse) String() string {
 func (*SupportCategoryResponse) ProtoMessage() {}
 
 func (x *SupportCategoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[35]
+	mi := &file_ride_support_v1_support_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3022,7 +3229,7 @@ func (x *SupportCategoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SupportCategoryResponse.ProtoReflect.Descriptor instead.
 func (*SupportCategoryResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{35}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *SupportCategoryResponse) GetCategory() *SupportCategory {
@@ -3048,7 +3255,7 @@ type HelpSection struct {
 
 func (x *HelpSection) Reset() {
 	*x = HelpSection{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[36]
+	mi := &file_ride_support_v1_support_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3060,7 +3267,7 @@ func (x *HelpSection) String() string {
 func (*HelpSection) ProtoMessage() {}
 
 func (x *HelpSection) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[36]
+	mi := &file_ride_support_v1_support_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3073,7 +3280,7 @@ func (x *HelpSection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HelpSection.ProtoReflect.Descriptor instead.
 func (*HelpSection) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{36}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *HelpSection) GetKey() string {
@@ -3154,7 +3361,7 @@ type HelpArticle struct {
 
 func (x *HelpArticle) Reset() {
 	*x = HelpArticle{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[37]
+	mi := &file_ride_support_v1_support_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3166,7 +3373,7 @@ func (x *HelpArticle) String() string {
 func (*HelpArticle) ProtoMessage() {}
 
 func (x *HelpArticle) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[37]
+	mi := &file_ride_support_v1_support_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3179,7 +3386,7 @@ func (x *HelpArticle) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HelpArticle.ProtoReflect.Descriptor instead.
 func (*HelpArticle) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{37}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *HelpArticle) GetKey() string {
@@ -3310,7 +3517,7 @@ type ListHelpSectionsRequest struct {
 
 func (x *ListHelpSectionsRequest) Reset() {
 	*x = ListHelpSectionsRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[38]
+	mi := &file_ride_support_v1_support_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3322,7 +3529,7 @@ func (x *ListHelpSectionsRequest) String() string {
 func (*ListHelpSectionsRequest) ProtoMessage() {}
 
 func (x *ListHelpSectionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[38]
+	mi := &file_ride_support_v1_support_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3335,7 +3542,7 @@ func (x *ListHelpSectionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHelpSectionsRequest.ProtoReflect.Descriptor instead.
 func (*ListHelpSectionsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{38}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *ListHelpSectionsRequest) GetAudience() Audience {
@@ -3354,7 +3561,7 @@ type ListHelpSectionsResponse struct {
 
 func (x *ListHelpSectionsResponse) Reset() {
 	*x = ListHelpSectionsResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[39]
+	mi := &file_ride_support_v1_support_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3366,7 +3573,7 @@ func (x *ListHelpSectionsResponse) String() string {
 func (*ListHelpSectionsResponse) ProtoMessage() {}
 
 func (x *ListHelpSectionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[39]
+	mi := &file_ride_support_v1_support_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3379,7 +3586,7 @@ func (x *ListHelpSectionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHelpSectionsResponse.ProtoReflect.Descriptor instead.
 func (*ListHelpSectionsResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{39}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *ListHelpSectionsResponse) GetSections() []*HelpSection {
@@ -3403,7 +3610,7 @@ type ListHelpArticlesRequest struct {
 
 func (x *ListHelpArticlesRequest) Reset() {
 	*x = ListHelpArticlesRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[40]
+	mi := &file_ride_support_v1_support_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3415,7 +3622,7 @@ func (x *ListHelpArticlesRequest) String() string {
 func (*ListHelpArticlesRequest) ProtoMessage() {}
 
 func (x *ListHelpArticlesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[40]
+	mi := &file_ride_support_v1_support_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3428,7 +3635,7 @@ func (x *ListHelpArticlesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHelpArticlesRequest.ProtoReflect.Descriptor instead.
 func (*ListHelpArticlesRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{40}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ListHelpArticlesRequest) GetAudience() Audience {
@@ -3461,7 +3668,7 @@ type ListHelpArticlesResponse struct {
 
 func (x *ListHelpArticlesResponse) Reset() {
 	*x = ListHelpArticlesResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[41]
+	mi := &file_ride_support_v1_support_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3473,7 +3680,7 @@ func (x *ListHelpArticlesResponse) String() string {
 func (*ListHelpArticlesResponse) ProtoMessage() {}
 
 func (x *ListHelpArticlesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[41]
+	mi := &file_ride_support_v1_support_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3486,7 +3693,7 @@ func (x *ListHelpArticlesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHelpArticlesResponse.ProtoReflect.Descriptor instead.
 func (*ListHelpArticlesResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{41}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ListHelpArticlesResponse) GetArticles() []*HelpArticle {
@@ -3505,7 +3712,7 @@ type GetHelpArticleRequest struct {
 
 func (x *GetHelpArticleRequest) Reset() {
 	*x = GetHelpArticleRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[42]
+	mi := &file_ride_support_v1_support_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3517,7 +3724,7 @@ func (x *GetHelpArticleRequest) String() string {
 func (*GetHelpArticleRequest) ProtoMessage() {}
 
 func (x *GetHelpArticleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[42]
+	mi := &file_ride_support_v1_support_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3530,7 +3737,7 @@ func (x *GetHelpArticleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHelpArticleRequest.ProtoReflect.Descriptor instead.
 func (*GetHelpArticleRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{42}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *GetHelpArticleRequest) GetKey() string {
@@ -3549,7 +3756,7 @@ type HelpArticleResponse struct {
 
 func (x *HelpArticleResponse) Reset() {
 	*x = HelpArticleResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[43]
+	mi := &file_ride_support_v1_support_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3561,7 +3768,7 @@ func (x *HelpArticleResponse) String() string {
 func (*HelpArticleResponse) ProtoMessage() {}
 
 func (x *HelpArticleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[43]
+	mi := &file_ride_support_v1_support_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3574,7 +3781,7 @@ func (x *HelpArticleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HelpArticleResponse.ProtoReflect.Descriptor instead.
 func (*HelpArticleResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{43}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *HelpArticleResponse) GetArticle() *HelpArticle {
@@ -3594,7 +3801,7 @@ type RateHelpArticleRequest struct {
 
 func (x *RateHelpArticleRequest) Reset() {
 	*x = RateHelpArticleRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[44]
+	mi := &file_ride_support_v1_support_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3606,7 +3813,7 @@ func (x *RateHelpArticleRequest) String() string {
 func (*RateHelpArticleRequest) ProtoMessage() {}
 
 func (x *RateHelpArticleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[44]
+	mi := &file_ride_support_v1_support_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3619,7 +3826,7 @@ func (x *RateHelpArticleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RateHelpArticleRequest.ProtoReflect.Descriptor instead.
 func (*RateHelpArticleRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{44}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *RateHelpArticleRequest) GetKey() string {
@@ -3649,7 +3856,7 @@ type RateTicketRequest struct {
 
 func (x *RateTicketRequest) Reset() {
 	*x = RateTicketRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[45]
+	mi := &file_ride_support_v1_support_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3661,7 +3868,7 @@ func (x *RateTicketRequest) String() string {
 func (*RateTicketRequest) ProtoMessage() {}
 
 func (x *RateTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[45]
+	mi := &file_ride_support_v1_support_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3674,7 +3881,7 @@ func (x *RateTicketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RateTicketRequest.ProtoReflect.Descriptor instead.
 func (*RateTicketRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{45}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *RateTicketRequest) GetTicketId() string {
@@ -3706,7 +3913,7 @@ type AdminListHelpSectionsRequest struct {
 
 func (x *AdminListHelpSectionsRequest) Reset() {
 	*x = AdminListHelpSectionsRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[46]
+	mi := &file_ride_support_v1_support_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3718,7 +3925,7 @@ func (x *AdminListHelpSectionsRequest) String() string {
 func (*AdminListHelpSectionsRequest) ProtoMessage() {}
 
 func (x *AdminListHelpSectionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[46]
+	mi := &file_ride_support_v1_support_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3731,7 +3938,7 @@ func (x *AdminListHelpSectionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminListHelpSectionsRequest.ProtoReflect.Descriptor instead.
 func (*AdminListHelpSectionsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{46}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{49}
 }
 
 type UpsertHelpSectionRequest struct {
@@ -3743,7 +3950,7 @@ type UpsertHelpSectionRequest struct {
 
 func (x *UpsertHelpSectionRequest) Reset() {
 	*x = UpsertHelpSectionRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[47]
+	mi := &file_ride_support_v1_support_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3755,7 +3962,7 @@ func (x *UpsertHelpSectionRequest) String() string {
 func (*UpsertHelpSectionRequest) ProtoMessage() {}
 
 func (x *UpsertHelpSectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[47]
+	mi := &file_ride_support_v1_support_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3768,7 +3975,7 @@ func (x *UpsertHelpSectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertHelpSectionRequest.ProtoReflect.Descriptor instead.
 func (*UpsertHelpSectionRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{47}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *UpsertHelpSectionRequest) GetSection() *HelpSection {
@@ -3787,7 +3994,7 @@ type HelpSectionResponse struct {
 
 func (x *HelpSectionResponse) Reset() {
 	*x = HelpSectionResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[48]
+	mi := &file_ride_support_v1_support_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3799,7 +4006,7 @@ func (x *HelpSectionResponse) String() string {
 func (*HelpSectionResponse) ProtoMessage() {}
 
 func (x *HelpSectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[48]
+	mi := &file_ride_support_v1_support_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3812,7 +4019,7 @@ func (x *HelpSectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HelpSectionResponse.ProtoReflect.Descriptor instead.
 func (*HelpSectionResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{48}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *HelpSectionResponse) GetSection() *HelpSection {
@@ -3832,7 +4039,7 @@ type AdminListHelpArticlesRequest struct {
 
 func (x *AdminListHelpArticlesRequest) Reset() {
 	*x = AdminListHelpArticlesRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[49]
+	mi := &file_ride_support_v1_support_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3844,7 +4051,7 @@ func (x *AdminListHelpArticlesRequest) String() string {
 func (*AdminListHelpArticlesRequest) ProtoMessage() {}
 
 func (x *AdminListHelpArticlesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[49]
+	mi := &file_ride_support_v1_support_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3857,7 +4064,7 @@ func (x *AdminListHelpArticlesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminListHelpArticlesRequest.ProtoReflect.Descriptor instead.
 func (*AdminListHelpArticlesRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{49}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *AdminListHelpArticlesRequest) GetSectionKey() string {
@@ -3876,7 +4083,7 @@ type UpsertHelpArticleRequest struct {
 
 func (x *UpsertHelpArticleRequest) Reset() {
 	*x = UpsertHelpArticleRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[50]
+	mi := &file_ride_support_v1_support_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3888,7 +4095,7 @@ func (x *UpsertHelpArticleRequest) String() string {
 func (*UpsertHelpArticleRequest) ProtoMessage() {}
 
 func (x *UpsertHelpArticleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[50]
+	mi := &file_ride_support_v1_support_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3901,7 +4108,7 @@ func (x *UpsertHelpArticleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertHelpArticleRequest.ProtoReflect.Descriptor instead.
 func (*UpsertHelpArticleRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{50}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *UpsertHelpArticleRequest) GetArticle() *HelpArticle {
@@ -3930,7 +4137,7 @@ type Macro struct {
 
 func (x *Macro) Reset() {
 	*x = Macro{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[51]
+	mi := &file_ride_support_v1_support_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3942,7 +4149,7 @@ func (x *Macro) String() string {
 func (*Macro) ProtoMessage() {}
 
 func (x *Macro) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[51]
+	mi := &file_ride_support_v1_support_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3955,7 +4162,7 @@ func (x *Macro) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Macro.ProtoReflect.Descriptor instead.
 func (*Macro) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{51}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *Macro) GetKey() string {
@@ -4024,7 +4231,7 @@ type ListMacrosRequest struct {
 
 func (x *ListMacrosRequest) Reset() {
 	*x = ListMacrosRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[52]
+	mi := &file_ride_support_v1_support_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4036,7 +4243,7 @@ func (x *ListMacrosRequest) String() string {
 func (*ListMacrosRequest) ProtoMessage() {}
 
 func (x *ListMacrosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[52]
+	mi := &file_ride_support_v1_support_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4049,7 +4256,7 @@ func (x *ListMacrosRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMacrosRequest.ProtoReflect.Descriptor instead.
 func (*ListMacrosRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{52}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *ListMacrosRequest) GetCategoryKey() string {
@@ -4068,7 +4275,7 @@ type ListMacrosResponse struct {
 
 func (x *ListMacrosResponse) Reset() {
 	*x = ListMacrosResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[53]
+	mi := &file_ride_support_v1_support_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4080,7 +4287,7 @@ func (x *ListMacrosResponse) String() string {
 func (*ListMacrosResponse) ProtoMessage() {}
 
 func (x *ListMacrosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[53]
+	mi := &file_ride_support_v1_support_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4093,7 +4300,7 @@ func (x *ListMacrosResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMacrosResponse.ProtoReflect.Descriptor instead.
 func (*ListMacrosResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{53}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *ListMacrosResponse) GetMacros() []*Macro {
@@ -4111,7 +4318,7 @@ type AdminListMacrosRequest struct {
 
 func (x *AdminListMacrosRequest) Reset() {
 	*x = AdminListMacrosRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[54]
+	mi := &file_ride_support_v1_support_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4123,7 +4330,7 @@ func (x *AdminListMacrosRequest) String() string {
 func (*AdminListMacrosRequest) ProtoMessage() {}
 
 func (x *AdminListMacrosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[54]
+	mi := &file_ride_support_v1_support_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4136,7 +4343,7 @@ func (x *AdminListMacrosRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminListMacrosRequest.ProtoReflect.Descriptor instead.
 func (*AdminListMacrosRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{54}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{57}
 }
 
 type UpsertMacroRequest struct {
@@ -4148,7 +4355,7 @@ type UpsertMacroRequest struct {
 
 func (x *UpsertMacroRequest) Reset() {
 	*x = UpsertMacroRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[55]
+	mi := &file_ride_support_v1_support_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4160,7 +4367,7 @@ func (x *UpsertMacroRequest) String() string {
 func (*UpsertMacroRequest) ProtoMessage() {}
 
 func (x *UpsertMacroRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[55]
+	mi := &file_ride_support_v1_support_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4173,7 +4380,7 @@ func (x *UpsertMacroRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertMacroRequest.ProtoReflect.Descriptor instead.
 func (*UpsertMacroRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{55}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *UpsertMacroRequest) GetMacro() *Macro {
@@ -4192,7 +4399,7 @@ type MacroResponse struct {
 
 func (x *MacroResponse) Reset() {
 	*x = MacroResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[56]
+	mi := &file_ride_support_v1_support_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4204,7 +4411,7 @@ func (x *MacroResponse) String() string {
 func (*MacroResponse) ProtoMessage() {}
 
 func (x *MacroResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[56]
+	mi := &file_ride_support_v1_support_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4217,7 +4424,7 @@ func (x *MacroResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MacroResponse.ProtoReflect.Descriptor instead.
 func (*MacroResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{56}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *MacroResponse) GetMacro() *Macro {
@@ -4239,7 +4446,7 @@ type GetSupportStatsRequest struct {
 
 func (x *GetSupportStatsRequest) Reset() {
 	*x = GetSupportStatsRequest{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[57]
+	mi := &file_ride_support_v1_support_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4251,7 +4458,7 @@ func (x *GetSupportStatsRequest) String() string {
 func (*GetSupportStatsRequest) ProtoMessage() {}
 
 func (x *GetSupportStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[57]
+	mi := &file_ride_support_v1_support_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4264,7 +4471,7 @@ func (x *GetSupportStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSupportStatsRequest.ProtoReflect.Descriptor instead.
 func (*GetSupportStatsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{57}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *GetSupportStatsRequest) GetFrom() *timestamppb.Timestamp {
@@ -4291,7 +4498,7 @@ type PriorityCount struct {
 
 func (x *PriorityCount) Reset() {
 	*x = PriorityCount{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[58]
+	mi := &file_ride_support_v1_support_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4303,7 +4510,7 @@ func (x *PriorityCount) String() string {
 func (*PriorityCount) ProtoMessage() {}
 
 func (x *PriorityCount) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[58]
+	mi := &file_ride_support_v1_support_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4316,7 +4523,7 @@ func (x *PriorityCount) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PriorityCount.ProtoReflect.Descriptor instead.
 func (*PriorityCount) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{58}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *PriorityCount) GetPriority() TicketPriority {
@@ -4359,7 +4566,7 @@ type GetSupportStatsResponse struct {
 
 func (x *GetSupportStatsResponse) Reset() {
 	*x = GetSupportStatsResponse{}
-	mi := &file_ride_support_v1_support_proto_msgTypes[59]
+	mi := &file_ride_support_v1_support_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4371,7 +4578,7 @@ func (x *GetSupportStatsResponse) String() string {
 func (*GetSupportStatsResponse) ProtoMessage() {}
 
 func (x *GetSupportStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_support_v1_support_proto_msgTypes[59]
+	mi := &file_ride_support_v1_support_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4384,7 +4591,7 @@ func (x *GetSupportStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSupportStatsResponse.ProtoReflect.Descriptor instead.
 func (*GetSupportStatsResponse) Descriptor() ([]byte, []int) {
-	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{59}
+	return file_ride_support_v1_support_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *GetSupportStatsResponse) GetOpenByPriority() []*PriorityCount {
@@ -4475,7 +4682,16 @@ var File_ride_support_v1_support_proto protoreflect.FileDescriptor
 
 const file_ride_support_v1_support_proto_rawDesc = "" +
 	"\n" +
-	"\x1dride/support/v1/support.proto\x12\x0fride.support.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a$ride/dataexport/v1/data_export.proto\"\x8a\x03\n" +
+	"\x1dride/support/v1/support.proto\x12\x0fride.support.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a$ride/dataexport/v1/data_export.proto\"\x18\n" +
+	"\x16GetInstanceInfoRequest\"\xa6\x01\n" +
+	"\x17GetInstanceInfoResponse\x12\x1b\n" +
+	"\tterms_url\x18\x01 \x01(\tR\btermsUrl\x12\x1f\n" +
+	"\vprivacy_url\x18\x02 \x01(\tR\n" +
+	"privacyUrl\x12M\n" +
+	"\x11emergency_numbers\x18\x03 \x03(\v2 .ride.support.v1.EmergencyNumberR\x10emergencyNumbers\"]\n" +
+	"\x0fEmergencyNumber\x122\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x1e.ride.support.v1.EmergencyKindR\x04kind\x12\x16\n" +
+	"\x06number\x18\x02 \x01(\tR\x06number\"\x8a\x03\n" +
 	"\x0fSupportCategory\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12=\n" +
 	"\baudience\x18\x02 \x01(\x0e2!.ride.support.v1.CategoryAudienceR\baudience\x12\x17\n" +
@@ -4774,7 +4990,13 @@ const file_ride_support_v1_support_proto_rawDesc = "" +
 	"\x0eaverage_rating\x18\n" +
 	" \x01(\x01R\raverageRating\x12.\n" +
 	"\x04from\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
-	"\x02to\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\x02to*M\n" +
+	"\x02to\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\x02to*\x9d\x01\n" +
+	"\rEmergencyKind\x12\x1e\n" +
+	"\x1aEMERGENCY_KIND_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16EMERGENCY_KIND_GENERAL\x10\x01\x12\x19\n" +
+	"\x15EMERGENCY_KIND_POLICE\x10\x02\x12\x1c\n" +
+	"\x18EMERGENCY_KIND_AMBULANCE\x10\x03\x12\x17\n" +
+	"\x13EMERGENCY_KIND_FIRE\x10\x04*M\n" +
 	"\bAudience\x12\x18\n" +
 	"\x14AUDIENCE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eAUDIENCE_RIDER\x10\x01\x12\x13\n" +
@@ -4830,7 +5052,7 @@ const file_ride_support_v1_support_proto_rawDesc = "" +
 	"\fActionTarget\x12\x1d\n" +
 	"\x19ACTION_TARGET_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17ACTION_TARGET_REQUESTER\x10\x01\x12\x1d\n" +
-	"\x19ACTION_TARGET_COUNTERPART\x10\x022\x8d)\n" +
+	"\x19ACTION_TARGET_COUNTERPART\x10\x022\x97*\n" +
 	"\x0eSupportService\x12s\n" +
 	"\x12ExportPersonalData\x12-.ride.dataexport.v1.ExportPersonalDataRequest\x1a..ride.dataexport.v1.ExportPersonalDataResponse\x12\x96\x01\n" +
 	"\x15ListSupportCategories\x12-.ride.support.v1.ListSupportCategoriesRequest\x1a..ride.support.v1.ListSupportCategoriesResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/support/categories\x12{\n" +
@@ -4853,7 +5075,8 @@ const file_ride_support_v1_support_proto_rawDesc = "" +
 	"\x13ApproveTicketAction\x12+.ride.support.v1.ApproveTicketActionRequest\x1a%.ride.support.v1.TicketActionResponse\"8\x82\xd3\xe4\x93\x022:\x01*\"-/v1/admin/support/actions/{action_id}:approve\x12\xa0\x01\n" +
 	"\x12RejectTicketAction\x12*.ride.support.v1.RejectTicketActionRequest\x1a%.ride.support.v1.TicketActionResponse\"7\x82\xd3\xe4\x93\x021:\x01*\",/v1/admin/support/actions/{action_id}:reject\x12\xa6\x01\n" +
 	"\x1aAdminListSupportCategories\x122.ride.support.v1.AdminListSupportCategoriesRequest\x1a..ride.support.v1.ListSupportCategoriesResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/v1/admin/support/categories\x12\xa8\x01\n" +
-	"\x15UpsertSupportCategory\x12-.ride.support.v1.UpsertSupportCategoryRequest\x1a(.ride.support.v1.SupportCategoryResponse\"6\x82\xd3\xe4\x93\x020:\x01*\x1a+/v1/admin/support/categories/{category.key}\x12\x8a\x01\n" +
+	"\x15UpsertSupportCategory\x12-.ride.support.v1.UpsertSupportCategoryRequest\x1a(.ride.support.v1.SupportCategoryResponse\"6\x82\xd3\xe4\x93\x020:\x01*\x1a+/v1/admin/support/categories/{category.key}\x12\x87\x01\n" +
+	"\x0fGetInstanceInfo\x12'.ride.support.v1.GetInstanceInfoRequest\x1a(.ride.support.v1.GetInstanceInfoResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/support/instance-info\x12\x8a\x01\n" +
 	"\x10ListHelpSections\x12(.ride.support.v1.ListHelpSectionsRequest\x1a).ride.support.v1.ListHelpSectionsResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/support/help/sections\x12\x8a\x01\n" +
 	"\x10ListHelpArticles\x12(.ride.support.v1.ListHelpArticlesRequest\x1a).ride.support.v1.ListHelpArticlesResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/support/help/articles\x12\x87\x01\n" +
 	"\x0eGetHelpArticle\x12&.ride.support.v1.GetHelpArticleRequest\x1a$.ride.support.v1.HelpArticleResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/support/help/articles/{key}\x12\x91\x01\n" +
@@ -4882,232 +5105,240 @@ func file_ride_support_v1_support_proto_rawDescGZIP() []byte {
 	return file_ride_support_v1_support_proto_rawDescData
 }
 
-var file_ride_support_v1_support_proto_enumTypes = make([]protoimpl.EnumInfo, 10)
-var file_ride_support_v1_support_proto_msgTypes = make([]protoimpl.MessageInfo, 60)
+var file_ride_support_v1_support_proto_enumTypes = make([]protoimpl.EnumInfo, 11)
+var file_ride_support_v1_support_proto_msgTypes = make([]protoimpl.MessageInfo, 63)
 var file_ride_support_v1_support_proto_goTypes = []any{
-	(Audience)(0),                             // 0: ride.support.v1.Audience
-	(CategoryAudience)(0),                     // 1: ride.support.v1.CategoryAudience
-	(TicketStatus)(0),                         // 2: ride.support.v1.TicketStatus
-	(TicketPriority)(0),                       // 3: ride.support.v1.TicketPriority
-	(TicketSource)(0),                         // 4: ride.support.v1.TicketSource
-	(TicketRole)(0),                           // 5: ride.support.v1.TicketRole
-	(MessageAuthor)(0),                        // 6: ride.support.v1.MessageAuthor
-	(ActionKind)(0),                           // 7: ride.support.v1.ActionKind
-	(ActionStatus)(0),                         // 8: ride.support.v1.ActionStatus
-	(ActionTarget)(0),                         // 9: ride.support.v1.ActionTarget
-	(*SupportCategory)(nil),                   // 10: ride.support.v1.SupportCategory
-	(*Attachment)(nil),                        // 11: ride.support.v1.Attachment
-	(*TicketMessage)(nil),                     // 12: ride.support.v1.TicketMessage
-	(*Ticket)(nil),                            // 13: ride.support.v1.Ticket
-	(*StaffTicket)(nil),                       // 14: ride.support.v1.StaffTicket
-	(*TicketAction)(nil),                      // 15: ride.support.v1.TicketAction
-	(*ListSupportCategoriesRequest)(nil),      // 16: ride.support.v1.ListSupportCategoriesRequest
-	(*ListSupportCategoriesResponse)(nil),     // 17: ride.support.v1.ListSupportCategoriesResponse
-	(*CreateTicketRequest)(nil),               // 18: ride.support.v1.CreateTicketRequest
-	(*CreateTicketResponse)(nil),              // 19: ride.support.v1.CreateTicketResponse
-	(*ListMyTicketsRequest)(nil),              // 20: ride.support.v1.ListMyTicketsRequest
-	(*ListMyTicketsResponse)(nil),             // 21: ride.support.v1.ListMyTicketsResponse
-	(*GetMyTicketRequest)(nil),                // 22: ride.support.v1.GetMyTicketRequest
-	(*TicketDetailResponse)(nil),              // 23: ride.support.v1.TicketDetailResponse
-	(*AddTicketMessageRequest)(nil),           // 24: ride.support.v1.AddTicketMessageRequest
-	(*CloseMyTicketRequest)(nil),              // 25: ride.support.v1.CloseMyTicketRequest
-	(*GetAttachmentURLRequest)(nil),           // 26: ride.support.v1.GetAttachmentURLRequest
-	(*GetAttachmentURLResponse)(nil),          // 27: ride.support.v1.GetAttachmentURLResponse
-	(*ListSupportQueueRequest)(nil),           // 28: ride.support.v1.ListSupportQueueRequest
-	(*ListSupportQueueResponse)(nil),          // 29: ride.support.v1.ListSupportQueueResponse
-	(*GetTicketForStaffRequest)(nil),          // 30: ride.support.v1.GetTicketForStaffRequest
-	(*StaffTicketDetailResponse)(nil),         // 31: ride.support.v1.StaffTicketDetailResponse
-	(*ClaimTicketRequest)(nil),                // 32: ride.support.v1.ClaimTicketRequest
-	(*AssignTicketRequest)(nil),               // 33: ride.support.v1.AssignTicketRequest
-	(*ReplyToTicketRequest)(nil),              // 34: ride.support.v1.ReplyToTicketRequest
-	(*SetTicketStatusRequest)(nil),            // 35: ride.support.v1.SetTicketStatusRequest
-	(*SetTicketPriorityRequest)(nil),          // 36: ride.support.v1.SetTicketPriorityRequest
-	(*RequestTicketActionRequest)(nil),        // 37: ride.support.v1.RequestTicketActionRequest
-	(*TicketActionResponse)(nil),              // 38: ride.support.v1.TicketActionResponse
-	(*ListPendingTicketActionsRequest)(nil),   // 39: ride.support.v1.ListPendingTicketActionsRequest
-	(*ListPendingTicketActionsResponse)(nil),  // 40: ride.support.v1.ListPendingTicketActionsResponse
-	(*ApproveTicketActionRequest)(nil),        // 41: ride.support.v1.ApproveTicketActionRequest
-	(*RejectTicketActionRequest)(nil),         // 42: ride.support.v1.RejectTicketActionRequest
-	(*AdminListSupportCategoriesRequest)(nil), // 43: ride.support.v1.AdminListSupportCategoriesRequest
-	(*UpsertSupportCategoryRequest)(nil),      // 44: ride.support.v1.UpsertSupportCategoryRequest
-	(*SupportCategoryResponse)(nil),           // 45: ride.support.v1.SupportCategoryResponse
-	(*HelpSection)(nil),                       // 46: ride.support.v1.HelpSection
-	(*HelpArticle)(nil),                       // 47: ride.support.v1.HelpArticle
-	(*ListHelpSectionsRequest)(nil),           // 48: ride.support.v1.ListHelpSectionsRequest
-	(*ListHelpSectionsResponse)(nil),          // 49: ride.support.v1.ListHelpSectionsResponse
-	(*ListHelpArticlesRequest)(nil),           // 50: ride.support.v1.ListHelpArticlesRequest
-	(*ListHelpArticlesResponse)(nil),          // 51: ride.support.v1.ListHelpArticlesResponse
-	(*GetHelpArticleRequest)(nil),             // 52: ride.support.v1.GetHelpArticleRequest
-	(*HelpArticleResponse)(nil),               // 53: ride.support.v1.HelpArticleResponse
-	(*RateHelpArticleRequest)(nil),            // 54: ride.support.v1.RateHelpArticleRequest
-	(*RateTicketRequest)(nil),                 // 55: ride.support.v1.RateTicketRequest
-	(*AdminListHelpSectionsRequest)(nil),      // 56: ride.support.v1.AdminListHelpSectionsRequest
-	(*UpsertHelpSectionRequest)(nil),          // 57: ride.support.v1.UpsertHelpSectionRequest
-	(*HelpSectionResponse)(nil),               // 58: ride.support.v1.HelpSectionResponse
-	(*AdminListHelpArticlesRequest)(nil),      // 59: ride.support.v1.AdminListHelpArticlesRequest
-	(*UpsertHelpArticleRequest)(nil),          // 60: ride.support.v1.UpsertHelpArticleRequest
-	(*Macro)(nil),                             // 61: ride.support.v1.Macro
-	(*ListMacrosRequest)(nil),                 // 62: ride.support.v1.ListMacrosRequest
-	(*ListMacrosResponse)(nil),                // 63: ride.support.v1.ListMacrosResponse
-	(*AdminListMacrosRequest)(nil),            // 64: ride.support.v1.AdminListMacrosRequest
-	(*UpsertMacroRequest)(nil),                // 65: ride.support.v1.UpsertMacroRequest
-	(*MacroResponse)(nil),                     // 66: ride.support.v1.MacroResponse
-	(*GetSupportStatsRequest)(nil),            // 67: ride.support.v1.GetSupportStatsRequest
-	(*PriorityCount)(nil),                     // 68: ride.support.v1.PriorityCount
-	(*GetSupportStatsResponse)(nil),           // 69: ride.support.v1.GetSupportStatsResponse
-	(*timestamppb.Timestamp)(nil),             // 70: google.protobuf.Timestamp
-	(*v1.ExportPersonalDataRequest)(nil),      // 71: ride.dataexport.v1.ExportPersonalDataRequest
-	(*v1.ExportPersonalDataResponse)(nil),     // 72: ride.dataexport.v1.ExportPersonalDataResponse
+	(EmergencyKind)(0),                        // 0: ride.support.v1.EmergencyKind
+	(Audience)(0),                             // 1: ride.support.v1.Audience
+	(CategoryAudience)(0),                     // 2: ride.support.v1.CategoryAudience
+	(TicketStatus)(0),                         // 3: ride.support.v1.TicketStatus
+	(TicketPriority)(0),                       // 4: ride.support.v1.TicketPriority
+	(TicketSource)(0),                         // 5: ride.support.v1.TicketSource
+	(TicketRole)(0),                           // 6: ride.support.v1.TicketRole
+	(MessageAuthor)(0),                        // 7: ride.support.v1.MessageAuthor
+	(ActionKind)(0),                           // 8: ride.support.v1.ActionKind
+	(ActionStatus)(0),                         // 9: ride.support.v1.ActionStatus
+	(ActionTarget)(0),                         // 10: ride.support.v1.ActionTarget
+	(*GetInstanceInfoRequest)(nil),            // 11: ride.support.v1.GetInstanceInfoRequest
+	(*GetInstanceInfoResponse)(nil),           // 12: ride.support.v1.GetInstanceInfoResponse
+	(*EmergencyNumber)(nil),                   // 13: ride.support.v1.EmergencyNumber
+	(*SupportCategory)(nil),                   // 14: ride.support.v1.SupportCategory
+	(*Attachment)(nil),                        // 15: ride.support.v1.Attachment
+	(*TicketMessage)(nil),                     // 16: ride.support.v1.TicketMessage
+	(*Ticket)(nil),                            // 17: ride.support.v1.Ticket
+	(*StaffTicket)(nil),                       // 18: ride.support.v1.StaffTicket
+	(*TicketAction)(nil),                      // 19: ride.support.v1.TicketAction
+	(*ListSupportCategoriesRequest)(nil),      // 20: ride.support.v1.ListSupportCategoriesRequest
+	(*ListSupportCategoriesResponse)(nil),     // 21: ride.support.v1.ListSupportCategoriesResponse
+	(*CreateTicketRequest)(nil),               // 22: ride.support.v1.CreateTicketRequest
+	(*CreateTicketResponse)(nil),              // 23: ride.support.v1.CreateTicketResponse
+	(*ListMyTicketsRequest)(nil),              // 24: ride.support.v1.ListMyTicketsRequest
+	(*ListMyTicketsResponse)(nil),             // 25: ride.support.v1.ListMyTicketsResponse
+	(*GetMyTicketRequest)(nil),                // 26: ride.support.v1.GetMyTicketRequest
+	(*TicketDetailResponse)(nil),              // 27: ride.support.v1.TicketDetailResponse
+	(*AddTicketMessageRequest)(nil),           // 28: ride.support.v1.AddTicketMessageRequest
+	(*CloseMyTicketRequest)(nil),              // 29: ride.support.v1.CloseMyTicketRequest
+	(*GetAttachmentURLRequest)(nil),           // 30: ride.support.v1.GetAttachmentURLRequest
+	(*GetAttachmentURLResponse)(nil),          // 31: ride.support.v1.GetAttachmentURLResponse
+	(*ListSupportQueueRequest)(nil),           // 32: ride.support.v1.ListSupportQueueRequest
+	(*ListSupportQueueResponse)(nil),          // 33: ride.support.v1.ListSupportQueueResponse
+	(*GetTicketForStaffRequest)(nil),          // 34: ride.support.v1.GetTicketForStaffRequest
+	(*StaffTicketDetailResponse)(nil),         // 35: ride.support.v1.StaffTicketDetailResponse
+	(*ClaimTicketRequest)(nil),                // 36: ride.support.v1.ClaimTicketRequest
+	(*AssignTicketRequest)(nil),               // 37: ride.support.v1.AssignTicketRequest
+	(*ReplyToTicketRequest)(nil),              // 38: ride.support.v1.ReplyToTicketRequest
+	(*SetTicketStatusRequest)(nil),            // 39: ride.support.v1.SetTicketStatusRequest
+	(*SetTicketPriorityRequest)(nil),          // 40: ride.support.v1.SetTicketPriorityRequest
+	(*RequestTicketActionRequest)(nil),        // 41: ride.support.v1.RequestTicketActionRequest
+	(*TicketActionResponse)(nil),              // 42: ride.support.v1.TicketActionResponse
+	(*ListPendingTicketActionsRequest)(nil),   // 43: ride.support.v1.ListPendingTicketActionsRequest
+	(*ListPendingTicketActionsResponse)(nil),  // 44: ride.support.v1.ListPendingTicketActionsResponse
+	(*ApproveTicketActionRequest)(nil),        // 45: ride.support.v1.ApproveTicketActionRequest
+	(*RejectTicketActionRequest)(nil),         // 46: ride.support.v1.RejectTicketActionRequest
+	(*AdminListSupportCategoriesRequest)(nil), // 47: ride.support.v1.AdminListSupportCategoriesRequest
+	(*UpsertSupportCategoryRequest)(nil),      // 48: ride.support.v1.UpsertSupportCategoryRequest
+	(*SupportCategoryResponse)(nil),           // 49: ride.support.v1.SupportCategoryResponse
+	(*HelpSection)(nil),                       // 50: ride.support.v1.HelpSection
+	(*HelpArticle)(nil),                       // 51: ride.support.v1.HelpArticle
+	(*ListHelpSectionsRequest)(nil),           // 52: ride.support.v1.ListHelpSectionsRequest
+	(*ListHelpSectionsResponse)(nil),          // 53: ride.support.v1.ListHelpSectionsResponse
+	(*ListHelpArticlesRequest)(nil),           // 54: ride.support.v1.ListHelpArticlesRequest
+	(*ListHelpArticlesResponse)(nil),          // 55: ride.support.v1.ListHelpArticlesResponse
+	(*GetHelpArticleRequest)(nil),             // 56: ride.support.v1.GetHelpArticleRequest
+	(*HelpArticleResponse)(nil),               // 57: ride.support.v1.HelpArticleResponse
+	(*RateHelpArticleRequest)(nil),            // 58: ride.support.v1.RateHelpArticleRequest
+	(*RateTicketRequest)(nil),                 // 59: ride.support.v1.RateTicketRequest
+	(*AdminListHelpSectionsRequest)(nil),      // 60: ride.support.v1.AdminListHelpSectionsRequest
+	(*UpsertHelpSectionRequest)(nil),          // 61: ride.support.v1.UpsertHelpSectionRequest
+	(*HelpSectionResponse)(nil),               // 62: ride.support.v1.HelpSectionResponse
+	(*AdminListHelpArticlesRequest)(nil),      // 63: ride.support.v1.AdminListHelpArticlesRequest
+	(*UpsertHelpArticleRequest)(nil),          // 64: ride.support.v1.UpsertHelpArticleRequest
+	(*Macro)(nil),                             // 65: ride.support.v1.Macro
+	(*ListMacrosRequest)(nil),                 // 66: ride.support.v1.ListMacrosRequest
+	(*ListMacrosResponse)(nil),                // 67: ride.support.v1.ListMacrosResponse
+	(*AdminListMacrosRequest)(nil),            // 68: ride.support.v1.AdminListMacrosRequest
+	(*UpsertMacroRequest)(nil),                // 69: ride.support.v1.UpsertMacroRequest
+	(*MacroResponse)(nil),                     // 70: ride.support.v1.MacroResponse
+	(*GetSupportStatsRequest)(nil),            // 71: ride.support.v1.GetSupportStatsRequest
+	(*PriorityCount)(nil),                     // 72: ride.support.v1.PriorityCount
+	(*GetSupportStatsResponse)(nil),           // 73: ride.support.v1.GetSupportStatsResponse
+	(*timestamppb.Timestamp)(nil),             // 74: google.protobuf.Timestamp
+	(*v1.ExportPersonalDataRequest)(nil),      // 75: ride.dataexport.v1.ExportPersonalDataRequest
+	(*v1.ExportPersonalDataResponse)(nil),     // 76: ride.dataexport.v1.ExportPersonalDataResponse
 }
 var file_ride_support_v1_support_proto_depIdxs = []int32{
-	1,   // 0: ride.support.v1.SupportCategory.audience:type_name -> ride.support.v1.CategoryAudience
-	3,   // 1: ride.support.v1.SupportCategory.default_priority:type_name -> ride.support.v1.TicketPriority
-	6,   // 2: ride.support.v1.TicketMessage.author:type_name -> ride.support.v1.MessageAuthor
-	70,  // 3: ride.support.v1.TicketMessage.created_at:type_name -> google.protobuf.Timestamp
-	0,   // 4: ride.support.v1.Ticket.audience:type_name -> ride.support.v1.Audience
-	2,   // 5: ride.support.v1.Ticket.status:type_name -> ride.support.v1.TicketStatus
-	3,   // 6: ride.support.v1.Ticket.priority:type_name -> ride.support.v1.TicketPriority
-	4,   // 7: ride.support.v1.Ticket.source:type_name -> ride.support.v1.TicketSource
-	70,  // 8: ride.support.v1.Ticket.created_at:type_name -> google.protobuf.Timestamp
-	70,  // 9: ride.support.v1.Ticket.updated_at:type_name -> google.protobuf.Timestamp
-	70,  // 10: ride.support.v1.Ticket.last_message_at:type_name -> google.protobuf.Timestamp
-	70,  // 11: ride.support.v1.Ticket.resolved_at:type_name -> google.protobuf.Timestamp
-	70,  // 12: ride.support.v1.Ticket.closed_at:type_name -> google.protobuf.Timestamp
-	5,   // 13: ride.support.v1.Ticket.role:type_name -> ride.support.v1.TicketRole
-	70,  // 14: ride.support.v1.Ticket.first_response_due_at:type_name -> google.protobuf.Timestamp
-	70,  // 15: ride.support.v1.Ticket.rated_at:type_name -> google.protobuf.Timestamp
-	70,  // 16: ride.support.v1.Ticket.auto_closes_at:type_name -> google.protobuf.Timestamp
-	13,  // 17: ride.support.v1.StaffTicket.ticket:type_name -> ride.support.v1.Ticket
-	70,  // 18: ride.support.v1.StaffTicket.first_response_at:type_name -> google.protobuf.Timestamp
-	7,   // 19: ride.support.v1.TicketAction.kind:type_name -> ride.support.v1.ActionKind
-	8,   // 20: ride.support.v1.TicketAction.status:type_name -> ride.support.v1.ActionStatus
-	9,   // 21: ride.support.v1.TicketAction.target:type_name -> ride.support.v1.ActionTarget
-	70,  // 22: ride.support.v1.TicketAction.suspend_until:type_name -> google.protobuf.Timestamp
-	70,  // 23: ride.support.v1.TicketAction.created_at:type_name -> google.protobuf.Timestamp
-	70,  // 24: ride.support.v1.TicketAction.decided_at:type_name -> google.protobuf.Timestamp
-	70,  // 25: ride.support.v1.TicketAction.completed_at:type_name -> google.protobuf.Timestamp
-	0,   // 26: ride.support.v1.ListSupportCategoriesRequest.audience:type_name -> ride.support.v1.Audience
-	10,  // 27: ride.support.v1.ListSupportCategoriesResponse.categories:type_name -> ride.support.v1.SupportCategory
-	0,   // 28: ride.support.v1.CreateTicketRequest.audience:type_name -> ride.support.v1.Audience
-	13,  // 29: ride.support.v1.CreateTicketResponse.ticket:type_name -> ride.support.v1.Ticket
-	12,  // 30: ride.support.v1.CreateTicketResponse.messages:type_name -> ride.support.v1.TicketMessage
-	0,   // 31: ride.support.v1.ListMyTicketsRequest.audience:type_name -> ride.support.v1.Audience
-	13,  // 32: ride.support.v1.ListMyTicketsResponse.tickets:type_name -> ride.support.v1.Ticket
-	13,  // 33: ride.support.v1.TicketDetailResponse.ticket:type_name -> ride.support.v1.Ticket
-	12,  // 34: ride.support.v1.TicketDetailResponse.messages:type_name -> ride.support.v1.TicketMessage
-	70,  // 35: ride.support.v1.GetAttachmentURLResponse.expires_at:type_name -> google.protobuf.Timestamp
-	2,   // 36: ride.support.v1.ListSupportQueueRequest.status:type_name -> ride.support.v1.TicketStatus
-	3,   // 37: ride.support.v1.ListSupportQueueRequest.priority:type_name -> ride.support.v1.TicketPriority
-	0,   // 38: ride.support.v1.ListSupportQueueRequest.audience:type_name -> ride.support.v1.Audience
-	14,  // 39: ride.support.v1.ListSupportQueueResponse.tickets:type_name -> ride.support.v1.StaffTicket
-	14,  // 40: ride.support.v1.StaffTicketDetailResponse.ticket:type_name -> ride.support.v1.StaffTicket
-	12,  // 41: ride.support.v1.StaffTicketDetailResponse.messages:type_name -> ride.support.v1.TicketMessage
-	15,  // 42: ride.support.v1.StaffTicketDetailResponse.actions:type_name -> ride.support.v1.TicketAction
-	2,   // 43: ride.support.v1.ReplyToTicketRequest.set_status:type_name -> ride.support.v1.TicketStatus
-	2,   // 44: ride.support.v1.SetTicketStatusRequest.status:type_name -> ride.support.v1.TicketStatus
-	3,   // 45: ride.support.v1.SetTicketPriorityRequest.priority:type_name -> ride.support.v1.TicketPriority
-	7,   // 46: ride.support.v1.RequestTicketActionRequest.kind:type_name -> ride.support.v1.ActionKind
-	9,   // 47: ride.support.v1.RequestTicketActionRequest.target:type_name -> ride.support.v1.ActionTarget
-	70,  // 48: ride.support.v1.RequestTicketActionRequest.suspend_until:type_name -> google.protobuf.Timestamp
-	15,  // 49: ride.support.v1.TicketActionResponse.action:type_name -> ride.support.v1.TicketAction
-	15,  // 50: ride.support.v1.ListPendingTicketActionsResponse.actions:type_name -> ride.support.v1.TicketAction
-	10,  // 51: ride.support.v1.UpsertSupportCategoryRequest.category:type_name -> ride.support.v1.SupportCategory
-	10,  // 52: ride.support.v1.SupportCategoryResponse.category:type_name -> ride.support.v1.SupportCategory
-	1,   // 53: ride.support.v1.HelpSection.audience:type_name -> ride.support.v1.CategoryAudience
-	1,   // 54: ride.support.v1.HelpArticle.audience:type_name -> ride.support.v1.CategoryAudience
-	70,  // 55: ride.support.v1.HelpArticle.updated_at:type_name -> google.protobuf.Timestamp
-	0,   // 56: ride.support.v1.ListHelpSectionsRequest.audience:type_name -> ride.support.v1.Audience
-	46,  // 57: ride.support.v1.ListHelpSectionsResponse.sections:type_name -> ride.support.v1.HelpSection
-	0,   // 58: ride.support.v1.ListHelpArticlesRequest.audience:type_name -> ride.support.v1.Audience
-	47,  // 59: ride.support.v1.ListHelpArticlesResponse.articles:type_name -> ride.support.v1.HelpArticle
-	47,  // 60: ride.support.v1.HelpArticleResponse.article:type_name -> ride.support.v1.HelpArticle
-	46,  // 61: ride.support.v1.UpsertHelpSectionRequest.section:type_name -> ride.support.v1.HelpSection
-	46,  // 62: ride.support.v1.HelpSectionResponse.section:type_name -> ride.support.v1.HelpSection
-	47,  // 63: ride.support.v1.UpsertHelpArticleRequest.article:type_name -> ride.support.v1.HelpArticle
-	61,  // 64: ride.support.v1.ListMacrosResponse.macros:type_name -> ride.support.v1.Macro
-	61,  // 65: ride.support.v1.UpsertMacroRequest.macro:type_name -> ride.support.v1.Macro
-	61,  // 66: ride.support.v1.MacroResponse.macro:type_name -> ride.support.v1.Macro
-	70,  // 67: ride.support.v1.GetSupportStatsRequest.from:type_name -> google.protobuf.Timestamp
-	70,  // 68: ride.support.v1.GetSupportStatsRequest.to:type_name -> google.protobuf.Timestamp
-	3,   // 69: ride.support.v1.PriorityCount.priority:type_name -> ride.support.v1.TicketPriority
-	68,  // 70: ride.support.v1.GetSupportStatsResponse.open_by_priority:type_name -> ride.support.v1.PriorityCount
-	70,  // 71: ride.support.v1.GetSupportStatsResponse.from:type_name -> google.protobuf.Timestamp
-	70,  // 72: ride.support.v1.GetSupportStatsResponse.to:type_name -> google.protobuf.Timestamp
-	71,  // 73: ride.support.v1.SupportService.ExportPersonalData:input_type -> ride.dataexport.v1.ExportPersonalDataRequest
-	16,  // 74: ride.support.v1.SupportService.ListSupportCategories:input_type -> ride.support.v1.ListSupportCategoriesRequest
-	18,  // 75: ride.support.v1.SupportService.CreateTicket:input_type -> ride.support.v1.CreateTicketRequest
-	20,  // 76: ride.support.v1.SupportService.ListMyTickets:input_type -> ride.support.v1.ListMyTicketsRequest
-	22,  // 77: ride.support.v1.SupportService.GetMyTicket:input_type -> ride.support.v1.GetMyTicketRequest
-	24,  // 78: ride.support.v1.SupportService.AddTicketMessage:input_type -> ride.support.v1.AddTicketMessageRequest
-	25,  // 79: ride.support.v1.SupportService.CloseMyTicket:input_type -> ride.support.v1.CloseMyTicketRequest
-	26,  // 80: ride.support.v1.SupportService.GetAttachmentURL:input_type -> ride.support.v1.GetAttachmentURLRequest
-	28,  // 81: ride.support.v1.SupportService.ListSupportQueue:input_type -> ride.support.v1.ListSupportQueueRequest
-	28,  // 82: ride.support.v1.SupportService.ListSafetyQueue:input_type -> ride.support.v1.ListSupportQueueRequest
-	30,  // 83: ride.support.v1.SupportService.GetTicketForStaff:input_type -> ride.support.v1.GetTicketForStaffRequest
-	32,  // 84: ride.support.v1.SupportService.ClaimTicket:input_type -> ride.support.v1.ClaimTicketRequest
-	33,  // 85: ride.support.v1.SupportService.AssignTicket:input_type -> ride.support.v1.AssignTicketRequest
-	34,  // 86: ride.support.v1.SupportService.ReplyToTicket:input_type -> ride.support.v1.ReplyToTicketRequest
-	35,  // 87: ride.support.v1.SupportService.SetTicketStatus:input_type -> ride.support.v1.SetTicketStatusRequest
-	36,  // 88: ride.support.v1.SupportService.SetTicketPriority:input_type -> ride.support.v1.SetTicketPriorityRequest
-	37,  // 89: ride.support.v1.SupportService.RequestTicketAction:input_type -> ride.support.v1.RequestTicketActionRequest
-	39,  // 90: ride.support.v1.SupportService.ListPendingTicketActions:input_type -> ride.support.v1.ListPendingTicketActionsRequest
-	41,  // 91: ride.support.v1.SupportService.ApproveTicketAction:input_type -> ride.support.v1.ApproveTicketActionRequest
-	42,  // 92: ride.support.v1.SupportService.RejectTicketAction:input_type -> ride.support.v1.RejectTicketActionRequest
-	43,  // 93: ride.support.v1.SupportService.AdminListSupportCategories:input_type -> ride.support.v1.AdminListSupportCategoriesRequest
-	44,  // 94: ride.support.v1.SupportService.UpsertSupportCategory:input_type -> ride.support.v1.UpsertSupportCategoryRequest
-	48,  // 95: ride.support.v1.SupportService.ListHelpSections:input_type -> ride.support.v1.ListHelpSectionsRequest
-	50,  // 96: ride.support.v1.SupportService.ListHelpArticles:input_type -> ride.support.v1.ListHelpArticlesRequest
-	52,  // 97: ride.support.v1.SupportService.GetHelpArticle:input_type -> ride.support.v1.GetHelpArticleRequest
-	54,  // 98: ride.support.v1.SupportService.RateHelpArticle:input_type -> ride.support.v1.RateHelpArticleRequest
-	55,  // 99: ride.support.v1.SupportService.RateTicket:input_type -> ride.support.v1.RateTicketRequest
-	56,  // 100: ride.support.v1.SupportService.AdminListHelpSections:input_type -> ride.support.v1.AdminListHelpSectionsRequest
-	57,  // 101: ride.support.v1.SupportService.UpsertHelpSection:input_type -> ride.support.v1.UpsertHelpSectionRequest
-	59,  // 102: ride.support.v1.SupportService.AdminListHelpArticles:input_type -> ride.support.v1.AdminListHelpArticlesRequest
-	60,  // 103: ride.support.v1.SupportService.UpsertHelpArticle:input_type -> ride.support.v1.UpsertHelpArticleRequest
-	62,  // 104: ride.support.v1.SupportService.ListMacros:input_type -> ride.support.v1.ListMacrosRequest
-	64,  // 105: ride.support.v1.SupportService.AdminListMacros:input_type -> ride.support.v1.AdminListMacrosRequest
-	65,  // 106: ride.support.v1.SupportService.UpsertMacro:input_type -> ride.support.v1.UpsertMacroRequest
-	67,  // 107: ride.support.v1.SupportService.GetSupportStats:input_type -> ride.support.v1.GetSupportStatsRequest
-	72,  // 108: ride.support.v1.SupportService.ExportPersonalData:output_type -> ride.dataexport.v1.ExportPersonalDataResponse
-	17,  // 109: ride.support.v1.SupportService.ListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
-	19,  // 110: ride.support.v1.SupportService.CreateTicket:output_type -> ride.support.v1.CreateTicketResponse
-	21,  // 111: ride.support.v1.SupportService.ListMyTickets:output_type -> ride.support.v1.ListMyTicketsResponse
-	23,  // 112: ride.support.v1.SupportService.GetMyTicket:output_type -> ride.support.v1.TicketDetailResponse
-	23,  // 113: ride.support.v1.SupportService.AddTicketMessage:output_type -> ride.support.v1.TicketDetailResponse
-	23,  // 114: ride.support.v1.SupportService.CloseMyTicket:output_type -> ride.support.v1.TicketDetailResponse
-	27,  // 115: ride.support.v1.SupportService.GetAttachmentURL:output_type -> ride.support.v1.GetAttachmentURLResponse
-	29,  // 116: ride.support.v1.SupportService.ListSupportQueue:output_type -> ride.support.v1.ListSupportQueueResponse
-	29,  // 117: ride.support.v1.SupportService.ListSafetyQueue:output_type -> ride.support.v1.ListSupportQueueResponse
-	31,  // 118: ride.support.v1.SupportService.GetTicketForStaff:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31,  // 119: ride.support.v1.SupportService.ClaimTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31,  // 120: ride.support.v1.SupportService.AssignTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31,  // 121: ride.support.v1.SupportService.ReplyToTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31,  // 122: ride.support.v1.SupportService.SetTicketStatus:output_type -> ride.support.v1.StaffTicketDetailResponse
-	31,  // 123: ride.support.v1.SupportService.SetTicketPriority:output_type -> ride.support.v1.StaffTicketDetailResponse
-	38,  // 124: ride.support.v1.SupportService.RequestTicketAction:output_type -> ride.support.v1.TicketActionResponse
-	40,  // 125: ride.support.v1.SupportService.ListPendingTicketActions:output_type -> ride.support.v1.ListPendingTicketActionsResponse
-	38,  // 126: ride.support.v1.SupportService.ApproveTicketAction:output_type -> ride.support.v1.TicketActionResponse
-	38,  // 127: ride.support.v1.SupportService.RejectTicketAction:output_type -> ride.support.v1.TicketActionResponse
-	17,  // 128: ride.support.v1.SupportService.AdminListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
-	45,  // 129: ride.support.v1.SupportService.UpsertSupportCategory:output_type -> ride.support.v1.SupportCategoryResponse
-	49,  // 130: ride.support.v1.SupportService.ListHelpSections:output_type -> ride.support.v1.ListHelpSectionsResponse
-	51,  // 131: ride.support.v1.SupportService.ListHelpArticles:output_type -> ride.support.v1.ListHelpArticlesResponse
-	53,  // 132: ride.support.v1.SupportService.GetHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
-	53,  // 133: ride.support.v1.SupportService.RateHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
-	23,  // 134: ride.support.v1.SupportService.RateTicket:output_type -> ride.support.v1.TicketDetailResponse
-	49,  // 135: ride.support.v1.SupportService.AdminListHelpSections:output_type -> ride.support.v1.ListHelpSectionsResponse
-	58,  // 136: ride.support.v1.SupportService.UpsertHelpSection:output_type -> ride.support.v1.HelpSectionResponse
-	51,  // 137: ride.support.v1.SupportService.AdminListHelpArticles:output_type -> ride.support.v1.ListHelpArticlesResponse
-	53,  // 138: ride.support.v1.SupportService.UpsertHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
-	63,  // 139: ride.support.v1.SupportService.ListMacros:output_type -> ride.support.v1.ListMacrosResponse
-	63,  // 140: ride.support.v1.SupportService.AdminListMacros:output_type -> ride.support.v1.ListMacrosResponse
-	66,  // 141: ride.support.v1.SupportService.UpsertMacro:output_type -> ride.support.v1.MacroResponse
-	69,  // 142: ride.support.v1.SupportService.GetSupportStats:output_type -> ride.support.v1.GetSupportStatsResponse
-	108, // [108:143] is the sub-list for method output_type
-	73,  // [73:108] is the sub-list for method input_type
-	73,  // [73:73] is the sub-list for extension type_name
-	73,  // [73:73] is the sub-list for extension extendee
-	0,   // [0:73] is the sub-list for field type_name
+	13,  // 0: ride.support.v1.GetInstanceInfoResponse.emergency_numbers:type_name -> ride.support.v1.EmergencyNumber
+	0,   // 1: ride.support.v1.EmergencyNumber.kind:type_name -> ride.support.v1.EmergencyKind
+	2,   // 2: ride.support.v1.SupportCategory.audience:type_name -> ride.support.v1.CategoryAudience
+	4,   // 3: ride.support.v1.SupportCategory.default_priority:type_name -> ride.support.v1.TicketPriority
+	7,   // 4: ride.support.v1.TicketMessage.author:type_name -> ride.support.v1.MessageAuthor
+	74,  // 5: ride.support.v1.TicketMessage.created_at:type_name -> google.protobuf.Timestamp
+	1,   // 6: ride.support.v1.Ticket.audience:type_name -> ride.support.v1.Audience
+	3,   // 7: ride.support.v1.Ticket.status:type_name -> ride.support.v1.TicketStatus
+	4,   // 8: ride.support.v1.Ticket.priority:type_name -> ride.support.v1.TicketPriority
+	5,   // 9: ride.support.v1.Ticket.source:type_name -> ride.support.v1.TicketSource
+	74,  // 10: ride.support.v1.Ticket.created_at:type_name -> google.protobuf.Timestamp
+	74,  // 11: ride.support.v1.Ticket.updated_at:type_name -> google.protobuf.Timestamp
+	74,  // 12: ride.support.v1.Ticket.last_message_at:type_name -> google.protobuf.Timestamp
+	74,  // 13: ride.support.v1.Ticket.resolved_at:type_name -> google.protobuf.Timestamp
+	74,  // 14: ride.support.v1.Ticket.closed_at:type_name -> google.protobuf.Timestamp
+	6,   // 15: ride.support.v1.Ticket.role:type_name -> ride.support.v1.TicketRole
+	74,  // 16: ride.support.v1.Ticket.first_response_due_at:type_name -> google.protobuf.Timestamp
+	74,  // 17: ride.support.v1.Ticket.rated_at:type_name -> google.protobuf.Timestamp
+	74,  // 18: ride.support.v1.Ticket.auto_closes_at:type_name -> google.protobuf.Timestamp
+	17,  // 19: ride.support.v1.StaffTicket.ticket:type_name -> ride.support.v1.Ticket
+	74,  // 20: ride.support.v1.StaffTicket.first_response_at:type_name -> google.protobuf.Timestamp
+	8,   // 21: ride.support.v1.TicketAction.kind:type_name -> ride.support.v1.ActionKind
+	9,   // 22: ride.support.v1.TicketAction.status:type_name -> ride.support.v1.ActionStatus
+	10,  // 23: ride.support.v1.TicketAction.target:type_name -> ride.support.v1.ActionTarget
+	74,  // 24: ride.support.v1.TicketAction.suspend_until:type_name -> google.protobuf.Timestamp
+	74,  // 25: ride.support.v1.TicketAction.created_at:type_name -> google.protobuf.Timestamp
+	74,  // 26: ride.support.v1.TicketAction.decided_at:type_name -> google.protobuf.Timestamp
+	74,  // 27: ride.support.v1.TicketAction.completed_at:type_name -> google.protobuf.Timestamp
+	1,   // 28: ride.support.v1.ListSupportCategoriesRequest.audience:type_name -> ride.support.v1.Audience
+	14,  // 29: ride.support.v1.ListSupportCategoriesResponse.categories:type_name -> ride.support.v1.SupportCategory
+	1,   // 30: ride.support.v1.CreateTicketRequest.audience:type_name -> ride.support.v1.Audience
+	17,  // 31: ride.support.v1.CreateTicketResponse.ticket:type_name -> ride.support.v1.Ticket
+	16,  // 32: ride.support.v1.CreateTicketResponse.messages:type_name -> ride.support.v1.TicketMessage
+	1,   // 33: ride.support.v1.ListMyTicketsRequest.audience:type_name -> ride.support.v1.Audience
+	17,  // 34: ride.support.v1.ListMyTicketsResponse.tickets:type_name -> ride.support.v1.Ticket
+	17,  // 35: ride.support.v1.TicketDetailResponse.ticket:type_name -> ride.support.v1.Ticket
+	16,  // 36: ride.support.v1.TicketDetailResponse.messages:type_name -> ride.support.v1.TicketMessage
+	74,  // 37: ride.support.v1.GetAttachmentURLResponse.expires_at:type_name -> google.protobuf.Timestamp
+	3,   // 38: ride.support.v1.ListSupportQueueRequest.status:type_name -> ride.support.v1.TicketStatus
+	4,   // 39: ride.support.v1.ListSupportQueueRequest.priority:type_name -> ride.support.v1.TicketPriority
+	1,   // 40: ride.support.v1.ListSupportQueueRequest.audience:type_name -> ride.support.v1.Audience
+	18,  // 41: ride.support.v1.ListSupportQueueResponse.tickets:type_name -> ride.support.v1.StaffTicket
+	18,  // 42: ride.support.v1.StaffTicketDetailResponse.ticket:type_name -> ride.support.v1.StaffTicket
+	16,  // 43: ride.support.v1.StaffTicketDetailResponse.messages:type_name -> ride.support.v1.TicketMessage
+	19,  // 44: ride.support.v1.StaffTicketDetailResponse.actions:type_name -> ride.support.v1.TicketAction
+	3,   // 45: ride.support.v1.ReplyToTicketRequest.set_status:type_name -> ride.support.v1.TicketStatus
+	3,   // 46: ride.support.v1.SetTicketStatusRequest.status:type_name -> ride.support.v1.TicketStatus
+	4,   // 47: ride.support.v1.SetTicketPriorityRequest.priority:type_name -> ride.support.v1.TicketPriority
+	8,   // 48: ride.support.v1.RequestTicketActionRequest.kind:type_name -> ride.support.v1.ActionKind
+	10,  // 49: ride.support.v1.RequestTicketActionRequest.target:type_name -> ride.support.v1.ActionTarget
+	74,  // 50: ride.support.v1.RequestTicketActionRequest.suspend_until:type_name -> google.protobuf.Timestamp
+	19,  // 51: ride.support.v1.TicketActionResponse.action:type_name -> ride.support.v1.TicketAction
+	19,  // 52: ride.support.v1.ListPendingTicketActionsResponse.actions:type_name -> ride.support.v1.TicketAction
+	14,  // 53: ride.support.v1.UpsertSupportCategoryRequest.category:type_name -> ride.support.v1.SupportCategory
+	14,  // 54: ride.support.v1.SupportCategoryResponse.category:type_name -> ride.support.v1.SupportCategory
+	2,   // 55: ride.support.v1.HelpSection.audience:type_name -> ride.support.v1.CategoryAudience
+	2,   // 56: ride.support.v1.HelpArticle.audience:type_name -> ride.support.v1.CategoryAudience
+	74,  // 57: ride.support.v1.HelpArticle.updated_at:type_name -> google.protobuf.Timestamp
+	1,   // 58: ride.support.v1.ListHelpSectionsRequest.audience:type_name -> ride.support.v1.Audience
+	50,  // 59: ride.support.v1.ListHelpSectionsResponse.sections:type_name -> ride.support.v1.HelpSection
+	1,   // 60: ride.support.v1.ListHelpArticlesRequest.audience:type_name -> ride.support.v1.Audience
+	51,  // 61: ride.support.v1.ListHelpArticlesResponse.articles:type_name -> ride.support.v1.HelpArticle
+	51,  // 62: ride.support.v1.HelpArticleResponse.article:type_name -> ride.support.v1.HelpArticle
+	50,  // 63: ride.support.v1.UpsertHelpSectionRequest.section:type_name -> ride.support.v1.HelpSection
+	50,  // 64: ride.support.v1.HelpSectionResponse.section:type_name -> ride.support.v1.HelpSection
+	51,  // 65: ride.support.v1.UpsertHelpArticleRequest.article:type_name -> ride.support.v1.HelpArticle
+	65,  // 66: ride.support.v1.ListMacrosResponse.macros:type_name -> ride.support.v1.Macro
+	65,  // 67: ride.support.v1.UpsertMacroRequest.macro:type_name -> ride.support.v1.Macro
+	65,  // 68: ride.support.v1.MacroResponse.macro:type_name -> ride.support.v1.Macro
+	74,  // 69: ride.support.v1.GetSupportStatsRequest.from:type_name -> google.protobuf.Timestamp
+	74,  // 70: ride.support.v1.GetSupportStatsRequest.to:type_name -> google.protobuf.Timestamp
+	4,   // 71: ride.support.v1.PriorityCount.priority:type_name -> ride.support.v1.TicketPriority
+	72,  // 72: ride.support.v1.GetSupportStatsResponse.open_by_priority:type_name -> ride.support.v1.PriorityCount
+	74,  // 73: ride.support.v1.GetSupportStatsResponse.from:type_name -> google.protobuf.Timestamp
+	74,  // 74: ride.support.v1.GetSupportStatsResponse.to:type_name -> google.protobuf.Timestamp
+	75,  // 75: ride.support.v1.SupportService.ExportPersonalData:input_type -> ride.dataexport.v1.ExportPersonalDataRequest
+	20,  // 76: ride.support.v1.SupportService.ListSupportCategories:input_type -> ride.support.v1.ListSupportCategoriesRequest
+	22,  // 77: ride.support.v1.SupportService.CreateTicket:input_type -> ride.support.v1.CreateTicketRequest
+	24,  // 78: ride.support.v1.SupportService.ListMyTickets:input_type -> ride.support.v1.ListMyTicketsRequest
+	26,  // 79: ride.support.v1.SupportService.GetMyTicket:input_type -> ride.support.v1.GetMyTicketRequest
+	28,  // 80: ride.support.v1.SupportService.AddTicketMessage:input_type -> ride.support.v1.AddTicketMessageRequest
+	29,  // 81: ride.support.v1.SupportService.CloseMyTicket:input_type -> ride.support.v1.CloseMyTicketRequest
+	30,  // 82: ride.support.v1.SupportService.GetAttachmentURL:input_type -> ride.support.v1.GetAttachmentURLRequest
+	32,  // 83: ride.support.v1.SupportService.ListSupportQueue:input_type -> ride.support.v1.ListSupportQueueRequest
+	32,  // 84: ride.support.v1.SupportService.ListSafetyQueue:input_type -> ride.support.v1.ListSupportQueueRequest
+	34,  // 85: ride.support.v1.SupportService.GetTicketForStaff:input_type -> ride.support.v1.GetTicketForStaffRequest
+	36,  // 86: ride.support.v1.SupportService.ClaimTicket:input_type -> ride.support.v1.ClaimTicketRequest
+	37,  // 87: ride.support.v1.SupportService.AssignTicket:input_type -> ride.support.v1.AssignTicketRequest
+	38,  // 88: ride.support.v1.SupportService.ReplyToTicket:input_type -> ride.support.v1.ReplyToTicketRequest
+	39,  // 89: ride.support.v1.SupportService.SetTicketStatus:input_type -> ride.support.v1.SetTicketStatusRequest
+	40,  // 90: ride.support.v1.SupportService.SetTicketPriority:input_type -> ride.support.v1.SetTicketPriorityRequest
+	41,  // 91: ride.support.v1.SupportService.RequestTicketAction:input_type -> ride.support.v1.RequestTicketActionRequest
+	43,  // 92: ride.support.v1.SupportService.ListPendingTicketActions:input_type -> ride.support.v1.ListPendingTicketActionsRequest
+	45,  // 93: ride.support.v1.SupportService.ApproveTicketAction:input_type -> ride.support.v1.ApproveTicketActionRequest
+	46,  // 94: ride.support.v1.SupportService.RejectTicketAction:input_type -> ride.support.v1.RejectTicketActionRequest
+	47,  // 95: ride.support.v1.SupportService.AdminListSupportCategories:input_type -> ride.support.v1.AdminListSupportCategoriesRequest
+	48,  // 96: ride.support.v1.SupportService.UpsertSupportCategory:input_type -> ride.support.v1.UpsertSupportCategoryRequest
+	11,  // 97: ride.support.v1.SupportService.GetInstanceInfo:input_type -> ride.support.v1.GetInstanceInfoRequest
+	52,  // 98: ride.support.v1.SupportService.ListHelpSections:input_type -> ride.support.v1.ListHelpSectionsRequest
+	54,  // 99: ride.support.v1.SupportService.ListHelpArticles:input_type -> ride.support.v1.ListHelpArticlesRequest
+	56,  // 100: ride.support.v1.SupportService.GetHelpArticle:input_type -> ride.support.v1.GetHelpArticleRequest
+	58,  // 101: ride.support.v1.SupportService.RateHelpArticle:input_type -> ride.support.v1.RateHelpArticleRequest
+	59,  // 102: ride.support.v1.SupportService.RateTicket:input_type -> ride.support.v1.RateTicketRequest
+	60,  // 103: ride.support.v1.SupportService.AdminListHelpSections:input_type -> ride.support.v1.AdminListHelpSectionsRequest
+	61,  // 104: ride.support.v1.SupportService.UpsertHelpSection:input_type -> ride.support.v1.UpsertHelpSectionRequest
+	63,  // 105: ride.support.v1.SupportService.AdminListHelpArticles:input_type -> ride.support.v1.AdminListHelpArticlesRequest
+	64,  // 106: ride.support.v1.SupportService.UpsertHelpArticle:input_type -> ride.support.v1.UpsertHelpArticleRequest
+	66,  // 107: ride.support.v1.SupportService.ListMacros:input_type -> ride.support.v1.ListMacrosRequest
+	68,  // 108: ride.support.v1.SupportService.AdminListMacros:input_type -> ride.support.v1.AdminListMacrosRequest
+	69,  // 109: ride.support.v1.SupportService.UpsertMacro:input_type -> ride.support.v1.UpsertMacroRequest
+	71,  // 110: ride.support.v1.SupportService.GetSupportStats:input_type -> ride.support.v1.GetSupportStatsRequest
+	76,  // 111: ride.support.v1.SupportService.ExportPersonalData:output_type -> ride.dataexport.v1.ExportPersonalDataResponse
+	21,  // 112: ride.support.v1.SupportService.ListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
+	23,  // 113: ride.support.v1.SupportService.CreateTicket:output_type -> ride.support.v1.CreateTicketResponse
+	25,  // 114: ride.support.v1.SupportService.ListMyTickets:output_type -> ride.support.v1.ListMyTicketsResponse
+	27,  // 115: ride.support.v1.SupportService.GetMyTicket:output_type -> ride.support.v1.TicketDetailResponse
+	27,  // 116: ride.support.v1.SupportService.AddTicketMessage:output_type -> ride.support.v1.TicketDetailResponse
+	27,  // 117: ride.support.v1.SupportService.CloseMyTicket:output_type -> ride.support.v1.TicketDetailResponse
+	31,  // 118: ride.support.v1.SupportService.GetAttachmentURL:output_type -> ride.support.v1.GetAttachmentURLResponse
+	33,  // 119: ride.support.v1.SupportService.ListSupportQueue:output_type -> ride.support.v1.ListSupportQueueResponse
+	33,  // 120: ride.support.v1.SupportService.ListSafetyQueue:output_type -> ride.support.v1.ListSupportQueueResponse
+	35,  // 121: ride.support.v1.SupportService.GetTicketForStaff:output_type -> ride.support.v1.StaffTicketDetailResponse
+	35,  // 122: ride.support.v1.SupportService.ClaimTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
+	35,  // 123: ride.support.v1.SupportService.AssignTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
+	35,  // 124: ride.support.v1.SupportService.ReplyToTicket:output_type -> ride.support.v1.StaffTicketDetailResponse
+	35,  // 125: ride.support.v1.SupportService.SetTicketStatus:output_type -> ride.support.v1.StaffTicketDetailResponse
+	35,  // 126: ride.support.v1.SupportService.SetTicketPriority:output_type -> ride.support.v1.StaffTicketDetailResponse
+	42,  // 127: ride.support.v1.SupportService.RequestTicketAction:output_type -> ride.support.v1.TicketActionResponse
+	44,  // 128: ride.support.v1.SupportService.ListPendingTicketActions:output_type -> ride.support.v1.ListPendingTicketActionsResponse
+	42,  // 129: ride.support.v1.SupportService.ApproveTicketAction:output_type -> ride.support.v1.TicketActionResponse
+	42,  // 130: ride.support.v1.SupportService.RejectTicketAction:output_type -> ride.support.v1.TicketActionResponse
+	21,  // 131: ride.support.v1.SupportService.AdminListSupportCategories:output_type -> ride.support.v1.ListSupportCategoriesResponse
+	49,  // 132: ride.support.v1.SupportService.UpsertSupportCategory:output_type -> ride.support.v1.SupportCategoryResponse
+	12,  // 133: ride.support.v1.SupportService.GetInstanceInfo:output_type -> ride.support.v1.GetInstanceInfoResponse
+	53,  // 134: ride.support.v1.SupportService.ListHelpSections:output_type -> ride.support.v1.ListHelpSectionsResponse
+	55,  // 135: ride.support.v1.SupportService.ListHelpArticles:output_type -> ride.support.v1.ListHelpArticlesResponse
+	57,  // 136: ride.support.v1.SupportService.GetHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
+	57,  // 137: ride.support.v1.SupportService.RateHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
+	27,  // 138: ride.support.v1.SupportService.RateTicket:output_type -> ride.support.v1.TicketDetailResponse
+	53,  // 139: ride.support.v1.SupportService.AdminListHelpSections:output_type -> ride.support.v1.ListHelpSectionsResponse
+	62,  // 140: ride.support.v1.SupportService.UpsertHelpSection:output_type -> ride.support.v1.HelpSectionResponse
+	55,  // 141: ride.support.v1.SupportService.AdminListHelpArticles:output_type -> ride.support.v1.ListHelpArticlesResponse
+	57,  // 142: ride.support.v1.SupportService.UpsertHelpArticle:output_type -> ride.support.v1.HelpArticleResponse
+	67,  // 143: ride.support.v1.SupportService.ListMacros:output_type -> ride.support.v1.ListMacrosResponse
+	67,  // 144: ride.support.v1.SupportService.AdminListMacros:output_type -> ride.support.v1.ListMacrosResponse
+	70,  // 145: ride.support.v1.SupportService.UpsertMacro:output_type -> ride.support.v1.MacroResponse
+	73,  // 146: ride.support.v1.SupportService.GetSupportStats:output_type -> ride.support.v1.GetSupportStatsResponse
+	111, // [111:147] is the sub-list for method output_type
+	75,  // [75:111] is the sub-list for method input_type
+	75,  // [75:75] is the sub-list for extension type_name
+	75,  // [75:75] is the sub-list for extension extendee
+	0,   // [0:75] is the sub-list for field type_name
 }
 
 func init() { file_ride_support_v1_support_proto_init() }
@@ -5120,8 +5351,8 @@ func file_ride_support_v1_support_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_support_v1_support_proto_rawDesc), len(file_ride_support_v1_support_proto_rawDesc)),
-			NumEnums:      10,
-			NumMessages:   60,
+			NumEnums:      11,
+			NumMessages:   63,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

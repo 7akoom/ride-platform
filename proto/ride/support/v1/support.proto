@@ -185,6 +185,17 @@ service SupportService {
     };
   }
 
+  // GetInstanceInfo is what the apps show about this copy of the platform:
+  // its terms and privacy pages (empty when not set), and the emergency
+  // numbers of its country for the safety center (none when not set). Set per
+  // instance (SUPPORT_TERMS_URL, SUPPORT_PRIVACY_URL,
+  // SUPPORT_EMERGENCY_NUMBERS), so they change without a new app build.
+  rpc GetInstanceInfo(GetInstanceInfoRequest) returns (GetInstanceInfoResponse) {
+    option (google.api.http) = {
+      get: "/v1/support/instance-info"
+    };
+  }
+
   // Help centre. Riders and drivers read published articles for them, by
   // section or by a search over the three languages, and say whether one
   // helped (once per person; a second vote replaces the first). An article
@@ -269,6 +280,31 @@ service SupportService {
       get: "/v1/admin/support/stats"
     };
   }
+}
+
+message GetInstanceInfoRequest {}
+
+message GetInstanceInfoResponse {
+  string terms_url = 1;
+  string privacy_url = 2;
+  // In the order the instance lists them; the apps name each kind in the
+  // person's language.
+  repeated EmergencyNumber emergency_numbers = 3;
+}
+
+message EmergencyNumber {
+  EmergencyKind kind = 1;
+  // As dialled: digits, maybe with a leading +.
+  string number = 2;
+}
+
+enum EmergencyKind {
+  EMERGENCY_KIND_UNSPECIFIED = 0;
+  // The country's one number for everything (112).
+  EMERGENCY_KIND_GENERAL = 1;
+  EMERGENCY_KIND_POLICE = 2;
+  EMERGENCY_KIND_AMBULANCE = 3;
+  EMERGENCY_KIND_FIRE = 4;
 }
 
 enum Audience {
