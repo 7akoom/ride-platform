@@ -37,7 +37,8 @@ func addWaiting(b *FareBreakdown, card Config, arrivedAt, startedAt *time.Time, 
 // cancellationKind decides whether a cancelled trip owes a fee, before any
 // rate card is read:
 //
-//	the driver cancels because the rider did not come   -> no_show
+//	the driver cancels because the rider did not come,
+//	    or trip-service does once the card's wait ran out -> no_show
 //	the rider cancels once a driver accepted             -> cancellation,
 //	    unless within the card's grace minutes, or the driver is late
 //	    (not at the pickup driverLateAfter after accepting)
@@ -51,7 +52,7 @@ func cancellationKind(in CancellationInput) (FareKind, bool) {
 	}
 
 	switch {
-	case in.CancelledBy == "driver" && in.RiderNoShow:
+	case (in.CancelledBy == "driver" || in.CancelledBy == "system") && in.RiderNoShow:
 		return FareKindNoShow, true
 	case in.CancelledBy != "rider":
 		return "", false

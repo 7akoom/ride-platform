@@ -98,6 +98,7 @@ func TestWhoPaysForACancellation(t *testing.T) {
 		{"driver, the rider did not come", cancelled("driver", true, at(0), at(5), at(11)), FareKindNoShow, 2000},
 		{"driver, for another reason", cancelled("driver", false, at(0), at(5), at(11)), "", 0},
 		{"system", cancelled("system", false, at(0), nil, at(5)), "", 0},
+		{"system, the wait for the rider ran out", cancelled("system", true, at(0), at(5), at(11)), FareKindNoShow, 2000},
 	}
 
 	for _, tc := range cases {

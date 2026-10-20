@@ -29,6 +29,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// noShowSweepInterval is how often trips waiting at the pickup are looked at.
+const noShowSweepInterval = 20 * time.Second
+
 func main() {
 	os.Exit(run())
 }
@@ -354,6 +357,16 @@ func run() int {
 	go func() {
 		if err := scheduleDispatcher.Run(ctx); err != nil {
 			logger.Error("the scheduled trip dispatcher stopped with error", "error", err)
+		}
+	}()
+
+	// Trips whose rider did not come once the card's wait ran out are
+	// cancelled as no-shows (the rider pays the card's fee to the captain).
+	noShowSweeper := trip.NewNoShowSweeper(tripRepository, tripService, noShowSweepInterval, logger)
+
+	go func() {
+		if err := noShowSweeper.Run(ctx); err != nil {
+			logger.Error("the no-show sweeper stopped with error", "error", err)
 		}
 	}()
 

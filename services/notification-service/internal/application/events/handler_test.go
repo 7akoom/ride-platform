@@ -293,6 +293,22 @@ func TestHandler_Dispatch_TripCancelled_PassesReasonThrough(t *testing.T) {
 	}
 }
 
+func TestHandler_Dispatch_TripCancelled_ANoShowHasItsOwnMessage(t *testing.T) {
+	h := newHarness()
+	h.trips.trip = events.TripInfo{ID: "trip-1", RiderID: "rider-1"}
+	handler := h.handler()
+
+	payload := envelopeWithPayload("evt-4", `{"trip_id":"trip-1","reason":"the rider did not come","rider_no_show":"true"}`)
+	if err := handler.Dispatch(context.Background(), "trip.cancelled", payload); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	call := h.notifications.sendCalls[0]
+	if call.EventKey != "trip.no_show" || call.RecipientID != "rider-1" || len(call.Variables) != 0 {
+		t.Fatalf("unexpected call: %+v", call)
+	}
+}
+
 // --- fare.calculated ---------------------------------------------------------
 
 func TestHandler_Dispatch_FareCalculated_FormatsTotalToTwoDecimals(t *testing.T) {

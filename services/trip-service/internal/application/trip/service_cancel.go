@@ -77,7 +77,8 @@ func (s *service) CancelTrip(
 	}
 
 	if input.RiderNoShow {
-		if input.By != CancelledByDriver {
+		// The driver reports it, or the no-show sweeper does once the wait ran out.
+		if input.By != CancelledByDriver && input.By != CancelledBySystem {
 			return Trip{}, ErrNoShowOnlyByDriver
 		}
 

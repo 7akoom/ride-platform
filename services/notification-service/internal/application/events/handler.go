@@ -228,6 +228,8 @@ func (h *Handler) handleTripStarted(ctx context.Context, envelope Envelope) erro
 type tripCancelledPayload struct {
 	TripID string `json:"trip_id"`
 	Reason string `json:"reason"`
+	// "true" when the rider did not come (they owe the no-show fee).
+	RiderNoShow string `json:"rider_no_show"`
 }
 
 func (h *Handler) handleTripCancelled(ctx context.Context, envelope Envelope) error {
@@ -242,7 +244,7 @@ func (h *Handler) handleTripCancelled(ctx context.Context, envelope Envelope) er
 		return fmt.Errorf("look up trip %s: %w", payload.TripID, err)
 	}
 
-	_, err = h.notificationService.Send(ctx, notification.SendInput{
+	input := notification.SendInput{
 		RecipientType: notification.RecipientRider,
 		RecipientID:   trip.RiderID,
 		EventKey:      "trip.cancelled",
@@ -250,7 +252,14 @@ func (h *Handler) handleTripCancelled(ctx context.Context, envelope Envelope) er
 			"reason": payload.Reason,
 		},
 		IdempotencyKey: envelope.EventID,
-	})
+	}
+
+	if payload.RiderNoShow == "true" {
+		input.EventKey = "trip.no_show"
+		input.Variables = map[string]string{}
+	}
+
+	_, err = h.notificationService.Send(ctx, input)
 	if err != nil {
 		return fmt.Errorf("send trip.cancelled notification: %w", err)
 	}

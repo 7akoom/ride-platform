@@ -4,7 +4,8 @@
 # "captain is here" card can be tried with real numbers. Run it on the server, from
 # the repo root:
 #   bash scripts/dev/set-trip-fees.sh [cancellation_fee] [no_show_fee] [waiting_per_minute] [no_show_wait_minutes]
-# Defaults: 1000 2000 250 6. "bash scripts/dev/set-trip-fees.sh 0 0 0" takes them off.
+# Defaults: 1000 2000 0 6 (no charge per minute of waiting: the trip is cancelled as a
+# no-show once the wait runs out). "bash scripts/dev/set-trip-fees.sh 0 0 0" takes them off.
 # Every other price on the cards stays as it is (a new version of each card).
 # It refuses to run unless instance/instance.env says IDENTITY_APP_ENV=test.
 set -Euo pipefail
@@ -17,7 +18,7 @@ value() { sed -n "s/^$1=//p" instance/instance.env | tail -1; }
   die "this instance is not staging (IDENTITY_APP_ENV=test); test prices have no place on a real one"
 command -v python3 > /dev/null || die "python3 is needed"
 
-CANCEL="${1:-1000}"; NO_SHOW="${2:-2000}"; PER_MINUTE="${3:-250}"; WAIT="${4:-6}"
+CANCEL="${1:-1000}"; NO_SHOW="${2:-2000}"; PER_MINUTE="${3:-0}"; WAIT="${4:-6}"
 PHONE="${SIM_STAFF_PHONE:-+9647700000991}"
 for n in "$CANCEL" "$NO_SHOW" "$PER_MINUTE"; do
   echo "$n" | grep -Eq '^[0-9]+$' || die "amounts are whole numbers, for example 1000"

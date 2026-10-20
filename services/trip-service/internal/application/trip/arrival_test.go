@@ -149,11 +149,13 @@ func TestANoShowIsTheDriversAfterWaiting(t *testing.T) {
 		current trip.Trip
 		want    error
 	}{
-		"the rider cannot":     {trip.CancelledByRider, trip.Trip{Status: trip.StatusAccepted, ArrivedAt: arrivedAgo(10 * time.Minute)}, trip.ErrNoShowOnlyByDriver},
-		"not arrived":          {trip.CancelledByDriver, trip.Trip{Status: trip.StatusAccepted}, trip.ErrNoShowTooEarly},
-		"arrived a minute ago": {trip.CancelledByDriver, trip.Trip{Status: trip.StatusAccepted, ArrivedAt: arrivedAgo(time.Minute)}, trip.ErrNoShowTooEarly},
-		"already started":      {trip.CancelledByDriver, trip.Trip{Status: trip.StatusInProgress, ArrivedAt: arrivedAgo(10 * time.Minute)}, trip.ErrNoShowTooEarly},
-		"waited long enough":   {trip.CancelledByDriver, trip.Trip{Status: trip.StatusAccepted, ArrivedAt: arrivedAgo(6 * time.Minute)}, nil},
+		"the rider cannot":                  {trip.CancelledByRider, trip.Trip{Status: trip.StatusAccepted, ArrivedAt: arrivedAgo(10 * time.Minute)}, trip.ErrNoShowOnlyByDriver},
+		"not arrived":                       {trip.CancelledByDriver, trip.Trip{Status: trip.StatusAccepted}, trip.ErrNoShowTooEarly},
+		"arrived a minute ago":              {trip.CancelledByDriver, trip.Trip{Status: trip.StatusAccepted, ArrivedAt: arrivedAgo(time.Minute)}, trip.ErrNoShowTooEarly},
+		"already started":                   {trip.CancelledByDriver, trip.Trip{Status: trip.StatusInProgress, ArrivedAt: arrivedAgo(10 * time.Minute)}, trip.ErrNoShowTooEarly},
+		"waited long enough":                {trip.CancelledByDriver, trip.Trip{Status: trip.StatusAccepted, ArrivedAt: arrivedAgo(6 * time.Minute)}, nil},
+		"the system, once the wait ran out": {trip.CancelledBySystem, trip.Trip{Status: trip.StatusAccepted, ArrivedAt: arrivedAgo(6 * time.Minute)}, nil},
+		"the system, too early":             {trip.CancelledBySystem, trip.Trip{Status: trip.StatusAccepted, ArrivedAt: arrivedAgo(time.Minute)}, trip.ErrNoShowTooEarly},
 	}
 
 	for name, tc := range cases {
