@@ -44,6 +44,21 @@ curated places and pick points on the map.
    (`POST /v1/staff/me:accept`). On staging both codes are in the log:
    `docker logs ride-identity-service 2>&1 | grep otp_code | tail -1`.
 
+## Certificate pinning (the apps)
+
+The apps' release builds trust only this server's TLS key. Once, after step 5:
+`sudo bash scripts/deploy/tls-pins.sh`. It makes certbot renew with the same key,
+creates a backup key in `instance/tls-backup-key.pem` (copy `instance/` off the
+server again) and prints the `--dart-define=API_PINS=…` line for the app builds
+(also kept in `instance/app-pins.env`). It stops if the domains are behind a proxy
+(Cloudflare's orange cloud): the apps would see the proxy's key.
+
+Never request this certificate again without `--reuse-key`, and never delete the
+backup key: a key that is not pinned cuts off every installed app until it updates.
+If the key leaks: `sudo bash scripts/deploy/tls-pins.sh --rotate` moves the server
+to the backup key (the installed apps keep working), then build the apps with the
+new line before any later rotation.
+
 ## Address search (Nominatim)
 
 Finding streets and places by name, and naming a point on the map, needs
