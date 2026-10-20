@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	pricingv1 "github.com/7akoom/ride-platform/gen/go/ride/pricing/v1"
+	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/dispatchsettings"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/promotions"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/tariffs"
@@ -20,6 +21,9 @@ type PricingHandler struct {
 	tariffs        *tariffs.Service
 	promotions     *promotions.Service
 	logger         *slog.Logger
+
+	// dispatchSettings is set by WithDispatchSettings.
+	dispatchSettings *dispatchsettings.Service
 }
 
 func NewPricingHandler(

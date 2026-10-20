@@ -156,6 +156,21 @@ service PricingService {
     };
   }
 
+  // How trips are given out (staff, dispatch.manage; dispatch-service reads them
+  // with the internal token): whether a driver finishing a trip may be offered a
+  // new one whose pickup is near where they drop their rider, and how near.
+  rpc GetDispatchSettings(GetDispatchSettingsRequest) returns (DispatchSettingsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/dispatch-settings"
+    };
+  }
+  rpc UpdateDispatchSettings(UpdateDispatchSettingsRequest) returns (DispatchSettingsResponse) {
+    option (google.api.http) = {
+      put: "/v1/admin/dispatch-settings"
+      body: "*"
+    };
+  }
+
   // Offers (the rider, for their own profile): what the app's home shows.
   // ListRiderOffers is the featured coupons this rider may still use, the
   // first-ride discount (a rider who never completed a trip) and how far
@@ -491,6 +506,28 @@ message UpdatePromotionSettingsRequest {
 
 message PromotionSettingsResponse {
   PromotionSettings settings = 1;
+}
+
+message GetDispatchSettingsRequest {}
+
+// DispatchSettings: next_trips_enabled lets a driver whose rider is in the car
+// be offered a trip whose pickup is within next_trip_radius_meters (500-10000)
+// of where they drop that rider, to take once they do.
+message DispatchSettings {
+  bool next_trips_enabled = 1;
+  int32 next_trip_radius_meters = 2;
+  string updated_by = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+// UpdateDispatchSettingsRequest replaces the settings.
+message UpdateDispatchSettingsRequest {
+  bool next_trips_enabled = 1;
+  int32 next_trip_radius_meters = 2;
+}
+
+message DispatchSettingsResponse {
+  DispatchSettings settings = 1;
 }
 
 // --- Offers (the rider) --------------------------------------------------------

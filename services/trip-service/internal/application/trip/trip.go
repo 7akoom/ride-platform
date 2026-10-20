@@ -118,6 +118,13 @@ type Trip struct {
 	CancelledAt *time.Time
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	// AfterTripID is the trip the driver was on when they took this one, to do
+	// after it; HeadingAt is when they set off for the pickup (when they
+	// accepted, or when that trip ended). ExpectedPickupAt is when they were
+	// expected at the pickup as they accepted; nil when not known.
+	AfterTripID      string
+	HeadingAt        *time.Time
+	ExpectedPickupAt *time.Time
 }
 
 // SosTriggeredBy is who pressed the SOS button — the rider or the

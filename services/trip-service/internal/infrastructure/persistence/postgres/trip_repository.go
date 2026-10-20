@@ -125,11 +125,21 @@ func (r *TripRepository) FindActiveByRiderID(
 	return r.findOneWhere(ctx, "rider_id = $1 AND status = ANY($2)", riderID, activeStatuses)
 }
 
+// FindActiveByDriverID is the driver's current trip: the one they are on or on
+// their way to, not a next trip they took to do after it.
 func (r *TripRepository) FindActiveByDriverID(
 	ctx context.Context,
 	driverID string,
 ) (trip.Trip, error) {
-	return r.findOneWhere(ctx, "driver_id = $1 AND status = ANY($2)", driverID, activeStatuses)
+	return r.findOneWhere(ctx, "driver_id = $1 AND status = ANY($2) AND heading_at IS NOT NULL", driverID, activeStatuses)
+}
+
+// FindNextByDriverID is the trip the driver took to do after their current one.
+func (r *TripRepository) FindNextByDriverID(
+	ctx context.Context,
+	driverID string,
+) (trip.Trip, error) {
+	return r.findOneWhere(ctx, "driver_id = $1 AND status = 'accepted' AND heading_at IS NULL", driverID)
 }
 
 func (r *TripRepository) findOneWhere(
@@ -172,6 +182,7 @@ func (r *TripRepository) Accept(
 			 SET driver_id = $2,
 			     status = 'accepted',
 			     accepted_at = CURRENT_TIMESTAMP,
+			     heading_at = CURRENT_TIMESTAMP,
 			     updated_at = CURRENT_TIMESTAMP
 			 WHERE id = $1
 			 RETURNING `+tripColumns,
@@ -195,6 +206,10 @@ func (r *TripRepository) Start(
 	tripID string,
 ) (trip.Trip, error) {
 	return r.transition(ctx, tripID, trip.StatusInProgress, func(tx pgx.Tx, current trip.Trip) (trip.Trip, error) {
+		if current.WaitingForPreviousTrip() {
+			return trip.Trip{}, trip.ErrPreviousTripNotFinished
+		}
+
 		var updated trip.Trip
 
 		row := tx.QueryRow(
@@ -240,11 +255,15 @@ func (r *TripRepository) Complete(
 			return trip.Trip{}, err
 		}
 
-		return updated, writeOutboxEvent(ctx, tx, "trip.completed", updated.ID, map[string]string{
+		if err := writeOutboxEvent(ctx, tx, "trip.completed", updated.ID, map[string]string{
 			"trip_id":   updated.ID,
 			"rider_id":  updated.RiderID,
 			"driver_id": updated.DriverID,
-		})
+		}); err != nil {
+			return trip.Trip{}, err
+		}
+
+		return updated, startNextTrip(ctx, tx, updated.ID)
 	})
 }
 
@@ -282,14 +301,18 @@ func (r *TripRepository) Cancel(
 			return trip.Trip{}, err
 		}
 
-		return updated, writeOutboxEvent(ctx, tx, "trip.cancelled", updated.ID, map[string]string{
+		if err := writeOutboxEvent(ctx, tx, "trip.cancelled", updated.ID, map[string]string{
 			"trip_id":        updated.ID,
 			"reason":         record.Reason,
 			"cancelled_by":   string(record.By),
 			"rider_no_show":  strconv.FormatBool(record.RiderNoShow),
 			"from_status":    string(current.Status),
 			"driver_arrived": strconv.FormatBool(current.ArrivedAt != nil),
-		})
+		}); err != nil {
+			return trip.Trip{}, err
+		}
+
+		return updated, startNextTrip(ctx, tx, updated.ID)
 	})
 }
 
@@ -309,7 +332,7 @@ func (r *TripRepository) MarkArrived(ctx context.Context, tripID string) (trip.T
 		`UPDATE trips
 		 SET arrived_at = CURRENT_TIMESTAMP,
 		     updated_at = CURRENT_TIMESTAMP
-		 WHERE id = $1 AND status = 'accepted' AND arrived_at IS NULL
+		 WHERE id = $1 AND status = 'accepted' AND arrived_at IS NULL AND heading_at IS NOT NULL
 		 RETURNING `+tripColumns,
 		tripID,
 	), &updated)
@@ -323,6 +346,10 @@ func (r *TripRepository) MarkArrived(ctx context.Context, tripID string) (trip.T
 
 		if current.Status == trip.StatusAccepted && current.ArrivedAt != nil {
 			return current, nil
+		}
+
+		if current.Status == trip.StatusAccepted && current.WaitingForPreviousTrip() {
+			return trip.Trip{}, trip.ErrPreviousTripNotFinished
 		}
 
 		return trip.Trip{}, trip.ErrInvalidTransition
@@ -444,7 +471,8 @@ const tripColumns = `id, rider_id, driver_id, status,
 	COALESCE(pickup_photo_media_id::text, ''),
 	COALESCE(quote_id::text, ''), COALESCE(quoted_fare::text, ''), COALESCE(currency_code, ''),
 	arrived_at, COALESCE(cancelled_by, ''), rider_no_show,
-	passenger_name, passenger_phone, scheduled, stops`
+	passenger_name, passenger_phone, scheduled, stops,
+	COALESCE(after_trip_id::text, ''), heading_at, expected_pickup_at`
 
 func scanTrip(row pgx.Row, dest *trip.Trip) error {
 	var status string
@@ -486,6 +514,9 @@ func scanTrip(row pgx.Row, dest *trip.Trip) error {
 		&dest.PassengerPhone,
 		&dest.Scheduled,
 		&stops,
+		&dest.AfterTripID,
+		&dest.HeadingAt,
+		&dest.ExpectedPickupAt,
 	)
 	if err != nil {
 		return err
@@ -523,4 +554,56 @@ func trimDecimal(value string) string {
 	value = strings.TrimRight(value, "0")
 
 	return strings.TrimSuffix(value, ".")
+}
+
+// sqlStartNextTrip sets the driver off for the trip they took to do after the
+// one that just ended.
+const sqlStartNextTrip = `UPDATE trips
+	SET heading_at = CURRENT_TIMESTAMP,
+	    updated_at = CURRENT_TIMESTAMP
+	WHERE after_trip_id = $1 AND status = 'accepted' AND heading_at IS NULL
+	RETURNING id, rider_id, COALESCE(driver_id::text, '')`
+
+// startNextTrip runs in the transaction that ends a trip: the driver's next
+// trip, if they took one, becomes their current one, with a trip.driver_heading
+// event so its rider is told the driver is on the way.
+func startNextTrip(ctx context.Context, tx pgx.Tx, endedTripID string) error {
+	rows, err := tx.Query(ctx, sqlStartNextTrip, endedTripID)
+	if err != nil {
+		return fmt.Errorf("start next trip: %w", err)
+	}
+
+	type started struct{ id, riderID, driverID string }
+
+	var next []started
+
+	for rows.Next() {
+		var s started
+		if err := rows.Scan(&s.id, &s.riderID, &s.driverID); err != nil {
+			rows.Close()
+
+			return fmt.Errorf("read next trip: %w", err)
+		}
+
+		next = append(next, s)
+	}
+
+	rows.Close()
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("start next trip: %w", err)
+	}
+
+	for _, s := range next {
+		if err := writeOutboxEvent(ctx, tx, "trip.driver_heading", s.id, map[string]string{
+			"trip_id":       s.id,
+			"rider_id":      s.riderID,
+			"driver_id":     s.driverID,
+			"after_trip_id": endedTripID,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

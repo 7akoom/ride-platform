@@ -69,6 +69,9 @@ var methodAccess = map[string]accessLevel{
 	"/ride.pricing.v1.PricingService/ListCouponRedemptions":   accessStaff,
 	"/ride.pricing.v1.PricingService/GetPromotionSettings":    accessStaff,
 	"/ride.pricing.v1.PricingService/UpdatePromotionSettings": accessStaff,
+
+	"/ride.pricing.v1.PricingService/GetDispatchSettings":    accessStaff,
+	"/ride.pricing.v1.PricingService/UpdateDispatchSettings": accessStaff,
 }
 
 // staffPermissions names the staff permission for every accessStaff method.
@@ -93,11 +96,15 @@ var staffPermissions = map[string]string{
 	"/ride.pricing.v1.PricingService/ListCouponRedemptions":   permissionPromotionsManage,
 	"/ride.pricing.v1.PricingService/GetPromotionSettings":    permissionPromotionsManage,
 	"/ride.pricing.v1.PricingService/UpdatePromotionSettings": permissionPromotionsManage,
+
+	"/ride.pricing.v1.PricingService/GetDispatchSettings":    permissionDispatchManage,
+	"/ride.pricing.v1.PricingService/UpdateDispatchSettings": permissionDispatchManage,
 }
 
 const (
 	permissionPricingManage    = "pricing.manage"
 	permissionPromotionsManage = "promotions.manage"
+	permissionDispatchManage   = "dispatch.manage"
 )
 
 func NewAuthorizationUnaryInterceptor(resolver CallerResolver, staff StaffAuthorizer) googlegrpc.UnaryServerInterceptor {

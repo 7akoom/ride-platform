@@ -62,6 +62,10 @@ func (s *arrivalService) MarkDriverArrived(ctx context.Context, tripID string) (
 		return current, nil
 	}
 
+	if current.WaitingForPreviousTrip() {
+		return Trip{}, ErrPreviousTripNotFinished
+	}
+
 	position, err := s.locator.DriverLocation(ctx, current.DriverID)
 	if errors.Is(err, ErrDriverLocationUnavailable) {
 		return Trip{}, ErrArrivalPositionUnknown

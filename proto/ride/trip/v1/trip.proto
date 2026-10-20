@@ -133,6 +133,7 @@ service TripService {
   // requested, accepted or in-progress trip, for example when the app is opened
   // again after being closed. Name exactly one of rider_id and driver_id, and it
   // must be the caller's own profile. NOT_FOUND means there is no active trip.
+  // A driver also gets next_trip: the one they took to do after this one.
   rpc GetActiveTrip(GetActiveTripRequest) returns (GetActiveTripResponse) {
     option (google.api.http) = {
       get: "/v1/trips:active"
@@ -166,6 +167,9 @@ service TripService {
   // and FAILED_PRECONDITION (the driver has a pending offer or a trip, or the trip
   // is no longer waiting) mean try the next driver; ABORTED means another driver
   // has a live offer for this trip, so wait for it to be answered or to expire.
+  // With after_trip_id the trip is offered to a driver on that trip, to take
+  // after it (FAILED_PRECONDITION when that trip is not theirs and under way, or
+  // they already have a trip waiting).
   rpc OfferTrip(OfferTripRequest) returns (OfferTripResponse);
 
   // GetPendingOffer is the Driver app's poll target: the trip it is being offered,
@@ -378,6 +382,16 @@ message Trip {
   // "trip", or the kind of fee (cancellation, no_show).
   string final_fare_kind = 31;
   string final_fare_currency_code = 32;
+  // When the driver set off for the pickup: when they accepted, or, for a trip
+  // taken while finishing another one, when that one ended. Empty until then.
+  google.protobuf.Timestamp heading_to_pickup_at = 33;
+  // The driver took the trip while finishing another one nearby and has not
+  // set off for this pickup yet (they come once that trip ends). Stays true on
+  // a trip cancelled before then.
+  bool waiting_for_previous_trip = 34;
+  // When the driver was expected at the pickup as the trip was accepted (the
+  // road time dispatch offered it with); empty when not known.
+  google.protobuf.Timestamp expected_pickup_at = 35;
 }
 
 // A stop on the way. reached_at is set once the driver marks it.
@@ -556,6 +570,9 @@ message GetActiveTripRequest {
 
 message GetActiveTripResponse {
   Trip trip = 1;
+  // For a driver: the trip they took while on this one, which they go to once
+  // this one ends; empty when there is none, and always for a rider.
+  Trip next_trip = 2;
 }
 
 message ListTripsRequest {
@@ -594,6 +611,12 @@ message TripOffer {
   string currency_code = 11;
   // The stops on the way, in order.
   repeated TripStop stops = 12;
+  // The trip is offered to a driver who is finishing another one nearby: they
+  // go to this pickup once that trip ends.
+  bool after_current_trip = 13;
+  // How long to the pickup by road (for after_current_trip: the rest of the
+  // current trip, then on to this pickup); 0 when not known.
+  int32 pickup_eta_seconds = 14;
 }
 
 message OfferTripRequest {
@@ -601,6 +624,12 @@ message OfferTripRequest {
   string driver_id = 2;
   // 0 means the default (15); anything else is served within 5 to 60.
   int32 ttl_seconds = 3;
+  // The driver's current trip, when they are offered this one to take after
+  // it: that trip must be under way, and they must have no other trip waiting.
+  string after_trip_id = 4;
+  // How long the driver is from the pickup by road (for after_trip_id, the
+  // rest of that trip included); 0 when not known.
+  int32 pickup_eta_seconds = 5;
 }
 
 message OfferTripResponse {

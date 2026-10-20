@@ -61,6 +61,10 @@ const (
 
 	// tripSchedulesDurable: a ride booked ahead that could not be made.
 	tripSchedulesDurable = "notification-trip-schedules"
+
+	// tripHeadingDurable: a driver who took a trip while finishing another one
+	// has ended that one and set off for the pickup.
+	tripHeadingDurable = "notification-trip-heading"
 )
 
 func main() {
@@ -426,6 +430,22 @@ func run() int {
 		return 1
 	}
 	defer scheduleSubscription.Stop()
+
+	headingSubscription, err := natsinfra.SubscribeDurableFromNow(
+		ctx,
+		natsConnection.JetStream(),
+		"TRIP_EVENTS",
+		tripHeadingDurable,
+		events.TripHeadingSubjects,
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to drivers setting off for next trips", "error", err)
+
+		return 1
+	}
+	defer headingSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

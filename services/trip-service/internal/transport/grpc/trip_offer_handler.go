@@ -22,6 +22,12 @@ type tripOffers interface {
 	RejectOffer(ctx context.Context, tripID string, driverID string) error
 }
 
+// chainedTripOffers is what trip.WithTripOffers adds besides: an offer to a driver
+// to take after their current trip, and the road time to the pickup.
+type chainedTripOffers interface {
+	OfferTripWithChain(ctx context.Context, tripID string, driverID string, ttl time.Duration, chain trip.OfferChain) (trip.Offer, error)
+}
+
 func (h *TripHandler) offers() (tripOffers, error) {
 	offers, ok := trip.As[tripOffers](h.tripService)
 	if !ok {
@@ -50,7 +56,26 @@ func (h *TripHandler) OfferTrip(
 		return nil, err
 	}
 
-	offer, err := offers.OfferTrip(ctx, request.GetTripId(), request.GetDriverId(), time.Duration(request.GetTtlSeconds())*time.Second)
+	if request.GetPickupEtaSeconds() < 0 {
+		return nil, status.Error(codes.InvalidArgument, "pickup_eta_seconds must not be negative")
+	}
+
+	ttl := time.Duration(request.GetTtlSeconds()) * time.Second
+	chain := trip.OfferChain{
+		AfterTripID: request.GetAfterTripId(),
+		PickupETA:   time.Duration(request.GetPickupEtaSeconds()) * time.Second,
+	}
+
+	var offer trip.Offer
+
+	if chained, ok := trip.As[chainedTripOffers](h.tripService); ok {
+		offer, err = chained.OfferTripWithChain(ctx, request.GetTripId(), request.GetDriverId(), ttl, chain)
+	} else if chain.AfterTripID != "" {
+		err = trip.ErrNotOfferableAfterTrip
+	} else {
+		offer, err = offers.OfferTrip(ctx, request.GetTripId(), request.GetDriverId(), ttl)
+	}
+
 	if err != nil {
 		return nil, h.mapOfferError(err)
 	}
@@ -151,7 +176,8 @@ func (h *TripHandler) mapOfferError(err error) error {
 	case errors.Is(err, trip.ErrAlreadyOffered):
 		return status.Error(codes.AlreadyExists, err.Error())
 
-	case errors.Is(err, trip.ErrDriverHasPendingOffer), errors.Is(err, trip.ErrTripNotOfferable):
+	case errors.Is(err, trip.ErrDriverHasPendingOffer), errors.Is(err, trip.ErrTripNotOfferable),
+		errors.Is(err, trip.ErrNotOfferableAfterTrip):
 		return status.Error(codes.FailedPrecondition, err.Error())
 
 	default:
@@ -179,5 +205,8 @@ func toProtoOffer(offer trip.Offer) *tripv1.TripOffer {
 		CurrencyCode: offer.Trip.CurrencyCode,
 		// Where it stops on the way: the driver should know before accepting.
 		Stops: toProtoStops(offer.Trip.Stops),
+		// Taken after the trip they are on, and how far the pickup is by road.
+		AfterCurrentTrip: offer.AfterTripID != "",
+		PickupEtaSeconds: int32(offer.PickupETA / time.Second),
 	}
 }

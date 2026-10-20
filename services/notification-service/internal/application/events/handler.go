@@ -118,6 +118,8 @@ func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) err
 		return h.handleTripOffered(ctx, envelope)
 	case "trip.driver_arrived":
 		return h.handleDriverArrived(ctx, envelope)
+	case SubjectDriverHeading:
+		return h.handleDriverHeading(ctx, envelope)
 	case SubjectTransferCompleted:
 		return h.handleTransferCompleted(ctx, envelope)
 	case SubjectMoneyRequested:
@@ -170,10 +172,16 @@ func (h *Handler) handleTripAccepted(ctx context.Context, envelope Envelope) err
 		return fmt.Errorf("look up driver %s: %w", payload.DriverID, err)
 	}
 
+	// A driver finishing a trip nearby comes once it ends: the rider is told so.
+	eventKey := "trip.driver_assigned"
+	if trip.WaitingForPreviousTrip {
+		eventKey = "trip.driver_assigned_next"
+	}
+
 	_, err = h.notificationService.Send(ctx, notification.SendInput{
 		RecipientType: notification.RecipientRider,
 		RecipientID:   trip.RiderID,
-		EventKey:      "trip.driver_assigned",
+		EventKey:      eventKey,
 		Variables: map[string]string{
 			"driver_name":   driver.DisplayName,
 			"vehicle_color": driver.VehicleColor,

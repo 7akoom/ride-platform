@@ -119,6 +119,7 @@ type TripServiceClient interface {
 	// requested, accepted or in-progress trip, for example when the app is opened
 	// again after being closed. Name exactly one of rider_id and driver_id, and it
 	// must be the caller's own profile. NOT_FOUND means there is no active trip.
+	// A driver also gets next_trip: the one they took to do after this one.
 	GetActiveTrip(ctx context.Context, in *GetActiveTripRequest, opts ...grpc.CallOption) (*GetActiveTripResponse, error)
 	// ListTrips is the caller's trip history, newest first, one page at a time. Name
 	// exactly one of rider_id and driver_id, and it must be the caller's own profile.
@@ -137,6 +138,9 @@ type TripServiceClient interface {
 	// and FAILED_PRECONDITION (the driver has a pending offer or a trip, or the trip
 	// is no longer waiting) mean try the next driver; ABORTED means another driver
 	// has a live offer for this trip, so wait for it to be answered or to expire.
+	// With after_trip_id the trip is offered to a driver on that trip, to take
+	// after it (FAILED_PRECONDITION when that trip is not theirs and under way, or
+	// they already have a trip waiting).
 	OfferTrip(ctx context.Context, in *OfferTripRequest, opts ...grpc.CallOption) (*OfferTripResponse, error)
 	// GetPendingOffer is the Driver app's poll target: the trip it is being offered,
 	// with what it needs to decide (where from and to, vehicle class, payment method,
@@ -618,6 +622,7 @@ type TripServiceServer interface {
 	// requested, accepted or in-progress trip, for example when the app is opened
 	// again after being closed. Name exactly one of rider_id and driver_id, and it
 	// must be the caller's own profile. NOT_FOUND means there is no active trip.
+	// A driver also gets next_trip: the one they took to do after this one.
 	GetActiveTrip(context.Context, *GetActiveTripRequest) (*GetActiveTripResponse, error)
 	// ListTrips is the caller's trip history, newest first, one page at a time. Name
 	// exactly one of rider_id and driver_id, and it must be the caller's own profile.
@@ -636,6 +641,9 @@ type TripServiceServer interface {
 	// and FAILED_PRECONDITION (the driver has a pending offer or a trip, or the trip
 	// is no longer waiting) mean try the next driver; ABORTED means another driver
 	// has a live offer for this trip, so wait for it to be answered or to expire.
+	// With after_trip_id the trip is offered to a driver on that trip, to take
+	// after it (FAILED_PRECONDITION when that trip is not theirs and under way, or
+	// they already have a trip waiting).
 	OfferTrip(context.Context, *OfferTripRequest) (*OfferTripResponse, error)
 	// GetPendingOffer is the Driver app's poll target: the trip it is being offered,
 	// with what it needs to decide (where from and to, vehicle class, payment method,

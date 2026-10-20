@@ -40,5 +40,7 @@ func (c *TripClient) GetTrip(
 		PickupLongitude:  trip.GetPickup().GetLongitude(),
 		DropoffLatitude:  trip.GetDropoff().GetLatitude(),
 		DropoffLongitude: trip.GetDropoff().GetLongitude(),
+
+		WaitingForPreviousTrip: trip.GetWaitingForPreviousTrip(),
 	}, nil
 }

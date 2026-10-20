@@ -53,11 +53,27 @@ func (c *TripClient) GetTrip(
 		Status:       tripStatus(trip.GetStatus()),
 		CancelledBy:  trip.GetCancelledBy(),
 		RiderNoShow:  trip.GetRiderNoShow(),
-		AcceptedAt:   optionalTime(trip.GetAcceptedAt()),
+		AcceptedAt:   feeClockStart(trip),
 		ArrivedAt:    optionalTime(trip.GetArrivedAt()),
 		StartedAt:    optionalTime(trip.GetStartedAt()),
 		CancelledAt:  optionalTime(trip.GetCancelledAt()),
 	}, nil
+}
+
+// feeClockStart is the acceptance time the cancellation fee counts from: when the
+// driver set off for the pickup. A driver who took the trip while finishing
+// another one sets off when that one ends; until then (and on a trip cancelled
+// before) there is none, so cancelling costs the rider nothing.
+func feeClockStart(trip *tripv1.Trip) *time.Time {
+	if trip.GetWaitingForPreviousTrip() {
+		return nil
+	}
+
+	if at := optionalTime(trip.GetHeadingToPickupAt()); at != nil {
+		return at
+	}
+
+	return optionalTime(trip.GetAcceptedAt())
 }
 
 func tripStops(stops []*tripv1.TripStop) []pricing.Point {
@@ -118,7 +134,7 @@ func (c *TripClient) TripSnapshot(ctx context.Context, tripID string) (pricing.T
 		VehicleClass: trip.GetVehicleClass(),
 		PickupLat:    trip.GetPickup().GetLatitude(),
 		PickupLng:    trip.GetPickup().GetLongitude(),
-		AcceptedAt:   optionalTime(trip.GetAcceptedAt()),
+		AcceptedAt:   feeClockStart(trip),
 		ArrivedAt:    optionalTime(trip.GetArrivedAt()),
 	}, nil
 }

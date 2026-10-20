@@ -41,6 +41,8 @@ const (
 	PricingService_ListCouponRedemptions_FullMethodName   = "/ride.pricing.v1.PricingService/ListCouponRedemptions"
 	PricingService_GetPromotionSettings_FullMethodName    = "/ride.pricing.v1.PricingService/GetPromotionSettings"
 	PricingService_UpdatePromotionSettings_FullMethodName = "/ride.pricing.v1.PricingService/UpdatePromotionSettings"
+	PricingService_GetDispatchSettings_FullMethodName     = "/ride.pricing.v1.PricingService/GetDispatchSettings"
+	PricingService_UpdateDispatchSettings_FullMethodName  = "/ride.pricing.v1.PricingService/UpdateDispatchSettings"
 	PricingService_ListRiderOffers_FullMethodName         = "/ride.pricing.v1.PricingService/ListRiderOffers"
 	PricingService_CheckRiderCoupon_FullMethodName        = "/ride.pricing.v1.PricingService/CheckRiderCoupon"
 	PricingService_GetTripFare_FullMethodName             = "/ride.pricing.v1.PricingService/GetTripFare"
@@ -106,6 +108,11 @@ type PricingServiceClient interface {
 	// automatic, never two.
 	GetPromotionSettings(ctx context.Context, in *GetPromotionSettingsRequest, opts ...grpc.CallOption) (*PromotionSettingsResponse, error)
 	UpdatePromotionSettings(ctx context.Context, in *UpdatePromotionSettingsRequest, opts ...grpc.CallOption) (*PromotionSettingsResponse, error)
+	// How trips are given out (staff, dispatch.manage; dispatch-service reads them
+	// with the internal token): whether a driver finishing a trip may be offered a
+	// new one whose pickup is near where they drop their rider, and how near.
+	GetDispatchSettings(ctx context.Context, in *GetDispatchSettingsRequest, opts ...grpc.CallOption) (*DispatchSettingsResponse, error)
+	UpdateDispatchSettings(ctx context.Context, in *UpdateDispatchSettingsRequest, opts ...grpc.CallOption) (*DispatchSettingsResponse, error)
 	// Offers (the rider, for their own profile): what the app's home shows.
 	// ListRiderOffers is the featured coupons this rider may still use, the
 	// first-ride discount (a rider who never completed a trip) and how far
@@ -367,6 +374,26 @@ func (c *pricingServiceClient) UpdatePromotionSettings(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *pricingServiceClient) GetDispatchSettings(ctx context.Context, in *GetDispatchSettingsRequest, opts ...grpc.CallOption) (*DispatchSettingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DispatchSettingsResponse)
+	err := c.cc.Invoke(ctx, PricingService_GetDispatchSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pricingServiceClient) UpdateDispatchSettings(ctx context.Context, in *UpdateDispatchSettingsRequest, opts ...grpc.CallOption) (*DispatchSettingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DispatchSettingsResponse)
+	err := c.cc.Invoke(ctx, PricingService_UpdateDispatchSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *pricingServiceClient) ListRiderOffers(ctx context.Context, in *ListRiderOffersRequest, opts ...grpc.CallOption) (*ListRiderOffersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListRiderOffersResponse)
@@ -475,6 +502,11 @@ type PricingServiceServer interface {
 	// automatic, never two.
 	GetPromotionSettings(context.Context, *GetPromotionSettingsRequest) (*PromotionSettingsResponse, error)
 	UpdatePromotionSettings(context.Context, *UpdatePromotionSettingsRequest) (*PromotionSettingsResponse, error)
+	// How trips are given out (staff, dispatch.manage; dispatch-service reads them
+	// with the internal token): whether a driver finishing a trip may be offered a
+	// new one whose pickup is near where they drop their rider, and how near.
+	GetDispatchSettings(context.Context, *GetDispatchSettingsRequest) (*DispatchSettingsResponse, error)
+	UpdateDispatchSettings(context.Context, *UpdateDispatchSettingsRequest) (*DispatchSettingsResponse, error)
 	// Offers (the rider, for their own profile): what the app's home shows.
 	// ListRiderOffers is the featured coupons this rider may still use, the
 	// first-ride discount (a rider who never completed a trip) and how far
@@ -581,6 +613,12 @@ func (UnimplementedPricingServiceServer) GetPromotionSettings(context.Context, *
 }
 func (UnimplementedPricingServiceServer) UpdatePromotionSettings(context.Context, *UpdatePromotionSettingsRequest) (*PromotionSettingsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdatePromotionSettings not implemented")
+}
+func (UnimplementedPricingServiceServer) GetDispatchSettings(context.Context, *GetDispatchSettingsRequest) (*DispatchSettingsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDispatchSettings not implemented")
+}
+func (UnimplementedPricingServiceServer) UpdateDispatchSettings(context.Context, *UpdateDispatchSettingsRequest) (*DispatchSettingsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateDispatchSettings not implemented")
 }
 func (UnimplementedPricingServiceServer) ListRiderOffers(context.Context, *ListRiderOffersRequest) (*ListRiderOffersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListRiderOffers not implemented")
@@ -1014,6 +1052,42 @@ func _PricingService_UpdatePromotionSettings_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PricingService_GetDispatchSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDispatchSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).GetDispatchSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_GetDispatchSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).GetDispatchSettings(ctx, req.(*GetDispatchSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PricingService_UpdateDispatchSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateDispatchSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).UpdateDispatchSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_UpdateDispatchSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).UpdateDispatchSettings(ctx, req.(*UpdateDispatchSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _PricingService_ListRiderOffers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRiderOffersRequest)
 	if err := dec(in); err != nil {
@@ -1198,6 +1272,14 @@ var PricingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdatePromotionSettings",
 			Handler:    _PricingService_UpdatePromotionSettings_Handler,
+		},
+		{
+			MethodName: "GetDispatchSettings",
+			Handler:    _PricingService_GetDispatchSettings_Handler,
+		},
+		{
+			MethodName: "UpdateDispatchSettings",
+			Handler:    _PricingService_UpdateDispatchSettings_Handler,
 		},
 		{
 			MethodName: "ListRiderOffers",

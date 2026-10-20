@@ -48,6 +48,10 @@ type Offer struct {
 	OfferedAt time.Time
 	ExpiresAt time.Time
 	Trip      Trip
+	// AfterTripID is the driver's current trip when this one is offered to take
+	// after it; PickupETA the road time to the pickup (zero when not known).
+	AfterTripID string
+	PickupETA   time.Duration
 }
 
 // OfferStore is the outbound port behind driver offers. Every method is atomic:

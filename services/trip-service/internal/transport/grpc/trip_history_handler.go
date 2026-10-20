@@ -47,7 +47,42 @@ func (h *TripHandler) GetActiveTrip(
 		return nil, h.mapTripError(err)
 	}
 
-	return &tripv1.GetActiveTripResponse{Trip: toProtoTrip(found)}, nil
+	response := &tripv1.GetActiveTripResponse{Trip: toProtoTrip(found)}
+
+	if request.GetDriverId() != "" {
+		next, err := h.nextTrip(ctx, request.GetDriverId())
+		if err != nil {
+			return nil, err
+		}
+
+		response.NextTrip = next
+	}
+
+	return response, nil
+}
+
+// nextTrips is what trip.WithTripHistory adds for drivers: the trip they took to
+// do after their current one.
+type nextTrips interface {
+	NextTrip(ctx context.Context, driverID string) (trip.Trip, error)
+}
+
+func (h *TripHandler) nextTrip(ctx context.Context, driverID string) (*tripv1.Trip, error) {
+	finder, ok := trip.As[nextTrips](h.tripService)
+	if !ok {
+		return nil, nil
+	}
+
+	next, err := finder.NextTrip(ctx, driverID)
+
+	switch {
+	case errors.Is(err, trip.ErrTripNotFound):
+		return nil, nil
+	case err != nil:
+		return nil, h.mapTripError(err)
+	}
+
+	return toProtoTrip(next), nil
 }
 
 // ListTrips returns one page of the caller's trips, newest first. The interceptor

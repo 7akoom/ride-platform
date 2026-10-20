@@ -60,7 +60,7 @@ func testPool(t *testing.T) *pgxpool.Pool {
 
 	dropAll := func() {
 		psql(`DROP TABLE IF EXISTS fare_quotes, zone_surges, fares, rider_trip_stats, coupon_redemptions,
-		      coupons, surge_time_rules, pricing_configs, outbox_events, promotion_settings CASCADE;`)
+		      coupons, surge_time_rules, pricing_configs, outbox_events, promotion_settings, dispatch_settings CASCADE;`)
 	}
 
 	dropAll()

@@ -13,6 +13,9 @@ type TripInfo struct {
 	PickupLongitude  float64
 	DropoffLatitude  float64
 	DropoffLongitude float64
+	// WaitingForPreviousTrip: the driver took the trip while finishing another
+	// one and comes once that one ends.
+	WaitingForPreviousTrip bool
 }
 
 // TripClient is the handler's view of trip-service.

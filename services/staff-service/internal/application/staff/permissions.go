@@ -47,6 +47,9 @@ const (
 	// PermissionAnalyticsRead: business reports (trips, cancellations,
 	// revenue, retention). Only the owner holds it by default.
 	PermissionAnalyticsRead = "analytics.read"
+	// PermissionDispatchManage: how trips are given out to drivers (next trips
+	// for drivers finishing a ride nearby). Only the owner holds it by default.
+	PermissionDispatchManage = "dispatch.manage"
 )
 
 // RoleKeyOwner is the system role that always holds every permission,
@@ -80,6 +83,7 @@ var permissionCatalog = map[string]string{
 	PermissionSupportSafety:    "See and work safety tickets and SOS alerts",
 	PermissionSupportConfigure: "Create and change support ticket categories",
 	PermissionAnalyticsRead:    "See business reports: trips, cancellations, revenue and retention",
+	PermissionDispatchManage:   "Set how trips are given out to drivers: next trips for drivers finishing a ride nearby",
 }
 
 // PermissionInfo describes one grantable permission.

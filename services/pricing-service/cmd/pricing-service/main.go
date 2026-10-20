@@ -12,6 +12,7 @@ import (
 	// zoneinfo of its own.
 	_ "time/tzdata"
 
+	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/dispatchsettings"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/events"
 	outboxapp "github.com/7akoom/ride-platform/services/pricing-service/internal/application/outbox"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
@@ -298,7 +299,8 @@ func run() int {
 	)
 	tariffService := tariffs.NewService(pricingRepository, locationClient)
 	promotionService := promotions.NewService(pricingRepository, locationClient)
-	pricingHandler := grpcserver.NewPricingHandler(pricingService, tariffService, promotionService, logger)
+	pricingHandler := grpcserver.NewPricingHandler(pricingService, tariffService, promotionService, logger).
+		WithDispatchSettings(dispatchsettings.NewService(pricingRepository))
 
 	eventHandler := events.NewHandler(
 		pricingService,

@@ -518,6 +518,60 @@
         ]
       }
     },
+    "/v1/admin/dispatch-settings": {
+      "get": {
+        "summary": "How trips are given out (staff, dispatch.manage; dispatch-service reads them\nwith the internal token): whether a driver finishing a trip may be offered a\nnew one whose pickup is near where they drop their rider, and how near.",
+        "operationId": "PricingService_GetDispatchSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DispatchSettingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "PricingService"
+        ]
+      },
+      "put": {
+        "operationId": "PricingService_UpdateDispatchSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DispatchSettingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "UpdateDispatchSettingsRequest replaces the settings.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdateDispatchSettingsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
     "/v1/admin/driver-document-types": {
       "get": {
         "summary": "AdminListDriverDocumentTypes lists every type, inactive ones too. Staff\nwith drivers.read, or the internal token.",
@@ -9092,7 +9146,7 @@
     },
     "/v1/trips:active": {
       "get": {
-        "summary": "GetActiveTrip is how an app finds the trip it should be showing: the caller's\nrequested, accepted or in-progress trip, for example when the app is opened\nagain after being closed. Name exactly one of rider_id and driver_id, and it\nmust be the caller's own profile. NOT_FOUND means there is no active trip.",
+        "summary": "GetActiveTrip is how an app finds the trip it should be showing: the caller's\nrequested, accepted or in-progress trip, for example when the app is opened\nagain after being closed. Name exactly one of rider_id and driver_id, and it\nmust be the caller's own profile. NOT_FOUND means there is no active trip.\nA driver also gets next_trip: the one they took to do after this one.",
         "operationId": "TripService_GetActiveTrip",
         "responses": {
           "200": {
@@ -12750,6 +12804,34 @@
       ],
       "default": "DISCOUNT_TYPE_UNSPECIFIED"
     },
+    "v1DispatchSettings": {
+      "type": "object",
+      "properties": {
+        "nextTripsEnabled": {
+          "type": "boolean"
+        },
+        "nextTripRadiusMeters": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "DispatchSettings: next_trips_enabled lets a driver whose rider is in the car\nbe offered a trip whose pickup is within next_trip_radius_meters (500-10000)\nof where they drop that rider, to take once they do."
+    },
+    "v1DispatchSettingsResponse": {
+      "type": "object",
+      "properties": {
+        "settings": {
+          "$ref": "#/definitions/v1DispatchSettings"
+        }
+      }
+    },
     "v1DocumentRequirement": {
       "type": "object",
       "properties": {
@@ -13501,6 +13583,10 @@
       "properties": {
         "trip": {
           "$ref": "#/definitions/v1Trip"
+        },
+        "nextTrip": {
+          "$ref": "#/definitions/v1Trip",
+          "description": "For a driver: the trip they took while on this one, which they go to once\nthis one ends; empty when there is none, and always for a rider."
         }
       }
     },
@@ -18291,6 +18377,20 @@
         },
         "finalFareCurrencyCode": {
           "type": "string"
+        },
+        "headingToPickupAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the driver set off for the pickup: when they accepted, or, for a trip\ntaken while finishing another one, when that one ended. Empty until then."
+        },
+        "waitingForPreviousTrip": {
+          "type": "boolean",
+          "description": "The driver took the trip while finishing another one nearby and has not\nset off for this pickup yet (they come once that trip ends). Stays true on\na trip cancelled before then."
+        },
+        "expectedPickupAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the driver was expected at the pickup as the trip was accepted (the\nroad time dispatch offered it with); empty when not known."
         }
       }
     },
@@ -18373,6 +18473,15 @@
             "$ref": "#/definitions/v1TripStop"
           },
           "description": "The stops on the way, in order."
+        },
+        "afterCurrentTrip": {
+          "type": "boolean",
+          "description": "The trip is offered to a driver who is finishing another one nearby: they\ngo to this pickup once that trip ends."
+        },
+        "pickupEtaSeconds": {
+          "type": "integer",
+          "format": "int32",
+          "description": "How long to the pickup by road (for after_current_trip: the rest of the\ncurrent trip, then on to this pickup); 0 when not known."
         }
       },
       "description": "TripOffer is what a driver sees to decide. The rider is not identified."
@@ -18476,6 +18585,19 @@
           "$ref": "#/definitions/v1Driver"
         }
       }
+    },
+    "v1UpdateDispatchSettingsRequest": {
+      "type": "object",
+      "properties": {
+        "nextTripsEnabled": {
+          "type": "boolean"
+        },
+        "nextTripRadiusMeters": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "UpdateDispatchSettingsRequest replaces the settings."
     },
     "v1UpdateDriverProfileResponse": {
       "type": "object",

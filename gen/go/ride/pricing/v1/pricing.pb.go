@@ -2043,6 +2043,210 @@ func (x *PromotionSettingsResponse) GetSettings() *PromotionSettings {
 	return nil
 }
 
+type GetDispatchSettingsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDispatchSettingsRequest) Reset() {
+	*x = GetDispatchSettingsRequest{}
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDispatchSettingsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDispatchSettingsRequest) ProtoMessage() {}
+
+func (x *GetDispatchSettingsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDispatchSettingsRequest.ProtoReflect.Descriptor instead.
+func (*GetDispatchSettingsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{22}
+}
+
+// DispatchSettings: next_trips_enabled lets a driver whose rider is in the car
+// be offered a trip whose pickup is within next_trip_radius_meters (500-10000)
+// of where they drop that rider, to take once they do.
+type DispatchSettings struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	NextTripsEnabled     bool                   `protobuf:"varint,1,opt,name=next_trips_enabled,json=nextTripsEnabled,proto3" json:"next_trips_enabled,omitempty"`
+	NextTripRadiusMeters int32                  `protobuf:"varint,2,opt,name=next_trip_radius_meters,json=nextTripRadiusMeters,proto3" json:"next_trip_radius_meters,omitempty"`
+	UpdatedBy            string                 `protobuf:"bytes,3,opt,name=updated_by,json=updatedBy,proto3" json:"updated_by,omitempty"`
+	UpdatedAt            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *DispatchSettings) Reset() {
+	*x = DispatchSettings{}
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DispatchSettings) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DispatchSettings) ProtoMessage() {}
+
+func (x *DispatchSettings) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DispatchSettings.ProtoReflect.Descriptor instead.
+func (*DispatchSettings) Descriptor() ([]byte, []int) {
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *DispatchSettings) GetNextTripsEnabled() bool {
+	if x != nil {
+		return x.NextTripsEnabled
+	}
+	return false
+}
+
+func (x *DispatchSettings) GetNextTripRadiusMeters() int32 {
+	if x != nil {
+		return x.NextTripRadiusMeters
+	}
+	return 0
+}
+
+func (x *DispatchSettings) GetUpdatedBy() string {
+	if x != nil {
+		return x.UpdatedBy
+	}
+	return ""
+}
+
+func (x *DispatchSettings) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+// UpdateDispatchSettingsRequest replaces the settings.
+type UpdateDispatchSettingsRequest struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	NextTripsEnabled     bool                   `protobuf:"varint,1,opt,name=next_trips_enabled,json=nextTripsEnabled,proto3" json:"next_trips_enabled,omitempty"`
+	NextTripRadiusMeters int32                  `protobuf:"varint,2,opt,name=next_trip_radius_meters,json=nextTripRadiusMeters,proto3" json:"next_trip_radius_meters,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *UpdateDispatchSettingsRequest) Reset() {
+	*x = UpdateDispatchSettingsRequest{}
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateDispatchSettingsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateDispatchSettingsRequest) ProtoMessage() {}
+
+func (x *UpdateDispatchSettingsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateDispatchSettingsRequest.ProtoReflect.Descriptor instead.
+func (*UpdateDispatchSettingsRequest) Descriptor() ([]byte, []int) {
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *UpdateDispatchSettingsRequest) GetNextTripsEnabled() bool {
+	if x != nil {
+		return x.NextTripsEnabled
+	}
+	return false
+}
+
+func (x *UpdateDispatchSettingsRequest) GetNextTripRadiusMeters() int32 {
+	if x != nil {
+		return x.NextTripRadiusMeters
+	}
+	return 0
+}
+
+type DispatchSettingsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Settings      *DispatchSettings      `protobuf:"bytes,1,opt,name=settings,proto3" json:"settings,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DispatchSettingsResponse) Reset() {
+	*x = DispatchSettingsResponse{}
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DispatchSettingsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DispatchSettingsResponse) ProtoMessage() {}
+
+func (x *DispatchSettingsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DispatchSettingsResponse.ProtoReflect.Descriptor instead.
+func (*DispatchSettingsResponse) Descriptor() ([]byte, []int) {
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *DispatchSettingsResponse) GetSettings() *DispatchSettings {
+	if x != nil {
+		return x.Settings
+	}
+	return nil
+}
+
 type ListRiderOffersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
@@ -2052,7 +2256,7 @@ type ListRiderOffersRequest struct {
 
 func (x *ListRiderOffersRequest) Reset() {
 	*x = ListRiderOffersRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[22]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2064,7 +2268,7 @@ func (x *ListRiderOffersRequest) String() string {
 func (*ListRiderOffersRequest) ProtoMessage() {}
 
 func (x *ListRiderOffersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[22]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2077,7 +2281,7 @@ func (x *ListRiderOffersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRiderOffersRequest.ProtoReflect.Descriptor instead.
 func (*ListRiderOffersRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{22}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ListRiderOffersRequest) GetRiderId() string {
@@ -2113,7 +2317,7 @@ type CouponOffer struct {
 
 func (x *CouponOffer) Reset() {
 	*x = CouponOffer{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[23]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2125,7 +2329,7 @@ func (x *CouponOffer) String() string {
 func (*CouponOffer) ProtoMessage() {}
 
 func (x *CouponOffer) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[23]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2138,7 +2342,7 @@ func (x *CouponOffer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CouponOffer.ProtoReflect.Descriptor instead.
 func (*CouponOffer) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{23}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *CouponOffer) GetCode() string {
@@ -2230,7 +2434,7 @@ type AutomaticOffer struct {
 
 func (x *AutomaticOffer) Reset() {
 	*x = AutomaticOffer{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[24]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2242,7 +2446,7 @@ func (x *AutomaticOffer) String() string {
 func (*AutomaticOffer) ProtoMessage() {}
 
 func (x *AutomaticOffer) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[24]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2255,7 +2459,7 @@ func (x *AutomaticOffer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AutomaticOffer.ProtoReflect.Descriptor instead.
 func (*AutomaticOffer) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{24}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *AutomaticOffer) GetPercent() string {
@@ -2287,7 +2491,7 @@ type LoyaltyOffer struct {
 
 func (x *LoyaltyOffer) Reset() {
 	*x = LoyaltyOffer{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[25]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2299,7 +2503,7 @@ func (x *LoyaltyOffer) String() string {
 func (*LoyaltyOffer) ProtoMessage() {}
 
 func (x *LoyaltyOffer) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[25]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2312,7 +2516,7 @@ func (x *LoyaltyOffer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoyaltyOffer.ProtoReflect.Descriptor instead.
 func (*LoyaltyOffer) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{25}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *LoyaltyOffer) GetEvery() int32 {
@@ -2364,7 +2568,7 @@ type ListRiderOffersResponse struct {
 
 func (x *ListRiderOffersResponse) Reset() {
 	*x = ListRiderOffersResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[26]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2376,7 +2580,7 @@ func (x *ListRiderOffersResponse) String() string {
 func (*ListRiderOffersResponse) ProtoMessage() {}
 
 func (x *ListRiderOffersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[26]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2389,7 +2593,7 @@ func (x *ListRiderOffersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRiderOffersResponse.ProtoReflect.Descriptor instead.
 func (*ListRiderOffersResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{26}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ListRiderOffersResponse) GetCoupons() []*CouponOffer {
@@ -2423,7 +2627,7 @@ type CheckRiderCouponRequest struct {
 
 func (x *CheckRiderCouponRequest) Reset() {
 	*x = CheckRiderCouponRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[27]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2435,7 +2639,7 @@ func (x *CheckRiderCouponRequest) String() string {
 func (*CheckRiderCouponRequest) ProtoMessage() {}
 
 func (x *CheckRiderCouponRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[27]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2448,7 +2652,7 @@ func (x *CheckRiderCouponRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckRiderCouponRequest.ProtoReflect.Descriptor instead.
 func (*CheckRiderCouponRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{27}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *CheckRiderCouponRequest) GetRiderId() string {
@@ -2479,7 +2683,7 @@ type CheckRiderCouponResponse struct {
 
 func (x *CheckRiderCouponResponse) Reset() {
 	*x = CheckRiderCouponResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[28]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2491,7 +2695,7 @@ func (x *CheckRiderCouponResponse) String() string {
 func (*CheckRiderCouponResponse) ProtoMessage() {}
 
 func (x *CheckRiderCouponResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[28]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2504,7 +2708,7 @@ func (x *CheckRiderCouponResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckRiderCouponResponse.ProtoReflect.Descriptor instead.
 func (*CheckRiderCouponResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{28}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *CheckRiderCouponResponse) GetStatus() CouponStatus {
@@ -2536,7 +2740,7 @@ type QuoteTripRequest struct {
 
 func (x *QuoteTripRequest) Reset() {
 	*x = QuoteTripRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[29]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2548,7 +2752,7 @@ func (x *QuoteTripRequest) String() string {
 func (*QuoteTripRequest) ProtoMessage() {}
 
 func (x *QuoteTripRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[29]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2561,7 +2765,7 @@ func (x *QuoteTripRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuoteTripRequest.ProtoReflect.Descriptor instead.
 func (*QuoteTripRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{29}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *QuoteTripRequest) GetRiderId() string {
@@ -2616,7 +2820,7 @@ type TripQuote struct {
 
 func (x *TripQuote) Reset() {
 	*x = TripQuote{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[30]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2628,7 +2832,7 @@ func (x *TripQuote) String() string {
 func (*TripQuote) ProtoMessage() {}
 
 func (x *TripQuote) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[30]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2641,7 +2845,7 @@ func (x *TripQuote) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TripQuote.ProtoReflect.Descriptor instead.
 func (*TripQuote) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{30}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *TripQuote) GetQuoteId() string {
@@ -2698,7 +2902,7 @@ type QuoteTripResponse struct {
 
 func (x *QuoteTripResponse) Reset() {
 	*x = QuoteTripResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[31]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2710,7 +2914,7 @@ func (x *QuoteTripResponse) String() string {
 func (*QuoteTripResponse) ProtoMessage() {}
 
 func (x *QuoteTripResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[31]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2723,7 +2927,7 @@ func (x *QuoteTripResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuoteTripResponse.ProtoReflect.Descriptor instead.
 func (*QuoteTripResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{31}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *QuoteTripResponse) GetQuotes() []*TripQuote {
@@ -2758,7 +2962,7 @@ type ClaimQuoteRequest struct {
 
 func (x *ClaimQuoteRequest) Reset() {
 	*x = ClaimQuoteRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[32]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2770,7 +2974,7 @@ func (x *ClaimQuoteRequest) String() string {
 func (*ClaimQuoteRequest) ProtoMessage() {}
 
 func (x *ClaimQuoteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[32]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2783,7 +2987,7 @@ func (x *ClaimQuoteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClaimQuoteRequest.ProtoReflect.Descriptor instead.
 func (*ClaimQuoteRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{32}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *ClaimQuoteRequest) GetQuoteId() string {
@@ -2823,7 +3027,7 @@ type ClaimQuoteResponse struct {
 
 func (x *ClaimQuoteResponse) Reset() {
 	*x = ClaimQuoteResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[33]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2835,7 +3039,7 @@ func (x *ClaimQuoteResponse) String() string {
 func (*ClaimQuoteResponse) ProtoMessage() {}
 
 func (x *ClaimQuoteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[33]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2848,7 +3052,7 @@ func (x *ClaimQuoteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClaimQuoteResponse.ProtoReflect.Descriptor instead.
 func (*ClaimQuoteResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{33}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *ClaimQuoteResponse) GetQuoteId() string {
@@ -2917,7 +3121,7 @@ type ReleaseQuoteRequest struct {
 
 func (x *ReleaseQuoteRequest) Reset() {
 	*x = ReleaseQuoteRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[34]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2929,7 +3133,7 @@ func (x *ReleaseQuoteRequest) String() string {
 func (*ReleaseQuoteRequest) ProtoMessage() {}
 
 func (x *ReleaseQuoteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[34]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2942,7 +3146,7 @@ func (x *ReleaseQuoteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseQuoteRequest.ProtoReflect.Descriptor instead.
 func (*ReleaseQuoteRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{34}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ReleaseQuoteRequest) GetQuoteId() string {
@@ -2967,7 +3171,7 @@ type ReleaseQuoteResponse struct {
 
 func (x *ReleaseQuoteResponse) Reset() {
 	*x = ReleaseQuoteResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[35]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2979,7 +3183,7 @@ func (x *ReleaseQuoteResponse) String() string {
 func (*ReleaseQuoteResponse) ProtoMessage() {}
 
 func (x *ReleaseQuoteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[35]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2992,7 +3196,7 @@ func (x *ReleaseQuoteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseQuoteResponse.ProtoReflect.Descriptor instead.
 func (*ReleaseQuoteResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{35}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{39}
 }
 
 type GetTripTermsRequest struct {
@@ -3005,7 +3209,7 @@ type GetTripTermsRequest struct {
 
 func (x *GetTripTermsRequest) Reset() {
 	*x = GetTripTermsRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[36]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3017,7 +3221,7 @@ func (x *GetTripTermsRequest) String() string {
 func (*GetTripTermsRequest) ProtoMessage() {}
 
 func (x *GetTripTermsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[36]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3030,7 +3234,7 @@ func (x *GetTripTermsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTripTermsRequest.ProtoReflect.Descriptor instead.
 func (*GetTripTermsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{36}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *GetTripTermsRequest) GetRiderId() string {
@@ -3069,7 +3273,7 @@ type GetTripTermsResponse struct {
 
 func (x *GetTripTermsResponse) Reset() {
 	*x = GetTripTermsResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[37]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3081,7 +3285,7 @@ func (x *GetTripTermsResponse) String() string {
 func (*GetTripTermsResponse) ProtoMessage() {}
 
 func (x *GetTripTermsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[37]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3094,7 +3298,7 @@ func (x *GetTripTermsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTripTermsResponse.ProtoReflect.Descriptor instead.
 func (*GetTripTermsResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{37}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *GetTripTermsResponse) GetCurrencyCode() string {
@@ -3208,7 +3412,7 @@ type RateCard struct {
 
 func (x *RateCard) Reset() {
 	*x = RateCard{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[38]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3220,7 +3424,7 @@ func (x *RateCard) String() string {
 func (*RateCard) ProtoMessage() {}
 
 func (x *RateCard) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[38]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3233,7 +3437,7 @@ func (x *RateCard) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RateCard.ProtoReflect.Descriptor instead.
 func (*RateCard) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{38}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *RateCard) GetId() string {
@@ -3388,7 +3592,7 @@ type ListRateCardsRequest struct {
 
 func (x *ListRateCardsRequest) Reset() {
 	*x = ListRateCardsRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[39]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3400,7 +3604,7 @@ func (x *ListRateCardsRequest) String() string {
 func (*ListRateCardsRequest) ProtoMessage() {}
 
 func (x *ListRateCardsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[39]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3413,7 +3617,7 @@ func (x *ListRateCardsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRateCardsRequest.ProtoReflect.Descriptor instead.
 func (*ListRateCardsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{39}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ListRateCardsRequest) GetCityId() string {
@@ -3440,7 +3644,7 @@ type ListRateCardsResponse struct {
 
 func (x *ListRateCardsResponse) Reset() {
 	*x = ListRateCardsResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[40]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3452,7 +3656,7 @@ func (x *ListRateCardsResponse) String() string {
 func (*ListRateCardsResponse) ProtoMessage() {}
 
 func (x *ListRateCardsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[40]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3465,7 +3669,7 @@ func (x *ListRateCardsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRateCardsResponse.ProtoReflect.Descriptor instead.
 func (*ListRateCardsResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{40}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ListRateCardsResponse) GetRateCards() []*RateCard {
@@ -3500,7 +3704,7 @@ type SetRateCardRequest struct {
 
 func (x *SetRateCardRequest) Reset() {
 	*x = SetRateCardRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[41]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3512,7 +3716,7 @@ func (x *SetRateCardRequest) String() string {
 func (*SetRateCardRequest) ProtoMessage() {}
 
 func (x *SetRateCardRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[41]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3525,7 +3729,7 @@ func (x *SetRateCardRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetRateCardRequest.ProtoReflect.Descriptor instead.
 func (*SetRateCardRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{41}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *SetRateCardRequest) GetZoneId() string {
@@ -3649,7 +3853,7 @@ type RateCardResponse struct {
 
 func (x *RateCardResponse) Reset() {
 	*x = RateCardResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[42]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3661,7 +3865,7 @@ func (x *RateCardResponse) String() string {
 func (*RateCardResponse) ProtoMessage() {}
 
 func (x *RateCardResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[42]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3674,7 +3878,7 @@ func (x *RateCardResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RateCardResponse.ProtoReflect.Descriptor instead.
 func (*RateCardResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{42}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *RateCardResponse) GetRateCard() *RateCard {
@@ -3695,7 +3899,7 @@ type RetireRateCardRequest struct {
 
 func (x *RetireRateCardRequest) Reset() {
 	*x = RetireRateCardRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[43]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3707,7 +3911,7 @@ func (x *RetireRateCardRequest) String() string {
 func (*RetireRateCardRequest) ProtoMessage() {}
 
 func (x *RetireRateCardRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[43]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3720,7 +3924,7 @@ func (x *RetireRateCardRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RetireRateCardRequest.ProtoReflect.Descriptor instead.
 func (*RetireRateCardRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{43}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *RetireRateCardRequest) GetZoneId() string {
@@ -3752,7 +3956,7 @@ type RetireRateCardResponse struct {
 
 func (x *RetireRateCardResponse) Reset() {
 	*x = RetireRateCardResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[44]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3764,7 +3968,7 @@ func (x *RetireRateCardResponse) String() string {
 func (*RetireRateCardResponse) ProtoMessage() {}
 
 func (x *RetireRateCardResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[44]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3777,7 +3981,7 @@ func (x *RetireRateCardResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RetireRateCardResponse.ProtoReflect.Descriptor instead.
 func (*RetireRateCardResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{44}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{48}
 }
 
 type SurgeRule struct {
@@ -3803,7 +4007,7 @@ type SurgeRule struct {
 
 func (x *SurgeRule) Reset() {
 	*x = SurgeRule{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[45]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3815,7 +4019,7 @@ func (x *SurgeRule) String() string {
 func (*SurgeRule) ProtoMessage() {}
 
 func (x *SurgeRule) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[45]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3828,7 +4032,7 @@ func (x *SurgeRule) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SurgeRule.ProtoReflect.Descriptor instead.
 func (*SurgeRule) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{45}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *SurgeRule) GetId() string {
@@ -3918,7 +4122,7 @@ type ListSurgeRulesRequest struct {
 
 func (x *ListSurgeRulesRequest) Reset() {
 	*x = ListSurgeRulesRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[46]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3930,7 +4134,7 @@ func (x *ListSurgeRulesRequest) String() string {
 func (*ListSurgeRulesRequest) ProtoMessage() {}
 
 func (x *ListSurgeRulesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[46]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3943,7 +4147,7 @@ func (x *ListSurgeRulesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSurgeRulesRequest.ProtoReflect.Descriptor instead.
 func (*ListSurgeRulesRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{46}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *ListSurgeRulesRequest) GetCityId() string {
@@ -3969,7 +4173,7 @@ type ListSurgeRulesResponse struct {
 
 func (x *ListSurgeRulesResponse) Reset() {
 	*x = ListSurgeRulesResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[47]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3981,7 +4185,7 @@ func (x *ListSurgeRulesResponse) String() string {
 func (*ListSurgeRulesResponse) ProtoMessage() {}
 
 func (x *ListSurgeRulesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[47]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3994,7 +4198,7 @@ func (x *ListSurgeRulesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSurgeRulesResponse.ProtoReflect.Descriptor instead.
 func (*ListSurgeRulesResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{47}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *ListSurgeRulesResponse) GetRules() []*SurgeRule {
@@ -4019,7 +4223,7 @@ type CreateSurgeRuleRequest struct {
 
 func (x *CreateSurgeRuleRequest) Reset() {
 	*x = CreateSurgeRuleRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[48]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4031,7 +4235,7 @@ func (x *CreateSurgeRuleRequest) String() string {
 func (*CreateSurgeRuleRequest) ProtoMessage() {}
 
 func (x *CreateSurgeRuleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[48]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4044,7 +4248,7 @@ func (x *CreateSurgeRuleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSurgeRuleRequest.ProtoReflect.Descriptor instead.
 func (*CreateSurgeRuleRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{48}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *CreateSurgeRuleRequest) GetLabel() string {
@@ -4111,7 +4315,7 @@ type UpdateSurgeRuleRequest struct {
 
 func (x *UpdateSurgeRuleRequest) Reset() {
 	*x = UpdateSurgeRuleRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[49]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4123,7 +4327,7 @@ func (x *UpdateSurgeRuleRequest) String() string {
 func (*UpdateSurgeRuleRequest) ProtoMessage() {}
 
 func (x *UpdateSurgeRuleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[49]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4136,7 +4340,7 @@ func (x *UpdateSurgeRuleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSurgeRuleRequest.ProtoReflect.Descriptor instead.
 func (*UpdateSurgeRuleRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{49}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *UpdateSurgeRuleRequest) GetRuleId() string {
@@ -4191,7 +4395,7 @@ type SetSurgeRuleActiveRequest struct {
 
 func (x *SetSurgeRuleActiveRequest) Reset() {
 	*x = SetSurgeRuleActiveRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[50]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4203,7 +4407,7 @@ func (x *SetSurgeRuleActiveRequest) String() string {
 func (*SetSurgeRuleActiveRequest) ProtoMessage() {}
 
 func (x *SetSurgeRuleActiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[50]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4216,7 +4420,7 @@ func (x *SetSurgeRuleActiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetSurgeRuleActiveRequest.ProtoReflect.Descriptor instead.
 func (*SetSurgeRuleActiveRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{50}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *SetSurgeRuleActiveRequest) GetRuleId() string {
@@ -4242,7 +4446,7 @@ type SurgeRuleResponse struct {
 
 func (x *SurgeRuleResponse) Reset() {
 	*x = SurgeRuleResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[51]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4254,7 +4458,7 @@ func (x *SurgeRuleResponse) String() string {
 func (*SurgeRuleResponse) ProtoMessage() {}
 
 func (x *SurgeRuleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[51]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4267,7 +4471,7 @@ func (x *SurgeRuleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SurgeRuleResponse.ProtoReflect.Descriptor instead.
 func (*SurgeRuleResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{51}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *SurgeRuleResponse) GetRule() *SurgeRule {
@@ -4296,7 +4500,7 @@ type ZoneSurge struct {
 
 func (x *ZoneSurge) Reset() {
 	*x = ZoneSurge{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[52]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4308,7 +4512,7 @@ func (x *ZoneSurge) String() string {
 func (*ZoneSurge) ProtoMessage() {}
 
 func (x *ZoneSurge) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[52]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4321,7 +4525,7 @@ func (x *ZoneSurge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ZoneSurge.ProtoReflect.Descriptor instead.
 func (*ZoneSurge) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{52}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *ZoneSurge) GetId() string {
@@ -4399,7 +4603,7 @@ type ListZoneSurgesRequest struct {
 
 func (x *ListZoneSurgesRequest) Reset() {
 	*x = ListZoneSurgesRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[53]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4411,7 +4615,7 @@ func (x *ListZoneSurgesRequest) String() string {
 func (*ListZoneSurgesRequest) ProtoMessage() {}
 
 func (x *ListZoneSurgesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[53]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4424,7 +4628,7 @@ func (x *ListZoneSurgesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListZoneSurgesRequest.ProtoReflect.Descriptor instead.
 func (*ListZoneSurgesRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{53}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *ListZoneSurgesRequest) GetZoneId() string {
@@ -4450,7 +4654,7 @@ type ListZoneSurgesResponse struct {
 
 func (x *ListZoneSurgesResponse) Reset() {
 	*x = ListZoneSurgesResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[54]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4462,7 +4666,7 @@ func (x *ListZoneSurgesResponse) String() string {
 func (*ListZoneSurgesResponse) ProtoMessage() {}
 
 func (x *ListZoneSurgesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[54]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4475,7 +4679,7 @@ func (x *ListZoneSurgesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListZoneSurgesResponse.ProtoReflect.Descriptor instead.
 func (*ListZoneSurgesResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{54}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *ListZoneSurgesResponse) GetZoneSurges() []*ZoneSurge {
@@ -4500,7 +4704,7 @@ type CreateZoneSurgeRequest struct {
 
 func (x *CreateZoneSurgeRequest) Reset() {
 	*x = CreateZoneSurgeRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[55]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4512,7 +4716,7 @@ func (x *CreateZoneSurgeRequest) String() string {
 func (*CreateZoneSurgeRequest) ProtoMessage() {}
 
 func (x *CreateZoneSurgeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[55]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4525,7 +4729,7 @@ func (x *CreateZoneSurgeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateZoneSurgeRequest.ProtoReflect.Descriptor instead.
 func (*CreateZoneSurgeRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{55}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *CreateZoneSurgeRequest) GetZoneId() string {
@@ -4572,7 +4776,7 @@ type EndZoneSurgeRequest struct {
 
 func (x *EndZoneSurgeRequest) Reset() {
 	*x = EndZoneSurgeRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[56]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4584,7 +4788,7 @@ func (x *EndZoneSurgeRequest) String() string {
 func (*EndZoneSurgeRequest) ProtoMessage() {}
 
 func (x *EndZoneSurgeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[56]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4597,7 +4801,7 @@ func (x *EndZoneSurgeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EndZoneSurgeRequest.ProtoReflect.Descriptor instead.
 func (*EndZoneSurgeRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{56}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *EndZoneSurgeRequest) GetZoneSurgeId() string {
@@ -4616,7 +4820,7 @@ type ZoneSurgeResponse struct {
 
 func (x *ZoneSurgeResponse) Reset() {
 	*x = ZoneSurgeResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[57]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4628,7 +4832,7 @@ func (x *ZoneSurgeResponse) String() string {
 func (*ZoneSurgeResponse) ProtoMessage() {}
 
 func (x *ZoneSurgeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[57]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4641,7 +4845,7 @@ func (x *ZoneSurgeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ZoneSurgeResponse.ProtoReflect.Descriptor instead.
 func (*ZoneSurgeResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{57}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *ZoneSurgeResponse) GetZoneSurge() *ZoneSurge {
@@ -4661,7 +4865,7 @@ type GetTripFareRequest struct {
 
 func (x *GetTripFareRequest) Reset() {
 	*x = GetTripFareRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[58]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4673,7 +4877,7 @@ func (x *GetTripFareRequest) String() string {
 func (*GetTripFareRequest) ProtoMessage() {}
 
 func (x *GetTripFareRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[58]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4686,7 +4890,7 @@ func (x *GetTripFareRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTripFareRequest.ProtoReflect.Descriptor instead.
 func (*GetTripFareRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{58}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *GetTripFareRequest) GetRiderId() string {
@@ -4713,7 +4917,7 @@ type GetTripFareResponse struct {
 
 func (x *GetTripFareResponse) Reset() {
 	*x = GetTripFareResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[59]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4725,7 +4929,7 @@ func (x *GetTripFareResponse) String() string {
 func (*GetTripFareResponse) ProtoMessage() {}
 
 func (x *GetTripFareResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[59]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4738,7 +4942,7 @@ func (x *GetTripFareResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTripFareResponse.ProtoReflect.Descriptor instead.
 func (*GetTripFareResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{59}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *GetTripFareResponse) GetFare() *FareBreakdown {
@@ -4757,7 +4961,7 @@ type ListTripFaresRequest struct {
 
 func (x *ListTripFaresRequest) Reset() {
 	*x = ListTripFaresRequest{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[60]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4769,7 +4973,7 @@ func (x *ListTripFaresRequest) String() string {
 func (*ListTripFaresRequest) ProtoMessage() {}
 
 func (x *ListTripFaresRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[60]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4782,7 +4986,7 @@ func (x *ListTripFaresRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTripFaresRequest.ProtoReflect.Descriptor instead.
 func (*ListTripFaresRequest) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{60}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *ListTripFaresRequest) GetTripIds() []string {
@@ -4806,7 +5010,7 @@ type TripFareTotal struct {
 
 func (x *TripFareTotal) Reset() {
 	*x = TripFareTotal{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[61]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4818,7 +5022,7 @@ func (x *TripFareTotal) String() string {
 func (*TripFareTotal) ProtoMessage() {}
 
 func (x *TripFareTotal) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[61]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4831,7 +5035,7 @@ func (x *TripFareTotal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TripFareTotal.ProtoReflect.Descriptor instead.
 func (*TripFareTotal) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{61}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *TripFareTotal) GetTripId() string {
@@ -4871,7 +5075,7 @@ type ListTripFaresResponse struct {
 
 func (x *ListTripFaresResponse) Reset() {
 	*x = ListTripFaresResponse{}
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[62]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4883,7 +5087,7 @@ func (x *ListTripFaresResponse) String() string {
 func (*ListTripFaresResponse) ProtoMessage() {}
 
 func (x *ListTripFaresResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[62]
+	mi := &file_ride_pricing_v1_pricing_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4896,7 +5100,7 @@ func (x *ListTripFaresResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTripFaresResponse.ProtoReflect.Descriptor instead.
 func (*ListTripFaresResponse) Descriptor() ([]byte, []int) {
-	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{62}
+	return file_ride_pricing_v1_pricing_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *ListTripFaresResponse) GetFares() []*TripFareTotal {
@@ -5090,7 +5294,20 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\x0floyalty_percent\x18\x04 \x01(\tR\x0eloyaltyPercent\x12,\n" +
 	"\x12loyalty_max_amount\x18\x05 \x01(\tR\x10loyaltyMaxAmount\"[\n" +
 	"\x19PromotionSettingsResponse\x12>\n" +
-	"\bsettings\x18\x01 \x01(\v2\".ride.pricing.v1.PromotionSettingsR\bsettings\"3\n" +
+	"\bsettings\x18\x01 \x01(\v2\".ride.pricing.v1.PromotionSettingsR\bsettings\"\x1c\n" +
+	"\x1aGetDispatchSettingsRequest\"\xd1\x01\n" +
+	"\x10DispatchSettings\x12,\n" +
+	"\x12next_trips_enabled\x18\x01 \x01(\bR\x10nextTripsEnabled\x125\n" +
+	"\x17next_trip_radius_meters\x18\x02 \x01(\x05R\x14nextTripRadiusMeters\x12\x1d\n" +
+	"\n" +
+	"updated_by\x18\x03 \x01(\tR\tupdatedBy\x129\n" +
+	"\n" +
+	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x84\x01\n" +
+	"\x1dUpdateDispatchSettingsRequest\x12,\n" +
+	"\x12next_trips_enabled\x18\x01 \x01(\bR\x10nextTripsEnabled\x125\n" +
+	"\x17next_trip_radius_meters\x18\x02 \x01(\x05R\x14nextTripRadiusMeters\"Y\n" +
+	"\x18DispatchSettingsResponse\x12=\n" +
+	"\bsettings\x18\x01 \x01(\v2!.ride.pricing.v1.DispatchSettingsR\bsettings\"3\n" +
 	"\x16ListRiderOffersRequest\x12\x19\n" +
 	"\brider_id\x18\x01 \x01(\tR\ariderId\"\xdc\x03\n" +
 	"\vCouponOffer\x12\x12\n" +
@@ -5343,7 +5560,7 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\x1dCOUPON_STATUS_NEW_RIDERS_ONLY\x10\n" +
 	"\x12\x1f\n" +
 	"\x1bCOUPON_STATUS_BELOW_MINIMUM\x10\v\x12!\n" +
-	"\x1dCOUPON_STATUS_BETTER_DISCOUNT\x10\f2\xcc\x1b\n" +
+	"\x1dCOUPON_STATUS_BETTER_DISCOUNT\x10\f2\xff\x1d\n" +
 	"\x0ePricingService\x12z\n" +
 	"\fEstimateFare\x12$.ride.pricing.v1.EstimateFareRequest\x1a%.ride.pricing.v1.EstimateFareResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/fare-estimates\x12^\n" +
 	"\rCalculateFare\x12%.ride.pricing.v1.CalculateFareRequest\x1a&.ride.pricing.v1.CalculateFareResponse\x12n\n" +
@@ -5367,7 +5584,9 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\fUpdateCoupon\x12$.ride.pricing.v1.UpdateCouponRequest\x1a%.ride.pricing.v1.CreateCouponResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*2\x18/v1/admin/coupons/{code}\x12\xa4\x01\n" +
 	"\x15ListCouponRedemptions\x12-.ride.pricing.v1.ListCouponRedemptionsRequest\x1a..ride.pricing.v1.ListCouponRedemptionsResponse\",\x82\xd3\xe4\x93\x02&\x12$/v1/admin/coupons/{code}/redemptions\x12\x96\x01\n" +
 	"\x14GetPromotionSettings\x12,.ride.pricing.v1.GetPromotionSettingsRequest\x1a*.ride.pricing.v1.PromotionSettingsResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/v1/admin/promotion-settings\x12\x9f\x01\n" +
-	"\x17UpdatePromotionSettings\x12/.ride.pricing.v1.UpdatePromotionSettingsRequest\x1a*.ride.pricing.v1.PromotionSettingsResponse\"'\x82\xd3\xe4\x93\x02!:\x01*\x1a\x1c/v1/admin/promotion-settings\x12\x8a\x01\n" +
+	"\x17UpdatePromotionSettings\x12/.ride.pricing.v1.UpdatePromotionSettingsRequest\x1a*.ride.pricing.v1.PromotionSettingsResponse\"'\x82\xd3\xe4\x93\x02!:\x01*\x1a\x1c/v1/admin/promotion-settings\x12\x92\x01\n" +
+	"\x13GetDispatchSettings\x12+.ride.pricing.v1.GetDispatchSettingsRequest\x1a).ride.pricing.v1.DispatchSettingsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/admin/dispatch-settings\x12\x9b\x01\n" +
+	"\x16UpdateDispatchSettings\x12..ride.pricing.v1.UpdateDispatchSettingsRequest\x1a).ride.pricing.v1.DispatchSettingsResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\x1a\x1b/v1/admin/dispatch-settings\x12\x8a\x01\n" +
 	"\x0fListRiderOffers\x12'.ride.pricing.v1.ListRiderOffersRequest\x1a(.ride.pricing.v1.ListRiderOffersResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/v1/riders/{rider_id}/offers\x12\x96\x01\n" +
 	"\x10CheckRiderCoupon\x12(.ride.pricing.v1.CheckRiderCouponRequest\x1a).ride.pricing.v1.CheckRiderCouponResponse\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/v1/riders/{rider_id}/offers:check\x12\x8c\x01\n" +
 	"\vGetTripFare\x12#.ride.pricing.v1.GetTripFareRequest\x1a$.ride.pricing.v1.GetTripFareResponse\"2\x82\xd3\xe4\x93\x02,\x12*/v1/riders/{rider_id}/trips/{trip_id}/fare\x12\x90\x01\n" +
@@ -5387,7 +5606,7 @@ func file_ride_pricing_v1_pricing_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_pricing_v1_pricing_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_ride_pricing_v1_pricing_proto_msgTypes = make([]protoimpl.MessageInfo, 63)
+var file_ride_pricing_v1_pricing_proto_msgTypes = make([]protoimpl.MessageInfo, 67)
 var file_ride_pricing_v1_pricing_proto_goTypes = []any{
 	(DiscountType)(0),                      // 0: ride.pricing.v1.DiscountType
 	(CouponStatus)(0),                      // 1: ride.pricing.v1.CouponStatus
@@ -5413,48 +5632,52 @@ var file_ride_pricing_v1_pricing_proto_goTypes = []any{
 	(*PromotionSettings)(nil),              // 21: ride.pricing.v1.PromotionSettings
 	(*UpdatePromotionSettingsRequest)(nil), // 22: ride.pricing.v1.UpdatePromotionSettingsRequest
 	(*PromotionSettingsResponse)(nil),      // 23: ride.pricing.v1.PromotionSettingsResponse
-	(*ListRiderOffersRequest)(nil),         // 24: ride.pricing.v1.ListRiderOffersRequest
-	(*CouponOffer)(nil),                    // 25: ride.pricing.v1.CouponOffer
-	(*AutomaticOffer)(nil),                 // 26: ride.pricing.v1.AutomaticOffer
-	(*LoyaltyOffer)(nil),                   // 27: ride.pricing.v1.LoyaltyOffer
-	(*ListRiderOffersResponse)(nil),        // 28: ride.pricing.v1.ListRiderOffersResponse
-	(*CheckRiderCouponRequest)(nil),        // 29: ride.pricing.v1.CheckRiderCouponRequest
-	(*CheckRiderCouponResponse)(nil),       // 30: ride.pricing.v1.CheckRiderCouponResponse
-	(*QuoteTripRequest)(nil),               // 31: ride.pricing.v1.QuoteTripRequest
-	(*TripQuote)(nil),                      // 32: ride.pricing.v1.TripQuote
-	(*QuoteTripResponse)(nil),              // 33: ride.pricing.v1.QuoteTripResponse
-	(*ClaimQuoteRequest)(nil),              // 34: ride.pricing.v1.ClaimQuoteRequest
-	(*ClaimQuoteResponse)(nil),             // 35: ride.pricing.v1.ClaimQuoteResponse
-	(*ReleaseQuoteRequest)(nil),            // 36: ride.pricing.v1.ReleaseQuoteRequest
-	(*ReleaseQuoteResponse)(nil),           // 37: ride.pricing.v1.ReleaseQuoteResponse
-	(*GetTripTermsRequest)(nil),            // 38: ride.pricing.v1.GetTripTermsRequest
-	(*GetTripTermsResponse)(nil),           // 39: ride.pricing.v1.GetTripTermsResponse
-	(*RateCard)(nil),                       // 40: ride.pricing.v1.RateCard
-	(*ListRateCardsRequest)(nil),           // 41: ride.pricing.v1.ListRateCardsRequest
-	(*ListRateCardsResponse)(nil),          // 42: ride.pricing.v1.ListRateCardsResponse
-	(*SetRateCardRequest)(nil),             // 43: ride.pricing.v1.SetRateCardRequest
-	(*RateCardResponse)(nil),               // 44: ride.pricing.v1.RateCardResponse
-	(*RetireRateCardRequest)(nil),          // 45: ride.pricing.v1.RetireRateCardRequest
-	(*RetireRateCardResponse)(nil),         // 46: ride.pricing.v1.RetireRateCardResponse
-	(*SurgeRule)(nil),                      // 47: ride.pricing.v1.SurgeRule
-	(*ListSurgeRulesRequest)(nil),          // 48: ride.pricing.v1.ListSurgeRulesRequest
-	(*ListSurgeRulesResponse)(nil),         // 49: ride.pricing.v1.ListSurgeRulesResponse
-	(*CreateSurgeRuleRequest)(nil),         // 50: ride.pricing.v1.CreateSurgeRuleRequest
-	(*UpdateSurgeRuleRequest)(nil),         // 51: ride.pricing.v1.UpdateSurgeRuleRequest
-	(*SetSurgeRuleActiveRequest)(nil),      // 52: ride.pricing.v1.SetSurgeRuleActiveRequest
-	(*SurgeRuleResponse)(nil),              // 53: ride.pricing.v1.SurgeRuleResponse
-	(*ZoneSurge)(nil),                      // 54: ride.pricing.v1.ZoneSurge
-	(*ListZoneSurgesRequest)(nil),          // 55: ride.pricing.v1.ListZoneSurgesRequest
-	(*ListZoneSurgesResponse)(nil),         // 56: ride.pricing.v1.ListZoneSurgesResponse
-	(*CreateZoneSurgeRequest)(nil),         // 57: ride.pricing.v1.CreateZoneSurgeRequest
-	(*EndZoneSurgeRequest)(nil),            // 58: ride.pricing.v1.EndZoneSurgeRequest
-	(*ZoneSurgeResponse)(nil),              // 59: ride.pricing.v1.ZoneSurgeResponse
-	(*GetTripFareRequest)(nil),             // 60: ride.pricing.v1.GetTripFareRequest
-	(*GetTripFareResponse)(nil),            // 61: ride.pricing.v1.GetTripFareResponse
-	(*ListTripFaresRequest)(nil),           // 62: ride.pricing.v1.ListTripFaresRequest
-	(*TripFareTotal)(nil),                  // 63: ride.pricing.v1.TripFareTotal
-	(*ListTripFaresResponse)(nil),          // 64: ride.pricing.v1.ListTripFaresResponse
-	(*timestamppb.Timestamp)(nil),          // 65: google.protobuf.Timestamp
+	(*GetDispatchSettingsRequest)(nil),     // 24: ride.pricing.v1.GetDispatchSettingsRequest
+	(*DispatchSettings)(nil),               // 25: ride.pricing.v1.DispatchSettings
+	(*UpdateDispatchSettingsRequest)(nil),  // 26: ride.pricing.v1.UpdateDispatchSettingsRequest
+	(*DispatchSettingsResponse)(nil),       // 27: ride.pricing.v1.DispatchSettingsResponse
+	(*ListRiderOffersRequest)(nil),         // 28: ride.pricing.v1.ListRiderOffersRequest
+	(*CouponOffer)(nil),                    // 29: ride.pricing.v1.CouponOffer
+	(*AutomaticOffer)(nil),                 // 30: ride.pricing.v1.AutomaticOffer
+	(*LoyaltyOffer)(nil),                   // 31: ride.pricing.v1.LoyaltyOffer
+	(*ListRiderOffersResponse)(nil),        // 32: ride.pricing.v1.ListRiderOffersResponse
+	(*CheckRiderCouponRequest)(nil),        // 33: ride.pricing.v1.CheckRiderCouponRequest
+	(*CheckRiderCouponResponse)(nil),       // 34: ride.pricing.v1.CheckRiderCouponResponse
+	(*QuoteTripRequest)(nil),               // 35: ride.pricing.v1.QuoteTripRequest
+	(*TripQuote)(nil),                      // 36: ride.pricing.v1.TripQuote
+	(*QuoteTripResponse)(nil),              // 37: ride.pricing.v1.QuoteTripResponse
+	(*ClaimQuoteRequest)(nil),              // 38: ride.pricing.v1.ClaimQuoteRequest
+	(*ClaimQuoteResponse)(nil),             // 39: ride.pricing.v1.ClaimQuoteResponse
+	(*ReleaseQuoteRequest)(nil),            // 40: ride.pricing.v1.ReleaseQuoteRequest
+	(*ReleaseQuoteResponse)(nil),           // 41: ride.pricing.v1.ReleaseQuoteResponse
+	(*GetTripTermsRequest)(nil),            // 42: ride.pricing.v1.GetTripTermsRequest
+	(*GetTripTermsResponse)(nil),           // 43: ride.pricing.v1.GetTripTermsResponse
+	(*RateCard)(nil),                       // 44: ride.pricing.v1.RateCard
+	(*ListRateCardsRequest)(nil),           // 45: ride.pricing.v1.ListRateCardsRequest
+	(*ListRateCardsResponse)(nil),          // 46: ride.pricing.v1.ListRateCardsResponse
+	(*SetRateCardRequest)(nil),             // 47: ride.pricing.v1.SetRateCardRequest
+	(*RateCardResponse)(nil),               // 48: ride.pricing.v1.RateCardResponse
+	(*RetireRateCardRequest)(nil),          // 49: ride.pricing.v1.RetireRateCardRequest
+	(*RetireRateCardResponse)(nil),         // 50: ride.pricing.v1.RetireRateCardResponse
+	(*SurgeRule)(nil),                      // 51: ride.pricing.v1.SurgeRule
+	(*ListSurgeRulesRequest)(nil),          // 52: ride.pricing.v1.ListSurgeRulesRequest
+	(*ListSurgeRulesResponse)(nil),         // 53: ride.pricing.v1.ListSurgeRulesResponse
+	(*CreateSurgeRuleRequest)(nil),         // 54: ride.pricing.v1.CreateSurgeRuleRequest
+	(*UpdateSurgeRuleRequest)(nil),         // 55: ride.pricing.v1.UpdateSurgeRuleRequest
+	(*SetSurgeRuleActiveRequest)(nil),      // 56: ride.pricing.v1.SetSurgeRuleActiveRequest
+	(*SurgeRuleResponse)(nil),              // 57: ride.pricing.v1.SurgeRuleResponse
+	(*ZoneSurge)(nil),                      // 58: ride.pricing.v1.ZoneSurge
+	(*ListZoneSurgesRequest)(nil),          // 59: ride.pricing.v1.ListZoneSurgesRequest
+	(*ListZoneSurgesResponse)(nil),         // 60: ride.pricing.v1.ListZoneSurgesResponse
+	(*CreateZoneSurgeRequest)(nil),         // 61: ride.pricing.v1.CreateZoneSurgeRequest
+	(*EndZoneSurgeRequest)(nil),            // 62: ride.pricing.v1.EndZoneSurgeRequest
+	(*ZoneSurgeResponse)(nil),              // 63: ride.pricing.v1.ZoneSurgeResponse
+	(*GetTripFareRequest)(nil),             // 64: ride.pricing.v1.GetTripFareRequest
+	(*GetTripFareResponse)(nil),            // 65: ride.pricing.v1.GetTripFareResponse
+	(*ListTripFaresRequest)(nil),           // 66: ride.pricing.v1.ListTripFaresRequest
+	(*TripFareTotal)(nil),                  // 67: ride.pricing.v1.TripFareTotal
+	(*ListTripFaresResponse)(nil),          // 68: ride.pricing.v1.ListTripFaresResponse
+	(*timestamppb.Timestamp)(nil),          // 69: google.protobuf.Timestamp
 }
 var file_ride_pricing_v1_pricing_proto_depIdxs = []int32{
 	3,  // 0: ride.pricing.v1.FareBreakdown.surge:type_name -> ride.pricing.v1.SurgeBreakdown
@@ -5469,115 +5692,121 @@ var file_ride_pricing_v1_pricing_proto_depIdxs = []int32{
 	2,  // 9: ride.pricing.v1.CalculateFareRequest.stops:type_name -> ride.pricing.v1.Coordinates
 	4,  // 10: ride.pricing.v1.CalculateFareResponse.fare:type_name -> ride.pricing.v1.FareBreakdown
 	0,  // 11: ride.pricing.v1.CreateCouponRequest.discount_type:type_name -> ride.pricing.v1.DiscountType
-	65, // 12: ride.pricing.v1.CreateCouponRequest.valid_from:type_name -> google.protobuf.Timestamp
-	65, // 13: ride.pricing.v1.CreateCouponRequest.valid_until:type_name -> google.protobuf.Timestamp
+	69, // 12: ride.pricing.v1.CreateCouponRequest.valid_from:type_name -> google.protobuf.Timestamp
+	69, // 13: ride.pricing.v1.CreateCouponRequest.valid_until:type_name -> google.protobuf.Timestamp
 	0,  // 14: ride.pricing.v1.Coupon.discount_type:type_name -> ride.pricing.v1.DiscountType
-	65, // 15: ride.pricing.v1.Coupon.valid_from:type_name -> google.protobuf.Timestamp
-	65, // 16: ride.pricing.v1.Coupon.valid_until:type_name -> google.protobuf.Timestamp
-	65, // 17: ride.pricing.v1.Coupon.created_at:type_name -> google.protobuf.Timestamp
-	65, // 18: ride.pricing.v1.Coupon.updated_at:type_name -> google.protobuf.Timestamp
+	69, // 15: ride.pricing.v1.Coupon.valid_from:type_name -> google.protobuf.Timestamp
+	69, // 16: ride.pricing.v1.Coupon.valid_until:type_name -> google.protobuf.Timestamp
+	69, // 17: ride.pricing.v1.Coupon.created_at:type_name -> google.protobuf.Timestamp
+	69, // 18: ride.pricing.v1.Coupon.updated_at:type_name -> google.protobuf.Timestamp
 	10, // 19: ride.pricing.v1.CreateCouponResponse.coupon:type_name -> ride.pricing.v1.Coupon
 	10, // 20: ride.pricing.v1.GetCouponResponse.coupon:type_name -> ride.pricing.v1.Coupon
 	10, // 21: ride.pricing.v1.ListCouponsResponse.coupons:type_name -> ride.pricing.v1.Coupon
-	65, // 22: ride.pricing.v1.UpdateCouponRequest.valid_until:type_name -> google.protobuf.Timestamp
-	65, // 23: ride.pricing.v1.CouponRedemption.created_at:type_name -> google.protobuf.Timestamp
-	65, // 24: ride.pricing.v1.CouponRedemption.released_at:type_name -> google.protobuf.Timestamp
+	69, // 22: ride.pricing.v1.UpdateCouponRequest.valid_until:type_name -> google.protobuf.Timestamp
+	69, // 23: ride.pricing.v1.CouponRedemption.created_at:type_name -> google.protobuf.Timestamp
+	69, // 24: ride.pricing.v1.CouponRedemption.released_at:type_name -> google.protobuf.Timestamp
 	18, // 25: ride.pricing.v1.ListCouponRedemptionsResponse.redemptions:type_name -> ride.pricing.v1.CouponRedemption
-	65, // 26: ride.pricing.v1.PromotionSettings.updated_at:type_name -> google.protobuf.Timestamp
+	69, // 26: ride.pricing.v1.PromotionSettings.updated_at:type_name -> google.protobuf.Timestamp
 	21, // 27: ride.pricing.v1.PromotionSettingsResponse.settings:type_name -> ride.pricing.v1.PromotionSettings
-	0,  // 28: ride.pricing.v1.CouponOffer.discount_type:type_name -> ride.pricing.v1.DiscountType
-	65, // 29: ride.pricing.v1.CouponOffer.valid_until:type_name -> google.protobuf.Timestamp
-	25, // 30: ride.pricing.v1.ListRiderOffersResponse.coupons:type_name -> ride.pricing.v1.CouponOffer
-	26, // 31: ride.pricing.v1.ListRiderOffersResponse.first_ride:type_name -> ride.pricing.v1.AutomaticOffer
-	27, // 32: ride.pricing.v1.ListRiderOffersResponse.loyalty:type_name -> ride.pricing.v1.LoyaltyOffer
-	1,  // 33: ride.pricing.v1.CheckRiderCouponResponse.status:type_name -> ride.pricing.v1.CouponStatus
-	25, // 34: ride.pricing.v1.CheckRiderCouponResponse.coupon:type_name -> ride.pricing.v1.CouponOffer
-	2,  // 35: ride.pricing.v1.QuoteTripRequest.pickup:type_name -> ride.pricing.v1.Coordinates
-	2,  // 36: ride.pricing.v1.QuoteTripRequest.dropoff:type_name -> ride.pricing.v1.Coordinates
-	2,  // 37: ride.pricing.v1.QuoteTripRequest.stops:type_name -> ride.pricing.v1.Coordinates
-	4,  // 38: ride.pricing.v1.TripQuote.fare:type_name -> ride.pricing.v1.FareBreakdown
-	65, // 39: ride.pricing.v1.TripQuote.expires_at:type_name -> google.protobuf.Timestamp
-	32, // 40: ride.pricing.v1.QuoteTripResponse.quotes:type_name -> ride.pricing.v1.TripQuote
-	2,  // 41: ride.pricing.v1.ClaimQuoteResponse.pickup:type_name -> ride.pricing.v1.Coordinates
-	2,  // 42: ride.pricing.v1.ClaimQuoteResponse.dropoff:type_name -> ride.pricing.v1.Coordinates
-	2,  // 43: ride.pricing.v1.ClaimQuoteResponse.stops:type_name -> ride.pricing.v1.Coordinates
-	65, // 44: ride.pricing.v1.GetTripTermsResponse.cancellation_fee_from:type_name -> google.protobuf.Timestamp
-	65, // 45: ride.pricing.v1.GetTripTermsResponse.no_show_from:type_name -> google.protobuf.Timestamp
-	65, // 46: ride.pricing.v1.RateCard.created_at:type_name -> google.protobuf.Timestamp
-	40, // 47: ride.pricing.v1.ListRateCardsResponse.rate_cards:type_name -> ride.pricing.v1.RateCard
-	40, // 48: ride.pricing.v1.RateCardResponse.rate_card:type_name -> ride.pricing.v1.RateCard
-	65, // 49: ride.pricing.v1.SurgeRule.created_at:type_name -> google.protobuf.Timestamp
-	65, // 50: ride.pricing.v1.SurgeRule.updated_at:type_name -> google.protobuf.Timestamp
-	47, // 51: ride.pricing.v1.ListSurgeRulesResponse.rules:type_name -> ride.pricing.v1.SurgeRule
-	47, // 52: ride.pricing.v1.SurgeRuleResponse.rule:type_name -> ride.pricing.v1.SurgeRule
-	65, // 53: ride.pricing.v1.ZoneSurge.starts_at:type_name -> google.protobuf.Timestamp
-	65, // 54: ride.pricing.v1.ZoneSurge.ends_at:type_name -> google.protobuf.Timestamp
-	65, // 55: ride.pricing.v1.ZoneSurge.ended_at:type_name -> google.protobuf.Timestamp
-	65, // 56: ride.pricing.v1.ZoneSurge.created_at:type_name -> google.protobuf.Timestamp
-	54, // 57: ride.pricing.v1.ListZoneSurgesResponse.zone_surges:type_name -> ride.pricing.v1.ZoneSurge
-	65, // 58: ride.pricing.v1.CreateZoneSurgeRequest.starts_at:type_name -> google.protobuf.Timestamp
-	54, // 59: ride.pricing.v1.ZoneSurgeResponse.zone_surge:type_name -> ride.pricing.v1.ZoneSurge
-	4,  // 60: ride.pricing.v1.GetTripFareResponse.fare:type_name -> ride.pricing.v1.FareBreakdown
-	63, // 61: ride.pricing.v1.ListTripFaresResponse.fares:type_name -> ride.pricing.v1.TripFareTotal
-	5,  // 62: ride.pricing.v1.PricingService.EstimateFare:input_type -> ride.pricing.v1.EstimateFareRequest
-	7,  // 63: ride.pricing.v1.PricingService.CalculateFare:input_type -> ride.pricing.v1.CalculateFareRequest
-	31, // 64: ride.pricing.v1.PricingService.QuoteTrip:input_type -> ride.pricing.v1.QuoteTripRequest
-	34, // 65: ride.pricing.v1.PricingService.ClaimQuote:input_type -> ride.pricing.v1.ClaimQuoteRequest
-	36, // 66: ride.pricing.v1.PricingService.ReleaseQuote:input_type -> ride.pricing.v1.ReleaseQuoteRequest
-	41, // 67: ride.pricing.v1.PricingService.ListRateCards:input_type -> ride.pricing.v1.ListRateCardsRequest
-	43, // 68: ride.pricing.v1.PricingService.SetRateCard:input_type -> ride.pricing.v1.SetRateCardRequest
-	45, // 69: ride.pricing.v1.PricingService.RetireRateCard:input_type -> ride.pricing.v1.RetireRateCardRequest
-	48, // 70: ride.pricing.v1.PricingService.ListSurgeRules:input_type -> ride.pricing.v1.ListSurgeRulesRequest
-	50, // 71: ride.pricing.v1.PricingService.CreateSurgeRule:input_type -> ride.pricing.v1.CreateSurgeRuleRequest
-	51, // 72: ride.pricing.v1.PricingService.UpdateSurgeRule:input_type -> ride.pricing.v1.UpdateSurgeRuleRequest
-	52, // 73: ride.pricing.v1.PricingService.SetSurgeRuleActive:input_type -> ride.pricing.v1.SetSurgeRuleActiveRequest
-	55, // 74: ride.pricing.v1.PricingService.ListZoneSurges:input_type -> ride.pricing.v1.ListZoneSurgesRequest
-	57, // 75: ride.pricing.v1.PricingService.CreateZoneSurge:input_type -> ride.pricing.v1.CreateZoneSurgeRequest
-	58, // 76: ride.pricing.v1.PricingService.EndZoneSurge:input_type -> ride.pricing.v1.EndZoneSurgeRequest
-	14, // 77: ride.pricing.v1.PricingService.ListCoupons:input_type -> ride.pricing.v1.ListCouponsRequest
-	9,  // 78: ride.pricing.v1.PricingService.CreateCoupon:input_type -> ride.pricing.v1.CreateCouponRequest
-	12, // 79: ride.pricing.v1.PricingService.GetCoupon:input_type -> ride.pricing.v1.GetCouponRequest
-	16, // 80: ride.pricing.v1.PricingService.UpdateCoupon:input_type -> ride.pricing.v1.UpdateCouponRequest
-	17, // 81: ride.pricing.v1.PricingService.ListCouponRedemptions:input_type -> ride.pricing.v1.ListCouponRedemptionsRequest
-	20, // 82: ride.pricing.v1.PricingService.GetPromotionSettings:input_type -> ride.pricing.v1.GetPromotionSettingsRequest
-	22, // 83: ride.pricing.v1.PricingService.UpdatePromotionSettings:input_type -> ride.pricing.v1.UpdatePromotionSettingsRequest
-	24, // 84: ride.pricing.v1.PricingService.ListRiderOffers:input_type -> ride.pricing.v1.ListRiderOffersRequest
-	29, // 85: ride.pricing.v1.PricingService.CheckRiderCoupon:input_type -> ride.pricing.v1.CheckRiderCouponRequest
-	60, // 86: ride.pricing.v1.PricingService.GetTripFare:input_type -> ride.pricing.v1.GetTripFareRequest
-	38, // 87: ride.pricing.v1.PricingService.GetTripTerms:input_type -> ride.pricing.v1.GetTripTermsRequest
-	62, // 88: ride.pricing.v1.PricingService.ListTripFares:input_type -> ride.pricing.v1.ListTripFaresRequest
-	6,  // 89: ride.pricing.v1.PricingService.EstimateFare:output_type -> ride.pricing.v1.EstimateFareResponse
-	8,  // 90: ride.pricing.v1.PricingService.CalculateFare:output_type -> ride.pricing.v1.CalculateFareResponse
-	33, // 91: ride.pricing.v1.PricingService.QuoteTrip:output_type -> ride.pricing.v1.QuoteTripResponse
-	35, // 92: ride.pricing.v1.PricingService.ClaimQuote:output_type -> ride.pricing.v1.ClaimQuoteResponse
-	37, // 93: ride.pricing.v1.PricingService.ReleaseQuote:output_type -> ride.pricing.v1.ReleaseQuoteResponse
-	42, // 94: ride.pricing.v1.PricingService.ListRateCards:output_type -> ride.pricing.v1.ListRateCardsResponse
-	44, // 95: ride.pricing.v1.PricingService.SetRateCard:output_type -> ride.pricing.v1.RateCardResponse
-	46, // 96: ride.pricing.v1.PricingService.RetireRateCard:output_type -> ride.pricing.v1.RetireRateCardResponse
-	49, // 97: ride.pricing.v1.PricingService.ListSurgeRules:output_type -> ride.pricing.v1.ListSurgeRulesResponse
-	53, // 98: ride.pricing.v1.PricingService.CreateSurgeRule:output_type -> ride.pricing.v1.SurgeRuleResponse
-	53, // 99: ride.pricing.v1.PricingService.UpdateSurgeRule:output_type -> ride.pricing.v1.SurgeRuleResponse
-	53, // 100: ride.pricing.v1.PricingService.SetSurgeRuleActive:output_type -> ride.pricing.v1.SurgeRuleResponse
-	56, // 101: ride.pricing.v1.PricingService.ListZoneSurges:output_type -> ride.pricing.v1.ListZoneSurgesResponse
-	59, // 102: ride.pricing.v1.PricingService.CreateZoneSurge:output_type -> ride.pricing.v1.ZoneSurgeResponse
-	59, // 103: ride.pricing.v1.PricingService.EndZoneSurge:output_type -> ride.pricing.v1.ZoneSurgeResponse
-	15, // 104: ride.pricing.v1.PricingService.ListCoupons:output_type -> ride.pricing.v1.ListCouponsResponse
-	11, // 105: ride.pricing.v1.PricingService.CreateCoupon:output_type -> ride.pricing.v1.CreateCouponResponse
-	13, // 106: ride.pricing.v1.PricingService.GetCoupon:output_type -> ride.pricing.v1.GetCouponResponse
-	11, // 107: ride.pricing.v1.PricingService.UpdateCoupon:output_type -> ride.pricing.v1.CreateCouponResponse
-	19, // 108: ride.pricing.v1.PricingService.ListCouponRedemptions:output_type -> ride.pricing.v1.ListCouponRedemptionsResponse
-	23, // 109: ride.pricing.v1.PricingService.GetPromotionSettings:output_type -> ride.pricing.v1.PromotionSettingsResponse
-	23, // 110: ride.pricing.v1.PricingService.UpdatePromotionSettings:output_type -> ride.pricing.v1.PromotionSettingsResponse
-	28, // 111: ride.pricing.v1.PricingService.ListRiderOffers:output_type -> ride.pricing.v1.ListRiderOffersResponse
-	30, // 112: ride.pricing.v1.PricingService.CheckRiderCoupon:output_type -> ride.pricing.v1.CheckRiderCouponResponse
-	61, // 113: ride.pricing.v1.PricingService.GetTripFare:output_type -> ride.pricing.v1.GetTripFareResponse
-	39, // 114: ride.pricing.v1.PricingService.GetTripTerms:output_type -> ride.pricing.v1.GetTripTermsResponse
-	64, // 115: ride.pricing.v1.PricingService.ListTripFares:output_type -> ride.pricing.v1.ListTripFaresResponse
-	89, // [89:116] is the sub-list for method output_type
-	62, // [62:89] is the sub-list for method input_type
-	62, // [62:62] is the sub-list for extension type_name
-	62, // [62:62] is the sub-list for extension extendee
-	0,  // [0:62] is the sub-list for field type_name
+	69, // 28: ride.pricing.v1.DispatchSettings.updated_at:type_name -> google.protobuf.Timestamp
+	25, // 29: ride.pricing.v1.DispatchSettingsResponse.settings:type_name -> ride.pricing.v1.DispatchSettings
+	0,  // 30: ride.pricing.v1.CouponOffer.discount_type:type_name -> ride.pricing.v1.DiscountType
+	69, // 31: ride.pricing.v1.CouponOffer.valid_until:type_name -> google.protobuf.Timestamp
+	29, // 32: ride.pricing.v1.ListRiderOffersResponse.coupons:type_name -> ride.pricing.v1.CouponOffer
+	30, // 33: ride.pricing.v1.ListRiderOffersResponse.first_ride:type_name -> ride.pricing.v1.AutomaticOffer
+	31, // 34: ride.pricing.v1.ListRiderOffersResponse.loyalty:type_name -> ride.pricing.v1.LoyaltyOffer
+	1,  // 35: ride.pricing.v1.CheckRiderCouponResponse.status:type_name -> ride.pricing.v1.CouponStatus
+	29, // 36: ride.pricing.v1.CheckRiderCouponResponse.coupon:type_name -> ride.pricing.v1.CouponOffer
+	2,  // 37: ride.pricing.v1.QuoteTripRequest.pickup:type_name -> ride.pricing.v1.Coordinates
+	2,  // 38: ride.pricing.v1.QuoteTripRequest.dropoff:type_name -> ride.pricing.v1.Coordinates
+	2,  // 39: ride.pricing.v1.QuoteTripRequest.stops:type_name -> ride.pricing.v1.Coordinates
+	4,  // 40: ride.pricing.v1.TripQuote.fare:type_name -> ride.pricing.v1.FareBreakdown
+	69, // 41: ride.pricing.v1.TripQuote.expires_at:type_name -> google.protobuf.Timestamp
+	36, // 42: ride.pricing.v1.QuoteTripResponse.quotes:type_name -> ride.pricing.v1.TripQuote
+	2,  // 43: ride.pricing.v1.ClaimQuoteResponse.pickup:type_name -> ride.pricing.v1.Coordinates
+	2,  // 44: ride.pricing.v1.ClaimQuoteResponse.dropoff:type_name -> ride.pricing.v1.Coordinates
+	2,  // 45: ride.pricing.v1.ClaimQuoteResponse.stops:type_name -> ride.pricing.v1.Coordinates
+	69, // 46: ride.pricing.v1.GetTripTermsResponse.cancellation_fee_from:type_name -> google.protobuf.Timestamp
+	69, // 47: ride.pricing.v1.GetTripTermsResponse.no_show_from:type_name -> google.protobuf.Timestamp
+	69, // 48: ride.pricing.v1.RateCard.created_at:type_name -> google.protobuf.Timestamp
+	44, // 49: ride.pricing.v1.ListRateCardsResponse.rate_cards:type_name -> ride.pricing.v1.RateCard
+	44, // 50: ride.pricing.v1.RateCardResponse.rate_card:type_name -> ride.pricing.v1.RateCard
+	69, // 51: ride.pricing.v1.SurgeRule.created_at:type_name -> google.protobuf.Timestamp
+	69, // 52: ride.pricing.v1.SurgeRule.updated_at:type_name -> google.protobuf.Timestamp
+	51, // 53: ride.pricing.v1.ListSurgeRulesResponse.rules:type_name -> ride.pricing.v1.SurgeRule
+	51, // 54: ride.pricing.v1.SurgeRuleResponse.rule:type_name -> ride.pricing.v1.SurgeRule
+	69, // 55: ride.pricing.v1.ZoneSurge.starts_at:type_name -> google.protobuf.Timestamp
+	69, // 56: ride.pricing.v1.ZoneSurge.ends_at:type_name -> google.protobuf.Timestamp
+	69, // 57: ride.pricing.v1.ZoneSurge.ended_at:type_name -> google.protobuf.Timestamp
+	69, // 58: ride.pricing.v1.ZoneSurge.created_at:type_name -> google.protobuf.Timestamp
+	58, // 59: ride.pricing.v1.ListZoneSurgesResponse.zone_surges:type_name -> ride.pricing.v1.ZoneSurge
+	69, // 60: ride.pricing.v1.CreateZoneSurgeRequest.starts_at:type_name -> google.protobuf.Timestamp
+	58, // 61: ride.pricing.v1.ZoneSurgeResponse.zone_surge:type_name -> ride.pricing.v1.ZoneSurge
+	4,  // 62: ride.pricing.v1.GetTripFareResponse.fare:type_name -> ride.pricing.v1.FareBreakdown
+	67, // 63: ride.pricing.v1.ListTripFaresResponse.fares:type_name -> ride.pricing.v1.TripFareTotal
+	5,  // 64: ride.pricing.v1.PricingService.EstimateFare:input_type -> ride.pricing.v1.EstimateFareRequest
+	7,  // 65: ride.pricing.v1.PricingService.CalculateFare:input_type -> ride.pricing.v1.CalculateFareRequest
+	35, // 66: ride.pricing.v1.PricingService.QuoteTrip:input_type -> ride.pricing.v1.QuoteTripRequest
+	38, // 67: ride.pricing.v1.PricingService.ClaimQuote:input_type -> ride.pricing.v1.ClaimQuoteRequest
+	40, // 68: ride.pricing.v1.PricingService.ReleaseQuote:input_type -> ride.pricing.v1.ReleaseQuoteRequest
+	45, // 69: ride.pricing.v1.PricingService.ListRateCards:input_type -> ride.pricing.v1.ListRateCardsRequest
+	47, // 70: ride.pricing.v1.PricingService.SetRateCard:input_type -> ride.pricing.v1.SetRateCardRequest
+	49, // 71: ride.pricing.v1.PricingService.RetireRateCard:input_type -> ride.pricing.v1.RetireRateCardRequest
+	52, // 72: ride.pricing.v1.PricingService.ListSurgeRules:input_type -> ride.pricing.v1.ListSurgeRulesRequest
+	54, // 73: ride.pricing.v1.PricingService.CreateSurgeRule:input_type -> ride.pricing.v1.CreateSurgeRuleRequest
+	55, // 74: ride.pricing.v1.PricingService.UpdateSurgeRule:input_type -> ride.pricing.v1.UpdateSurgeRuleRequest
+	56, // 75: ride.pricing.v1.PricingService.SetSurgeRuleActive:input_type -> ride.pricing.v1.SetSurgeRuleActiveRequest
+	59, // 76: ride.pricing.v1.PricingService.ListZoneSurges:input_type -> ride.pricing.v1.ListZoneSurgesRequest
+	61, // 77: ride.pricing.v1.PricingService.CreateZoneSurge:input_type -> ride.pricing.v1.CreateZoneSurgeRequest
+	62, // 78: ride.pricing.v1.PricingService.EndZoneSurge:input_type -> ride.pricing.v1.EndZoneSurgeRequest
+	14, // 79: ride.pricing.v1.PricingService.ListCoupons:input_type -> ride.pricing.v1.ListCouponsRequest
+	9,  // 80: ride.pricing.v1.PricingService.CreateCoupon:input_type -> ride.pricing.v1.CreateCouponRequest
+	12, // 81: ride.pricing.v1.PricingService.GetCoupon:input_type -> ride.pricing.v1.GetCouponRequest
+	16, // 82: ride.pricing.v1.PricingService.UpdateCoupon:input_type -> ride.pricing.v1.UpdateCouponRequest
+	17, // 83: ride.pricing.v1.PricingService.ListCouponRedemptions:input_type -> ride.pricing.v1.ListCouponRedemptionsRequest
+	20, // 84: ride.pricing.v1.PricingService.GetPromotionSettings:input_type -> ride.pricing.v1.GetPromotionSettingsRequest
+	22, // 85: ride.pricing.v1.PricingService.UpdatePromotionSettings:input_type -> ride.pricing.v1.UpdatePromotionSettingsRequest
+	24, // 86: ride.pricing.v1.PricingService.GetDispatchSettings:input_type -> ride.pricing.v1.GetDispatchSettingsRequest
+	26, // 87: ride.pricing.v1.PricingService.UpdateDispatchSettings:input_type -> ride.pricing.v1.UpdateDispatchSettingsRequest
+	28, // 88: ride.pricing.v1.PricingService.ListRiderOffers:input_type -> ride.pricing.v1.ListRiderOffersRequest
+	33, // 89: ride.pricing.v1.PricingService.CheckRiderCoupon:input_type -> ride.pricing.v1.CheckRiderCouponRequest
+	64, // 90: ride.pricing.v1.PricingService.GetTripFare:input_type -> ride.pricing.v1.GetTripFareRequest
+	42, // 91: ride.pricing.v1.PricingService.GetTripTerms:input_type -> ride.pricing.v1.GetTripTermsRequest
+	66, // 92: ride.pricing.v1.PricingService.ListTripFares:input_type -> ride.pricing.v1.ListTripFaresRequest
+	6,  // 93: ride.pricing.v1.PricingService.EstimateFare:output_type -> ride.pricing.v1.EstimateFareResponse
+	8,  // 94: ride.pricing.v1.PricingService.CalculateFare:output_type -> ride.pricing.v1.CalculateFareResponse
+	37, // 95: ride.pricing.v1.PricingService.QuoteTrip:output_type -> ride.pricing.v1.QuoteTripResponse
+	39, // 96: ride.pricing.v1.PricingService.ClaimQuote:output_type -> ride.pricing.v1.ClaimQuoteResponse
+	41, // 97: ride.pricing.v1.PricingService.ReleaseQuote:output_type -> ride.pricing.v1.ReleaseQuoteResponse
+	46, // 98: ride.pricing.v1.PricingService.ListRateCards:output_type -> ride.pricing.v1.ListRateCardsResponse
+	48, // 99: ride.pricing.v1.PricingService.SetRateCard:output_type -> ride.pricing.v1.RateCardResponse
+	50, // 100: ride.pricing.v1.PricingService.RetireRateCard:output_type -> ride.pricing.v1.RetireRateCardResponse
+	53, // 101: ride.pricing.v1.PricingService.ListSurgeRules:output_type -> ride.pricing.v1.ListSurgeRulesResponse
+	57, // 102: ride.pricing.v1.PricingService.CreateSurgeRule:output_type -> ride.pricing.v1.SurgeRuleResponse
+	57, // 103: ride.pricing.v1.PricingService.UpdateSurgeRule:output_type -> ride.pricing.v1.SurgeRuleResponse
+	57, // 104: ride.pricing.v1.PricingService.SetSurgeRuleActive:output_type -> ride.pricing.v1.SurgeRuleResponse
+	60, // 105: ride.pricing.v1.PricingService.ListZoneSurges:output_type -> ride.pricing.v1.ListZoneSurgesResponse
+	63, // 106: ride.pricing.v1.PricingService.CreateZoneSurge:output_type -> ride.pricing.v1.ZoneSurgeResponse
+	63, // 107: ride.pricing.v1.PricingService.EndZoneSurge:output_type -> ride.pricing.v1.ZoneSurgeResponse
+	15, // 108: ride.pricing.v1.PricingService.ListCoupons:output_type -> ride.pricing.v1.ListCouponsResponse
+	11, // 109: ride.pricing.v1.PricingService.CreateCoupon:output_type -> ride.pricing.v1.CreateCouponResponse
+	13, // 110: ride.pricing.v1.PricingService.GetCoupon:output_type -> ride.pricing.v1.GetCouponResponse
+	11, // 111: ride.pricing.v1.PricingService.UpdateCoupon:output_type -> ride.pricing.v1.CreateCouponResponse
+	19, // 112: ride.pricing.v1.PricingService.ListCouponRedemptions:output_type -> ride.pricing.v1.ListCouponRedemptionsResponse
+	23, // 113: ride.pricing.v1.PricingService.GetPromotionSettings:output_type -> ride.pricing.v1.PromotionSettingsResponse
+	23, // 114: ride.pricing.v1.PricingService.UpdatePromotionSettings:output_type -> ride.pricing.v1.PromotionSettingsResponse
+	27, // 115: ride.pricing.v1.PricingService.GetDispatchSettings:output_type -> ride.pricing.v1.DispatchSettingsResponse
+	27, // 116: ride.pricing.v1.PricingService.UpdateDispatchSettings:output_type -> ride.pricing.v1.DispatchSettingsResponse
+	32, // 117: ride.pricing.v1.PricingService.ListRiderOffers:output_type -> ride.pricing.v1.ListRiderOffersResponse
+	34, // 118: ride.pricing.v1.PricingService.CheckRiderCoupon:output_type -> ride.pricing.v1.CheckRiderCouponResponse
+	65, // 119: ride.pricing.v1.PricingService.GetTripFare:output_type -> ride.pricing.v1.GetTripFareResponse
+	43, // 120: ride.pricing.v1.PricingService.GetTripTerms:output_type -> ride.pricing.v1.GetTripTermsResponse
+	68, // 121: ride.pricing.v1.PricingService.ListTripFares:output_type -> ride.pricing.v1.ListTripFaresResponse
+	93, // [93:122] is the sub-list for method output_type
+	64, // [64:93] is the sub-list for method input_type
+	64, // [64:64] is the sub-list for extension type_name
+	64, // [64:64] is the sub-list for extension extendee
+	0,  // [0:64] is the sub-list for field type_name
 }
 
 func init() { file_ride_pricing_v1_pricing_proto_init() }
@@ -5586,16 +5815,16 @@ func file_ride_pricing_v1_pricing_proto_init() {
 		return
 	}
 	file_ride_pricing_v1_pricing_proto_msgTypes[14].OneofWrappers = []any{}
-	file_ride_pricing_v1_pricing_proto_msgTypes[45].OneofWrappers = []any{}
-	file_ride_pricing_v1_pricing_proto_msgTypes[48].OneofWrappers = []any{}
 	file_ride_pricing_v1_pricing_proto_msgTypes[49].OneofWrappers = []any{}
+	file_ride_pricing_v1_pricing_proto_msgTypes[52].OneofWrappers = []any{}
+	file_ride_pricing_v1_pricing_proto_msgTypes[53].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_pricing_v1_pricing_proto_rawDesc), len(file_ride_pricing_v1_pricing_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   63,
+			NumMessages:   67,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
