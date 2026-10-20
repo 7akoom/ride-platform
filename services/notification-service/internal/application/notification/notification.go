@@ -93,8 +93,11 @@ type Notification struct {
 	Body          string
 	Locale        string
 	Data          map[string]string
-	Read          bool
-	CreatedAt     time.Time
+	// What the template was filled with; nil for notifications stored before
+	// they were kept (those cannot be written again in another language).
+	Variables map[string]string
+	Read      bool
+	CreatedAt time.Time
 }
 
 type Delivery struct {

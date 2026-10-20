@@ -114,6 +114,8 @@ func (s *service) List(
 		nextPageToken = encodePageToken(PageCursor{CreatedAt: last.CreatedAt, ID: last.ID})
 	}
 
+	notifications = s.inLocale(ctx, notifications, input.Locale)
+
 	// Returned alongside the list so a client can render a badge count
 	// without a second call — the common case for an inbox screen.
 	unreadCount, err := s.repository.UnreadCount(ctx, input.RecipientType, recipientID)
@@ -200,4 +202,43 @@ func (s *service) UpsertTemplate(
 	}
 
 	return count, nil
+}
+
+// inLocale writes each notification again in locale, from its template and the
+// values it was filled with, so the inbox follows the reader's language when they
+// change it. A notification keeps its stored text when its values were not kept
+// (older ones), or its template has no translation in that language.
+func (s *service) inLocale(ctx context.Context, notifications []Notification, locale string) []Notification {
+	locale = strings.TrimSpace(locale)
+	if locale == "" {
+		return notifications
+	}
+
+	translations := map[string]*TemplateTranslation{}
+
+	for i, found := range notifications {
+		if found.Variables == nil || found.Locale == locale {
+			continue
+		}
+
+		translation, asked := translations[found.EventKey]
+		if !asked {
+			loaded, err := s.repository.FindTranslation(ctx, found.EventKey, []string{locale})
+			if err == nil && loaded.Locale == locale {
+				translation = &loaded
+			}
+
+			translations[found.EventKey] = translation
+		}
+
+		if translation == nil {
+			continue
+		}
+
+		notifications[i].Title = Render(translation.Title, found.Variables)
+		notifications[i].Body = Render(translation.Body, found.Variables)
+		notifications[i].Locale = locale
+	}
+
+	return notifications
 }

@@ -15,6 +15,7 @@ type PersistInput struct {
 	Body           string
 	Locale         string
 	Data           map[string]string
+	Variables      map[string]string
 	IdempotencyKey string
 	Deliveries     []Delivery
 }
@@ -40,6 +41,9 @@ type ListInput struct {
 	UnreadOnly    bool
 	// PageToken continues a previous page (its NextPageToken).
 	PageToken string
+	// Locale is the language the reader wants ("ar"); each notification is
+	// written again in it when its template has it. Empty: as stored.
+	Locale string
 	// Before is the decoded PageToken the repository pages from: notifications
 	// older than it, newest first. Nil for the first page.
 	Before *PageCursor

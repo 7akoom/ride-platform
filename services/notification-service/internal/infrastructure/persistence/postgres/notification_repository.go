@@ -346,6 +346,16 @@ func (r *NotificationRepository) Persist(
 		return notification.Notification{}, fmt.Errorf("marshal notification data: %w", err)
 	}
 
+	variables := input.Variables
+	if variables == nil {
+		variables = map[string]string{}
+	}
+
+	variablesJSON, err := json.Marshal(variables)
+	if err != nil {
+		return notification.Notification{}, fmt.Errorf("marshal notification variables: %w", err)
+	}
+
 	var idempotencyKey *string
 
 	if input.IdempotencyKey != "" {
@@ -356,11 +366,11 @@ func (r *NotificationRepository) Persist(
 		ctx,
 		`INSERT INTO notifications
 		    (id, recipient_type, recipient_id, event_key, title, body, locale,
-		     data, idempotency_key)
+		     data, idempotency_key, variables)
 		 VALUES (COALESCE(NULLIF($9, '')::uuid, gen_random_uuid()),
-		         $1, $2, $3, $4, $5, $6, $7, $8)
+		         $1, $2, $3, $4, $5, $6, $7, $8, $10)
 		 RETURNING id, recipient_type, recipient_id, event_key, title, body,
-		           locale, data, (read_at IS NOT NULL), created_at`,
+		           locale, data, variables, (read_at IS NOT NULL), created_at`,
 		string(input.RecipientType),
 		input.RecipientID,
 		input.EventKey,
@@ -370,6 +380,7 @@ func (r *NotificationRepository) Persist(
 		dataJSON,
 		idempotencyKey,
 		input.ID,
+		variablesJSON,
 	)
 
 	persisted, err := scanNotification(row)
@@ -497,7 +508,7 @@ func (r *NotificationRepository) MarkAsRead(
 }
 
 const notificationSelectSQL = `SELECT id, recipient_type, recipient_id, event_key,
-                                      title, body, locale, data,
+                                      title, body, locale, data, variables,
                                       (read_at IS NOT NULL), created_at
                                FROM notifications`
 
@@ -508,7 +519,7 @@ type scannable interface {
 func scanNotification(row scannable) (notification.Notification, error) {
 	var found notification.Notification
 	var recipientType string
-	var dataJSON []byte
+	var dataJSON, variablesJSON []byte
 
 	err := row.Scan(
 		&found.ID,
@@ -519,6 +530,7 @@ func scanNotification(row scannable) (notification.Notification, error) {
 		&found.Body,
 		&found.Locale,
 		&dataJSON,
+		&variablesJSON,
 		&found.Read,
 		&found.CreatedAt,
 	)
@@ -531,6 +543,15 @@ func scanNotification(row scannable) (notification.Notification, error) {
 	if len(dataJSON) > 0 {
 		if err := json.Unmarshal(dataJSON, &found.Data); err != nil {
 			return notification.Notification{}, fmt.Errorf("unmarshal notification data: %w", err)
+		}
+	}
+
+	// NULL (a notification from before the values were kept) stays nil.
+	if variablesJSON != nil {
+		found.Variables = map[string]string{}
+
+		if err := json.Unmarshal(variablesJSON, &found.Variables); err != nil {
+			return notification.Notification{}, fmt.Errorf("unmarshal notification variables: %w", err)
 		}
 	}
 

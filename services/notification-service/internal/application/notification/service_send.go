@@ -89,6 +89,7 @@ func (s *service) Send(
 		Body:           body,
 		Locale:         translation.Locale,
 		Data:           input.Data,
+		Variables:      input.Variables,
 		IdempotencyKey: idempotencyKey,
 		Deliveries:     deliveries,
 	})

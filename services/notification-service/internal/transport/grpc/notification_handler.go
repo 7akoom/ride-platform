@@ -120,6 +120,7 @@ func (h *NotificationHandler) ListNotifications(
 		Limit:         int(request.GetLimit()),
 		UnreadOnly:    request.GetUnreadOnly(),
 		PageToken:     request.GetPageToken(),
+		Locale:        readerLocale(ctx),
 	})
 	if err != nil {
 		return nil, h.mapNotificationError(err)
