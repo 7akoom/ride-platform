@@ -81,11 +81,26 @@ func (h *IdentityHandler) RequestLoginOTP(
 		sourceIPAddress = source.IPAddress
 	}
 
+	operation := ""
+
+	switch request.GetReason() {
+	case identityv1.OTPRequestReason_OTP_REQUEST_REASON_UNSPECIFIED,
+		identityv1.OTPRequestReason_OTP_REQUEST_REASON_SIGN_IN:
+	case identityv1.OTPRequestReason_OTP_REQUEST_REASON_CONFIRM_IDENTITY:
+		operation = auth.OTPOperationConfirmIdentity
+	default:
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"invalid OTP request reason",
+		)
+	}
+
 	result, err := h.authService.RequestOTP(
 		ctx,
 		auth.RequestOTPInput{
 			Identifier:      identifier,
 			Purpose:         auth.OTPPurposeLogin,
+			Operation:       operation,
 			TenantHint:      request.GetTenantHint(),
 			Channel:         deliveryChannel,
 			Locale:          requestLocaleFromIncomingContext(ctx),

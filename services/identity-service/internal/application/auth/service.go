@@ -6,8 +6,12 @@ import (
 )
 
 type RequestOTPInput struct {
-	Identifier       Identifier
-	Purpose          OTPPurpose
+	Identifier Identifier
+	Purpose    OTPPurpose
+	// Operation names what the code is for when one purpose serves several (a
+	// login code to sign in, or to confirm a signed-in person); each operation has
+	// its own cooldown. Empty: the purpose.
+	Operation        string
 	TargetIdentityID *string
 	TenantHint       string
 	Channel          OTPDeliveryChannel

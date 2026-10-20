@@ -121,6 +121,18 @@ message RequestLoginOTPRequest {
   Identifier identifier = 1;
   string tenant_hint = 2;
   OTPDeliveryChannel delivery_channel = 3;
+  // Why the code is asked for. Each reason has its own wait between two codes
+  // (OTP_REQUEST_COOLDOWN), while every code to a number counts towards the same
+  // limit (OTP_REQUEST_MAX_REQUESTS per OTP_REQUEST_WINDOW).
+  OTPRequestReason reason = 4;
+}
+
+enum OTPRequestReason {
+  // Signing in.
+  OTP_REQUEST_REASON_UNSPECIFIED = 0;
+  OTP_REQUEST_REASON_SIGN_IN = 1;
+  // A signed-in person proving it is them again (resetting the wallet PIN).
+  OTP_REQUEST_REASON_CONFIRM_IDENTITY = 2;
 }
 
 message RequestLoginOTPResponse {

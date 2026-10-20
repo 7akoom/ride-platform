@@ -236,8 +236,11 @@ type OTPRequestRateLimitPolicy struct {
 }
 
 type OTPRequestScope struct {
-	Identifier       Identifier
-	Purpose          OTPPurpose
+	Identifier Identifier
+	Purpose    OTPPurpose
+	// Operation is what the cooldown is kept per (empty: the purpose). The window
+	// limit counts every code to the identifier, whatever it is for.
+	Operation        string
 	TargetIdentityID *string
 	SourceIPAddress  string
 }

@@ -1032,3 +1032,89 @@ func TestOTPRequestRateLimiterCanonicalizesIPv4MappedIPv6Source(
 		)
 	}
 }
+
+func TestOTPRequestRateLimiterKeepsTheCooldownPerOperationAndTheWindowPerNumber(
+	t *testing.T,
+) {
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		t.Fatal("DATABASE_URL is required for integration test")
+	}
+
+	ctx := context.Background()
+
+	pool, err := database.NewPostgresPool(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("connect to PostgreSQL: %v", err)
+	}
+
+	t.Cleanup(pool.Close)
+
+	const phoneNumber = "+9647500000031"
+
+	clean := func(ctx context.Context) error {
+		_, err := pool.Exec(ctx, `
+			DELETE FROM otp_request_events
+			WHERE identifier_type = 'phone'
+			AND normalized_value = $1
+		`, phoneNumber)
+
+		return err
+	}
+
+	if err := clean(ctx); err != nil {
+		t.Fatalf("clean existing OTP request events: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if err := clean(context.Background()); err != nil {
+			t.Errorf("clean OTP request events: %v", err)
+		}
+	})
+
+	rateLimiter := NewOTPRequestRateLimiter(pool)
+	policy := auth.OTPRequestRateLimitPolicy{
+		Cooldown:    time.Minute,
+		Window:      15 * time.Minute,
+		MaxRequests: 5,
+	}
+	start := time.Date(2026, time.October, 20, 8, 0, 0, 0, time.UTC)
+
+	ask := func(operation string, at time.Time) error {
+		return rateLimiter.Allow(ctx, auth.OTPRequestScope{
+			Identifier: auth.Identifier{Type: auth.IdentifierTypePhone, Value: phoneNumber},
+			Purpose:    auth.OTPPurposeLogin,
+			Operation:  operation,
+		}, at, policy)
+	}
+
+	// Signing in, then confirming who one is ten seconds later: two operations.
+	if err := ask("", start); err != nil {
+		t.Fatalf("sign-in code: %v", err)
+	}
+
+	if err := ask(auth.OTPOperationConfirmIdentity, start.Add(10*time.Second)); err != nil {
+		t.Fatalf("confirm-identity code right after signing in: %v", err)
+	}
+
+	// The same operation again inside its cooldown is refused.
+	if err := ask(auth.OTPOperationConfirmIdentity, start.Add(20*time.Second)); !errors.Is(err, auth.ErrOTPRequestRateLimited) {
+		t.Fatalf("second confirm-identity code inside the cooldown returned %v", err)
+	}
+
+	// Three more after their cooldowns make five in the window, whatever they were for.
+	for i, at := range []time.Duration{2 * time.Minute, 4 * time.Minute, 6 * time.Minute} {
+		operation := ""
+		if i%2 == 1 {
+			operation = auth.OTPOperationConfirmIdentity
+		}
+
+		if err := ask(operation, start.Add(at)); err != nil {
+			t.Fatalf("code %d: %v", i+3, err)
+		}
+	}
+
+	if err := ask(auth.OTPOperationConfirmIdentity, start.Add(8*time.Minute)); !errors.Is(err, auth.ErrOTPRequestRateLimited) {
+		t.Fatalf("sixth code in the window returned %v", err)
+	}
+}

@@ -15625,6 +15625,16 @@
       ],
       "default": "OTP_DELIVERY_CHANNEL_UNSPECIFIED"
     },
+    "v1OTPRequestReason": {
+      "type": "string",
+      "enum": [
+        "OTP_REQUEST_REASON_UNSPECIFIED",
+        "OTP_REQUEST_REASON_SIGN_IN",
+        "OTP_REQUEST_REASON_CONFIRM_IDENTITY"
+      ],
+      "default": "OTP_REQUEST_REASON_UNSPECIFIED",
+      "description": " - OTP_REQUEST_REASON_UNSPECIFIED: Signing in.\n - OTP_REQUEST_REASON_CONFIRM_IDENTITY: A signed-in person proving it is them again (resetting the wallet PIN)."
+    },
     "v1OfferDay": {
       "type": "object",
       "properties": {
@@ -16331,6 +16341,10 @@
         },
         "deliveryChannel": {
           "$ref": "#/definitions/v1OTPDeliveryChannel"
+        },
+        "reason": {
+          "$ref": "#/definitions/v1OTPRequestReason",
+          "description": "Why the code is asked for. Each reason has its own wait between two codes\n(OTP_REQUEST_COOLDOWN), while every code to a number counts towards the same\nlimit (OTP_REQUEST_MAX_REQUESTS per OTP_REQUEST_WINDOW)."
         }
       }
     },

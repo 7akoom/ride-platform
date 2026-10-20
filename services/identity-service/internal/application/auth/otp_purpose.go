@@ -15,6 +15,11 @@ const (
 	OTPPurposeDeleteAccount OTPPurpose = "delete_account"
 )
 
+// OTPOperationConfirmIdentity is a login code asked for by a signed-in person to
+// prove it is them again (resetting the wallet PIN): it has its own cooldown, apart
+// from signing in, and counts towards the same per-identifier window.
+const OTPOperationConfirmIdentity = "login:confirm_identity"
+
 var ErrInvalidOTPPurpose = errors.New(
 	"invalid OTP purpose",
 )

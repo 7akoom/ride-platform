@@ -64,6 +64,7 @@ func (s *service) RequestOTP(
 		OTPRequestScope{
 			Identifier:       identifier,
 			Purpose:          purpose,
+			Operation:        strings.TrimSpace(input.Operation),
 			TargetIdentityID: targetIdentityID,
 			SourceIPAddress: strings.TrimSpace(
 				input.SourceIPAddress,

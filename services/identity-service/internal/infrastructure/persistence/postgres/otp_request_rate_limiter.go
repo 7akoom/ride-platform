@@ -123,6 +123,13 @@ func (r *OTPRequestRateLimiter) Allow(
 
 	now = now.UTC()
 
+	// The cooldown is kept per operation (what the code is for); the window counts
+	// every code to the identifier.
+	operation := strings.TrimSpace(scope.Operation)
+	if operation == "" {
+		operation = string(scope.Purpose)
+	}
+
 	var targetIdentityID any
 
 	if scope.TargetIdentityID != nil {
@@ -135,12 +142,11 @@ func (r *OTPRequestRateLimiter) Allow(
 		sourceIPAddressValue = sourceIPAddress
 	}
 
+	// One lock per identifier: the window is shared by everything sent to it.
 	identifierLockKey := fmt.Sprintf(
-		"otp:identifier:%s:%s:%s:%v",
+		"otp:identifier:%s:%s",
 		scope.Identifier.Type,
 		scope.Identifier.Value,
-		scope.Purpose,
-		targetIdentityID,
 	)
 
 	tx, err := r.pool.BeginTx(
@@ -193,12 +199,13 @@ func (r *OTPRequestRateLimiter) Allow(
 		}
 	}
 
+	// Rows from before operations were kept count as their purpose.
 	latestRequestQuery := `
 		SELECT requested_at
 		FROM otp_request_events
 		WHERE identifier_type = $1
 		AND normalized_value = $2
-		AND purpose = $3
+		AND COALESCE(operation, purpose) = $3
 		AND target_identity_id IS NULL
 		ORDER BY requested_at DESC
 		LIMIT 1
@@ -207,7 +214,7 @@ func (r *OTPRequestRateLimiter) Allow(
 	latestRequestArgs := []any{
 		string(scope.Identifier.Type),
 		scope.Identifier.Value,
-		string(scope.Purpose),
+		operation,
 	}
 
 	if scope.TargetIdentityID != nil {
@@ -216,7 +223,7 @@ func (r *OTPRequestRateLimiter) Allow(
 			FROM otp_request_events
 			WHERE identifier_type = $1
 			AND normalized_value = $2
-			AND purpose = $3
+			AND COALESCE(operation, purpose) = $3
 			AND target_identity_id = $4::uuid
 			ORDER BY requested_at DESC
 			LIMIT 1
@@ -262,41 +269,18 @@ func (r *OTPRequestRateLimiter) Allow(
 		-policy.Window,
 	)
 
-	countQuery := `
+	const countQuery = `
 		SELECT COUNT(*)
 		FROM otp_request_events
 		WHERE identifier_type = $1
 		AND normalized_value = $2
-		AND purpose = $3
-		AND target_identity_id IS NULL
-		AND requested_at >= $4
+		AND requested_at >= $3
 	`
 
 	countQueryArgs := []any{
 		string(scope.Identifier.Type),
 		scope.Identifier.Value,
-		string(scope.Purpose),
 		windowStartedAt,
-	}
-
-	if scope.TargetIdentityID != nil {
-		countQuery = `
-			SELECT COUNT(*)
-			FROM otp_request_events
-			WHERE identifier_type = $1
-			AND normalized_value = $2
-			AND purpose = $3
-			AND target_identity_id = $4::uuid
-			AND requested_at >= $5
-		`
-
-		countQueryArgs = []any{
-			string(scope.Identifier.Type),
-			scope.Identifier.Value,
-			string(scope.Purpose),
-			*scope.TargetIdentityID,
-			windowStartedAt,
-		}
 	}
 
 	var requestCount int
@@ -358,7 +342,8 @@ func (r *OTPRequestRateLimiter) Allow(
 			purpose,
 			target_identity_id,
 			source_ip_address,
-			requested_at
+			requested_at,
+			operation
 		)
 		VALUES (
 			$1,
@@ -366,7 +351,8 @@ func (r *OTPRequestRateLimiter) Allow(
 			$3,
 			$4,
 			$5,
-			$6
+			$6,
+			$7
 		)
 	`
 
@@ -379,6 +365,7 @@ func (r *OTPRequestRateLimiter) Allow(
 		targetIdentityID,
 		sourceIPAddressValue,
 		now,
+		operation,
 	); err != nil {
 		return fmt.Errorf(
 			"record allowed OTP request: %w",

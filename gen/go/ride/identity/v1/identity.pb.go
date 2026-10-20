@@ -179,6 +179,57 @@ func (IdentityStatus) EnumDescriptor() ([]byte, []int) {
 	return file_ride_identity_v1_identity_proto_rawDescGZIP(), []int{2}
 }
 
+type OTPRequestReason int32
+
+const (
+	// Signing in.
+	OTPRequestReason_OTP_REQUEST_REASON_UNSPECIFIED OTPRequestReason = 0
+	OTPRequestReason_OTP_REQUEST_REASON_SIGN_IN     OTPRequestReason = 1
+	// A signed-in person proving it is them again (resetting the wallet PIN).
+	OTPRequestReason_OTP_REQUEST_REASON_CONFIRM_IDENTITY OTPRequestReason = 2
+)
+
+// Enum value maps for OTPRequestReason.
+var (
+	OTPRequestReason_name = map[int32]string{
+		0: "OTP_REQUEST_REASON_UNSPECIFIED",
+		1: "OTP_REQUEST_REASON_SIGN_IN",
+		2: "OTP_REQUEST_REASON_CONFIRM_IDENTITY",
+	}
+	OTPRequestReason_value = map[string]int32{
+		"OTP_REQUEST_REASON_UNSPECIFIED":      0,
+		"OTP_REQUEST_REASON_SIGN_IN":          1,
+		"OTP_REQUEST_REASON_CONFIRM_IDENTITY": 2,
+	}
+)
+
+func (x OTPRequestReason) Enum() *OTPRequestReason {
+	p := new(OTPRequestReason)
+	*p = x
+	return p
+}
+
+func (x OTPRequestReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OTPRequestReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_ride_identity_v1_identity_proto_enumTypes[3].Descriptor()
+}
+
+func (OTPRequestReason) Type() protoreflect.EnumType {
+	return &file_ride_identity_v1_identity_proto_enumTypes[3]
+}
+
+func (x OTPRequestReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OTPRequestReason.Descriptor instead.
+func (OTPRequestReason) EnumDescriptor() ([]byte, []int) {
+	return file_ride_identity_v1_identity_proto_rawDescGZIP(), []int{3}
+}
+
 type Identifier struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          IdentifierType         `protobuf:"varint,1,opt,name=type,proto3,enum=ride.identity.v1.IdentifierType" json:"type,omitempty"`
@@ -236,8 +287,12 @@ type RequestLoginOTPRequest struct {
 	Identifier      *Identifier            `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
 	TenantHint      string                 `protobuf:"bytes,2,opt,name=tenant_hint,json=tenantHint,proto3" json:"tenant_hint,omitempty"`
 	DeliveryChannel OTPDeliveryChannel     `protobuf:"varint,3,opt,name=delivery_channel,json=deliveryChannel,proto3,enum=ride.identity.v1.OTPDeliveryChannel" json:"delivery_channel,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Why the code is asked for. Each reason has its own wait between two codes
+	// (OTP_REQUEST_COOLDOWN), while every code to a number counts towards the same
+	// limit (OTP_REQUEST_MAX_REQUESTS per OTP_REQUEST_WINDOW).
+	Reason        OTPRequestReason `protobuf:"varint,4,opt,name=reason,proto3,enum=ride.identity.v1.OTPRequestReason" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RequestLoginOTPRequest) Reset() {
@@ -289,6 +344,13 @@ func (x *RequestLoginOTPRequest) GetDeliveryChannel() OTPDeliveryChannel {
 		return x.DeliveryChannel
 	}
 	return OTPDeliveryChannel_OTP_DELIVERY_CHANNEL_UNSPECIFIED
+}
+
+func (x *RequestLoginOTPRequest) GetReason() OTPRequestReason {
+	if x != nil {
+		return x.Reason
+	}
+	return OTPRequestReason_OTP_REQUEST_REASON_UNSPECIFIED
 }
 
 type RequestLoginOTPResponse struct {
@@ -1615,14 +1677,15 @@ const file_ride_identity_v1_identity_proto_rawDesc = "" +
 	"\n" +
 	"Identifier\x124\n" +
 	"\x04type\x18\x01 \x01(\x0e2 .ride.identity.v1.IdentifierTypeR\x04type\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\"\xc8\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"\x84\x02\n" +
 	"\x16RequestLoginOTPRequest\x12<\n" +
 	"\n" +
 	"identifier\x18\x01 \x01(\v2\x1c.ride.identity.v1.IdentifierR\n" +
 	"identifier\x12\x1f\n" +
 	"\vtenant_hint\x18\x02 \x01(\tR\n" +
 	"tenantHint\x12O\n" +
-	"\x10delivery_channel\x18\x03 \x01(\x0e2$.ride.identity.v1.OTPDeliveryChannelR\x0fdeliveryChannel\"j\n" +
+	"\x10delivery_channel\x18\x03 \x01(\x0e2$.ride.identity.v1.OTPDeliveryChannelR\x0fdeliveryChannel\x12:\n" +
+	"\x06reason\x18\x04 \x01(\x0e2\".ride.identity.v1.OTPRequestReasonR\x06reason\"j\n" +
 	"\x17RequestLoginOTPResponse\x12!\n" +
 	"\fchallenge_id\x18\x01 \x01(\tR\vchallengeId\x12,\n" +
 	"\x12expires_in_seconds\x18\x02 \x01(\x05R\x10expiresInSeconds\"\xe6\x01\n" +
@@ -1744,7 +1807,11 @@ const file_ride_identity_v1_identity_proto_rawDesc = "" +
 	"\x1bIDENTITY_STATUS_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16IDENTITY_STATUS_ACTIVE\x10\x01\x12\x1d\n" +
 	"\x19IDENTITY_STATUS_SUSPENDED\x10\x02\x12\x1c\n" +
-	"\x18IDENTITY_STATUS_DISABLED\x10\x032\xc7\r\n" +
+	"\x18IDENTITY_STATUS_DISABLED\x10\x03*\x7f\n" +
+	"\x10OTPRequestReason\x12\"\n" +
+	"\x1eOTP_REQUEST_REASON_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aOTP_REQUEST_REASON_SIGN_IN\x10\x01\x12'\n" +
+	"#OTP_REQUEST_REASON_CONFIRM_IDENTITY\x10\x022\xc7\r\n" +
 	"\x0fIdentityService\x12\x87\x01\n" +
 	"\x0fRequestLoginOTP\x12(.ride.identity.v1.RequestLoginOTPRequest\x1a).ride.identity.v1.RequestLoginOTPResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/v1/auth/otp:request\x12\x83\x01\n" +
 	"\x0eVerifyLoginOTP\x12'.ride.identity.v1.VerifyLoginOTPRequest\x1a(.ride.identity.v1.VerifyLoginOTPResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/auth/otp:verify\x12\xa9\x01\n" +
@@ -1771,86 +1838,88 @@ func file_ride_identity_v1_identity_proto_rawDescGZIP() []byte {
 	return file_ride_identity_v1_identity_proto_rawDescData
 }
 
-var file_ride_identity_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_ride_identity_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_ride_identity_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_ride_identity_v1_identity_proto_goTypes = []any{
 	(IdentifierType)(0),                        // 0: ride.identity.v1.IdentifierType
 	(OTPDeliveryChannel)(0),                    // 1: ride.identity.v1.OTPDeliveryChannel
 	(IdentityStatus)(0),                        // 2: ride.identity.v1.IdentityStatus
-	(*Identifier)(nil),                         // 3: ride.identity.v1.Identifier
-	(*RequestLoginOTPRequest)(nil),             // 4: ride.identity.v1.RequestLoginOTPRequest
-	(*RequestLoginOTPResponse)(nil),            // 5: ride.identity.v1.RequestLoginOTPResponse
-	(*VerifyLoginOTPRequest)(nil),              // 6: ride.identity.v1.VerifyLoginOTPRequest
-	(*VerifyLoginOTPResponse)(nil),             // 7: ride.identity.v1.VerifyLoginOTPResponse
-	(*RequestIdentifierLinkOTPRequest)(nil),    // 8: ride.identity.v1.RequestIdentifierLinkOTPRequest
-	(*RequestIdentifierLinkOTPResponse)(nil),   // 9: ride.identity.v1.RequestIdentifierLinkOTPResponse
-	(*VerifyIdentifierLinkOTPRequest)(nil),     // 10: ride.identity.v1.VerifyIdentifierLinkOTPRequest
-	(*VerifyIdentifierLinkOTPResponse)(nil),    // 11: ride.identity.v1.VerifyIdentifierLinkOTPResponse
-	(*RequestIdentifierUnlinkOTPRequest)(nil),  // 12: ride.identity.v1.RequestIdentifierUnlinkOTPRequest
-	(*RequestIdentifierUnlinkOTPResponse)(nil), // 13: ride.identity.v1.RequestIdentifierUnlinkOTPResponse
-	(*VerifyIdentifierUnlinkOTPRequest)(nil),   // 14: ride.identity.v1.VerifyIdentifierUnlinkOTPRequest
-	(*VerifyIdentifierUnlinkOTPResponse)(nil),  // 15: ride.identity.v1.VerifyIdentifierUnlinkOTPResponse
-	(*GetMyIdentityRequest)(nil),               // 16: ride.identity.v1.GetMyIdentityRequest
-	(*VerifiedIdentifier)(nil),                 // 17: ride.identity.v1.VerifiedIdentifier
-	(*GetMyIdentityResponse)(nil),              // 18: ride.identity.v1.GetMyIdentityResponse
-	(*ListMySessionsRequest)(nil),              // 19: ride.identity.v1.ListMySessionsRequest
-	(*Session)(nil),                            // 20: ride.identity.v1.Session
-	(*ListMySessionsResponse)(nil),             // 21: ride.identity.v1.ListMySessionsResponse
-	(*RevokeSessionRequest)(nil),               // 22: ride.identity.v1.RevokeSessionRequest
-	(*RevokeSessionResponse)(nil),              // 23: ride.identity.v1.RevokeSessionResponse
-	(*RefreshTokenRequest)(nil),                // 24: ride.identity.v1.RefreshTokenRequest
-	(*RefreshTokenResponse)(nil),               // 25: ride.identity.v1.RefreshTokenResponse
-	(*LogoutRequest)(nil),                      // 26: ride.identity.v1.LogoutRequest
-	(*LogoutResponse)(nil),                     // 27: ride.identity.v1.LogoutResponse
-	(*LogoutAllSessionsRequest)(nil),           // 28: ride.identity.v1.LogoutAllSessionsRequest
-	(*LogoutAllSessionsResponse)(nil),          // 29: ride.identity.v1.LogoutAllSessionsResponse
-	(*timestamppb.Timestamp)(nil),              // 30: google.protobuf.Timestamp
+	(OTPRequestReason)(0),                      // 3: ride.identity.v1.OTPRequestReason
+	(*Identifier)(nil),                         // 4: ride.identity.v1.Identifier
+	(*RequestLoginOTPRequest)(nil),             // 5: ride.identity.v1.RequestLoginOTPRequest
+	(*RequestLoginOTPResponse)(nil),            // 6: ride.identity.v1.RequestLoginOTPResponse
+	(*VerifyLoginOTPRequest)(nil),              // 7: ride.identity.v1.VerifyLoginOTPRequest
+	(*VerifyLoginOTPResponse)(nil),             // 8: ride.identity.v1.VerifyLoginOTPResponse
+	(*RequestIdentifierLinkOTPRequest)(nil),    // 9: ride.identity.v1.RequestIdentifierLinkOTPRequest
+	(*RequestIdentifierLinkOTPResponse)(nil),   // 10: ride.identity.v1.RequestIdentifierLinkOTPResponse
+	(*VerifyIdentifierLinkOTPRequest)(nil),     // 11: ride.identity.v1.VerifyIdentifierLinkOTPRequest
+	(*VerifyIdentifierLinkOTPResponse)(nil),    // 12: ride.identity.v1.VerifyIdentifierLinkOTPResponse
+	(*RequestIdentifierUnlinkOTPRequest)(nil),  // 13: ride.identity.v1.RequestIdentifierUnlinkOTPRequest
+	(*RequestIdentifierUnlinkOTPResponse)(nil), // 14: ride.identity.v1.RequestIdentifierUnlinkOTPResponse
+	(*VerifyIdentifierUnlinkOTPRequest)(nil),   // 15: ride.identity.v1.VerifyIdentifierUnlinkOTPRequest
+	(*VerifyIdentifierUnlinkOTPResponse)(nil),  // 16: ride.identity.v1.VerifyIdentifierUnlinkOTPResponse
+	(*GetMyIdentityRequest)(nil),               // 17: ride.identity.v1.GetMyIdentityRequest
+	(*VerifiedIdentifier)(nil),                 // 18: ride.identity.v1.VerifiedIdentifier
+	(*GetMyIdentityResponse)(nil),              // 19: ride.identity.v1.GetMyIdentityResponse
+	(*ListMySessionsRequest)(nil),              // 20: ride.identity.v1.ListMySessionsRequest
+	(*Session)(nil),                            // 21: ride.identity.v1.Session
+	(*ListMySessionsResponse)(nil),             // 22: ride.identity.v1.ListMySessionsResponse
+	(*RevokeSessionRequest)(nil),               // 23: ride.identity.v1.RevokeSessionRequest
+	(*RevokeSessionResponse)(nil),              // 24: ride.identity.v1.RevokeSessionResponse
+	(*RefreshTokenRequest)(nil),                // 25: ride.identity.v1.RefreshTokenRequest
+	(*RefreshTokenResponse)(nil),               // 26: ride.identity.v1.RefreshTokenResponse
+	(*LogoutRequest)(nil),                      // 27: ride.identity.v1.LogoutRequest
+	(*LogoutResponse)(nil),                     // 28: ride.identity.v1.LogoutResponse
+	(*LogoutAllSessionsRequest)(nil),           // 29: ride.identity.v1.LogoutAllSessionsRequest
+	(*LogoutAllSessionsResponse)(nil),          // 30: ride.identity.v1.LogoutAllSessionsResponse
+	(*timestamppb.Timestamp)(nil),              // 31: google.protobuf.Timestamp
 }
 var file_ride_identity_v1_identity_proto_depIdxs = []int32{
 	0,  // 0: ride.identity.v1.Identifier.type:type_name -> ride.identity.v1.IdentifierType
-	3,  // 1: ride.identity.v1.RequestLoginOTPRequest.identifier:type_name -> ride.identity.v1.Identifier
+	4,  // 1: ride.identity.v1.RequestLoginOTPRequest.identifier:type_name -> ride.identity.v1.Identifier
 	1,  // 2: ride.identity.v1.RequestLoginOTPRequest.delivery_channel:type_name -> ride.identity.v1.OTPDeliveryChannel
-	3,  // 3: ride.identity.v1.RequestIdentifierLinkOTPRequest.identifier:type_name -> ride.identity.v1.Identifier
-	1,  // 4: ride.identity.v1.RequestIdentifierLinkOTPRequest.delivery_channel:type_name -> ride.identity.v1.OTPDeliveryChannel
-	3,  // 5: ride.identity.v1.RequestIdentifierUnlinkOTPRequest.identifier:type_name -> ride.identity.v1.Identifier
-	1,  // 6: ride.identity.v1.RequestIdentifierUnlinkOTPRequest.delivery_channel:type_name -> ride.identity.v1.OTPDeliveryChannel
-	0,  // 7: ride.identity.v1.VerifiedIdentifier.type:type_name -> ride.identity.v1.IdentifierType
-	30, // 8: ride.identity.v1.VerifiedIdentifier.verified_at:type_name -> google.protobuf.Timestamp
-	2,  // 9: ride.identity.v1.GetMyIdentityResponse.status:type_name -> ride.identity.v1.IdentityStatus
-	17, // 10: ride.identity.v1.GetMyIdentityResponse.identifiers:type_name -> ride.identity.v1.VerifiedIdentifier
-	30, // 11: ride.identity.v1.Session.expires_at:type_name -> google.protobuf.Timestamp
-	30, // 12: ride.identity.v1.Session.last_seen_at:type_name -> google.protobuf.Timestamp
-	30, // 13: ride.identity.v1.Session.created_at:type_name -> google.protobuf.Timestamp
-	20, // 14: ride.identity.v1.ListMySessionsResponse.sessions:type_name -> ride.identity.v1.Session
-	4,  // 15: ride.identity.v1.IdentityService.RequestLoginOTP:input_type -> ride.identity.v1.RequestLoginOTPRequest
-	6,  // 16: ride.identity.v1.IdentityService.VerifyLoginOTP:input_type -> ride.identity.v1.VerifyLoginOTPRequest
-	8,  // 17: ride.identity.v1.IdentityService.RequestIdentifierLinkOTP:input_type -> ride.identity.v1.RequestIdentifierLinkOTPRequest
-	10, // 18: ride.identity.v1.IdentityService.VerifyIdentifierLinkOTP:input_type -> ride.identity.v1.VerifyIdentifierLinkOTPRequest
-	12, // 19: ride.identity.v1.IdentityService.RequestIdentifierUnlinkOTP:input_type -> ride.identity.v1.RequestIdentifierUnlinkOTPRequest
-	14, // 20: ride.identity.v1.IdentityService.VerifyIdentifierUnlinkOTP:input_type -> ride.identity.v1.VerifyIdentifierUnlinkOTPRequest
-	16, // 21: ride.identity.v1.IdentityService.GetMyIdentity:input_type -> ride.identity.v1.GetMyIdentityRequest
-	19, // 22: ride.identity.v1.IdentityService.ListMySessions:input_type -> ride.identity.v1.ListMySessionsRequest
-	22, // 23: ride.identity.v1.IdentityService.RevokeSession:input_type -> ride.identity.v1.RevokeSessionRequest
-	24, // 24: ride.identity.v1.IdentityService.RefreshToken:input_type -> ride.identity.v1.RefreshTokenRequest
-	26, // 25: ride.identity.v1.IdentityService.Logout:input_type -> ride.identity.v1.LogoutRequest
-	28, // 26: ride.identity.v1.IdentityService.LogoutAllSessions:input_type -> ride.identity.v1.LogoutAllSessionsRequest
-	5,  // 27: ride.identity.v1.IdentityService.RequestLoginOTP:output_type -> ride.identity.v1.RequestLoginOTPResponse
-	7,  // 28: ride.identity.v1.IdentityService.VerifyLoginOTP:output_type -> ride.identity.v1.VerifyLoginOTPResponse
-	9,  // 29: ride.identity.v1.IdentityService.RequestIdentifierLinkOTP:output_type -> ride.identity.v1.RequestIdentifierLinkOTPResponse
-	11, // 30: ride.identity.v1.IdentityService.VerifyIdentifierLinkOTP:output_type -> ride.identity.v1.VerifyIdentifierLinkOTPResponse
-	13, // 31: ride.identity.v1.IdentityService.RequestIdentifierUnlinkOTP:output_type -> ride.identity.v1.RequestIdentifierUnlinkOTPResponse
-	15, // 32: ride.identity.v1.IdentityService.VerifyIdentifierUnlinkOTP:output_type -> ride.identity.v1.VerifyIdentifierUnlinkOTPResponse
-	18, // 33: ride.identity.v1.IdentityService.GetMyIdentity:output_type -> ride.identity.v1.GetMyIdentityResponse
-	21, // 34: ride.identity.v1.IdentityService.ListMySessions:output_type -> ride.identity.v1.ListMySessionsResponse
-	23, // 35: ride.identity.v1.IdentityService.RevokeSession:output_type -> ride.identity.v1.RevokeSessionResponse
-	25, // 36: ride.identity.v1.IdentityService.RefreshToken:output_type -> ride.identity.v1.RefreshTokenResponse
-	27, // 37: ride.identity.v1.IdentityService.Logout:output_type -> ride.identity.v1.LogoutResponse
-	29, // 38: ride.identity.v1.IdentityService.LogoutAllSessions:output_type -> ride.identity.v1.LogoutAllSessionsResponse
-	27, // [27:39] is the sub-list for method output_type
-	15, // [15:27] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	3,  // 3: ride.identity.v1.RequestLoginOTPRequest.reason:type_name -> ride.identity.v1.OTPRequestReason
+	4,  // 4: ride.identity.v1.RequestIdentifierLinkOTPRequest.identifier:type_name -> ride.identity.v1.Identifier
+	1,  // 5: ride.identity.v1.RequestIdentifierLinkOTPRequest.delivery_channel:type_name -> ride.identity.v1.OTPDeliveryChannel
+	4,  // 6: ride.identity.v1.RequestIdentifierUnlinkOTPRequest.identifier:type_name -> ride.identity.v1.Identifier
+	1,  // 7: ride.identity.v1.RequestIdentifierUnlinkOTPRequest.delivery_channel:type_name -> ride.identity.v1.OTPDeliveryChannel
+	0,  // 8: ride.identity.v1.VerifiedIdentifier.type:type_name -> ride.identity.v1.IdentifierType
+	31, // 9: ride.identity.v1.VerifiedIdentifier.verified_at:type_name -> google.protobuf.Timestamp
+	2,  // 10: ride.identity.v1.GetMyIdentityResponse.status:type_name -> ride.identity.v1.IdentityStatus
+	18, // 11: ride.identity.v1.GetMyIdentityResponse.identifiers:type_name -> ride.identity.v1.VerifiedIdentifier
+	31, // 12: ride.identity.v1.Session.expires_at:type_name -> google.protobuf.Timestamp
+	31, // 13: ride.identity.v1.Session.last_seen_at:type_name -> google.protobuf.Timestamp
+	31, // 14: ride.identity.v1.Session.created_at:type_name -> google.protobuf.Timestamp
+	21, // 15: ride.identity.v1.ListMySessionsResponse.sessions:type_name -> ride.identity.v1.Session
+	5,  // 16: ride.identity.v1.IdentityService.RequestLoginOTP:input_type -> ride.identity.v1.RequestLoginOTPRequest
+	7,  // 17: ride.identity.v1.IdentityService.VerifyLoginOTP:input_type -> ride.identity.v1.VerifyLoginOTPRequest
+	9,  // 18: ride.identity.v1.IdentityService.RequestIdentifierLinkOTP:input_type -> ride.identity.v1.RequestIdentifierLinkOTPRequest
+	11, // 19: ride.identity.v1.IdentityService.VerifyIdentifierLinkOTP:input_type -> ride.identity.v1.VerifyIdentifierLinkOTPRequest
+	13, // 20: ride.identity.v1.IdentityService.RequestIdentifierUnlinkOTP:input_type -> ride.identity.v1.RequestIdentifierUnlinkOTPRequest
+	15, // 21: ride.identity.v1.IdentityService.VerifyIdentifierUnlinkOTP:input_type -> ride.identity.v1.VerifyIdentifierUnlinkOTPRequest
+	17, // 22: ride.identity.v1.IdentityService.GetMyIdentity:input_type -> ride.identity.v1.GetMyIdentityRequest
+	20, // 23: ride.identity.v1.IdentityService.ListMySessions:input_type -> ride.identity.v1.ListMySessionsRequest
+	23, // 24: ride.identity.v1.IdentityService.RevokeSession:input_type -> ride.identity.v1.RevokeSessionRequest
+	25, // 25: ride.identity.v1.IdentityService.RefreshToken:input_type -> ride.identity.v1.RefreshTokenRequest
+	27, // 26: ride.identity.v1.IdentityService.Logout:input_type -> ride.identity.v1.LogoutRequest
+	29, // 27: ride.identity.v1.IdentityService.LogoutAllSessions:input_type -> ride.identity.v1.LogoutAllSessionsRequest
+	6,  // 28: ride.identity.v1.IdentityService.RequestLoginOTP:output_type -> ride.identity.v1.RequestLoginOTPResponse
+	8,  // 29: ride.identity.v1.IdentityService.VerifyLoginOTP:output_type -> ride.identity.v1.VerifyLoginOTPResponse
+	10, // 30: ride.identity.v1.IdentityService.RequestIdentifierLinkOTP:output_type -> ride.identity.v1.RequestIdentifierLinkOTPResponse
+	12, // 31: ride.identity.v1.IdentityService.VerifyIdentifierLinkOTP:output_type -> ride.identity.v1.VerifyIdentifierLinkOTPResponse
+	14, // 32: ride.identity.v1.IdentityService.RequestIdentifierUnlinkOTP:output_type -> ride.identity.v1.RequestIdentifierUnlinkOTPResponse
+	16, // 33: ride.identity.v1.IdentityService.VerifyIdentifierUnlinkOTP:output_type -> ride.identity.v1.VerifyIdentifierUnlinkOTPResponse
+	19, // 34: ride.identity.v1.IdentityService.GetMyIdentity:output_type -> ride.identity.v1.GetMyIdentityResponse
+	22, // 35: ride.identity.v1.IdentityService.ListMySessions:output_type -> ride.identity.v1.ListMySessionsResponse
+	24, // 36: ride.identity.v1.IdentityService.RevokeSession:output_type -> ride.identity.v1.RevokeSessionResponse
+	26, // 37: ride.identity.v1.IdentityService.RefreshToken:output_type -> ride.identity.v1.RefreshTokenResponse
+	28, // 38: ride.identity.v1.IdentityService.Logout:output_type -> ride.identity.v1.LogoutResponse
+	30, // 39: ride.identity.v1.IdentityService.LogoutAllSessions:output_type -> ride.identity.v1.LogoutAllSessionsResponse
+	28, // [28:40] is the sub-list for method output_type
+	16, // [16:28] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_ride_identity_v1_identity_proto_init() }
@@ -1864,7 +1933,7 @@ func file_ride_identity_v1_identity_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_identity_v1_identity_proto_rawDesc), len(file_ride_identity_v1_identity_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      4,
 			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
