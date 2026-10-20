@@ -89,9 +89,11 @@ type RateCardInput struct {
 	CancellationFee          decimal.Decimal
 	CancellationGraceMinutes int
 	NoShowFee                decimal.Decimal
-	MaxSurgePercent          *decimal.Decimal
-	DemandSurge              bool
-	WeatherSurge             bool
+	// NoShowWaitMinutes: 1 to 30; 0 is the default (6).
+	NoShowWaitMinutes int
+	MaxSurgePercent   *decimal.Decimal
+	DemandSurge       bool
+	WeatherSurge      bool
 }
 
 // SurgeRuleInput is a rule's label, days, hours and percent, and on create

@@ -9,6 +9,8 @@ import (
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/events"
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/pricing"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -92,4 +94,31 @@ func tripStatus(status tripv1.TripStatus) string {
 	default:
 		return ""
 	}
+}
+
+// TripSnapshot is the trip as the terms of waiting and cancelling need it.
+// See pricing.TripReader.
+func (c *TripClient) TripSnapshot(ctx context.Context, tripID string) (pricing.TripSnapshot, error) {
+	response, err := c.client.GetTrip(ctx, &tripv1.GetTripRequest{TripId: tripID})
+
+	switch status.Code(err) {
+	case codes.OK:
+	case codes.NotFound, codes.InvalidArgument:
+		return pricing.TripSnapshot{}, pricing.ErrTripTermsNotFound
+	default:
+		return pricing.TripSnapshot{}, fmt.Errorf("call trip-service GetTrip: %w", err)
+	}
+
+	trip := response.GetTrip()
+
+	return pricing.TripSnapshot{
+		RiderID:      trip.GetRiderId(),
+		DriverID:     trip.GetDriverId(),
+		QuoteID:      trip.GetQuoteId(),
+		VehicleClass: trip.GetVehicleClass(),
+		PickupLat:    trip.GetPickup().GetLatitude(),
+		PickupLng:    trip.GetPickup().GetLongitude(),
+		AcceptedAt:   optionalTime(trip.GetAcceptedAt()),
+		ArrivedAt:    optionalTime(trip.GetArrivedAt()),
+	}, nil
 }

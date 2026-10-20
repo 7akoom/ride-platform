@@ -79,9 +79,9 @@ func (r *PricingRepository) InsertRateCard(ctx context.Context, card pricing.Con
 		     free_waiting_minutes, waiting_per_minute, cancellation_fee,
 		     cancellation_grace_minutes, no_show_fee,
 		     max_surge_percent, demand_surge, weather_surge,
-		     average_speed_kmh, distance_correction_factor, retired, created_by, created_at)
+		     average_speed_kmh, distance_correction_factor, retired, created_by, no_show_wait_minutes, created_at)
 		 VALUES ($1, $2, NULLIF($3::text, ''), $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-		         $14, $15, $16, $17, $18, $19, $20, clock_timestamp())
+		         $14, $15, $16, $17, $18, $19, $20, $21, clock_timestamp())
 		 RETURNING `+configColumns,
 		nullableUUID(card.ZoneID),
 		nullableUUID(card.CityID),
@@ -103,6 +103,7 @@ func (r *PricingRepository) InsertRateCard(ctx context.Context, card pricing.Con
 		card.DistanceCorrectionFactor,
 		card.Retired,
 		nullableUUID(card.CreatedBy),
+		pricing.NoShowWaitOrDefault(card.NoShowWaitMinutes),
 	))
 	if err != nil {
 		return pricing.Config{}, fmt.Errorf("insert rate card: %w", err)

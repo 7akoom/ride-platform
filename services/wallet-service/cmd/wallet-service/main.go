@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/dues"
 	earningsapp "github.com/7akoom/ride-platform/services/wallet-service/internal/application/earnings"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/erasure"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/events"
@@ -352,6 +353,7 @@ func run() int {
 		WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export).
 		WithFeed(walletRepository).
 		WithLedger(postgresrepo.NewLedgerSummaries(pool)).
+		WithDues(dues.NewService(walletRepository)).
 		WithTransfers(
 			transferapp.NewService(
 				transferStore,

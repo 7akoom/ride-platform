@@ -96,6 +96,10 @@ func (s *Service) SetRateCard(ctx context.Context, input RateCardInput, staffID 
 		return pricing.Config{}, invalid("cancellation_grace_minutes", "must be between 0 and 60")
 	}
 
+	if input.NoShowWaitMinutes < 0 || input.NoShowWaitMinutes > pricing.MaxNoShowWaitMinutes {
+		return pricing.Config{}, invalid("no_show_wait_minutes", "must be between 1 and 30 (0 for the default)")
+	}
+
 	maxSurge := defaultMaxSurge
 	if input.MaxSurgePercent != nil {
 		maxSurge = *input.MaxSurgePercent
@@ -128,6 +132,7 @@ func (s *Service) SetRateCard(ctx context.Context, input RateCardInput, staffID 
 		CancellationFee:          input.CancellationFee,
 		CancellationGraceMinutes: input.CancellationGraceMinutes,
 		NoShowFee:                input.NoShowFee,
+		NoShowWaitMinutes:        pricing.NoShowWaitOrDefault(input.NoShowWaitMinutes),
 		MaxSurgePercent:          maxSurge,
 		DemandSurge:              input.DemandSurge,
 		WeatherSurge:             input.WeatherSurge,

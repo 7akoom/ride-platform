@@ -144,9 +144,10 @@ type Config struct {
 	TransferMaxAmount   Money
 	TransferDailyAmount Money
 	TransferDailyCount  int
-	// BlockTripsWithDues: a rider who owes fees may not request trips until
-	// they are paid.
+	// BlockTripsWithDues: a rider who owes fees may not request trips once
+	// the oldest has been owed DuesGraceDays (0: at once) until they are paid.
 	BlockTripsWithDues bool
+	DuesGraceDays      int
 	// The least and most one provider top-up may bring, and one tip may give.
 	TopUpMinAmount Money
 	TopUpMaxAmount Money

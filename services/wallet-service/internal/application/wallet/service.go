@@ -1,6 +1,9 @@
 package wallet
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type TopUpInput struct {
 	OwnerType      OwnerType
@@ -54,6 +57,9 @@ type RiderDues struct {
 	Outstanding     Money
 	Dues            []Due
 	CanRequestTrips bool
+	// PayBy is when the oldest unpaid fee blocks new trips (the grace days
+	// after it); nil when nothing is owed.
+	PayBy *time.Time
 }
 
 type service struct {

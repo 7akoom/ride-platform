@@ -45,6 +45,9 @@ type Config struct {
 	CancellationFee          decimal.Decimal
 	CancellationGraceMinutes int
 	NoShowFee                decimal.Decimal
+	// NoShowWaitMinutes is how long a driver waits at the pickup before they
+	// may report the rider did not come (DefaultNoShowWaitMinutes).
+	NoShowWaitMinutes int
 
 	// MaxSurgePercent caps the surge (0 turns it off). DemandSurge and
 	// WeatherSurge say whether those two sources count at all.

@@ -123,6 +123,9 @@ type service struct {
 	// driver by road (see WithTravelTimes).
 	travelTimer TravelTimer
 
+	// tripReader, when set, lets TripTerms read trips (see WithTripReader).
+	tripReader TripReader
+
 	// fareRoundingIncrement, when positive, rounds every fare total to a
 	// multiple of it (see fare_rounding.go). Zero means no rounding.
 	fareRoundingIncrement decimal.Decimal

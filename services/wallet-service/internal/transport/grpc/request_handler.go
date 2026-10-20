@@ -274,6 +274,10 @@ func (h *WalletHandler) GetRiderDues(
 		CanRequestTrips: dues.CanRequestTrips,
 	}
 
+	if dues.PayBy != nil {
+		response.PayBy = timestamppb.New(*dues.PayBy)
+	}
+
 	for _, due := range dues.Dues {
 		response.Dues = append(response.Dues, &walletv1.RiderDue{
 			TripId:      due.TripID,

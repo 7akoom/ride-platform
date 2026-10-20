@@ -48,6 +48,9 @@ const (
 	WalletService_CancelMoneyRequest_FullMethodName      = "/ride.wallet.v1.WalletService/CancelMoneyRequest"
 	WalletService_GetStatement_FullMethodName            = "/ride.wallet.v1.WalletService/GetStatement"
 	WalletService_GetRiderDues_FullMethodName            = "/ride.wallet.v1.WalletService/GetRiderDues"
+	WalletService_GetDuesPolicy_FullMethodName           = "/ride.wallet.v1.WalletService/GetDuesPolicy"
+	WalletService_SetDuesPolicy_FullMethodName           = "/ride.wallet.v1.WalletService/SetDuesPolicy"
+	WalletService_ListOverdueRiders_FullMethodName       = "/ride.wallet.v1.WalletService/ListOverdueRiders"
 	WalletService_CreateVoucherBatch_FullMethodName      = "/ride.wallet.v1.WalletService/CreateVoucherBatch"
 	WalletService_ListVoucherBatches_FullMethodName      = "/ride.wallet.v1.WalletService/ListVoucherBatches"
 	WalletService_GetVoucherBatch_FullMethodName         = "/ride.wallet.v1.WalletService/GetVoucherBatch"
@@ -189,6 +192,15 @@ type WalletServiceClient interface {
 	// money reaching their wallet pays it off first), and whether they may
 	// request trips meanwhile (trip-service asks, with the internal token).
 	GetRiderDues(ctx context.Context, in *GetRiderDuesRequest, opts ...grpc.CallOption) (*GetRiderDuesResponse, error)
+	// The dues policy (staff): whether a rider who owes fees may not request
+	// trips once the oldest has been owed grace_days (0: at once). Reading it
+	// needs wallets.read, changing it wallets.adjust.
+	GetDuesPolicy(ctx context.Context, in *GetDuesPolicyRequest, opts ...grpc.CallOption) (*DuesPolicy, error)
+	SetDuesPolicy(ctx context.Context, in *DuesPolicy, opts ...grpc.CallOption) (*DuesPolicy, error)
+	// ListOverdueRiders (staff, wallets.read) is the riders whose oldest unpaid
+	// fee is past the grace days, the longest owed first: who to follow up, and
+	// whose account staff may suspend.
+	ListOverdueRiders(ctx context.Context, in *ListOverdueRidersRequest, opts ...grpc.CallOption) (*ListOverdueRidersResponse, error)
 	// Vouchers: prepaid codes the platform issues in batches and sells through
 	// a seller (ZainCash, shops); a rider types one in to credit their wallet.
 	// Staff with vouchers.manage create a batch (its codes are generated here
@@ -547,6 +559,36 @@ func (c *walletServiceClient) GetRiderDues(ctx context.Context, in *GetRiderDues
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRiderDuesResponse)
 	err := c.cc.Invoke(ctx, WalletService_GetRiderDues_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) GetDuesPolicy(ctx context.Context, in *GetDuesPolicyRequest, opts ...grpc.CallOption) (*DuesPolicy, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DuesPolicy)
+	err := c.cc.Invoke(ctx, WalletService_GetDuesPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) SetDuesPolicy(ctx context.Context, in *DuesPolicy, opts ...grpc.CallOption) (*DuesPolicy, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DuesPolicy)
+	err := c.cc.Invoke(ctx, WalletService_SetDuesPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListOverdueRiders(ctx context.Context, in *ListOverdueRidersRequest, opts ...grpc.CallOption) (*ListOverdueRidersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListOverdueRidersResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListOverdueRiders_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -917,6 +959,15 @@ type WalletServiceServer interface {
 	// money reaching their wallet pays it off first), and whether they may
 	// request trips meanwhile (trip-service asks, with the internal token).
 	GetRiderDues(context.Context, *GetRiderDuesRequest) (*GetRiderDuesResponse, error)
+	// The dues policy (staff): whether a rider who owes fees may not request
+	// trips once the oldest has been owed grace_days (0: at once). Reading it
+	// needs wallets.read, changing it wallets.adjust.
+	GetDuesPolicy(context.Context, *GetDuesPolicyRequest) (*DuesPolicy, error)
+	SetDuesPolicy(context.Context, *DuesPolicy) (*DuesPolicy, error)
+	// ListOverdueRiders (staff, wallets.read) is the riders whose oldest unpaid
+	// fee is past the grace days, the longest owed first: who to follow up, and
+	// whose account staff may suspend.
+	ListOverdueRiders(context.Context, *ListOverdueRidersRequest) (*ListOverdueRidersResponse, error)
 	// Vouchers: prepaid codes the platform issues in batches and sells through
 	// a seller (ZainCash, shops); a rider types one in to credit their wallet.
 	// Staff with vouchers.manage create a batch (its codes are generated here
@@ -1084,6 +1135,15 @@ func (UnimplementedWalletServiceServer) GetStatement(context.Context, *GetStatem
 }
 func (UnimplementedWalletServiceServer) GetRiderDues(context.Context, *GetRiderDuesRequest) (*GetRiderDuesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRiderDues not implemented")
+}
+func (UnimplementedWalletServiceServer) GetDuesPolicy(context.Context, *GetDuesPolicyRequest) (*DuesPolicy, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDuesPolicy not implemented")
+}
+func (UnimplementedWalletServiceServer) SetDuesPolicy(context.Context, *DuesPolicy) (*DuesPolicy, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetDuesPolicy not implemented")
+}
+func (UnimplementedWalletServiceServer) ListOverdueRiders(context.Context, *ListOverdueRidersRequest) (*ListOverdueRidersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListOverdueRiders not implemented")
 }
 func (UnimplementedWalletServiceServer) CreateVoucherBatch(context.Context, *CreateVoucherBatchRequest) (*VoucherBatchResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateVoucherBatch not implemented")
@@ -1685,6 +1745,60 @@ func _WalletService_GetRiderDues_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WalletService_GetDuesPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDuesPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).GetDuesPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_GetDuesPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).GetDuesPolicy(ctx, req.(*GetDuesPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_SetDuesPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DuesPolicy)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).SetDuesPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_SetDuesPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).SetDuesPolicy(ctx, req.(*DuesPolicy))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListOverdueRiders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListOverdueRidersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListOverdueRiders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListOverdueRiders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListOverdueRiders(ctx, req.(*ListOverdueRidersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WalletService_CreateVoucherBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateVoucherBatchRequest)
 	if err := dec(in); err != nil {
@@ -2253,6 +2367,18 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRiderDues",
 			Handler:    _WalletService_GetRiderDues_Handler,
+		},
+		{
+			MethodName: "GetDuesPolicy",
+			Handler:    _WalletService_GetDuesPolicy_Handler,
+		},
+		{
+			MethodName: "SetDuesPolicy",
+			Handler:    _WalletService_SetDuesPolicy_Handler,
+		},
+		{
+			MethodName: "ListOverdueRiders",
+			Handler:    _WalletService_ListOverdueRiders_Handler,
 		},
 		{
 			MethodName: "CreateVoucherBatch",

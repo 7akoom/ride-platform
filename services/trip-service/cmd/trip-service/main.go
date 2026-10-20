@@ -227,6 +227,7 @@ func run() int {
 	baseService := trip.WithSavedAddresses(
 		trip.NewService(tripRepository, idGenerator, locationClient,
 			trip.WithQuotes(clients.NewQuoteBook(pricingConn)),
+			trip.WithNoShowWaits(clients.NewQuoteBook(pricingConn)),
 			trip.WithRiderStanding(clients.NewRiderStanding(walletConn, logger)),
 			trip.WithNoShowWait(noShowWait),
 		),

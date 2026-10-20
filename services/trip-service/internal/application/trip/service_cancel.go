@@ -8,8 +8,23 @@ import (
 )
 
 // DefaultNoShowWait is how long a driver waits at the pickup after marking
-// arrival before they may cancel because the rider did not come.
-const DefaultNoShowWait = 5 * time.Minute
+// arrival before they may cancel because the rider did not come, when the
+// trip's rate card cannot be read.
+const DefaultNoShowWait = 6 * time.Minute
+
+// NoShowWaits reads the no-show wait of a trip's rate card (pricing-service),
+// which staff set with the prices.
+type NoShowWaits interface {
+	NoShowWait(ctx context.Context, tripID, riderID string) (time.Duration, error)
+}
+
+// WithNoShowWaits makes each trip wait as long as its rate card says; the
+// configured wait (WithNoShowWait) stays the fallback.
+func WithNoShowWaits(source NoShowWaits) Option {
+	return func(s *service) {
+		s.noShowWaits = source
+	}
+}
 
 // CancelInput is a cancellation: who asks and why. RiderNoShow is the
 // driver cancelling because the rider did not come to the pickup.
@@ -66,7 +81,8 @@ func (s *service) CancelTrip(
 			return Trip{}, ErrNoShowOnlyByDriver
 		}
 
-		record.Allow = s.noShowAllowed
+		wait := s.noShowWaitOf(ctx, trimmedID)
+		record.Allow = func(current Trip) error { return s.noShowAllowed(current, wait) }
 	}
 
 	cancelled, err := s.repository.Cancel(ctx, record)
@@ -77,13 +93,33 @@ func (s *service) CancelTrip(
 	return cancelled, nil
 }
 
+// noShowWaitOf is the trip's rate card's no-show wait, or the configured one
+// when there is no card to ask or it cannot be read.
+func (s *service) noShowWaitOf(ctx context.Context, tripID string) time.Duration {
+	if s.noShowWaits == nil {
+		return s.noShowWait
+	}
+
+	current, err := s.repository.FindByID(ctx, tripID)
+	if err != nil {
+		return s.noShowWait
+	}
+
+	wait, err := s.noShowWaits.NoShowWait(ctx, tripID, current.RiderID)
+	if err != nil || wait <= 0 {
+		return s.noShowWait
+	}
+
+	return wait
+}
+
 // noShowAllowed: the driver marked arrival and has waited long enough since.
-func (s *service) noShowAllowed(current Trip) error {
+func (s *service) noShowAllowed(current Trip, wait time.Duration) error {
 	if current.Status != StatusAccepted || current.ArrivedAt == nil {
 		return ErrNoShowTooEarly
 	}
 
-	if s.now().Sub(*current.ArrivedAt) < s.noShowWait {
+	if s.now().Sub(*current.ArrivedAt) < wait {
 		return ErrNoShowTooEarly
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/shopspring/decimal"
 )
@@ -149,7 +150,14 @@ func (s *service) RiderDues(ctx context.Context, riderID string) (RiderDues, err
 		result.Outstanding = result.Outstanding.Add(due.Outstanding())
 	}
 
-	result.CanRequestTrips = !config.BlockTripsWithDues || !result.Outstanding.IsPositive()
+	// ListDues is oldest first: the oldest fee starts the grace days.
+	if len(dues) > 0 && result.Outstanding.IsPositive() {
+		payBy := dues[0].CreatedAt.AddDate(0, 0, config.DuesGraceDays)
+		result.PayBy = &payBy
+	}
+
+	result.CanRequestTrips = !config.BlockTripsWithDues || !result.Outstanding.IsPositive() ||
+		(result.PayBy != nil && time.Now().Before(*result.PayBy))
 
 	return result, nil
 }

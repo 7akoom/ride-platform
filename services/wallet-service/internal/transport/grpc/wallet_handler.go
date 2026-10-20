@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/dues"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/earnings"
 	"github.com/7akoom/ride-platform/services/wallet-service/internal/application/incentives"
 	"log/slog"
@@ -40,6 +41,7 @@ type WalletHandler struct {
 	tips          *tips.Service
 	earnings      *earnings.Service
 	incentives    *incentives.Service
+	dues          *dues.Service
 	logger        *slog.Logger
 }
 

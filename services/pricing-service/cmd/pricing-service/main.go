@@ -294,6 +294,7 @@ func run() int {
 		pricing.WithFareRounding(fareRoundingIncrement),
 		pricing.WithQuoteTTL(quoteTTL),
 		pricing.WithTravelTimes(locationClient),
+		pricing.WithTripReader(clients.NewTripClient(tripConn)),
 	)
 	tariffService := tariffs.NewService(pricingRepository, locationClient)
 	promotionService := promotions.NewService(pricingRepository, locationClient)

@@ -191,7 +191,7 @@ func Load() Config {
 
 		NoShowWait: getEnv(
 			"TRIP_NO_SHOW_WAIT",
-			"5m",
+			"6m",
 		),
 
 		ScheduleMinAhead:     getEnv("TRIP_SCHEDULE_MIN_AHEAD", "30m"),

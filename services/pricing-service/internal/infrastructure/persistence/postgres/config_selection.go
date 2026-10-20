@@ -15,7 +15,7 @@ import (
 const configColumns = `id, COALESCE(zone_id::text, ''), COALESCE(city_id::text, ''), COALESCE(vehicle_class, ''),
         currency_code, base_fare, per_km_rate, per_minute_rate, minimum_fare,
         free_waiting_minutes, waiting_per_minute, cancellation_fee,
-        cancellation_grace_minutes, no_show_fee,
+        cancellation_grace_minutes, no_show_fee, no_show_wait_minutes,
         max_surge_percent, demand_surge, weather_surge,
         average_speed_kmh, distance_correction_factor,
         retired, COALESCE(created_by::text, ''), created_at`
@@ -121,6 +121,7 @@ func scanConfig(row pgx.Row) (pricing.Config, error) {
 		&config.CancellationFee,
 		&config.CancellationGraceMinutes,
 		&config.NoShowFee,
+		&config.NoShowWaitMinutes,
 		&config.MaxSurgePercent,
 		&config.DemandSurge,
 		&config.WeatherSurge,

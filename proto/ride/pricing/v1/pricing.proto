@@ -188,6 +188,21 @@ service PricingService {
     };
   }
 
+  // GetTripTerms is what waiting at the pickup and cancelling cost on one of
+  // the rider's trips, by the rate card it was priced with, and what applies
+  // right now: the free waiting minutes and each further minute's price, the
+  // cancellation fee and from when it applies (cancellation_fee_now is what
+  // cancelling now costs: 0 within the grace minutes, before a driver
+  // accepted, or with the driver late), and how long the driver waits before
+  // they may report a no-show and what that costs. The caller's own rider
+  // profile only (trip-service asks with the internal token); NOT_FOUND for
+  // another rider's trip.
+  rpc GetTripTerms(GetTripTermsRequest) returns (GetTripTermsResponse) {
+    option (google.api.http) = {
+      get: "/v1/riders/{rider_id}/trips/{trip_id}/terms"
+    };
+  }
+
   // ListTripFares is the recorded total of each trip named (a trip's cost, or the fee
   // a cancelled trip owed), for trip-service's trip lists and activity page. Trips
   // with no fare are left out. Internal: trip-service only; at most 100 trips.
@@ -600,6 +615,28 @@ message ReleaseQuoteRequest {
 
 message ReleaseQuoteResponse {}
 
+message GetTripTermsRequest {
+  string rider_id = 1;
+  string trip_id = 2;
+}
+
+// Money fields are decimal strings in currency_code.
+message GetTripTermsResponse {
+  string currency_code = 1;
+  int32 free_waiting_minutes = 2;
+  string waiting_per_minute = 3;
+  string cancellation_fee = 4;
+  int32 cancellation_grace_minutes = 5;
+  // From when cancelling costs cancellation_fee; unset before a driver accepted.
+  google.protobuf.Timestamp cancellation_fee_from = 6;
+  string cancellation_fee_now = 7;
+  int32 no_show_wait_minutes = 8;
+  string no_show_fee = 9;
+  // From when the driver may report that the rider did not come; unset before
+  // the driver arrived.
+  google.protobuf.Timestamp no_show_from = 10;
+}
+
 // --- Rate cards ------------------------------------------------------------
 
 // Money fields are decimal strings in the deployment's currency.
@@ -633,6 +670,9 @@ message RateCard {
   google.protobuf.Timestamp created_at = 18;
   // The staff member's identity id; empty for the starting card.
   string created_by = 19;
+  // How long a driver waits at the pickup before they may report that the
+  // rider did not come (then no_show_fee applies): 1 to 30.
+  int32 no_show_wait_minutes = 20;
 }
 
 message ListRateCardsRequest {
@@ -663,6 +703,8 @@ message SetRateCardRequest {
   string max_surge_percent = 13;
   bool demand_surge = 14;
   bool weather_surge = 15;
+  // 1 to 30; 0 keeps the default (6).
+  int32 no_show_wait_minutes = 16;
 }
 
 message RateCardResponse {

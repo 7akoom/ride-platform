@@ -3515,6 +3515,92 @@
         ]
       }
     },
+    "/v1/admin/wallet/dues-policy": {
+      "get": {
+        "summary": "The dues policy (staff): whether a rider who owes fees may not request\ntrips once the oldest has been owed grace_days (0: at once). Reading it\nneeds wallets.read, changing it wallets.adjust.",
+        "operationId": "WalletService_GetDuesPolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DuesPolicy"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "WalletService"
+        ]
+      },
+      "put": {
+        "operationId": "WalletService_SetDuesPolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DuesPolicy"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1DuesPolicy"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/v1/admin/wallet/overdue-riders": {
+      "get": {
+        "summary": "ListOverdueRiders (staff, wallets.read) is the riders whose oldest unpaid\nfee is past the grace days, the longest owed first: who to follow up, and\nwhose account staff may suspend.",
+        "operationId": "WalletService_ListOverdueRiders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListOverdueRidersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "description": "50 by default, at most 200.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/admin/wallets/{ownerId}": {
       "get": {
         "summary": "Staff money operations. wallets.read: look at any wallet and its\nstatement. wallets.adjust: correct a balance, refund a trip.\npayouts.manage: work the payout queue. Every call is audited.",
@@ -7492,6 +7578,43 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/v1GetTripFareResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "riderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/riders/{riderId}/trips/{tripId}/terms": {
+      "get": {
+        "summary": "GetTripTerms is what waiting at the pickup and cancelling cost on one of\nthe rider's trips, by the rate card it was priced with, and what applies\nright now: the free waiting minutes and each further minute's price, the\ncancellation fee and from when it applies (cancellation_fee_now is what\ncancelling now costs: 0 within the grace minutes, before a driver\naccepted, or with the driver late), and how long the driver waits before\nthey may report a no-show and what that costs. The caller's own rider\nprofile only (trip-service asks with the internal token); NOT_FOUND for\nanother rider's trip.",
+        "operationId": "PricingService_GetTripTerms",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTripTermsResponse"
             }
           },
           "default": {
@@ -13032,6 +13155,19 @@
         }
       }
     },
+    "v1DuesPolicy": {
+      "type": "object",
+      "properties": {
+        "blockTripsWithDues": {
+          "type": "boolean"
+        },
+        "graceDays": {
+          "type": "integer",
+          "format": "int32",
+          "description": "0 to 365."
+        }
+      }
+    },
     "v1DurationStats": {
       "type": "object",
       "properties": {
@@ -13760,6 +13896,11 @@
         "canRequestTrips": {
           "type": "boolean",
           "description": "False when the deployment blocks trips until the fees are paid."
+        },
+        "payBy": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the oldest unpaid fee blocks new trips (when the deployment blocks\nthem at all); unset when nothing is owed."
         }
       }
     },
@@ -14161,6 +14302,49 @@
           "description": "What the rider tipped the driver for this trip. \"0\" if nothing."
         }
       }
+    },
+    "v1GetTripTermsResponse": {
+      "type": "object",
+      "properties": {
+        "currencyCode": {
+          "type": "string"
+        },
+        "freeWaitingMinutes": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "waitingPerMinute": {
+          "type": "string"
+        },
+        "cancellationFee": {
+          "type": "string"
+        },
+        "cancellationGraceMinutes": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "cancellationFeeFrom": {
+          "type": "string",
+          "format": "date-time",
+          "description": "From when cancelling costs cancellation_fee; unset before a driver accepted."
+        },
+        "cancellationFeeNow": {
+          "type": "string"
+        },
+        "noShowWaitMinutes": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "noShowFee": {
+          "type": "string"
+        },
+        "noShowFrom": {
+          "type": "string",
+          "format": "date-time",
+          "description": "From when the driver may report that the rider did not come; unset before\nthe driver arrived."
+        }
+      },
+      "description": "Money fields are decimal strings in currency_code."
     },
     "v1GetUnreadCountResponse": {
       "type": "object",
@@ -14876,6 +15060,18 @@
         "nextPageToken": {
           "type": "string",
           "description": "Empty on the last page."
+        }
+      }
+    },
+    "v1ListOverdueRidersResponse": {
+      "type": "object",
+      "properties": {
+        "riders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1OverdueRider"
+          }
         }
       }
     },
@@ -15799,6 +15995,28 @@
         }
       }
     },
+    "v1OverdueRider": {
+      "type": "object",
+      "properties": {
+        "riderId": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "outstanding": {
+          "type": "string"
+        },
+        "oldestDueAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "payBy": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "v1OwnerType": {
       "type": "string",
       "enum": [
@@ -16187,6 +16405,11 @@
         "createdBy": {
           "type": "string",
           "description": "The staff member's identity id; empty for the starting card."
+        },
+        "noShowWaitMinutes": {
+          "type": "integer",
+          "format": "int32",
+          "description": "How long a driver waits at the pickup before they may report that the\nrider did not come (then no_show_fee applies): 1 to 30."
         }
       },
       "description": "Money fields are decimal strings in the deployment's currency."
@@ -17157,6 +17380,11 @@
         },
         "weatherSurge": {
           "type": "boolean"
+        },
+        "noShowWaitMinutes": {
+          "type": "integer",
+          "format": "int32",
+          "description": "1 to 30; 0 keeps the default (6)."
         }
       }
     },

@@ -43,7 +43,8 @@ var methodAccess = map[string]accessLevel{
 	"/ride.pricing.v1.PricingService/ListRiderOffers":  accessOwner,
 	"/ride.pricing.v1.PricingService/CheckRiderCoupon": accessOwner,
 	// What one of the rider's own trips cost.
-	"/ride.pricing.v1.PricingService/GetTripFare": accessOwner,
+	"/ride.pricing.v1.PricingService/GetTripFare":  accessOwner,
+	"/ride.pricing.v1.PricingService/GetTripTerms": accessOwner,
 
 	// Trip totals for trip-service's lists (the lists check the owner).
 	"/ride.pricing.v1.PricingService/ListTripFares": accessInternal,

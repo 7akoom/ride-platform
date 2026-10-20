@@ -116,7 +116,10 @@ type service struct {
 	// noShowWait is how long a driver waits at the pickup, after marking
 	// arrival, before they may cancel for a rider no-show.
 	noShowWait time.Duration
-	now        func() time.Time
+
+	// noShowWaits, when set, gives each trip its rate card's wait instead.
+	noShowWaits NoShowWaits
+	now         func() time.Time
 }
 
 func NewService(

@@ -238,6 +238,31 @@ service WalletService {
     };
   }
 
+  // The dues policy (staff): whether a rider who owes fees may not request
+  // trips once the oldest has been owed grace_days (0: at once). Reading it
+  // needs wallets.read, changing it wallets.adjust.
+  rpc GetDuesPolicy(GetDuesPolicyRequest) returns (DuesPolicy) {
+    option (google.api.http) = {
+      get: "/v1/admin/wallet/dues-policy"
+    };
+  }
+
+  rpc SetDuesPolicy(DuesPolicy) returns (DuesPolicy) {
+    option (google.api.http) = {
+      put: "/v1/admin/wallet/dues-policy"
+      body: "*"
+    };
+  }
+
+  // ListOverdueRiders (staff, wallets.read) is the riders whose oldest unpaid
+  // fee is past the grace days, the longest owed first: who to follow up, and
+  // whose account staff may suspend.
+  rpc ListOverdueRiders(ListOverdueRidersRequest) returns (ListOverdueRidersResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/wallet/overdue-riders"
+    };
+  }
+
   // Vouchers: prepaid codes the platform issues in batches and sells through
   // a seller (ZainCash, shops); a rider types one in to credit their wallet.
   // Staff with vouchers.manage create a batch (its codes are generated here
@@ -957,6 +982,34 @@ message GetRiderDuesResponse {
   repeated RiderDue dues = 3;
   // False when the deployment blocks trips until the fees are paid.
   bool can_request_trips = 4;
+  // When the oldest unpaid fee blocks new trips (when the deployment blocks
+  // them at all); unset when nothing is owed.
+  google.protobuf.Timestamp pay_by = 5;
+}
+
+message GetDuesPolicyRequest {}
+
+message DuesPolicy {
+  bool block_trips_with_dues = 1;
+  // 0 to 365.
+  int32 grace_days = 2;
+}
+
+message ListOverdueRidersRequest {
+  // 50 by default, at most 200.
+  int32 limit = 1;
+}
+
+message OverdueRider {
+  string rider_id = 1;
+  string currency_code = 2;
+  string outstanding = 3;
+  google.protobuf.Timestamp oldest_due_at = 4;
+  google.protobuf.Timestamp pay_by = 5;
+}
+
+message ListOverdueRidersResponse {
+  repeated OverdueRider riders = 1;
 }
 
 message CreateVoucherBatchRequest {

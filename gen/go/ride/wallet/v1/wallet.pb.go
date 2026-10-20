@@ -4301,8 +4301,11 @@ type GetRiderDuesResponse struct {
 	Dues         []*RiderDue            `protobuf:"bytes,3,rep,name=dues,proto3" json:"dues,omitempty"`
 	// False when the deployment blocks trips until the fees are paid.
 	CanRequestTrips bool `protobuf:"varint,4,opt,name=can_request_trips,json=canRequestTrips,proto3" json:"can_request_trips,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// When the oldest unpaid fee blocks new trips (when the deployment blocks
+	// them at all); unset when nothing is owed.
+	PayBy         *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=pay_by,json=payBy,proto3" json:"pay_by,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRiderDuesResponse) Reset() {
@@ -4363,6 +4366,267 @@ func (x *GetRiderDuesResponse) GetCanRequestTrips() bool {
 	return false
 }
 
+func (x *GetRiderDuesResponse) GetPayBy() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PayBy
+	}
+	return nil
+}
+
+type GetDuesPolicyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDuesPolicyRequest) Reset() {
+	*x = GetDuesPolicyRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDuesPolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDuesPolicyRequest) ProtoMessage() {}
+
+func (x *GetDuesPolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDuesPolicyRequest.ProtoReflect.Descriptor instead.
+func (*GetDuesPolicyRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{57}
+}
+
+type DuesPolicy struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	BlockTripsWithDues bool                   `protobuf:"varint,1,opt,name=block_trips_with_dues,json=blockTripsWithDues,proto3" json:"block_trips_with_dues,omitempty"`
+	// 0 to 365.
+	GraceDays     int32 `protobuf:"varint,2,opt,name=grace_days,json=graceDays,proto3" json:"grace_days,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DuesPolicy) Reset() {
+	*x = DuesPolicy{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DuesPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DuesPolicy) ProtoMessage() {}
+
+func (x *DuesPolicy) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DuesPolicy.ProtoReflect.Descriptor instead.
+func (*DuesPolicy) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *DuesPolicy) GetBlockTripsWithDues() bool {
+	if x != nil {
+		return x.BlockTripsWithDues
+	}
+	return false
+}
+
+func (x *DuesPolicy) GetGraceDays() int32 {
+	if x != nil {
+		return x.GraceDays
+	}
+	return 0
+}
+
+type ListOverdueRidersRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 50 by default, at most 200.
+	Limit         int32 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListOverdueRidersRequest) Reset() {
+	*x = ListOverdueRidersRequest{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListOverdueRidersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListOverdueRidersRequest) ProtoMessage() {}
+
+func (x *ListOverdueRidersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListOverdueRidersRequest.ProtoReflect.Descriptor instead.
+func (*ListOverdueRidersRequest) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *ListOverdueRidersRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type OverdueRider struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RiderId       string                 `protobuf:"bytes,1,opt,name=rider_id,json=riderId,proto3" json:"rider_id,omitempty"`
+	CurrencyCode  string                 `protobuf:"bytes,2,opt,name=currency_code,json=currencyCode,proto3" json:"currency_code,omitempty"`
+	Outstanding   string                 `protobuf:"bytes,3,opt,name=outstanding,proto3" json:"outstanding,omitempty"`
+	OldestDueAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=oldest_due_at,json=oldestDueAt,proto3" json:"oldest_due_at,omitempty"`
+	PayBy         *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=pay_by,json=payBy,proto3" json:"pay_by,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OverdueRider) Reset() {
+	*x = OverdueRider{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OverdueRider) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OverdueRider) ProtoMessage() {}
+
+func (x *OverdueRider) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OverdueRider.ProtoReflect.Descriptor instead.
+func (*OverdueRider) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{60}
+}
+
+func (x *OverdueRider) GetRiderId() string {
+	if x != nil {
+		return x.RiderId
+	}
+	return ""
+}
+
+func (x *OverdueRider) GetCurrencyCode() string {
+	if x != nil {
+		return x.CurrencyCode
+	}
+	return ""
+}
+
+func (x *OverdueRider) GetOutstanding() string {
+	if x != nil {
+		return x.Outstanding
+	}
+	return ""
+}
+
+func (x *OverdueRider) GetOldestDueAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.OldestDueAt
+	}
+	return nil
+}
+
+func (x *OverdueRider) GetPayBy() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PayBy
+	}
+	return nil
+}
+
+type ListOverdueRidersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Riders        []*OverdueRider        `protobuf:"bytes,1,rep,name=riders,proto3" json:"riders,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListOverdueRidersResponse) Reset() {
+	*x = ListOverdueRidersResponse{}
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListOverdueRidersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListOverdueRidersResponse) ProtoMessage() {}
+
+func (x *ListOverdueRidersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListOverdueRidersResponse.ProtoReflect.Descriptor instead.
+func (*ListOverdueRidersResponse) Descriptor() ([]byte, []int) {
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *ListOverdueRidersResponse) GetRiders() []*OverdueRider {
+	if x != nil {
+		return x.Riders
+	}
+	return nil
+}
+
 type CreateVoucherBatchRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What staff call the batch, e.g. "ZainCash October 5000".
@@ -4384,7 +4648,7 @@ type CreateVoucherBatchRequest struct {
 
 func (x *CreateVoucherBatchRequest) Reset() {
 	*x = CreateVoucherBatchRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[57]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4396,7 +4660,7 @@ func (x *CreateVoucherBatchRequest) String() string {
 func (*CreateVoucherBatchRequest) ProtoMessage() {}
 
 func (x *CreateVoucherBatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[57]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4409,7 +4673,7 @@ func (x *CreateVoucherBatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateVoucherBatchRequest.ProtoReflect.Descriptor instead.
 func (*CreateVoucherBatchRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{57}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *CreateVoucherBatchRequest) GetLabel() string {
@@ -4482,7 +4746,7 @@ type VoucherBatch struct {
 
 func (x *VoucherBatch) Reset() {
 	*x = VoucherBatch{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[58]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4494,7 +4758,7 @@ func (x *VoucherBatch) String() string {
 func (*VoucherBatch) ProtoMessage() {}
 
 func (x *VoucherBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[58]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4507,7 +4771,7 @@ func (x *VoucherBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VoucherBatch.ProtoReflect.Descriptor instead.
 func (*VoucherBatch) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{58}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *VoucherBatch) GetId() string {
@@ -4631,7 +4895,7 @@ type VoucherBatchResponse struct {
 
 func (x *VoucherBatchResponse) Reset() {
 	*x = VoucherBatchResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[59]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4643,7 +4907,7 @@ func (x *VoucherBatchResponse) String() string {
 func (*VoucherBatchResponse) ProtoMessage() {}
 
 func (x *VoucherBatchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[59]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4656,7 +4920,7 @@ func (x *VoucherBatchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VoucherBatchResponse.ProtoReflect.Descriptor instead.
 func (*VoucherBatchResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{59}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *VoucherBatchResponse) GetBatch() *VoucherBatch {
@@ -4677,7 +4941,7 @@ type ListVoucherBatchesRequest struct {
 
 func (x *ListVoucherBatchesRequest) Reset() {
 	*x = ListVoucherBatchesRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[60]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4689,7 +4953,7 @@ func (x *ListVoucherBatchesRequest) String() string {
 func (*ListVoucherBatchesRequest) ProtoMessage() {}
 
 func (x *ListVoucherBatchesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[60]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4702,7 +4966,7 @@ func (x *ListVoucherBatchesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListVoucherBatchesRequest.ProtoReflect.Descriptor instead.
 func (*ListVoucherBatchesRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{60}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *ListVoucherBatchesRequest) GetStatus() string {
@@ -4736,7 +5000,7 @@ type ListVoucherBatchesResponse struct {
 
 func (x *ListVoucherBatchesResponse) Reset() {
 	*x = ListVoucherBatchesResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[61]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4748,7 +5012,7 @@ func (x *ListVoucherBatchesResponse) String() string {
 func (*ListVoucherBatchesResponse) ProtoMessage() {}
 
 func (x *ListVoucherBatchesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[61]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4761,7 +5025,7 @@ func (x *ListVoucherBatchesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListVoucherBatchesResponse.ProtoReflect.Descriptor instead.
 func (*ListVoucherBatchesResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{61}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *ListVoucherBatchesResponse) GetBatches() []*VoucherBatch {
@@ -4787,7 +5051,7 @@ type GetVoucherBatchRequest struct {
 
 func (x *GetVoucherBatchRequest) Reset() {
 	*x = GetVoucherBatchRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[62]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4799,7 +5063,7 @@ func (x *GetVoucherBatchRequest) String() string {
 func (*GetVoucherBatchRequest) ProtoMessage() {}
 
 func (x *GetVoucherBatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[62]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4812,7 +5076,7 @@ func (x *GetVoucherBatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVoucherBatchRequest.ProtoReflect.Descriptor instead.
 func (*GetVoucherBatchRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{62}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *GetVoucherBatchRequest) GetBatchId() string {
@@ -4831,7 +5095,7 @@ type ExportVoucherBatchRequest struct {
 
 func (x *ExportVoucherBatchRequest) Reset() {
 	*x = ExportVoucherBatchRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[63]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4843,7 +5107,7 @@ func (x *ExportVoucherBatchRequest) String() string {
 func (*ExportVoucherBatchRequest) ProtoMessage() {}
 
 func (x *ExportVoucherBatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[63]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4856,7 +5120,7 @@ func (x *ExportVoucherBatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportVoucherBatchRequest.ProtoReflect.Descriptor instead.
 func (*ExportVoucherBatchRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{63}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *ExportVoucherBatchRequest) GetBatchId() string {
@@ -4877,7 +5141,7 @@ type ExportedVoucher struct {
 
 func (x *ExportedVoucher) Reset() {
 	*x = ExportedVoucher{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[64]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4889,7 +5153,7 @@ func (x *ExportedVoucher) String() string {
 func (*ExportedVoucher) ProtoMessage() {}
 
 func (x *ExportedVoucher) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[64]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4902,7 +5166,7 @@ func (x *ExportedVoucher) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportedVoucher.ProtoReflect.Descriptor instead.
 func (*ExportedVoucher) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{64}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *ExportedVoucher) GetSerial() string {
@@ -4931,7 +5195,7 @@ type ExportVoucherBatchResponse struct {
 
 func (x *ExportVoucherBatchResponse) Reset() {
 	*x = ExportVoucherBatchResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[65]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4943,7 +5207,7 @@ func (x *ExportVoucherBatchResponse) String() string {
 func (*ExportVoucherBatchResponse) ProtoMessage() {}
 
 func (x *ExportVoucherBatchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[65]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4956,7 +5220,7 @@ func (x *ExportVoucherBatchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportVoucherBatchResponse.ProtoReflect.Descriptor instead.
 func (*ExportVoucherBatchResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{65}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *ExportVoucherBatchResponse) GetBatch() *VoucherBatch {
@@ -4991,7 +5255,7 @@ type CancelVoucherBatchRequest struct {
 
 func (x *CancelVoucherBatchRequest) Reset() {
 	*x = CancelVoucherBatchRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[66]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5003,7 +5267,7 @@ func (x *CancelVoucherBatchRequest) String() string {
 func (*CancelVoucherBatchRequest) ProtoMessage() {}
 
 func (x *CancelVoucherBatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[66]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5016,7 +5280,7 @@ func (x *CancelVoucherBatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelVoucherBatchRequest.ProtoReflect.Descriptor instead.
 func (*CancelVoucherBatchRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{66}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *CancelVoucherBatchRequest) GetBatchId() string {
@@ -5057,7 +5321,7 @@ type Voucher struct {
 
 func (x *Voucher) Reset() {
 	*x = Voucher{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[67]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5069,7 +5333,7 @@ func (x *Voucher) String() string {
 func (*Voucher) ProtoMessage() {}
 
 func (x *Voucher) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[67]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5082,7 +5346,7 @@ func (x *Voucher) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Voucher.ProtoReflect.Descriptor instead.
 func (*Voucher) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{67}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *Voucher) GetSerial() string {
@@ -5185,7 +5449,7 @@ type VoucherResponse struct {
 
 func (x *VoucherResponse) Reset() {
 	*x = VoucherResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[68]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5197,7 +5461,7 @@ func (x *VoucherResponse) String() string {
 func (*VoucherResponse) ProtoMessage() {}
 
 func (x *VoucherResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[68]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5210,7 +5474,7 @@ func (x *VoucherResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VoucherResponse.ProtoReflect.Descriptor instead.
 func (*VoucherResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{68}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *VoucherResponse) GetVoucher() *Voucher {
@@ -5229,7 +5493,7 @@ type GetVoucherRequest struct {
 
 func (x *GetVoucherRequest) Reset() {
 	*x = GetVoucherRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[69]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5241,7 +5505,7 @@ func (x *GetVoucherRequest) String() string {
 func (*GetVoucherRequest) ProtoMessage() {}
 
 func (x *GetVoucherRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[69]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5254,7 +5518,7 @@ func (x *GetVoucherRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVoucherRequest.ProtoReflect.Descriptor instead.
 func (*GetVoucherRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{69}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *GetVoucherRequest) GetSerial() string {
@@ -5275,7 +5539,7 @@ type VoidVoucherRequest struct {
 
 func (x *VoidVoucherRequest) Reset() {
 	*x = VoidVoucherRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[70]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5287,7 +5551,7 @@ func (x *VoidVoucherRequest) String() string {
 func (*VoidVoucherRequest) ProtoMessage() {}
 
 func (x *VoidVoucherRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[70]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5300,7 +5564,7 @@ func (x *VoidVoucherRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VoidVoucherRequest.ProtoReflect.Descriptor instead.
 func (*VoidVoucherRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{70}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *VoidVoucherRequest) GetSerial() string {
@@ -5329,7 +5593,7 @@ type RedeemVoucherRequest struct {
 
 func (x *RedeemVoucherRequest) Reset() {
 	*x = RedeemVoucherRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[71]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5341,7 +5605,7 @@ func (x *RedeemVoucherRequest) String() string {
 func (*RedeemVoucherRequest) ProtoMessage() {}
 
 func (x *RedeemVoucherRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[71]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5354,7 +5618,7 @@ func (x *RedeemVoucherRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RedeemVoucherRequest.ProtoReflect.Descriptor instead.
 func (*RedeemVoucherRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{71}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *RedeemVoucherRequest) GetRiderId() string {
@@ -5389,7 +5653,7 @@ type RedeemVoucherResponse struct {
 
 func (x *RedeemVoucherResponse) Reset() {
 	*x = RedeemVoucherResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[72]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5401,7 +5665,7 @@ func (x *RedeemVoucherResponse) String() string {
 func (*RedeemVoucherResponse) ProtoMessage() {}
 
 func (x *RedeemVoucherResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[72]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5414,7 +5678,7 @@ func (x *RedeemVoucherResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RedeemVoucherResponse.ProtoReflect.Descriptor instead.
 func (*RedeemVoucherResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{72}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *RedeemVoucherResponse) GetSerial() string {
@@ -5469,7 +5733,7 @@ type InspectWalletRequest struct {
 
 func (x *InspectWalletRequest) Reset() {
 	*x = InspectWalletRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[73]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5481,7 +5745,7 @@ func (x *InspectWalletRequest) String() string {
 func (*InspectWalletRequest) ProtoMessage() {}
 
 func (x *InspectWalletRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[73]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5494,7 +5758,7 @@ func (x *InspectWalletRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InspectWalletRequest.ProtoReflect.Descriptor instead.
 func (*InspectWalletRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{73}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *InspectWalletRequest) GetOwnerType() OwnerType {
@@ -5526,7 +5790,7 @@ type InspectWalletResponse struct {
 
 func (x *InspectWalletResponse) Reset() {
 	*x = InspectWalletResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[74]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5538,7 +5802,7 @@ func (x *InspectWalletResponse) String() string {
 func (*InspectWalletResponse) ProtoMessage() {}
 
 func (x *InspectWalletResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[74]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5551,7 +5815,7 @@ func (x *InspectWalletResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InspectWalletResponse.ProtoReflect.Descriptor instead.
 func (*InspectWalletResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{74}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *InspectWalletResponse) GetWallet() *Wallet {
@@ -5602,7 +5866,7 @@ type AdjustWalletRequest struct {
 
 func (x *AdjustWalletRequest) Reset() {
 	*x = AdjustWalletRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[75]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5614,7 +5878,7 @@ func (x *AdjustWalletRequest) String() string {
 func (*AdjustWalletRequest) ProtoMessage() {}
 
 func (x *AdjustWalletRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[75]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5627,7 +5891,7 @@ func (x *AdjustWalletRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdjustWalletRequest.ProtoReflect.Descriptor instead.
 func (*AdjustWalletRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{75}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *AdjustWalletRequest) GetOwnerType() OwnerType {
@@ -5696,7 +5960,7 @@ type Adjustment struct {
 
 func (x *Adjustment) Reset() {
 	*x = Adjustment{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[76]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5708,7 +5972,7 @@ func (x *Adjustment) String() string {
 func (*Adjustment) ProtoMessage() {}
 
 func (x *Adjustment) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[76]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5721,7 +5985,7 @@ func (x *Adjustment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Adjustment.ProtoReflect.Descriptor instead.
 func (*Adjustment) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{76}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *Adjustment) GetId() string {
@@ -5826,7 +6090,7 @@ type AdjustmentResponse struct {
 
 func (x *AdjustmentResponse) Reset() {
 	*x = AdjustmentResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[77]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5838,7 +6102,7 @@ func (x *AdjustmentResponse) String() string {
 func (*AdjustmentResponse) ProtoMessage() {}
 
 func (x *AdjustmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[77]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5851,7 +6115,7 @@ func (x *AdjustmentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdjustmentResponse.ProtoReflect.Descriptor instead.
 func (*AdjustmentResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{77}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *AdjustmentResponse) GetAdjustment() *Adjustment {
@@ -5887,7 +6151,7 @@ type RefundTripRequest struct {
 
 func (x *RefundTripRequest) Reset() {
 	*x = RefundTripRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[78]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5899,7 +6163,7 @@ func (x *RefundTripRequest) String() string {
 func (*RefundTripRequest) ProtoMessage() {}
 
 func (x *RefundTripRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[78]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5912,7 +6176,7 @@ func (x *RefundTripRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefundTripRequest.ProtoReflect.Descriptor instead.
 func (*RefundTripRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{78}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *RefundTripRequest) GetTripId() string {
@@ -5966,7 +6230,7 @@ type ListTripRefundsRequest struct {
 
 func (x *ListTripRefundsRequest) Reset() {
 	*x = ListTripRefundsRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[79]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5978,7 +6242,7 @@ func (x *ListTripRefundsRequest) String() string {
 func (*ListTripRefundsRequest) ProtoMessage() {}
 
 func (x *ListTripRefundsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[79]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5991,7 +6255,7 @@ func (x *ListTripRefundsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTripRefundsRequest.ProtoReflect.Descriptor instead.
 func (*ListTripRefundsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{79}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *ListTripRefundsRequest) GetTripId() string {
@@ -6014,7 +6278,7 @@ type ListTripRefundsResponse struct {
 
 func (x *ListTripRefundsResponse) Reset() {
 	*x = ListTripRefundsResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[80]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6026,7 +6290,7 @@ func (x *ListTripRefundsResponse) String() string {
 func (*ListTripRefundsResponse) ProtoMessage() {}
 
 func (x *ListTripRefundsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[80]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6039,7 +6303,7 @@ func (x *ListTripRefundsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTripRefundsResponse.ProtoReflect.Descriptor instead.
 func (*ListTripRefundsResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{80}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *ListTripRefundsResponse) GetRefunds() []*Adjustment {
@@ -6077,7 +6341,7 @@ type TipDriverRequest struct {
 
 func (x *TipDriverRequest) Reset() {
 	*x = TipDriverRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[81]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6089,7 +6353,7 @@ func (x *TipDriverRequest) String() string {
 func (*TipDriverRequest) ProtoMessage() {}
 
 func (x *TipDriverRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[81]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6102,7 +6366,7 @@ func (x *TipDriverRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TipDriverRequest.ProtoReflect.Descriptor instead.
 func (*TipDriverRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{81}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *TipDriverRequest) GetRiderId() string {
@@ -6146,7 +6410,7 @@ type Tip struct {
 
 func (x *Tip) Reset() {
 	*x = Tip{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[82]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6158,7 +6422,7 @@ func (x *Tip) String() string {
 func (*Tip) ProtoMessage() {}
 
 func (x *Tip) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[82]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6171,7 +6435,7 @@ func (x *Tip) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tip.ProtoReflect.Descriptor instead.
 func (*Tip) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{82}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *Tip) GetId() string {
@@ -6220,7 +6484,7 @@ type TipDriverResponse struct {
 
 func (x *TipDriverResponse) Reset() {
 	*x = TipDriverResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[83]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6232,7 +6496,7 @@ func (x *TipDriverResponse) String() string {
 func (*TipDriverResponse) ProtoMessage() {}
 
 func (x *TipDriverResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[83]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6245,7 +6509,7 @@ func (x *TipDriverResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TipDriverResponse.ProtoReflect.Descriptor instead.
 func (*TipDriverResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{83}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{88}
 }
 
 func (x *TipDriverResponse) GetTip() *Tip {
@@ -6275,7 +6539,7 @@ type GetDriverEarningsRequest struct {
 
 func (x *GetDriverEarningsRequest) Reset() {
 	*x = GetDriverEarningsRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[84]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6287,7 +6551,7 @@ func (x *GetDriverEarningsRequest) String() string {
 func (*GetDriverEarningsRequest) ProtoMessage() {}
 
 func (x *GetDriverEarningsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[84]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6300,7 +6564,7 @@ func (x *GetDriverEarningsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDriverEarningsRequest.ProtoReflect.Descriptor instead.
 func (*GetDriverEarningsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{84}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *GetDriverEarningsRequest) GetDriverId() string {
@@ -6354,7 +6618,7 @@ type EarningsTotals struct {
 
 func (x *EarningsTotals) Reset() {
 	*x = EarningsTotals{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[85]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6366,7 +6630,7 @@ func (x *EarningsTotals) String() string {
 func (*EarningsTotals) ProtoMessage() {}
 
 func (x *EarningsTotals) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[85]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6379,7 +6643,7 @@ func (x *EarningsTotals) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EarningsTotals.ProtoReflect.Descriptor instead.
 func (*EarningsTotals) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{85}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{90}
 }
 
 func (x *EarningsTotals) GetTrips() int32 {
@@ -6476,7 +6740,7 @@ type EarningsDay struct {
 
 func (x *EarningsDay) Reset() {
 	*x = EarningsDay{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[86]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6488,7 +6752,7 @@ func (x *EarningsDay) String() string {
 func (*EarningsDay) ProtoMessage() {}
 
 func (x *EarningsDay) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[86]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6501,7 +6765,7 @@ func (x *EarningsDay) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EarningsDay.ProtoReflect.Descriptor instead.
 func (*EarningsDay) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{86}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{91}
 }
 
 func (x *EarningsDay) GetDate() string {
@@ -6536,7 +6800,7 @@ type DriverEarnings struct {
 
 func (x *DriverEarnings) Reset() {
 	*x = DriverEarnings{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[87]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6548,7 +6812,7 @@ func (x *DriverEarnings) String() string {
 func (*DriverEarnings) ProtoMessage() {}
 
 func (x *DriverEarnings) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[87]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6561,7 +6825,7 @@ func (x *DriverEarnings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DriverEarnings.ProtoReflect.Descriptor instead.
 func (*DriverEarnings) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{87}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *DriverEarnings) GetDriverId() string {
@@ -6632,7 +6896,7 @@ type IncentiveTier struct {
 
 func (x *IncentiveTier) Reset() {
 	*x = IncentiveTier{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[88]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6644,7 +6908,7 @@ func (x *IncentiveTier) String() string {
 func (*IncentiveTier) ProtoMessage() {}
 
 func (x *IncentiveTier) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[88]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6657,7 +6921,7 @@ func (x *IncentiveTier) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IncentiveTier.ProtoReflect.Descriptor instead.
 func (*IncentiveTier) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{88}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *IncentiveTier) GetTrips() int32 {
@@ -6708,7 +6972,7 @@ type IncentiveCampaign struct {
 
 func (x *IncentiveCampaign) Reset() {
 	*x = IncentiveCampaign{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[89]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6720,7 +6984,7 @@ func (x *IncentiveCampaign) String() string {
 func (*IncentiveCampaign) ProtoMessage() {}
 
 func (x *IncentiveCampaign) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[89]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6733,7 +6997,7 @@ func (x *IncentiveCampaign) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IncentiveCampaign.ProtoReflect.Descriptor instead.
 func (*IncentiveCampaign) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{89}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *IncentiveCampaign) GetId() string {
@@ -6899,7 +7163,7 @@ type IncentiveCampaignResponse struct {
 
 func (x *IncentiveCampaignResponse) Reset() {
 	*x = IncentiveCampaignResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[90]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6911,7 +7175,7 @@ func (x *IncentiveCampaignResponse) String() string {
 func (*IncentiveCampaignResponse) ProtoMessage() {}
 
 func (x *IncentiveCampaignResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[90]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6924,7 +7188,7 @@ func (x *IncentiveCampaignResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IncentiveCampaignResponse.ProtoReflect.Descriptor instead.
 func (*IncentiveCampaignResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{90}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *IncentiveCampaignResponse) GetCampaign() *IncentiveCampaign {
@@ -6959,7 +7223,7 @@ type CreateIncentiveCampaignRequest struct {
 
 func (x *CreateIncentiveCampaignRequest) Reset() {
 	*x = CreateIncentiveCampaignRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[91]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6971,7 +7235,7 @@ func (x *CreateIncentiveCampaignRequest) String() string {
 func (*CreateIncentiveCampaignRequest) ProtoMessage() {}
 
 func (x *CreateIncentiveCampaignRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[91]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6984,7 +7248,7 @@ func (x *CreateIncentiveCampaignRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateIncentiveCampaignRequest.ProtoReflect.Descriptor instead.
 func (*CreateIncentiveCampaignRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{91}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *CreateIncentiveCampaignRequest) GetName() string {
@@ -7104,7 +7368,7 @@ type ListIncentiveCampaignsRequest struct {
 
 func (x *ListIncentiveCampaignsRequest) Reset() {
 	*x = ListIncentiveCampaignsRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[92]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7116,7 +7380,7 @@ func (x *ListIncentiveCampaignsRequest) String() string {
 func (*ListIncentiveCampaignsRequest) ProtoMessage() {}
 
 func (x *ListIncentiveCampaignsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[92]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7129,7 +7393,7 @@ func (x *ListIncentiveCampaignsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListIncentiveCampaignsRequest.ProtoReflect.Descriptor instead.
 func (*ListIncentiveCampaignsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{92}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{97}
 }
 
 func (x *ListIncentiveCampaignsRequest) GetStatus() IncentiveCampaignStatus {
@@ -7163,7 +7427,7 @@ type ListIncentiveCampaignsResponse struct {
 
 func (x *ListIncentiveCampaignsResponse) Reset() {
 	*x = ListIncentiveCampaignsResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[93]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7175,7 +7439,7 @@ func (x *ListIncentiveCampaignsResponse) String() string {
 func (*ListIncentiveCampaignsResponse) ProtoMessage() {}
 
 func (x *ListIncentiveCampaignsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[93]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7188,7 +7452,7 @@ func (x *ListIncentiveCampaignsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListIncentiveCampaignsResponse.ProtoReflect.Descriptor instead.
 func (*ListIncentiveCampaignsResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{93}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *ListIncentiveCampaignsResponse) GetCampaigns() []*IncentiveCampaign {
@@ -7214,7 +7478,7 @@ type GetIncentiveCampaignRequest struct {
 
 func (x *GetIncentiveCampaignRequest) Reset() {
 	*x = GetIncentiveCampaignRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[94]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7226,7 +7490,7 @@ func (x *GetIncentiveCampaignRequest) String() string {
 func (*GetIncentiveCampaignRequest) ProtoMessage() {}
 
 func (x *GetIncentiveCampaignRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[94]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7239,7 +7503,7 @@ func (x *GetIncentiveCampaignRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetIncentiveCampaignRequest.ProtoReflect.Descriptor instead.
 func (*GetIncentiveCampaignRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{94}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *GetIncentiveCampaignRequest) GetCampaignId() string {
@@ -7259,7 +7523,7 @@ type CancelIncentiveCampaignRequest struct {
 
 func (x *CancelIncentiveCampaignRequest) Reset() {
 	*x = CancelIncentiveCampaignRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[95]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7271,7 +7535,7 @@ func (x *CancelIncentiveCampaignRequest) String() string {
 func (*CancelIncentiveCampaignRequest) ProtoMessage() {}
 
 func (x *CancelIncentiveCampaignRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[95]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7284,7 +7548,7 @@ func (x *CancelIncentiveCampaignRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelIncentiveCampaignRequest.ProtoReflect.Descriptor instead.
 func (*CancelIncentiveCampaignRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{95}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *CancelIncentiveCampaignRequest) GetCampaignId() string {
@@ -7322,7 +7586,7 @@ type IncentivePayout struct {
 
 func (x *IncentivePayout) Reset() {
 	*x = IncentivePayout{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[96]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7334,7 +7598,7 @@ func (x *IncentivePayout) String() string {
 func (*IncentivePayout) ProtoMessage() {}
 
 func (x *IncentivePayout) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[96]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7347,7 +7611,7 @@ func (x *IncentivePayout) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IncentivePayout.ProtoReflect.Descriptor instead.
 func (*IncentivePayout) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{96}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *IncentivePayout) GetCampaignId() string {
@@ -7438,7 +7702,7 @@ type ListIncentivePayoutsRequest struct {
 
 func (x *ListIncentivePayoutsRequest) Reset() {
 	*x = ListIncentivePayoutsRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[97]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7450,7 +7714,7 @@ func (x *ListIncentivePayoutsRequest) String() string {
 func (*ListIncentivePayoutsRequest) ProtoMessage() {}
 
 func (x *ListIncentivePayoutsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[97]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7463,7 +7727,7 @@ func (x *ListIncentivePayoutsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListIncentivePayoutsRequest.ProtoReflect.Descriptor instead.
 func (*ListIncentivePayoutsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{97}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *ListIncentivePayoutsRequest) GetCampaignId() string {
@@ -7497,7 +7761,7 @@ type ListIncentivePayoutsResponse struct {
 
 func (x *ListIncentivePayoutsResponse) Reset() {
 	*x = ListIncentivePayoutsResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[98]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[103]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7509,7 +7773,7 @@ func (x *ListIncentivePayoutsResponse) String() string {
 func (*ListIncentivePayoutsResponse) ProtoMessage() {}
 
 func (x *ListIncentivePayoutsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[98]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[103]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7522,7 +7786,7 @@ func (x *ListIncentivePayoutsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListIncentivePayoutsResponse.ProtoReflect.Descriptor instead.
 func (*ListIncentivePayoutsResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{98}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{103}
 }
 
 func (x *ListIncentivePayoutsResponse) GetPayouts() []*IncentivePayout {
@@ -7548,7 +7812,7 @@ type ListDriverIncentivesRequest struct {
 
 func (x *ListDriverIncentivesRequest) Reset() {
 	*x = ListDriverIncentivesRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[99]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[104]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7560,7 +7824,7 @@ func (x *ListDriverIncentivesRequest) String() string {
 func (*ListDriverIncentivesRequest) ProtoMessage() {}
 
 func (x *ListDriverIncentivesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[99]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[104]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7573,7 +7837,7 @@ func (x *ListDriverIncentivesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDriverIncentivesRequest.ProtoReflect.Descriptor instead.
 func (*ListDriverIncentivesRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{99}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *ListDriverIncentivesRequest) GetDriverId() string {
@@ -7604,7 +7868,7 @@ type DriverIncentive struct {
 
 func (x *DriverIncentive) Reset() {
 	*x = DriverIncentive{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[100]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[105]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7616,7 +7880,7 @@ func (x *DriverIncentive) String() string {
 func (*DriverIncentive) ProtoMessage() {}
 
 func (x *DriverIncentive) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[100]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[105]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7629,7 +7893,7 @@ func (x *DriverIncentive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DriverIncentive.ProtoReflect.Descriptor instead.
 func (*DriverIncentive) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{100}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *DriverIncentive) GetCampaign() *IncentiveCampaign {
@@ -7711,7 +7975,7 @@ type ListDriverIncentivesResponse struct {
 
 func (x *ListDriverIncentivesResponse) Reset() {
 	*x = ListDriverIncentivesResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[101]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[106]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7723,7 +7987,7 @@ func (x *ListDriverIncentivesResponse) String() string {
 func (*ListDriverIncentivesResponse) ProtoMessage() {}
 
 func (x *ListDriverIncentivesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[101]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[106]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7736,7 +8000,7 @@ func (x *ListDriverIncentivesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDriverIncentivesResponse.ProtoReflect.Descriptor instead.
 func (*ListDriverIncentivesResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{101}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *ListDriverIncentivesResponse) GetIncentives() []*DriverIncentive {
@@ -7764,7 +8028,7 @@ type ListFeedTransactionsRequest struct {
 
 func (x *ListFeedTransactionsRequest) Reset() {
 	*x = ListFeedTransactionsRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[102]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[107]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7776,7 +8040,7 @@ func (x *ListFeedTransactionsRequest) String() string {
 func (*ListFeedTransactionsRequest) ProtoMessage() {}
 
 func (x *ListFeedTransactionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[102]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[107]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7789,7 +8053,7 @@ func (x *ListFeedTransactionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListFeedTransactionsRequest.ProtoReflect.Descriptor instead.
 func (*ListFeedTransactionsRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{102}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{107}
 }
 
 func (x *ListFeedTransactionsRequest) GetOwnerType() OwnerType {
@@ -7844,7 +8108,7 @@ type ListFeedTransactionsResponse struct {
 
 func (x *ListFeedTransactionsResponse) Reset() {
 	*x = ListFeedTransactionsResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[103]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[108]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7856,7 +8120,7 @@ func (x *ListFeedTransactionsResponse) String() string {
 func (*ListFeedTransactionsResponse) ProtoMessage() {}
 
 func (x *ListFeedTransactionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[103]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[108]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7869,7 +8133,7 @@ func (x *ListFeedTransactionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListFeedTransactionsResponse.ProtoReflect.Descriptor instead.
 func (*ListFeedTransactionsResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{103}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{108}
 }
 
 func (x *ListFeedTransactionsResponse) GetTransactions() []*Transaction {
@@ -7899,7 +8163,7 @@ type SummarizeLedgerRequest struct {
 
 func (x *SummarizeLedgerRequest) Reset() {
 	*x = SummarizeLedgerRequest{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[104]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[109]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7911,7 +8175,7 @@ func (x *SummarizeLedgerRequest) String() string {
 func (*SummarizeLedgerRequest) ProtoMessage() {}
 
 func (x *SummarizeLedgerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[104]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[109]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7924,7 +8188,7 @@ func (x *SummarizeLedgerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummarizeLedgerRequest.ProtoReflect.Descriptor instead.
 func (*SummarizeLedgerRequest) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{104}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{109}
 }
 
 func (x *SummarizeLedgerRequest) GetStart() *timestamppb.Timestamp {
@@ -7963,7 +8227,7 @@ type LedgerTotal struct {
 
 func (x *LedgerTotal) Reset() {
 	*x = LedgerTotal{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[105]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[110]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7975,7 +8239,7 @@ func (x *LedgerTotal) String() string {
 func (*LedgerTotal) ProtoMessage() {}
 
 func (x *LedgerTotal) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[105]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[110]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7988,7 +8252,7 @@ func (x *LedgerTotal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LedgerTotal.ProtoReflect.Descriptor instead.
 func (*LedgerTotal) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{105}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{110}
 }
 
 func (x *LedgerTotal) GetDate() string {
@@ -8050,7 +8314,7 @@ type SummarizeLedgerResponse struct {
 
 func (x *SummarizeLedgerResponse) Reset() {
 	*x = SummarizeLedgerResponse{}
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[106]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[111]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8062,7 +8326,7 @@ func (x *SummarizeLedgerResponse) String() string {
 func (*SummarizeLedgerResponse) ProtoMessage() {}
 
 func (x *SummarizeLedgerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[106]
+	mi := &file_ride_wallet_v1_wallet_proto_msgTypes[111]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8075,7 +8339,7 @@ func (x *SummarizeLedgerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummarizeLedgerResponse.ProtoReflect.Descriptor instead.
 func (*SummarizeLedgerResponse) Descriptor() ([]byte, []int) {
-	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{106}
+	return file_ride_wallet_v1_wallet_proto_rawDescGZIP(), []int{111}
 }
 
 func (x *SummarizeLedgerResponse) GetTotals() []*LedgerTotal {
@@ -8461,12 +8725,29 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x04paid\x18\x04 \x01(\tR\x04paid\x12 \n" +
 	"\voutstanding\x18\x05 \x01(\tR\voutstanding\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xb7\x01\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xea\x01\n" +
 	"\x14GetRiderDuesResponse\x12#\n" +
 	"\rcurrency_code\x18\x01 \x01(\tR\fcurrencyCode\x12 \n" +
 	"\voutstanding\x18\x02 \x01(\tR\voutstanding\x12,\n" +
 	"\x04dues\x18\x03 \x03(\v2\x18.ride.wallet.v1.RiderDueR\x04dues\x12*\n" +
-	"\x11can_request_trips\x18\x04 \x01(\bR\x0fcanRequestTrips\"\xe1\x01\n" +
+	"\x11can_request_trips\x18\x04 \x01(\bR\x0fcanRequestTrips\x121\n" +
+	"\x06pay_by\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x05payBy\"\x16\n" +
+	"\x14GetDuesPolicyRequest\"^\n" +
+	"\n" +
+	"DuesPolicy\x121\n" +
+	"\x15block_trips_with_dues\x18\x01 \x01(\bR\x12blockTripsWithDues\x12\x1d\n" +
+	"\n" +
+	"grace_days\x18\x02 \x01(\x05R\tgraceDays\"0\n" +
+	"\x18ListOverdueRidersRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\"\xe3\x01\n" +
+	"\fOverdueRider\x12\x19\n" +
+	"\brider_id\x18\x01 \x01(\tR\ariderId\x12#\n" +
+	"\rcurrency_code\x18\x02 \x01(\tR\fcurrencyCode\x12 \n" +
+	"\voutstanding\x18\x03 \x01(\tR\voutstanding\x12>\n" +
+	"\roldest_due_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\voldestDueAt\x121\n" +
+	"\x06pay_by\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x05payBy\"Q\n" +
+	"\x19ListOverdueRidersResponse\x124\n" +
+	"\x06riders\x18\x01 \x03(\v2\x1c.ride.wallet.v1.OverdueRiderR\x06riders\"\xe1\x01\n" +
 	"\x19CreateVoucherBatchRequest\x12\x14\n" +
 	"\x05label\x18\x01 \x01(\tR\x05label\x12\x16\n" +
 	"\x06seller\x18\x02 \x01(\tR\x06seller\x12\x16\n" +
@@ -8850,7 +9131,7 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x15IncentivePayoutStatus\x12'\n" +
 	"#INCENTIVE_PAYOUT_STATUS_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cINCENTIVE_PAYOUT_STATUS_PAID\x10\x01\x12(\n" +
-	"$INCENTIVE_PAYOUT_STATUS_NOT_ELIGIBLE\x10\x022\xaf;\n" +
+	"$INCENTIVE_PAYOUT_STATUS_NOT_ELIGIBLE\x10\x022\xae>\n" +
 	"\rWalletService\x12s\n" +
 	"\x12ExportPersonalData\x12-.ride.dataexport.v1.ExportPersonalDataRequest\x1a..ride.dataexport.v1.ExportPersonalDataResponse\x12q\n" +
 	"\x14ListFeedTransactions\x12+.ride.wallet.v1.ListFeedTransactionsRequest\x1a,.ride.wallet.v1.ListFeedTransactionsResponse\x12b\n" +
@@ -8880,7 +9161,10 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\x13DeclineMoneyRequest\x12(.ride.wallet.v1.CloseMoneyRequestRequest\x1a$.ride.wallet.v1.MoneyRequestResponse\"?\x82\xd3\xe4\x93\x029:\x01*\"4/v1/wallets/{rider_id}/money-requests/{code}:decline\x12\xa4\x01\n" +
 	"\x12CancelMoneyRequest\x12(.ride.wallet.v1.CloseMoneyRequestRequest\x1a$.ride.wallet.v1.MoneyRequestResponse\">\x82\xd3\xe4\x93\x028:\x01*\"3/v1/wallets/{rider_id}/money-requests/{code}:cancel\x12\x83\x01\n" +
 	"\fGetStatement\x12#.ride.wallet.v1.GetStatementRequest\x1a$.ride.wallet.v1.GetStatementResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/wallets/{owner_id}/statement\x12~\n" +
-	"\fGetRiderDues\x12#.ride.wallet.v1.GetRiderDuesRequest\x1a$.ride.wallet.v1.GetRiderDuesResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/wallets/{rider_id}/dues\x12\x8b\x01\n" +
+	"\fGetRiderDues\x12#.ride.wallet.v1.GetRiderDuesRequest\x1a$.ride.wallet.v1.GetRiderDuesResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/wallets/{rider_id}/dues\x12w\n" +
+	"\rGetDuesPolicy\x12$.ride.wallet.v1.GetDuesPolicyRequest\x1a\x1a.ride.wallet.v1.DuesPolicy\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/v1/admin/wallet/dues-policy\x12p\n" +
+	"\rSetDuesPolicy\x12\x1a.ride.wallet.v1.DuesPolicy\x1a\x1a.ride.wallet.v1.DuesPolicy\"'\x82\xd3\xe4\x93\x02!:\x01*\x1a\x1c/v1/admin/wallet/dues-policy\x12\x91\x01\n" +
+	"\x11ListOverdueRiders\x12(.ride.wallet.v1.ListOverdueRidersRequest\x1a).ride.wallet.v1.ListOverdueRidersResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/admin/wallet/overdue-riders\x12\x8b\x01\n" +
 	"\x12CreateVoucherBatch\x12).ride.wallet.v1.CreateVoucherBatchRequest\x1a$.ride.wallet.v1.VoucherBatchResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/admin/voucher-batches\x12\x8e\x01\n" +
 	"\x12ListVoucherBatches\x12).ride.wallet.v1.ListVoucherBatchesRequest\x1a*.ride.wallet.v1.ListVoucherBatchesResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/admin/voucher-batches\x12\x8d\x01\n" +
 	"\x0fGetVoucherBatch\x12&.ride.wallet.v1.GetVoucherBatchRequest\x1a$.ride.wallet.v1.VoucherBatchResponse\",\x82\xd3\xe4\x93\x02&\x12$/v1/admin/voucher-batches/{batch_id}\x12\xa3\x01\n" +
@@ -8922,7 +9206,7 @@ func file_ride_wallet_v1_wallet_proto_rawDescGZIP() []byte {
 }
 
 var file_ride_wallet_v1_wallet_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_ride_wallet_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 107)
+var file_ride_wallet_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 112)
 var file_ride_wallet_v1_wallet_proto_goTypes = []any{
 	(OwnerType)(0),                          // 0: ride.wallet.v1.OwnerType
 	(PaymentMethod)(0),                      // 1: ride.wallet.v1.PaymentMethod
@@ -8987,66 +9271,71 @@ var file_ride_wallet_v1_wallet_proto_goTypes = []any{
 	(*GetRiderDuesRequest)(nil),             // 60: ride.wallet.v1.GetRiderDuesRequest
 	(*RiderDue)(nil),                        // 61: ride.wallet.v1.RiderDue
 	(*GetRiderDuesResponse)(nil),            // 62: ride.wallet.v1.GetRiderDuesResponse
-	(*CreateVoucherBatchRequest)(nil),       // 63: ride.wallet.v1.CreateVoucherBatchRequest
-	(*VoucherBatch)(nil),                    // 64: ride.wallet.v1.VoucherBatch
-	(*VoucherBatchResponse)(nil),            // 65: ride.wallet.v1.VoucherBatchResponse
-	(*ListVoucherBatchesRequest)(nil),       // 66: ride.wallet.v1.ListVoucherBatchesRequest
-	(*ListVoucherBatchesResponse)(nil),      // 67: ride.wallet.v1.ListVoucherBatchesResponse
-	(*GetVoucherBatchRequest)(nil),          // 68: ride.wallet.v1.GetVoucherBatchRequest
-	(*ExportVoucherBatchRequest)(nil),       // 69: ride.wallet.v1.ExportVoucherBatchRequest
-	(*ExportedVoucher)(nil),                 // 70: ride.wallet.v1.ExportedVoucher
-	(*ExportVoucherBatchResponse)(nil),      // 71: ride.wallet.v1.ExportVoucherBatchResponse
-	(*CancelVoucherBatchRequest)(nil),       // 72: ride.wallet.v1.CancelVoucherBatchRequest
-	(*Voucher)(nil),                         // 73: ride.wallet.v1.Voucher
-	(*VoucherResponse)(nil),                 // 74: ride.wallet.v1.VoucherResponse
-	(*GetVoucherRequest)(nil),               // 75: ride.wallet.v1.GetVoucherRequest
-	(*VoidVoucherRequest)(nil),              // 76: ride.wallet.v1.VoidVoucherRequest
-	(*RedeemVoucherRequest)(nil),            // 77: ride.wallet.v1.RedeemVoucherRequest
-	(*RedeemVoucherResponse)(nil),           // 78: ride.wallet.v1.RedeemVoucherResponse
-	(*InspectWalletRequest)(nil),            // 79: ride.wallet.v1.InspectWalletRequest
-	(*InspectWalletResponse)(nil),           // 80: ride.wallet.v1.InspectWalletResponse
-	(*AdjustWalletRequest)(nil),             // 81: ride.wallet.v1.AdjustWalletRequest
-	(*Adjustment)(nil),                      // 82: ride.wallet.v1.Adjustment
-	(*AdjustmentResponse)(nil),              // 83: ride.wallet.v1.AdjustmentResponse
-	(*RefundTripRequest)(nil),               // 84: ride.wallet.v1.RefundTripRequest
-	(*ListTripRefundsRequest)(nil),          // 85: ride.wallet.v1.ListTripRefundsRequest
-	(*ListTripRefundsResponse)(nil),         // 86: ride.wallet.v1.ListTripRefundsResponse
-	(*TipDriverRequest)(nil),                // 87: ride.wallet.v1.TipDriverRequest
-	(*Tip)(nil),                             // 88: ride.wallet.v1.Tip
-	(*TipDriverResponse)(nil),               // 89: ride.wallet.v1.TipDriverResponse
-	(*GetDriverEarningsRequest)(nil),        // 90: ride.wallet.v1.GetDriverEarningsRequest
-	(*EarningsTotals)(nil),                  // 91: ride.wallet.v1.EarningsTotals
-	(*EarningsDay)(nil),                     // 92: ride.wallet.v1.EarningsDay
-	(*DriverEarnings)(nil),                  // 93: ride.wallet.v1.DriverEarnings
-	(*IncentiveTier)(nil),                   // 94: ride.wallet.v1.IncentiveTier
-	(*IncentiveCampaign)(nil),               // 95: ride.wallet.v1.IncentiveCampaign
-	(*IncentiveCampaignResponse)(nil),       // 96: ride.wallet.v1.IncentiveCampaignResponse
-	(*CreateIncentiveCampaignRequest)(nil),  // 97: ride.wallet.v1.CreateIncentiveCampaignRequest
-	(*ListIncentiveCampaignsRequest)(nil),   // 98: ride.wallet.v1.ListIncentiveCampaignsRequest
-	(*ListIncentiveCampaignsResponse)(nil),  // 99: ride.wallet.v1.ListIncentiveCampaignsResponse
-	(*GetIncentiveCampaignRequest)(nil),     // 100: ride.wallet.v1.GetIncentiveCampaignRequest
-	(*CancelIncentiveCampaignRequest)(nil),  // 101: ride.wallet.v1.CancelIncentiveCampaignRequest
-	(*IncentivePayout)(nil),                 // 102: ride.wallet.v1.IncentivePayout
-	(*ListIncentivePayoutsRequest)(nil),     // 103: ride.wallet.v1.ListIncentivePayoutsRequest
-	(*ListIncentivePayoutsResponse)(nil),    // 104: ride.wallet.v1.ListIncentivePayoutsResponse
-	(*ListDriverIncentivesRequest)(nil),     // 105: ride.wallet.v1.ListDriverIncentivesRequest
-	(*DriverIncentive)(nil),                 // 106: ride.wallet.v1.DriverIncentive
-	(*ListDriverIncentivesResponse)(nil),    // 107: ride.wallet.v1.ListDriverIncentivesResponse
-	(*ListFeedTransactionsRequest)(nil),     // 108: ride.wallet.v1.ListFeedTransactionsRequest
-	(*ListFeedTransactionsResponse)(nil),    // 109: ride.wallet.v1.ListFeedTransactionsResponse
-	(*SummarizeLedgerRequest)(nil),          // 110: ride.wallet.v1.SummarizeLedgerRequest
-	(*LedgerTotal)(nil),                     // 111: ride.wallet.v1.LedgerTotal
-	(*SummarizeLedgerResponse)(nil),         // 112: ride.wallet.v1.SummarizeLedgerResponse
-	(*timestamppb.Timestamp)(nil),           // 113: google.protobuf.Timestamp
-	(*v1.ExportPersonalDataRequest)(nil),    // 114: ride.dataexport.v1.ExportPersonalDataRequest
-	(*v1.ExportPersonalDataResponse)(nil),   // 115: ride.dataexport.v1.ExportPersonalDataResponse
+	(*GetDuesPolicyRequest)(nil),            // 63: ride.wallet.v1.GetDuesPolicyRequest
+	(*DuesPolicy)(nil),                      // 64: ride.wallet.v1.DuesPolicy
+	(*ListOverdueRidersRequest)(nil),        // 65: ride.wallet.v1.ListOverdueRidersRequest
+	(*OverdueRider)(nil),                    // 66: ride.wallet.v1.OverdueRider
+	(*ListOverdueRidersResponse)(nil),       // 67: ride.wallet.v1.ListOverdueRidersResponse
+	(*CreateVoucherBatchRequest)(nil),       // 68: ride.wallet.v1.CreateVoucherBatchRequest
+	(*VoucherBatch)(nil),                    // 69: ride.wallet.v1.VoucherBatch
+	(*VoucherBatchResponse)(nil),            // 70: ride.wallet.v1.VoucherBatchResponse
+	(*ListVoucherBatchesRequest)(nil),       // 71: ride.wallet.v1.ListVoucherBatchesRequest
+	(*ListVoucherBatchesResponse)(nil),      // 72: ride.wallet.v1.ListVoucherBatchesResponse
+	(*GetVoucherBatchRequest)(nil),          // 73: ride.wallet.v1.GetVoucherBatchRequest
+	(*ExportVoucherBatchRequest)(nil),       // 74: ride.wallet.v1.ExportVoucherBatchRequest
+	(*ExportedVoucher)(nil),                 // 75: ride.wallet.v1.ExportedVoucher
+	(*ExportVoucherBatchResponse)(nil),      // 76: ride.wallet.v1.ExportVoucherBatchResponse
+	(*CancelVoucherBatchRequest)(nil),       // 77: ride.wallet.v1.CancelVoucherBatchRequest
+	(*Voucher)(nil),                         // 78: ride.wallet.v1.Voucher
+	(*VoucherResponse)(nil),                 // 79: ride.wallet.v1.VoucherResponse
+	(*GetVoucherRequest)(nil),               // 80: ride.wallet.v1.GetVoucherRequest
+	(*VoidVoucherRequest)(nil),              // 81: ride.wallet.v1.VoidVoucherRequest
+	(*RedeemVoucherRequest)(nil),            // 82: ride.wallet.v1.RedeemVoucherRequest
+	(*RedeemVoucherResponse)(nil),           // 83: ride.wallet.v1.RedeemVoucherResponse
+	(*InspectWalletRequest)(nil),            // 84: ride.wallet.v1.InspectWalletRequest
+	(*InspectWalletResponse)(nil),           // 85: ride.wallet.v1.InspectWalletResponse
+	(*AdjustWalletRequest)(nil),             // 86: ride.wallet.v1.AdjustWalletRequest
+	(*Adjustment)(nil),                      // 87: ride.wallet.v1.Adjustment
+	(*AdjustmentResponse)(nil),              // 88: ride.wallet.v1.AdjustmentResponse
+	(*RefundTripRequest)(nil),               // 89: ride.wallet.v1.RefundTripRequest
+	(*ListTripRefundsRequest)(nil),          // 90: ride.wallet.v1.ListTripRefundsRequest
+	(*ListTripRefundsResponse)(nil),         // 91: ride.wallet.v1.ListTripRefundsResponse
+	(*TipDriverRequest)(nil),                // 92: ride.wallet.v1.TipDriverRequest
+	(*Tip)(nil),                             // 93: ride.wallet.v1.Tip
+	(*TipDriverResponse)(nil),               // 94: ride.wallet.v1.TipDriverResponse
+	(*GetDriverEarningsRequest)(nil),        // 95: ride.wallet.v1.GetDriverEarningsRequest
+	(*EarningsTotals)(nil),                  // 96: ride.wallet.v1.EarningsTotals
+	(*EarningsDay)(nil),                     // 97: ride.wallet.v1.EarningsDay
+	(*DriverEarnings)(nil),                  // 98: ride.wallet.v1.DriverEarnings
+	(*IncentiveTier)(nil),                   // 99: ride.wallet.v1.IncentiveTier
+	(*IncentiveCampaign)(nil),               // 100: ride.wallet.v1.IncentiveCampaign
+	(*IncentiveCampaignResponse)(nil),       // 101: ride.wallet.v1.IncentiveCampaignResponse
+	(*CreateIncentiveCampaignRequest)(nil),  // 102: ride.wallet.v1.CreateIncentiveCampaignRequest
+	(*ListIncentiveCampaignsRequest)(nil),   // 103: ride.wallet.v1.ListIncentiveCampaignsRequest
+	(*ListIncentiveCampaignsResponse)(nil),  // 104: ride.wallet.v1.ListIncentiveCampaignsResponse
+	(*GetIncentiveCampaignRequest)(nil),     // 105: ride.wallet.v1.GetIncentiveCampaignRequest
+	(*CancelIncentiveCampaignRequest)(nil),  // 106: ride.wallet.v1.CancelIncentiveCampaignRequest
+	(*IncentivePayout)(nil),                 // 107: ride.wallet.v1.IncentivePayout
+	(*ListIncentivePayoutsRequest)(nil),     // 108: ride.wallet.v1.ListIncentivePayoutsRequest
+	(*ListIncentivePayoutsResponse)(nil),    // 109: ride.wallet.v1.ListIncentivePayoutsResponse
+	(*ListDriverIncentivesRequest)(nil),     // 110: ride.wallet.v1.ListDriverIncentivesRequest
+	(*DriverIncentive)(nil),                 // 111: ride.wallet.v1.DriverIncentive
+	(*ListDriverIncentivesResponse)(nil),    // 112: ride.wallet.v1.ListDriverIncentivesResponse
+	(*ListFeedTransactionsRequest)(nil),     // 113: ride.wallet.v1.ListFeedTransactionsRequest
+	(*ListFeedTransactionsResponse)(nil),    // 114: ride.wallet.v1.ListFeedTransactionsResponse
+	(*SummarizeLedgerRequest)(nil),          // 115: ride.wallet.v1.SummarizeLedgerRequest
+	(*LedgerTotal)(nil),                     // 116: ride.wallet.v1.LedgerTotal
+	(*SummarizeLedgerResponse)(nil),         // 117: ride.wallet.v1.SummarizeLedgerResponse
+	(*timestamppb.Timestamp)(nil),           // 118: google.protobuf.Timestamp
+	(*v1.ExportPersonalDataRequest)(nil),    // 119: ride.dataexport.v1.ExportPersonalDataRequest
+	(*v1.ExportPersonalDataResponse)(nil),   // 120: ride.dataexport.v1.ExportPersonalDataResponse
 }
 var file_ride_wallet_v1_wallet_proto_depIdxs = []int32{
 	0,   // 0: ride.wallet.v1.Wallet.owner_type:type_name -> ride.wallet.v1.OwnerType
-	113, // 1: ride.wallet.v1.Wallet.created_at:type_name -> google.protobuf.Timestamp
-	113, // 2: ride.wallet.v1.Wallet.updated_at:type_name -> google.protobuf.Timestamp
+	118, // 1: ride.wallet.v1.Wallet.created_at:type_name -> google.protobuf.Timestamp
+	118, // 2: ride.wallet.v1.Wallet.updated_at:type_name -> google.protobuf.Timestamp
 	2,   // 3: ride.wallet.v1.Transaction.type:type_name -> ride.wallet.v1.TransactionType
-	113, // 4: ride.wallet.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
+	118, // 4: ride.wallet.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
 	0,   // 5: ride.wallet.v1.GetWalletRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	6,   // 6: ride.wallet.v1.GetWalletResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	0,   // 7: ride.wallet.v1.TopUpRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
@@ -9058,26 +9347,26 @@ var file_ride_wallet_v1_wallet_proto_depIdxs = []int32{
 	6,   // 13: ride.wallet.v1.RequestPayoutResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	7,   // 14: ride.wallet.v1.RequestPayoutResponse.transaction:type_name -> ride.wallet.v1.Transaction
 	20,  // 15: ride.wallet.v1.RequestPayoutResponse.payout:type_name -> ride.wallet.v1.Payout
-	113, // 16: ride.wallet.v1.Payout.created_at:type_name -> google.protobuf.Timestamp
-	113, // 17: ride.wallet.v1.Payout.approved_at:type_name -> google.protobuf.Timestamp
-	113, // 18: ride.wallet.v1.Payout.paid_at:type_name -> google.protobuf.Timestamp
-	113, // 19: ride.wallet.v1.Payout.rejected_at:type_name -> google.protobuf.Timestamp
+	118, // 16: ride.wallet.v1.Payout.created_at:type_name -> google.protobuf.Timestamp
+	118, // 17: ride.wallet.v1.Payout.approved_at:type_name -> google.protobuf.Timestamp
+	118, // 18: ride.wallet.v1.Payout.paid_at:type_name -> google.protobuf.Timestamp
+	118, // 19: ride.wallet.v1.Payout.rejected_at:type_name -> google.protobuf.Timestamp
 	20,  // 20: ride.wallet.v1.PayoutResponse.payout:type_name -> ride.wallet.v1.Payout
 	20,  // 21: ride.wallet.v1.ListPayoutsResponse.payouts:type_name -> ride.wallet.v1.Payout
 	0,   // 22: ride.wallet.v1.InitiateTopUpRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	0,   // 23: ride.wallet.v1.GetTopUpOptionsRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	0,   // 24: ride.wallet.v1.GetTopUpRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
-	113, // 25: ride.wallet.v1.GetTopUpResponse.created_at:type_name -> google.protobuf.Timestamp
-	113, // 26: ride.wallet.v1.GetTopUpResponse.updated_at:type_name -> google.protobuf.Timestamp
+	118, // 25: ride.wallet.v1.GetTopUpResponse.created_at:type_name -> google.protobuf.Timestamp
+	118, // 26: ride.wallet.v1.GetTopUpResponse.updated_at:type_name -> google.protobuf.Timestamp
 	0,   // 27: ride.wallet.v1.GetTripSettlementRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	1,   // 28: ride.wallet.v1.GetTripSettlementResponse.payment_method:type_name -> ride.wallet.v1.PaymentMethod
-	113, // 29: ride.wallet.v1.Transfer.created_at:type_name -> google.protobuf.Timestamp
+	118, // 29: ride.wallet.v1.Transfer.created_at:type_name -> google.protobuf.Timestamp
 	41,  // 30: ride.wallet.v1.SendTransferResponse.transfer:type_name -> ride.wallet.v1.Transfer
 	6,   // 31: ride.wallet.v1.SendTransferResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	41,  // 32: ride.wallet.v1.ListTransfersResponse.transfers:type_name -> ride.wallet.v1.Transfer
-	113, // 33: ride.wallet.v1.MoneyRequest.expires_at:type_name -> google.protobuf.Timestamp
-	113, // 34: ride.wallet.v1.MoneyRequest.created_at:type_name -> google.protobuf.Timestamp
-	113, // 35: ride.wallet.v1.MoneyRequest.closed_at:type_name -> google.protobuf.Timestamp
+	118, // 33: ride.wallet.v1.MoneyRequest.expires_at:type_name -> google.protobuf.Timestamp
+	118, // 34: ride.wallet.v1.MoneyRequest.created_at:type_name -> google.protobuf.Timestamp
+	118, // 35: ride.wallet.v1.MoneyRequest.closed_at:type_name -> google.protobuf.Timestamp
 	50,  // 36: ride.wallet.v1.MoneyRequestResponse.money_request:type_name -> ride.wallet.v1.MoneyRequest
 	50,  // 37: ride.wallet.v1.ListMoneyRequestsResponse.money_requests:type_name -> ride.wallet.v1.MoneyRequest
 	50,  // 38: ride.wallet.v1.PayMoneyRequestResponse.money_request:type_name -> ride.wallet.v1.MoneyRequest
@@ -9085,179 +9374,189 @@ var file_ride_wallet_v1_wallet_proto_depIdxs = []int32{
 	6,   // 40: ride.wallet.v1.PayMoneyRequestResponse.wallet:type_name -> ride.wallet.v1.Wallet
 	0,   // 41: ride.wallet.v1.GetStatementRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
 	2,   // 42: ride.wallet.v1.GetStatementRequest.types:type_name -> ride.wallet.v1.TransactionType
-	113, // 43: ride.wallet.v1.GetStatementRequest.from:type_name -> google.protobuf.Timestamp
-	113, // 44: ride.wallet.v1.GetStatementRequest.to:type_name -> google.protobuf.Timestamp
+	118, // 43: ride.wallet.v1.GetStatementRequest.from:type_name -> google.protobuf.Timestamp
+	118, // 44: ride.wallet.v1.GetStatementRequest.to:type_name -> google.protobuf.Timestamp
 	7,   // 45: ride.wallet.v1.GetStatementResponse.entries:type_name -> ride.wallet.v1.Transaction
-	113, // 46: ride.wallet.v1.RiderDue.created_at:type_name -> google.protobuf.Timestamp
+	118, // 46: ride.wallet.v1.RiderDue.created_at:type_name -> google.protobuf.Timestamp
 	61,  // 47: ride.wallet.v1.GetRiderDuesResponse.dues:type_name -> ride.wallet.v1.RiderDue
-	113, // 48: ride.wallet.v1.CreateVoucherBatchRequest.expires_at:type_name -> google.protobuf.Timestamp
-	113, // 49: ride.wallet.v1.VoucherBatch.expires_at:type_name -> google.protobuf.Timestamp
-	113, // 50: ride.wallet.v1.VoucherBatch.created_at:type_name -> google.protobuf.Timestamp
-	113, // 51: ride.wallet.v1.VoucherBatch.exported_at:type_name -> google.protobuf.Timestamp
-	113, // 52: ride.wallet.v1.VoucherBatch.cancelled_at:type_name -> google.protobuf.Timestamp
-	64,  // 53: ride.wallet.v1.VoucherBatchResponse.batch:type_name -> ride.wallet.v1.VoucherBatch
-	64,  // 54: ride.wallet.v1.ListVoucherBatchesResponse.batches:type_name -> ride.wallet.v1.VoucherBatch
-	64,  // 55: ride.wallet.v1.ExportVoucherBatchResponse.batch:type_name -> ride.wallet.v1.VoucherBatch
-	70,  // 56: ride.wallet.v1.ExportVoucherBatchResponse.vouchers:type_name -> ride.wallet.v1.ExportedVoucher
-	113, // 57: ride.wallet.v1.Voucher.expires_at:type_name -> google.protobuf.Timestamp
-	113, // 58: ride.wallet.v1.Voucher.redeemed_at:type_name -> google.protobuf.Timestamp
-	113, // 59: ride.wallet.v1.Voucher.voided_at:type_name -> google.protobuf.Timestamp
-	73,  // 60: ride.wallet.v1.VoucherResponse.voucher:type_name -> ride.wallet.v1.Voucher
-	6,   // 61: ride.wallet.v1.RedeemVoucherResponse.wallet:type_name -> ride.wallet.v1.Wallet
-	7,   // 62: ride.wallet.v1.RedeemVoucherResponse.transaction:type_name -> ride.wallet.v1.Transaction
-	0,   // 63: ride.wallet.v1.InspectWalletRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
-	6,   // 64: ride.wallet.v1.InspectWalletResponse.wallet:type_name -> ride.wallet.v1.Wallet
-	7,   // 65: ride.wallet.v1.InspectWalletResponse.recent_transactions:type_name -> ride.wallet.v1.Transaction
-	20,  // 66: ride.wallet.v1.InspectWalletResponse.open_payouts:type_name -> ride.wallet.v1.Payout
-	0,   // 67: ride.wallet.v1.AdjustWalletRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
-	0,   // 68: ride.wallet.v1.Adjustment.owner_type:type_name -> ride.wallet.v1.OwnerType
-	113, // 69: ride.wallet.v1.Adjustment.created_at:type_name -> google.protobuf.Timestamp
-	82,  // 70: ride.wallet.v1.AdjustmentResponse.adjustment:type_name -> ride.wallet.v1.Adjustment
-	6,   // 71: ride.wallet.v1.AdjustmentResponse.wallet:type_name -> ride.wallet.v1.Wallet
-	82,  // 72: ride.wallet.v1.ListTripRefundsResponse.refunds:type_name -> ride.wallet.v1.Adjustment
-	113, // 73: ride.wallet.v1.Tip.created_at:type_name -> google.protobuf.Timestamp
-	88,  // 74: ride.wallet.v1.TipDriverResponse.tip:type_name -> ride.wallet.v1.Tip
-	6,   // 75: ride.wallet.v1.TipDriverResponse.wallet:type_name -> ride.wallet.v1.Wallet
-	3,   // 76: ride.wallet.v1.GetDriverEarningsRequest.period:type_name -> ride.wallet.v1.EarningsPeriod
-	91,  // 77: ride.wallet.v1.EarningsDay.totals:type_name -> ride.wallet.v1.EarningsTotals
-	3,   // 78: ride.wallet.v1.DriverEarnings.period:type_name -> ride.wallet.v1.EarningsPeriod
-	91,  // 79: ride.wallet.v1.DriverEarnings.totals:type_name -> ride.wallet.v1.EarningsTotals
-	92,  // 80: ride.wallet.v1.DriverEarnings.days:type_name -> ride.wallet.v1.EarningsDay
-	113, // 81: ride.wallet.v1.IncentiveCampaign.starts_at:type_name -> google.protobuf.Timestamp
-	113, // 82: ride.wallet.v1.IncentiveCampaign.ends_at:type_name -> google.protobuf.Timestamp
-	94,  // 83: ride.wallet.v1.IncentiveCampaign.tiers:type_name -> ride.wallet.v1.IncentiveTier
-	4,   // 84: ride.wallet.v1.IncentiveCampaign.status:type_name -> ride.wallet.v1.IncentiveCampaignStatus
-	113, // 85: ride.wallet.v1.IncentiveCampaign.created_at:type_name -> google.protobuf.Timestamp
-	113, // 86: ride.wallet.v1.IncentiveCampaign.settled_at:type_name -> google.protobuf.Timestamp
-	95,  // 87: ride.wallet.v1.IncentiveCampaignResponse.campaign:type_name -> ride.wallet.v1.IncentiveCampaign
-	113, // 88: ride.wallet.v1.CreateIncentiveCampaignRequest.starts_at:type_name -> google.protobuf.Timestamp
-	113, // 89: ride.wallet.v1.CreateIncentiveCampaignRequest.ends_at:type_name -> google.protobuf.Timestamp
-	94,  // 90: ride.wallet.v1.CreateIncentiveCampaignRequest.tiers:type_name -> ride.wallet.v1.IncentiveTier
-	4,   // 91: ride.wallet.v1.ListIncentiveCampaignsRequest.status:type_name -> ride.wallet.v1.IncentiveCampaignStatus
-	95,  // 92: ride.wallet.v1.ListIncentiveCampaignsResponse.campaigns:type_name -> ride.wallet.v1.IncentiveCampaign
-	5,   // 93: ride.wallet.v1.IncentivePayout.status:type_name -> ride.wallet.v1.IncentivePayoutStatus
-	113, // 94: ride.wallet.v1.IncentivePayout.created_at:type_name -> google.protobuf.Timestamp
-	102, // 95: ride.wallet.v1.ListIncentivePayoutsResponse.payouts:type_name -> ride.wallet.v1.IncentivePayout
-	95,  // 96: ride.wallet.v1.DriverIncentive.campaign:type_name -> ride.wallet.v1.IncentiveCampaign
-	102, // 97: ride.wallet.v1.DriverIncentive.payout:type_name -> ride.wallet.v1.IncentivePayout
-	106, // 98: ride.wallet.v1.ListDriverIncentivesResponse.incentives:type_name -> ride.wallet.v1.DriverIncentive
-	0,   // 99: ride.wallet.v1.ListFeedTransactionsRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
-	113, // 100: ride.wallet.v1.ListFeedTransactionsRequest.before:type_name -> google.protobuf.Timestamp
-	7,   // 101: ride.wallet.v1.ListFeedTransactionsResponse.transactions:type_name -> ride.wallet.v1.Transaction
-	113, // 102: ride.wallet.v1.SummarizeLedgerRequest.start:type_name -> google.protobuf.Timestamp
-	113, // 103: ride.wallet.v1.SummarizeLedgerRequest.end:type_name -> google.protobuf.Timestamp
-	111, // 104: ride.wallet.v1.SummarizeLedgerResponse.totals:type_name -> ride.wallet.v1.LedgerTotal
-	114, // 105: ride.wallet.v1.WalletService.ExportPersonalData:input_type -> ride.dataexport.v1.ExportPersonalDataRequest
-	108, // 106: ride.wallet.v1.WalletService.ListFeedTransactions:input_type -> ride.wallet.v1.ListFeedTransactionsRequest
-	110, // 107: ride.wallet.v1.WalletService.SummarizeLedger:input_type -> ride.wallet.v1.SummarizeLedgerRequest
-	8,   // 108: ride.wallet.v1.WalletService.GetWallet:input_type -> ride.wallet.v1.GetWalletRequest
-	10,  // 109: ride.wallet.v1.WalletService.TopUp:input_type -> ride.wallet.v1.TopUpRequest
-	12,  // 110: ride.wallet.v1.WalletService.SettleTrip:input_type -> ride.wallet.v1.SettleTripRequest
-	14,  // 111: ride.wallet.v1.WalletService.ListTransactions:input_type -> ride.wallet.v1.ListTransactionsRequest
-	16,  // 112: ride.wallet.v1.WalletService.CheckDriverStanding:input_type -> ride.wallet.v1.CheckDriverStandingRequest
-	18,  // 113: ride.wallet.v1.WalletService.RequestPayout:input_type -> ride.wallet.v1.RequestPayoutRequest
-	22,  // 114: ride.wallet.v1.WalletService.ListPayouts:input_type -> ride.wallet.v1.ListPayoutsRequest
-	36,  // 115: ride.wallet.v1.WalletService.GetTripSettlement:input_type -> ride.wallet.v1.GetTripSettlementRequest
-	38,  // 116: ride.wallet.v1.WalletService.RecordTripChange:input_type -> ride.wallet.v1.RecordTripChangeRequest
-	28,  // 117: ride.wallet.v1.WalletService.InitiateTopUp:input_type -> ride.wallet.v1.InitiateTopUpRequest
-	32,  // 118: ride.wallet.v1.WalletService.GetTopUp:input_type -> ride.wallet.v1.GetTopUpRequest
-	30,  // 119: ride.wallet.v1.WalletService.GetTopUpOptions:input_type -> ride.wallet.v1.GetTopUpOptionsRequest
-	87,  // 120: ride.wallet.v1.WalletService.TipDriver:input_type -> ride.wallet.v1.TipDriverRequest
-	40,  // 121: ride.wallet.v1.WalletService.SendTransfer:input_type -> ride.wallet.v1.SendTransferRequest
-	43,  // 122: ride.wallet.v1.WalletService.ListTransfers:input_type -> ride.wallet.v1.ListTransfersRequest
-	45,  // 123: ride.wallet.v1.WalletService.GetTransferOptions:input_type -> ride.wallet.v1.GetTransferOptionsRequest
-	47,  // 124: ride.wallet.v1.WalletService.LookupTransferRecipient:input_type -> ride.wallet.v1.LookupTransferRecipientRequest
-	49,  // 125: ride.wallet.v1.WalletService.CreateMoneyRequest:input_type -> ride.wallet.v1.CreateMoneyRequestRequest
-	52,  // 126: ride.wallet.v1.WalletService.ListMoneyRequests:input_type -> ride.wallet.v1.ListMoneyRequestsRequest
-	54,  // 127: ride.wallet.v1.WalletService.GetMoneyRequest:input_type -> ride.wallet.v1.GetMoneyRequestRequest
-	55,  // 128: ride.wallet.v1.WalletService.PayMoneyRequest:input_type -> ride.wallet.v1.PayMoneyRequestRequest
-	57,  // 129: ride.wallet.v1.WalletService.DeclineMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
-	57,  // 130: ride.wallet.v1.WalletService.CancelMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
-	58,  // 131: ride.wallet.v1.WalletService.GetStatement:input_type -> ride.wallet.v1.GetStatementRequest
-	60,  // 132: ride.wallet.v1.WalletService.GetRiderDues:input_type -> ride.wallet.v1.GetRiderDuesRequest
-	63,  // 133: ride.wallet.v1.WalletService.CreateVoucherBatch:input_type -> ride.wallet.v1.CreateVoucherBatchRequest
-	66,  // 134: ride.wallet.v1.WalletService.ListVoucherBatches:input_type -> ride.wallet.v1.ListVoucherBatchesRequest
-	68,  // 135: ride.wallet.v1.WalletService.GetVoucherBatch:input_type -> ride.wallet.v1.GetVoucherBatchRequest
-	69,  // 136: ride.wallet.v1.WalletService.ExportVoucherBatch:input_type -> ride.wallet.v1.ExportVoucherBatchRequest
-	72,  // 137: ride.wallet.v1.WalletService.CancelVoucherBatch:input_type -> ride.wallet.v1.CancelVoucherBatchRequest
-	75,  // 138: ride.wallet.v1.WalletService.GetVoucher:input_type -> ride.wallet.v1.GetVoucherRequest
-	76,  // 139: ride.wallet.v1.WalletService.VoidVoucher:input_type -> ride.wallet.v1.VoidVoucherRequest
-	77,  // 140: ride.wallet.v1.WalletService.RedeemVoucher:input_type -> ride.wallet.v1.RedeemVoucherRequest
-	79,  // 141: ride.wallet.v1.WalletService.InspectWallet:input_type -> ride.wallet.v1.InspectWalletRequest
-	58,  // 142: ride.wallet.v1.WalletService.GetStatementForStaff:input_type -> ride.wallet.v1.GetStatementRequest
-	81,  // 143: ride.wallet.v1.WalletService.AdjustWallet:input_type -> ride.wallet.v1.AdjustWalletRequest
-	84,  // 144: ride.wallet.v1.WalletService.RefundTrip:input_type -> ride.wallet.v1.RefundTripRequest
-	85,  // 145: ride.wallet.v1.WalletService.ListTripRefunds:input_type -> ride.wallet.v1.ListTripRefundsRequest
-	24,  // 146: ride.wallet.v1.WalletService.ListPayoutRequests:input_type -> ride.wallet.v1.ListPayoutRequestsRequest
-	25,  // 147: ride.wallet.v1.WalletService.ApprovePayout:input_type -> ride.wallet.v1.ApprovePayoutRequest
-	26,  // 148: ride.wallet.v1.WalletService.MarkPayoutPaid:input_type -> ride.wallet.v1.MarkPayoutPaidRequest
-	27,  // 149: ride.wallet.v1.WalletService.RejectPayout:input_type -> ride.wallet.v1.RejectPayoutRequest
-	34,  // 150: ride.wallet.v1.WalletService.ProcessZainCashWebhook:input_type -> ride.wallet.v1.ProcessZainCashWebhookRequest
-	90,  // 151: ride.wallet.v1.WalletService.GetDriverEarnings:input_type -> ride.wallet.v1.GetDriverEarningsRequest
-	105, // 152: ride.wallet.v1.WalletService.ListDriverIncentives:input_type -> ride.wallet.v1.ListDriverIncentivesRequest
-	97,  // 153: ride.wallet.v1.WalletService.CreateIncentiveCampaign:input_type -> ride.wallet.v1.CreateIncentiveCampaignRequest
-	98,  // 154: ride.wallet.v1.WalletService.ListIncentiveCampaigns:input_type -> ride.wallet.v1.ListIncentiveCampaignsRequest
-	100, // 155: ride.wallet.v1.WalletService.GetIncentiveCampaign:input_type -> ride.wallet.v1.GetIncentiveCampaignRequest
-	101, // 156: ride.wallet.v1.WalletService.CancelIncentiveCampaign:input_type -> ride.wallet.v1.CancelIncentiveCampaignRequest
-	103, // 157: ride.wallet.v1.WalletService.ListIncentivePayouts:input_type -> ride.wallet.v1.ListIncentivePayoutsRequest
-	115, // 158: ride.wallet.v1.WalletService.ExportPersonalData:output_type -> ride.dataexport.v1.ExportPersonalDataResponse
-	109, // 159: ride.wallet.v1.WalletService.ListFeedTransactions:output_type -> ride.wallet.v1.ListFeedTransactionsResponse
-	112, // 160: ride.wallet.v1.WalletService.SummarizeLedger:output_type -> ride.wallet.v1.SummarizeLedgerResponse
-	9,   // 161: ride.wallet.v1.WalletService.GetWallet:output_type -> ride.wallet.v1.GetWalletResponse
-	11,  // 162: ride.wallet.v1.WalletService.TopUp:output_type -> ride.wallet.v1.TopUpResponse
-	13,  // 163: ride.wallet.v1.WalletService.SettleTrip:output_type -> ride.wallet.v1.SettleTripResponse
-	15,  // 164: ride.wallet.v1.WalletService.ListTransactions:output_type -> ride.wallet.v1.ListTransactionsResponse
-	17,  // 165: ride.wallet.v1.WalletService.CheckDriverStanding:output_type -> ride.wallet.v1.CheckDriverStandingResponse
-	19,  // 166: ride.wallet.v1.WalletService.RequestPayout:output_type -> ride.wallet.v1.RequestPayoutResponse
-	23,  // 167: ride.wallet.v1.WalletService.ListPayouts:output_type -> ride.wallet.v1.ListPayoutsResponse
-	37,  // 168: ride.wallet.v1.WalletService.GetTripSettlement:output_type -> ride.wallet.v1.GetTripSettlementResponse
-	39,  // 169: ride.wallet.v1.WalletService.RecordTripChange:output_type -> ride.wallet.v1.RecordTripChangeResponse
-	29,  // 170: ride.wallet.v1.WalletService.InitiateTopUp:output_type -> ride.wallet.v1.InitiateTopUpResponse
-	33,  // 171: ride.wallet.v1.WalletService.GetTopUp:output_type -> ride.wallet.v1.GetTopUpResponse
-	31,  // 172: ride.wallet.v1.WalletService.GetTopUpOptions:output_type -> ride.wallet.v1.GetTopUpOptionsResponse
-	89,  // 173: ride.wallet.v1.WalletService.TipDriver:output_type -> ride.wallet.v1.TipDriverResponse
-	42,  // 174: ride.wallet.v1.WalletService.SendTransfer:output_type -> ride.wallet.v1.SendTransferResponse
-	44,  // 175: ride.wallet.v1.WalletService.ListTransfers:output_type -> ride.wallet.v1.ListTransfersResponse
-	46,  // 176: ride.wallet.v1.WalletService.GetTransferOptions:output_type -> ride.wallet.v1.GetTransferOptionsResponse
-	48,  // 177: ride.wallet.v1.WalletService.LookupTransferRecipient:output_type -> ride.wallet.v1.LookupTransferRecipientResponse
-	51,  // 178: ride.wallet.v1.WalletService.CreateMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	53,  // 179: ride.wallet.v1.WalletService.ListMoneyRequests:output_type -> ride.wallet.v1.ListMoneyRequestsResponse
-	51,  // 180: ride.wallet.v1.WalletService.GetMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	56,  // 181: ride.wallet.v1.WalletService.PayMoneyRequest:output_type -> ride.wallet.v1.PayMoneyRequestResponse
-	51,  // 182: ride.wallet.v1.WalletService.DeclineMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	51,  // 183: ride.wallet.v1.WalletService.CancelMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
-	59,  // 184: ride.wallet.v1.WalletService.GetStatement:output_type -> ride.wallet.v1.GetStatementResponse
-	62,  // 185: ride.wallet.v1.WalletService.GetRiderDues:output_type -> ride.wallet.v1.GetRiderDuesResponse
-	65,  // 186: ride.wallet.v1.WalletService.CreateVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
-	67,  // 187: ride.wallet.v1.WalletService.ListVoucherBatches:output_type -> ride.wallet.v1.ListVoucherBatchesResponse
-	65,  // 188: ride.wallet.v1.WalletService.GetVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
-	71,  // 189: ride.wallet.v1.WalletService.ExportVoucherBatch:output_type -> ride.wallet.v1.ExportVoucherBatchResponse
-	65,  // 190: ride.wallet.v1.WalletService.CancelVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
-	74,  // 191: ride.wallet.v1.WalletService.GetVoucher:output_type -> ride.wallet.v1.VoucherResponse
-	74,  // 192: ride.wallet.v1.WalletService.VoidVoucher:output_type -> ride.wallet.v1.VoucherResponse
-	78,  // 193: ride.wallet.v1.WalletService.RedeemVoucher:output_type -> ride.wallet.v1.RedeemVoucherResponse
-	80,  // 194: ride.wallet.v1.WalletService.InspectWallet:output_type -> ride.wallet.v1.InspectWalletResponse
-	59,  // 195: ride.wallet.v1.WalletService.GetStatementForStaff:output_type -> ride.wallet.v1.GetStatementResponse
-	83,  // 196: ride.wallet.v1.WalletService.AdjustWallet:output_type -> ride.wallet.v1.AdjustmentResponse
-	83,  // 197: ride.wallet.v1.WalletService.RefundTrip:output_type -> ride.wallet.v1.AdjustmentResponse
-	86,  // 198: ride.wallet.v1.WalletService.ListTripRefunds:output_type -> ride.wallet.v1.ListTripRefundsResponse
-	23,  // 199: ride.wallet.v1.WalletService.ListPayoutRequests:output_type -> ride.wallet.v1.ListPayoutsResponse
-	21,  // 200: ride.wallet.v1.WalletService.ApprovePayout:output_type -> ride.wallet.v1.PayoutResponse
-	21,  // 201: ride.wallet.v1.WalletService.MarkPayoutPaid:output_type -> ride.wallet.v1.PayoutResponse
-	21,  // 202: ride.wallet.v1.WalletService.RejectPayout:output_type -> ride.wallet.v1.PayoutResponse
-	35,  // 203: ride.wallet.v1.WalletService.ProcessZainCashWebhook:output_type -> ride.wallet.v1.ProcessZainCashWebhookResponse
-	93,  // 204: ride.wallet.v1.WalletService.GetDriverEarnings:output_type -> ride.wallet.v1.DriverEarnings
-	107, // 205: ride.wallet.v1.WalletService.ListDriverIncentives:output_type -> ride.wallet.v1.ListDriverIncentivesResponse
-	96,  // 206: ride.wallet.v1.WalletService.CreateIncentiveCampaign:output_type -> ride.wallet.v1.IncentiveCampaignResponse
-	99,  // 207: ride.wallet.v1.WalletService.ListIncentiveCampaigns:output_type -> ride.wallet.v1.ListIncentiveCampaignsResponse
-	96,  // 208: ride.wallet.v1.WalletService.GetIncentiveCampaign:output_type -> ride.wallet.v1.IncentiveCampaignResponse
-	96,  // 209: ride.wallet.v1.WalletService.CancelIncentiveCampaign:output_type -> ride.wallet.v1.IncentiveCampaignResponse
-	104, // 210: ride.wallet.v1.WalletService.ListIncentivePayouts:output_type -> ride.wallet.v1.ListIncentivePayoutsResponse
-	158, // [158:211] is the sub-list for method output_type
-	105, // [105:158] is the sub-list for method input_type
-	105, // [105:105] is the sub-list for extension type_name
-	105, // [105:105] is the sub-list for extension extendee
-	0,   // [0:105] is the sub-list for field type_name
+	118, // 48: ride.wallet.v1.GetRiderDuesResponse.pay_by:type_name -> google.protobuf.Timestamp
+	118, // 49: ride.wallet.v1.OverdueRider.oldest_due_at:type_name -> google.protobuf.Timestamp
+	118, // 50: ride.wallet.v1.OverdueRider.pay_by:type_name -> google.protobuf.Timestamp
+	66,  // 51: ride.wallet.v1.ListOverdueRidersResponse.riders:type_name -> ride.wallet.v1.OverdueRider
+	118, // 52: ride.wallet.v1.CreateVoucherBatchRequest.expires_at:type_name -> google.protobuf.Timestamp
+	118, // 53: ride.wallet.v1.VoucherBatch.expires_at:type_name -> google.protobuf.Timestamp
+	118, // 54: ride.wallet.v1.VoucherBatch.created_at:type_name -> google.protobuf.Timestamp
+	118, // 55: ride.wallet.v1.VoucherBatch.exported_at:type_name -> google.protobuf.Timestamp
+	118, // 56: ride.wallet.v1.VoucherBatch.cancelled_at:type_name -> google.protobuf.Timestamp
+	69,  // 57: ride.wallet.v1.VoucherBatchResponse.batch:type_name -> ride.wallet.v1.VoucherBatch
+	69,  // 58: ride.wallet.v1.ListVoucherBatchesResponse.batches:type_name -> ride.wallet.v1.VoucherBatch
+	69,  // 59: ride.wallet.v1.ExportVoucherBatchResponse.batch:type_name -> ride.wallet.v1.VoucherBatch
+	75,  // 60: ride.wallet.v1.ExportVoucherBatchResponse.vouchers:type_name -> ride.wallet.v1.ExportedVoucher
+	118, // 61: ride.wallet.v1.Voucher.expires_at:type_name -> google.protobuf.Timestamp
+	118, // 62: ride.wallet.v1.Voucher.redeemed_at:type_name -> google.protobuf.Timestamp
+	118, // 63: ride.wallet.v1.Voucher.voided_at:type_name -> google.protobuf.Timestamp
+	78,  // 64: ride.wallet.v1.VoucherResponse.voucher:type_name -> ride.wallet.v1.Voucher
+	6,   // 65: ride.wallet.v1.RedeemVoucherResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	7,   // 66: ride.wallet.v1.RedeemVoucherResponse.transaction:type_name -> ride.wallet.v1.Transaction
+	0,   // 67: ride.wallet.v1.InspectWalletRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
+	6,   // 68: ride.wallet.v1.InspectWalletResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	7,   // 69: ride.wallet.v1.InspectWalletResponse.recent_transactions:type_name -> ride.wallet.v1.Transaction
+	20,  // 70: ride.wallet.v1.InspectWalletResponse.open_payouts:type_name -> ride.wallet.v1.Payout
+	0,   // 71: ride.wallet.v1.AdjustWalletRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
+	0,   // 72: ride.wallet.v1.Adjustment.owner_type:type_name -> ride.wallet.v1.OwnerType
+	118, // 73: ride.wallet.v1.Adjustment.created_at:type_name -> google.protobuf.Timestamp
+	87,  // 74: ride.wallet.v1.AdjustmentResponse.adjustment:type_name -> ride.wallet.v1.Adjustment
+	6,   // 75: ride.wallet.v1.AdjustmentResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	87,  // 76: ride.wallet.v1.ListTripRefundsResponse.refunds:type_name -> ride.wallet.v1.Adjustment
+	118, // 77: ride.wallet.v1.Tip.created_at:type_name -> google.protobuf.Timestamp
+	93,  // 78: ride.wallet.v1.TipDriverResponse.tip:type_name -> ride.wallet.v1.Tip
+	6,   // 79: ride.wallet.v1.TipDriverResponse.wallet:type_name -> ride.wallet.v1.Wallet
+	3,   // 80: ride.wallet.v1.GetDriverEarningsRequest.period:type_name -> ride.wallet.v1.EarningsPeriod
+	96,  // 81: ride.wallet.v1.EarningsDay.totals:type_name -> ride.wallet.v1.EarningsTotals
+	3,   // 82: ride.wallet.v1.DriverEarnings.period:type_name -> ride.wallet.v1.EarningsPeriod
+	96,  // 83: ride.wallet.v1.DriverEarnings.totals:type_name -> ride.wallet.v1.EarningsTotals
+	97,  // 84: ride.wallet.v1.DriverEarnings.days:type_name -> ride.wallet.v1.EarningsDay
+	118, // 85: ride.wallet.v1.IncentiveCampaign.starts_at:type_name -> google.protobuf.Timestamp
+	118, // 86: ride.wallet.v1.IncentiveCampaign.ends_at:type_name -> google.protobuf.Timestamp
+	99,  // 87: ride.wallet.v1.IncentiveCampaign.tiers:type_name -> ride.wallet.v1.IncentiveTier
+	4,   // 88: ride.wallet.v1.IncentiveCampaign.status:type_name -> ride.wallet.v1.IncentiveCampaignStatus
+	118, // 89: ride.wallet.v1.IncentiveCampaign.created_at:type_name -> google.protobuf.Timestamp
+	118, // 90: ride.wallet.v1.IncentiveCampaign.settled_at:type_name -> google.protobuf.Timestamp
+	100, // 91: ride.wallet.v1.IncentiveCampaignResponse.campaign:type_name -> ride.wallet.v1.IncentiveCampaign
+	118, // 92: ride.wallet.v1.CreateIncentiveCampaignRequest.starts_at:type_name -> google.protobuf.Timestamp
+	118, // 93: ride.wallet.v1.CreateIncentiveCampaignRequest.ends_at:type_name -> google.protobuf.Timestamp
+	99,  // 94: ride.wallet.v1.CreateIncentiveCampaignRequest.tiers:type_name -> ride.wallet.v1.IncentiveTier
+	4,   // 95: ride.wallet.v1.ListIncentiveCampaignsRequest.status:type_name -> ride.wallet.v1.IncentiveCampaignStatus
+	100, // 96: ride.wallet.v1.ListIncentiveCampaignsResponse.campaigns:type_name -> ride.wallet.v1.IncentiveCampaign
+	5,   // 97: ride.wallet.v1.IncentivePayout.status:type_name -> ride.wallet.v1.IncentivePayoutStatus
+	118, // 98: ride.wallet.v1.IncentivePayout.created_at:type_name -> google.protobuf.Timestamp
+	107, // 99: ride.wallet.v1.ListIncentivePayoutsResponse.payouts:type_name -> ride.wallet.v1.IncentivePayout
+	100, // 100: ride.wallet.v1.DriverIncentive.campaign:type_name -> ride.wallet.v1.IncentiveCampaign
+	107, // 101: ride.wallet.v1.DriverIncentive.payout:type_name -> ride.wallet.v1.IncentivePayout
+	111, // 102: ride.wallet.v1.ListDriverIncentivesResponse.incentives:type_name -> ride.wallet.v1.DriverIncentive
+	0,   // 103: ride.wallet.v1.ListFeedTransactionsRequest.owner_type:type_name -> ride.wallet.v1.OwnerType
+	118, // 104: ride.wallet.v1.ListFeedTransactionsRequest.before:type_name -> google.protobuf.Timestamp
+	7,   // 105: ride.wallet.v1.ListFeedTransactionsResponse.transactions:type_name -> ride.wallet.v1.Transaction
+	118, // 106: ride.wallet.v1.SummarizeLedgerRequest.start:type_name -> google.protobuf.Timestamp
+	118, // 107: ride.wallet.v1.SummarizeLedgerRequest.end:type_name -> google.protobuf.Timestamp
+	116, // 108: ride.wallet.v1.SummarizeLedgerResponse.totals:type_name -> ride.wallet.v1.LedgerTotal
+	119, // 109: ride.wallet.v1.WalletService.ExportPersonalData:input_type -> ride.dataexport.v1.ExportPersonalDataRequest
+	113, // 110: ride.wallet.v1.WalletService.ListFeedTransactions:input_type -> ride.wallet.v1.ListFeedTransactionsRequest
+	115, // 111: ride.wallet.v1.WalletService.SummarizeLedger:input_type -> ride.wallet.v1.SummarizeLedgerRequest
+	8,   // 112: ride.wallet.v1.WalletService.GetWallet:input_type -> ride.wallet.v1.GetWalletRequest
+	10,  // 113: ride.wallet.v1.WalletService.TopUp:input_type -> ride.wallet.v1.TopUpRequest
+	12,  // 114: ride.wallet.v1.WalletService.SettleTrip:input_type -> ride.wallet.v1.SettleTripRequest
+	14,  // 115: ride.wallet.v1.WalletService.ListTransactions:input_type -> ride.wallet.v1.ListTransactionsRequest
+	16,  // 116: ride.wallet.v1.WalletService.CheckDriverStanding:input_type -> ride.wallet.v1.CheckDriverStandingRequest
+	18,  // 117: ride.wallet.v1.WalletService.RequestPayout:input_type -> ride.wallet.v1.RequestPayoutRequest
+	22,  // 118: ride.wallet.v1.WalletService.ListPayouts:input_type -> ride.wallet.v1.ListPayoutsRequest
+	36,  // 119: ride.wallet.v1.WalletService.GetTripSettlement:input_type -> ride.wallet.v1.GetTripSettlementRequest
+	38,  // 120: ride.wallet.v1.WalletService.RecordTripChange:input_type -> ride.wallet.v1.RecordTripChangeRequest
+	28,  // 121: ride.wallet.v1.WalletService.InitiateTopUp:input_type -> ride.wallet.v1.InitiateTopUpRequest
+	32,  // 122: ride.wallet.v1.WalletService.GetTopUp:input_type -> ride.wallet.v1.GetTopUpRequest
+	30,  // 123: ride.wallet.v1.WalletService.GetTopUpOptions:input_type -> ride.wallet.v1.GetTopUpOptionsRequest
+	92,  // 124: ride.wallet.v1.WalletService.TipDriver:input_type -> ride.wallet.v1.TipDriverRequest
+	40,  // 125: ride.wallet.v1.WalletService.SendTransfer:input_type -> ride.wallet.v1.SendTransferRequest
+	43,  // 126: ride.wallet.v1.WalletService.ListTransfers:input_type -> ride.wallet.v1.ListTransfersRequest
+	45,  // 127: ride.wallet.v1.WalletService.GetTransferOptions:input_type -> ride.wallet.v1.GetTransferOptionsRequest
+	47,  // 128: ride.wallet.v1.WalletService.LookupTransferRecipient:input_type -> ride.wallet.v1.LookupTransferRecipientRequest
+	49,  // 129: ride.wallet.v1.WalletService.CreateMoneyRequest:input_type -> ride.wallet.v1.CreateMoneyRequestRequest
+	52,  // 130: ride.wallet.v1.WalletService.ListMoneyRequests:input_type -> ride.wallet.v1.ListMoneyRequestsRequest
+	54,  // 131: ride.wallet.v1.WalletService.GetMoneyRequest:input_type -> ride.wallet.v1.GetMoneyRequestRequest
+	55,  // 132: ride.wallet.v1.WalletService.PayMoneyRequest:input_type -> ride.wallet.v1.PayMoneyRequestRequest
+	57,  // 133: ride.wallet.v1.WalletService.DeclineMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
+	57,  // 134: ride.wallet.v1.WalletService.CancelMoneyRequest:input_type -> ride.wallet.v1.CloseMoneyRequestRequest
+	58,  // 135: ride.wallet.v1.WalletService.GetStatement:input_type -> ride.wallet.v1.GetStatementRequest
+	60,  // 136: ride.wallet.v1.WalletService.GetRiderDues:input_type -> ride.wallet.v1.GetRiderDuesRequest
+	63,  // 137: ride.wallet.v1.WalletService.GetDuesPolicy:input_type -> ride.wallet.v1.GetDuesPolicyRequest
+	64,  // 138: ride.wallet.v1.WalletService.SetDuesPolicy:input_type -> ride.wallet.v1.DuesPolicy
+	65,  // 139: ride.wallet.v1.WalletService.ListOverdueRiders:input_type -> ride.wallet.v1.ListOverdueRidersRequest
+	68,  // 140: ride.wallet.v1.WalletService.CreateVoucherBatch:input_type -> ride.wallet.v1.CreateVoucherBatchRequest
+	71,  // 141: ride.wallet.v1.WalletService.ListVoucherBatches:input_type -> ride.wallet.v1.ListVoucherBatchesRequest
+	73,  // 142: ride.wallet.v1.WalletService.GetVoucherBatch:input_type -> ride.wallet.v1.GetVoucherBatchRequest
+	74,  // 143: ride.wallet.v1.WalletService.ExportVoucherBatch:input_type -> ride.wallet.v1.ExportVoucherBatchRequest
+	77,  // 144: ride.wallet.v1.WalletService.CancelVoucherBatch:input_type -> ride.wallet.v1.CancelVoucherBatchRequest
+	80,  // 145: ride.wallet.v1.WalletService.GetVoucher:input_type -> ride.wallet.v1.GetVoucherRequest
+	81,  // 146: ride.wallet.v1.WalletService.VoidVoucher:input_type -> ride.wallet.v1.VoidVoucherRequest
+	82,  // 147: ride.wallet.v1.WalletService.RedeemVoucher:input_type -> ride.wallet.v1.RedeemVoucherRequest
+	84,  // 148: ride.wallet.v1.WalletService.InspectWallet:input_type -> ride.wallet.v1.InspectWalletRequest
+	58,  // 149: ride.wallet.v1.WalletService.GetStatementForStaff:input_type -> ride.wallet.v1.GetStatementRequest
+	86,  // 150: ride.wallet.v1.WalletService.AdjustWallet:input_type -> ride.wallet.v1.AdjustWalletRequest
+	89,  // 151: ride.wallet.v1.WalletService.RefundTrip:input_type -> ride.wallet.v1.RefundTripRequest
+	90,  // 152: ride.wallet.v1.WalletService.ListTripRefunds:input_type -> ride.wallet.v1.ListTripRefundsRequest
+	24,  // 153: ride.wallet.v1.WalletService.ListPayoutRequests:input_type -> ride.wallet.v1.ListPayoutRequestsRequest
+	25,  // 154: ride.wallet.v1.WalletService.ApprovePayout:input_type -> ride.wallet.v1.ApprovePayoutRequest
+	26,  // 155: ride.wallet.v1.WalletService.MarkPayoutPaid:input_type -> ride.wallet.v1.MarkPayoutPaidRequest
+	27,  // 156: ride.wallet.v1.WalletService.RejectPayout:input_type -> ride.wallet.v1.RejectPayoutRequest
+	34,  // 157: ride.wallet.v1.WalletService.ProcessZainCashWebhook:input_type -> ride.wallet.v1.ProcessZainCashWebhookRequest
+	95,  // 158: ride.wallet.v1.WalletService.GetDriverEarnings:input_type -> ride.wallet.v1.GetDriverEarningsRequest
+	110, // 159: ride.wallet.v1.WalletService.ListDriverIncentives:input_type -> ride.wallet.v1.ListDriverIncentivesRequest
+	102, // 160: ride.wallet.v1.WalletService.CreateIncentiveCampaign:input_type -> ride.wallet.v1.CreateIncentiveCampaignRequest
+	103, // 161: ride.wallet.v1.WalletService.ListIncentiveCampaigns:input_type -> ride.wallet.v1.ListIncentiveCampaignsRequest
+	105, // 162: ride.wallet.v1.WalletService.GetIncentiveCampaign:input_type -> ride.wallet.v1.GetIncentiveCampaignRequest
+	106, // 163: ride.wallet.v1.WalletService.CancelIncentiveCampaign:input_type -> ride.wallet.v1.CancelIncentiveCampaignRequest
+	108, // 164: ride.wallet.v1.WalletService.ListIncentivePayouts:input_type -> ride.wallet.v1.ListIncentivePayoutsRequest
+	120, // 165: ride.wallet.v1.WalletService.ExportPersonalData:output_type -> ride.dataexport.v1.ExportPersonalDataResponse
+	114, // 166: ride.wallet.v1.WalletService.ListFeedTransactions:output_type -> ride.wallet.v1.ListFeedTransactionsResponse
+	117, // 167: ride.wallet.v1.WalletService.SummarizeLedger:output_type -> ride.wallet.v1.SummarizeLedgerResponse
+	9,   // 168: ride.wallet.v1.WalletService.GetWallet:output_type -> ride.wallet.v1.GetWalletResponse
+	11,  // 169: ride.wallet.v1.WalletService.TopUp:output_type -> ride.wallet.v1.TopUpResponse
+	13,  // 170: ride.wallet.v1.WalletService.SettleTrip:output_type -> ride.wallet.v1.SettleTripResponse
+	15,  // 171: ride.wallet.v1.WalletService.ListTransactions:output_type -> ride.wallet.v1.ListTransactionsResponse
+	17,  // 172: ride.wallet.v1.WalletService.CheckDriverStanding:output_type -> ride.wallet.v1.CheckDriverStandingResponse
+	19,  // 173: ride.wallet.v1.WalletService.RequestPayout:output_type -> ride.wallet.v1.RequestPayoutResponse
+	23,  // 174: ride.wallet.v1.WalletService.ListPayouts:output_type -> ride.wallet.v1.ListPayoutsResponse
+	37,  // 175: ride.wallet.v1.WalletService.GetTripSettlement:output_type -> ride.wallet.v1.GetTripSettlementResponse
+	39,  // 176: ride.wallet.v1.WalletService.RecordTripChange:output_type -> ride.wallet.v1.RecordTripChangeResponse
+	29,  // 177: ride.wallet.v1.WalletService.InitiateTopUp:output_type -> ride.wallet.v1.InitiateTopUpResponse
+	33,  // 178: ride.wallet.v1.WalletService.GetTopUp:output_type -> ride.wallet.v1.GetTopUpResponse
+	31,  // 179: ride.wallet.v1.WalletService.GetTopUpOptions:output_type -> ride.wallet.v1.GetTopUpOptionsResponse
+	94,  // 180: ride.wallet.v1.WalletService.TipDriver:output_type -> ride.wallet.v1.TipDriverResponse
+	42,  // 181: ride.wallet.v1.WalletService.SendTransfer:output_type -> ride.wallet.v1.SendTransferResponse
+	44,  // 182: ride.wallet.v1.WalletService.ListTransfers:output_type -> ride.wallet.v1.ListTransfersResponse
+	46,  // 183: ride.wallet.v1.WalletService.GetTransferOptions:output_type -> ride.wallet.v1.GetTransferOptionsResponse
+	48,  // 184: ride.wallet.v1.WalletService.LookupTransferRecipient:output_type -> ride.wallet.v1.LookupTransferRecipientResponse
+	51,  // 185: ride.wallet.v1.WalletService.CreateMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	53,  // 186: ride.wallet.v1.WalletService.ListMoneyRequests:output_type -> ride.wallet.v1.ListMoneyRequestsResponse
+	51,  // 187: ride.wallet.v1.WalletService.GetMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	56,  // 188: ride.wallet.v1.WalletService.PayMoneyRequest:output_type -> ride.wallet.v1.PayMoneyRequestResponse
+	51,  // 189: ride.wallet.v1.WalletService.DeclineMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	51,  // 190: ride.wallet.v1.WalletService.CancelMoneyRequest:output_type -> ride.wallet.v1.MoneyRequestResponse
+	59,  // 191: ride.wallet.v1.WalletService.GetStatement:output_type -> ride.wallet.v1.GetStatementResponse
+	62,  // 192: ride.wallet.v1.WalletService.GetRiderDues:output_type -> ride.wallet.v1.GetRiderDuesResponse
+	64,  // 193: ride.wallet.v1.WalletService.GetDuesPolicy:output_type -> ride.wallet.v1.DuesPolicy
+	64,  // 194: ride.wallet.v1.WalletService.SetDuesPolicy:output_type -> ride.wallet.v1.DuesPolicy
+	67,  // 195: ride.wallet.v1.WalletService.ListOverdueRiders:output_type -> ride.wallet.v1.ListOverdueRidersResponse
+	70,  // 196: ride.wallet.v1.WalletService.CreateVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
+	72,  // 197: ride.wallet.v1.WalletService.ListVoucherBatches:output_type -> ride.wallet.v1.ListVoucherBatchesResponse
+	70,  // 198: ride.wallet.v1.WalletService.GetVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
+	76,  // 199: ride.wallet.v1.WalletService.ExportVoucherBatch:output_type -> ride.wallet.v1.ExportVoucherBatchResponse
+	70,  // 200: ride.wallet.v1.WalletService.CancelVoucherBatch:output_type -> ride.wallet.v1.VoucherBatchResponse
+	79,  // 201: ride.wallet.v1.WalletService.GetVoucher:output_type -> ride.wallet.v1.VoucherResponse
+	79,  // 202: ride.wallet.v1.WalletService.VoidVoucher:output_type -> ride.wallet.v1.VoucherResponse
+	83,  // 203: ride.wallet.v1.WalletService.RedeemVoucher:output_type -> ride.wallet.v1.RedeemVoucherResponse
+	85,  // 204: ride.wallet.v1.WalletService.InspectWallet:output_type -> ride.wallet.v1.InspectWalletResponse
+	59,  // 205: ride.wallet.v1.WalletService.GetStatementForStaff:output_type -> ride.wallet.v1.GetStatementResponse
+	88,  // 206: ride.wallet.v1.WalletService.AdjustWallet:output_type -> ride.wallet.v1.AdjustmentResponse
+	88,  // 207: ride.wallet.v1.WalletService.RefundTrip:output_type -> ride.wallet.v1.AdjustmentResponse
+	91,  // 208: ride.wallet.v1.WalletService.ListTripRefunds:output_type -> ride.wallet.v1.ListTripRefundsResponse
+	23,  // 209: ride.wallet.v1.WalletService.ListPayoutRequests:output_type -> ride.wallet.v1.ListPayoutsResponse
+	21,  // 210: ride.wallet.v1.WalletService.ApprovePayout:output_type -> ride.wallet.v1.PayoutResponse
+	21,  // 211: ride.wallet.v1.WalletService.MarkPayoutPaid:output_type -> ride.wallet.v1.PayoutResponse
+	21,  // 212: ride.wallet.v1.WalletService.RejectPayout:output_type -> ride.wallet.v1.PayoutResponse
+	35,  // 213: ride.wallet.v1.WalletService.ProcessZainCashWebhook:output_type -> ride.wallet.v1.ProcessZainCashWebhookResponse
+	98,  // 214: ride.wallet.v1.WalletService.GetDriverEarnings:output_type -> ride.wallet.v1.DriverEarnings
+	112, // 215: ride.wallet.v1.WalletService.ListDriverIncentives:output_type -> ride.wallet.v1.ListDriverIncentivesResponse
+	101, // 216: ride.wallet.v1.WalletService.CreateIncentiveCampaign:output_type -> ride.wallet.v1.IncentiveCampaignResponse
+	104, // 217: ride.wallet.v1.WalletService.ListIncentiveCampaigns:output_type -> ride.wallet.v1.ListIncentiveCampaignsResponse
+	101, // 218: ride.wallet.v1.WalletService.GetIncentiveCampaign:output_type -> ride.wallet.v1.IncentiveCampaignResponse
+	101, // 219: ride.wallet.v1.WalletService.CancelIncentiveCampaign:output_type -> ride.wallet.v1.IncentiveCampaignResponse
+	109, // 220: ride.wallet.v1.WalletService.ListIncentivePayouts:output_type -> ride.wallet.v1.ListIncentivePayoutsResponse
+	165, // [165:221] is the sub-list for method output_type
+	109, // [109:165] is the sub-list for method input_type
+	109, // [109:109] is the sub-list for extension type_name
+	109, // [109:109] is the sub-list for extension extendee
+	0,   // [0:109] is the sub-list for field type_name
 }
 
 func init() { file_ride_wallet_v1_wallet_proto_init() }
@@ -9271,7 +9570,7 @@ func file_ride_wallet_v1_wallet_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ride_wallet_v1_wallet_proto_rawDesc), len(file_ride_wallet_v1_wallet_proto_rawDesc)),
 			NumEnums:      6,
-			NumMessages:   107,
+			NumMessages:   112,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

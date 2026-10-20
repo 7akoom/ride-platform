@@ -64,6 +64,9 @@ var methodAccess = map[string]accessLevel{
 	"/ride.wallet.v1.WalletService/ListDriverIncentives": accessOwner,
 
 	"/ride.wallet.v1.WalletService/CreateVoucherBatch": accessStaff,
+	"/ride.wallet.v1.WalletService/GetDuesPolicy":      accessStaff,
+	"/ride.wallet.v1.WalletService/SetDuesPolicy":      accessStaff,
+	"/ride.wallet.v1.WalletService/ListOverdueRiders":  accessStaff,
 	"/ride.wallet.v1.WalletService/ListVoucherBatches": accessStaff,
 	"/ride.wallet.v1.WalletService/GetVoucherBatch":    accessStaff,
 	"/ride.wallet.v1.WalletService/ExportVoucherBatch": accessStaff,
@@ -102,6 +105,9 @@ var staffPermissions = map[string]string{
 	"/ride.wallet.v1.WalletService/VoidVoucher":        permissionVouchersManage,
 
 	"/ride.wallet.v1.WalletService/InspectWallet":        permissionWalletsRead,
+	"/ride.wallet.v1.WalletService/GetDuesPolicy":        permissionWalletsRead,
+	"/ride.wallet.v1.WalletService/ListOverdueRiders":    permissionWalletsRead,
+	"/ride.wallet.v1.WalletService/SetDuesPolicy":        permissionWalletsAdjust,
 	"/ride.wallet.v1.WalletService/GetStatementForStaff": permissionWalletsRead,
 	"/ride.wallet.v1.WalletService/ListTripRefunds":      permissionWalletsRead,
 	"/ride.wallet.v1.WalletService/AdjustWallet":         permissionWalletsAdjust,

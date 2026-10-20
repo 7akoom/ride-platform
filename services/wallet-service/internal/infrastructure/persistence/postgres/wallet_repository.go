@@ -40,7 +40,7 @@ func (r *WalletRepository) GetActiveConfig(
 		        minimum_payout_amount, max_change_credit,
 		        transfer_min_amount, transfer_max_amount, transfer_daily_amount, transfer_daily_count,
 		        block_trips_with_dues, topup_min_amount, topup_max_amount,
-		        tip_min_amount, tip_max_amount, created_at
+		        tip_min_amount, tip_max_amount, dues_grace_days, created_at
 		 FROM wallet_configs
 		 ORDER BY created_at DESC
 		 LIMIT 1`,
@@ -64,6 +64,7 @@ func (r *WalletRepository) GetActiveConfig(
 		&config.TopUpMaxAmount,
 		&config.TipMinAmount,
 		&config.TipMaxAmount,
+		&config.DuesGraceDays,
 		&config.CreatedAt,
 	)
 	if err != nil {

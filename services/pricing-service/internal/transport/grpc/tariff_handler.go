@@ -46,6 +46,7 @@ func (h *PricingHandler) SetRateCard(
 		},
 		FreeWaitingMinutes:       int(request.GetFreeWaitingMinutes()),
 		CancellationGraceMinutes: int(request.GetCancellationGraceMinutes()),
+		NoShowWaitMinutes:        int(request.GetNoShowWaitMinutes()),
 		DemandSurge:              request.GetDemandSurge(),
 		WeatherSurge:             request.GetWeatherSurge(),
 	}
@@ -331,6 +332,7 @@ func toProtoRateCard(card pricing.Config) *pricingv1.RateCard {
 		CancellationFee:          card.CancellationFee.String(),
 		CancellationGraceMinutes: int32(card.CancellationGraceMinutes),
 		NoShowFee:                card.NoShowFee.String(),
+		NoShowWaitMinutes:        int32(pricing.NoShowWaitOrDefault(card.NoShowWaitMinutes)),
 		MaxSurgePercent:          card.MaxSurgePercent.String(),
 		DemandSurge:              card.DemandSurge,
 		WeatherSurge:             card.WeatherSurge,

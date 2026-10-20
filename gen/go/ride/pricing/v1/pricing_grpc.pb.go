@@ -44,6 +44,7 @@ const (
 	PricingService_ListRiderOffers_FullMethodName         = "/ride.pricing.v1.PricingService/ListRiderOffers"
 	PricingService_CheckRiderCoupon_FullMethodName        = "/ride.pricing.v1.PricingService/CheckRiderCoupon"
 	PricingService_GetTripFare_FullMethodName             = "/ride.pricing.v1.PricingService/GetTripFare"
+	PricingService_GetTripTerms_FullMethodName            = "/ride.pricing.v1.PricingService/GetTripTerms"
 	PricingService_ListTripFares_FullMethodName           = "/ride.pricing.v1.PricingService/ListTripFares"
 )
 
@@ -122,6 +123,16 @@ type PricingServiceClient interface {
 	// NOT_FOUND when the trip has no fare (not ended, owed nothing, or not this
 	// rider's: the two are not told apart).
 	GetTripFare(ctx context.Context, in *GetTripFareRequest, opts ...grpc.CallOption) (*GetTripFareResponse, error)
+	// GetTripTerms is what waiting at the pickup and cancelling cost on one of
+	// the rider's trips, by the rate card it was priced with, and what applies
+	// right now: the free waiting minutes and each further minute's price, the
+	// cancellation fee and from when it applies (cancellation_fee_now is what
+	// cancelling now costs: 0 within the grace minutes, before a driver
+	// accepted, or with the driver late), and how long the driver waits before
+	// they may report a no-show and what that costs. The caller's own rider
+	// profile only (trip-service asks with the internal token); NOT_FOUND for
+	// another rider's trip.
+	GetTripTerms(ctx context.Context, in *GetTripTermsRequest, opts ...grpc.CallOption) (*GetTripTermsResponse, error)
 	// ListTripFares is the recorded total of each trip named (a trip's cost, or the fee
 	// a cancelled trip owed), for trip-service's trip lists and activity page. Trips
 	// with no fare are left out. Internal: trip-service only; at most 100 trips.
@@ -386,6 +397,16 @@ func (c *pricingServiceClient) GetTripFare(ctx context.Context, in *GetTripFareR
 	return out, nil
 }
 
+func (c *pricingServiceClient) GetTripTerms(ctx context.Context, in *GetTripTermsRequest, opts ...grpc.CallOption) (*GetTripTermsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTripTermsResponse)
+	err := c.cc.Invoke(ctx, PricingService_GetTripTerms_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *pricingServiceClient) ListTripFares(ctx context.Context, in *ListTripFaresRequest, opts ...grpc.CallOption) (*ListTripFaresResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListTripFaresResponse)
@@ -471,6 +492,16 @@ type PricingServiceServer interface {
 	// NOT_FOUND when the trip has no fare (not ended, owed nothing, or not this
 	// rider's: the two are not told apart).
 	GetTripFare(context.Context, *GetTripFareRequest) (*GetTripFareResponse, error)
+	// GetTripTerms is what waiting at the pickup and cancelling cost on one of
+	// the rider's trips, by the rate card it was priced with, and what applies
+	// right now: the free waiting minutes and each further minute's price, the
+	// cancellation fee and from when it applies (cancellation_fee_now is what
+	// cancelling now costs: 0 within the grace minutes, before a driver
+	// accepted, or with the driver late), and how long the driver waits before
+	// they may report a no-show and what that costs. The caller's own rider
+	// profile only (trip-service asks with the internal token); NOT_FOUND for
+	// another rider's trip.
+	GetTripTerms(context.Context, *GetTripTermsRequest) (*GetTripTermsResponse, error)
 	// ListTripFares is the recorded total of each trip named (a trip's cost, or the fee
 	// a cancelled trip owed), for trip-service's trip lists and activity page. Trips
 	// with no fare are left out. Internal: trip-service only; at most 100 trips.
@@ -559,6 +590,9 @@ func (UnimplementedPricingServiceServer) CheckRiderCoupon(context.Context, *Chec
 }
 func (UnimplementedPricingServiceServer) GetTripFare(context.Context, *GetTripFareRequest) (*GetTripFareResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTripFare not implemented")
+}
+func (UnimplementedPricingServiceServer) GetTripTerms(context.Context, *GetTripTermsRequest) (*GetTripTermsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTripTerms not implemented")
 }
 func (UnimplementedPricingServiceServer) ListTripFares(context.Context, *ListTripFaresRequest) (*ListTripFaresResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTripFares not implemented")
@@ -1034,6 +1068,24 @@ func _PricingService_GetTripFare_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PricingService_GetTripTerms_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTripTermsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).GetTripTerms(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_GetTripTerms_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).GetTripTerms(ctx, req.(*GetTripTermsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _PricingService_ListTripFares_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListTripFaresRequest)
 	if err := dec(in); err != nil {
@@ -1158,6 +1210,10 @@ var PricingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTripFare",
 			Handler:    _PricingService_GetTripFare_Handler,
+		},
+		{
+			MethodName: "GetTripTerms",
+			Handler:    _PricingService_GetTripTerms_Handler,
 		},
 		{
 			MethodName: "ListTripFares",

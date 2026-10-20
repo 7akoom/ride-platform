@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"fmt"
+	"time"
 
 	pricingv1 "github.com/7akoom/ride-platform/gen/go/ride/pricing/v1"
 	"google.golang.org/grpc"
@@ -69,4 +70,18 @@ func (b *QuoteBook) Release(ctx context.Context, quoteID, tripID string) error {
 	}
 
 	return nil
+}
+
+// NoShowWait is how long the driver of the trip waits at the pickup before they
+// may report a no-show: the rate card's (pricing-service). See trip.NoShowWaits.
+func (b *QuoteBook) NoShowWait(ctx context.Context, tripID, riderID string) (time.Duration, error) {
+	ctx, cancel := context.WithTimeout(ctx, lookupTimeout)
+	defer cancel()
+
+	response, err := b.pricing.GetTripTerms(ctx, &pricingv1.GetTripTermsRequest{RiderId: riderID, TripId: tripID})
+	if err != nil {
+		return 0, fmt.Errorf("pricing-service GetTripTerms: %w", err)
+	}
+
+	return time.Duration(response.GetNoShowWaitMinutes()) * time.Minute, nil
 }
