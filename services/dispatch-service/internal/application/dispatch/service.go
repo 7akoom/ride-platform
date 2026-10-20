@@ -34,6 +34,11 @@ type service struct {
 	// WithRoadRanking); maxPickup leaves out those further than it.
 	travelTimes TravelTimeClient
 	maxPickup   time.Duration
+
+	// currentTrips and nextTripSettings, when set, let a driver finishing a trip
+	// nearby be offered this one after it (see WithNextTrips).
+	currentTrips     CurrentTripReader
+	nextTripSettings NextTripSettingsSource
 }
 
 // Option customises a service at construction time.

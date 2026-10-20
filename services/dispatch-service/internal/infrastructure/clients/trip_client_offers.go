@@ -26,6 +26,12 @@ func (c *TripClient) OfferTrip(
 		DriverId:   driverID,
 		TtlSeconds: int32(ttl / time.Second),
 	})
+
+	return offerError(err)
+}
+
+// offerError turns trip-service's refusals of an offer into dispatch's.
+func offerError(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -40,4 +46,25 @@ func (c *TripClient) OfferTrip(
 	default:
 		return fmt.Errorf("call trip-service OfferTrip: %w", err)
 	}
+}
+
+// OfferTripWithChain is OfferTrip with the road time to the pickup and, for a next
+// trip, the driver's current trip. Its refusals are those of OfferTrip.
+func (c *TripClient) OfferTripWithChain(
+	ctx context.Context,
+	tripID string,
+	driverID string,
+	ttl time.Duration,
+	afterTripID string,
+	pickupETA time.Duration,
+) error {
+	_, err := c.client.OfferTrip(ctx, &tripv1.OfferTripRequest{
+		TripId:           tripID,
+		DriverId:         driverID,
+		TtlSeconds:       int32(ttl / time.Second),
+		AfterTripId:      afterTripID,
+		PickupEtaSeconds: int32(pickupETA / time.Second),
+	})
+
+	return offerError(err)
 }

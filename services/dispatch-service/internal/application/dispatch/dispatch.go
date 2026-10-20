@@ -90,4 +90,8 @@ type Result struct {
 	// Offered is true when the trip was put to DriverID as an offer they have not
 	// answered yet, false when it was assigned to them.
 	Offered bool
+
+	// AfterTripID is the driver's current trip when the trip was offered to them
+	// to take after it; empty otherwise.
+	AfterTripID string
 }

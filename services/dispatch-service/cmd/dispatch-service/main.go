@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -157,6 +158,22 @@ func run() int {
 		logger.Info("dispatch ranks drivers by time to the pickup by road", "max_pickup", roadRanking.MaxPickup)
 	} else {
 		logger.Info("dispatch ranks drivers by straight-line distance (DISPATCH_ROAD_RANKING is false)")
+	}
+
+	if address := strings.TrimSpace(cfg.PricingServiceAddress); address != "" {
+		pricingConn, err := dialService(address, cfg.InternalServiceToken)
+		if err != nil {
+			logger.Error("failed to connect to pricing-service", "error", err)
+
+			return 1
+		}
+		defer pricingConn.Close()
+
+		dispatchOptions = append(dispatchOptions, dispatch.WithNextTrips(
+			clients.NewTripClient(tripConn),
+			clients.NewDispatchSettingsClient(pricingConn),
+		))
+		logger.Info("drivers finishing a ride nearby may be offered next trips, as the dispatch settings say")
 	}
 
 	dispatchService := dispatch.NewService(

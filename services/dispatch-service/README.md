@@ -62,6 +62,29 @@ free driver of the class by road, the one dispatch would send.
 
 End to end: `bash scripts/e2e/test-road-dispatch.sh`.
 
+## Next trips
+
+A driver whose rider is in the car may be offered a trip to do right after,
+when they drop that rider near its pickup (as Uber and Careem do): the rider
+waits less than for a free driver further away.
+
+- Only with offers (`DISPATCH_OFFER_TTL` > 0: the driver accepts it) and road
+  ranking (the time must be known), and when the dispatch settings say so:
+  `GET/PUT /v1/admin/dispatch-settings` on pricing-service
+  (`PRICING_SERVICE_ADDRESS`; empty switches next trips off), read again
+  every 30 s. On by default, within 3 km of the drop-off.
+- Up to 5 busy drivers (nearest first) of the trip's class are looked at.
+  Their time is the rest of their trip by road (through the stops not reached
+  yet) plus the drive from the drop-off to the pickup; they are ranked with
+  the free drivers by it (a free driver first on equal times), under the same
+  `DISPATCH_MAX_PICKUP_ETA`.
+- trip-service checks it again as it makes the offer: the driver's current
+  trip is under way and they have no next trip yet. Accepted, the trip waits
+  until the current one ends, then becomes the driver's current trip.
+
+On staging: `scripts/dev/sim-captain.sh` takes next trips; `scripts/dev/sim-ride.sh`
+plays a second rider.
+
 ## What's intentionally NOT done yet
 
 Same deferred list as every other service (observability, auth

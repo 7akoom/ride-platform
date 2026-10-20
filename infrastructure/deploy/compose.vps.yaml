@@ -145,6 +145,10 @@
           "condition": "service_healthy",
           "required": true
         },
+        "pricing-service": {
+          "condition": "service_started",
+          "required": true
+        },
         "trip-service": {
           "condition": "service_started",
           "required": true
@@ -180,6 +184,7 @@
         "NATS_URL": "nats://nats:4222",
         "OTEL_EXPORTER_OTLP_ENDPOINT": "${OTEL_EXPORTER_OTLP_ENDPOINT:-}",
         "OTEL_TRACES_SAMPLER_ARG": "${OTEL_TRACES_SAMPLER_ARG:-1}",
+        "PRICING_SERVICE_ADDRESS": "pricing-service:50057",
         "TRIP_SERVICE_ADDRESS": "trip-service:50055",
         "WALLET_SERVICE_ADDRESS": "wallet-service:50058"
       },

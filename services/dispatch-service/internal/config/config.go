@@ -12,6 +12,10 @@ type Config struct {
 	DriverServiceAddress   string
 	WalletServiceAddress   string
 
+	// pricing-service holds the dispatch settings staff set (next trips for
+	// drivers finishing a ride nearby). Empty switches next trips off.
+	PricingServiceAddress string
+
 	// Verifies access tokens issued by identity-service. The public key
 	// must be copied from identity-service's own .local/keys directory —
 	// it is never committed to the repo.
@@ -67,6 +71,7 @@ func Load() Config {
 		LocationServiceAddress: getEnv("LOCATION_SERVICE_ADDRESS", "localhost:50054"),
 		DriverServiceAddress:   getEnv("DRIVER_SERVICE_ADDRESS", "localhost:50053"),
 		WalletServiceAddress:   getEnv("WALLET_SERVICE_ADDRESS", "localhost:50058"),
+		PricingServiceAddress:  getEnv("PRICING_SERVICE_ADDRESS", "localhost:50057"),
 
 		AccessTokenPublicKeyPath: getEnv("ACCESS_TOKEN_PUBLIC_KEY_PATH", ".local/keys/access_token_public.pem"),
 		AccessTokenIssuer:        getEnv("ACCESS_TOKEN_ISSUER", "ride-identity"),

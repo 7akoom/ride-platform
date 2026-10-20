@@ -921,6 +921,8 @@ services:
       LOCATION_SERVICE_ADDRESS: location-service:50054
       DRIVER_SERVICE_ADDRESS: driver-service:50053
       WALLET_SERVICE_ADDRESS: wallet-service:50058
+      # The dispatch settings: next trips for drivers finishing a ride nearby.
+      PRICING_SERVICE_ADDRESS: pricing-service:50057
       NATS_URL: nats://nats:4222
 
     volumes:
@@ -934,6 +936,8 @@ services:
       driver-service:
         condition: service_started
       wallet-service:
+        condition: service_started
+      pricing-service:
         condition: service_started
       nats:
         condition: service_healthy

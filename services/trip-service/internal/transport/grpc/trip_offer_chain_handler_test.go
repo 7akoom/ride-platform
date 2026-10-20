@@ -74,3 +74,56 @@ func TestAWaitingTripSaysSo(t *testing.T) {
 		t.Fatalf("trip %+v", shown)
 	}
 }
+
+// handlerNextTripFake also knows the driver's next trip.
+type handlerNextTripFake struct {
+	handlerHistoryFake
+
+	next     trip.Trip
+	nextErr  error
+	askedFor []string
+}
+
+func (f *handlerNextTripFake) NextTrip(_ context.Context, driverID string) (trip.Trip, error) {
+	f.askedFor = append(f.askedFor, driverID)
+
+	return f.next, f.nextErr
+}
+
+func TestADriverSeesTheirNextTripBesideTheCurrentOne(t *testing.T) {
+	fake := &handlerNextTripFake{
+		handlerHistoryFake: handlerHistoryFake{active: trip.Trip{ID: "trip-1"}},
+		next:               trip.Trip{ID: "trip-2", AfterTripID: "trip-1"},
+	}
+
+	response, err := newHistoryHandler(fake).GetActiveTrip(context.Background(), &tripv1.GetActiveTripRequest{DriverId: "driver-a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if response.GetNextTrip().GetId() != "trip-2" || !response.GetNextTrip().GetWaitingForPreviousTrip() {
+		t.Fatalf("next trip %+v", response.GetNextTrip())
+	}
+}
+
+func TestARiderIsNeverToldOfANextTrip(t *testing.T) {
+	fake := &handlerNextTripFake{handlerHistoryFake: handlerHistoryFake{active: trip.Trip{ID: "trip-2"}}, next: trip.Trip{ID: "trip-3"}}
+
+	response, err := newHistoryHandler(fake).GetActiveTrip(context.Background(), &tripv1.GetActiveTripRequest{RiderId: "rider-a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if response.GetNextTrip() != nil || len(fake.askedFor) != 0 {
+		t.Fatalf("next trip %+v, asked %v", response.GetNextTrip(), fake.askedFor)
+	}
+}
+
+func TestADriverWithoutANextTripGetsNone(t *testing.T) {
+	fake := &handlerNextTripFake{handlerHistoryFake: handlerHistoryFake{active: trip.Trip{ID: "trip-1"}}, nextErr: trip.ErrTripNotFound}
+
+	response, err := newHistoryHandler(fake).GetActiveTrip(context.Background(), &tripv1.GetActiveTripRequest{DriverId: "driver-a"})
+	if err != nil || response.GetNextTrip() != nil {
+		t.Fatalf("got %+v, %v", response.GetNextTrip(), err)
+	}
+}

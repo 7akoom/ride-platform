@@ -65,22 +65,30 @@ func (s *service) DispatchTrip(
 	}
 
 	nearby := len(candidates)
-	candidates = s.rankByRoad(ctx, trimmedID, Point{Latitude: tripInfo.PickupLat, Longitude: tripInfo.PickupLng}, candidates, skip)
+	queue, lookups := s.orderCandidates(ctx, trimmedID, tripInfo, Point{Latitude: tripInfo.PickupLat, Longitude: tripInfo.PickupLng}, candidates, skip)
 
 	// Try candidates fastest-first by road (nearest-first without road
 	// ranking). A candidate is skipped (not a hard
 	// failure) if it's no longer eligible or loses a race to be
 	// assigned — the next-nearest candidate is tried instead. Only if
-	// every candidate is exhausted do we report failure.
-	for _, candidate := range candidates {
-		driverInfo, err := s.driverClient.GetDriver(ctx, candidate.DriverID)
+	// every candidate is exhausted do we report failure. A driver
+	// offered a next trip is busy on the trip before it.
+	for _, entry := range queue {
+		candidate := entry.candidate
+
+		driverInfo, err := s.lookupDriver(ctx, lookups, candidate.DriverID)
 		if err != nil {
 			skip(candidate.DriverID, "could not load driver: %v", err)
 
 			continue
 		}
 
-		if driverInfo.Status != driverStatusActive || driverInfo.AvailabilityStatus != driverAvailable {
+		wantAvailability := driverAvailable
+		if entry.afterTripID != "" {
+			wantAvailability = driverBusy
+		}
+
+		if driverInfo.Status != driverStatusActive || driverInfo.AvailabilityStatus != wantAvailability {
 			skip(candidate.DriverID, "not eligible (status=%s, availability=%s)",
 				driverInfo.Status, driverInfo.AvailabilityStatus)
 
@@ -117,7 +125,7 @@ func (s *service) DispatchTrip(
 		// By offers, the trip is put to this driver, who answers within the TTL,
 		// instead of being assigned to them outright.
 		if s.offerTTL > 0 {
-			result, done, err := s.offerToCandidate(ctx, trimmedID, candidate, driverInfo, skip)
+			result, done, err := s.offerToCandidate(ctx, trimmedID, candidate, driverInfo, entry.afterTripID, skip)
 			if done {
 				return result, err
 			}

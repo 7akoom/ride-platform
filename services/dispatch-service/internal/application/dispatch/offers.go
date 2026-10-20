@@ -63,11 +63,18 @@ func (s *service) offerToCandidate(
 	tripID string,
 	candidate NearbyDriver,
 	driver DriverInfo,
+	afterTripID string,
 	skip func(driverID string, format string, args ...any),
 ) (result Result, done bool, err error) {
-	offerer, _ := s.tripClient.(TripOfferer)
+	var offerErr error
 
-	offerErr := offerer.OfferTrip(ctx, tripID, driver.ID, s.offerTTL)
+	if chained, ok := s.tripClient.(ChainedTripOfferer); ok {
+		eta := time.Duration(candidate.PickupETASeconds * float64(time.Second))
+		offerErr = chained.OfferTripWithChain(ctx, tripID, driver.ID, s.offerTTL, afterTripID, eta)
+	} else {
+		offerer, _ := s.tripClient.(TripOfferer)
+		offerErr = offerer.OfferTrip(ctx, tripID, driver.ID, s.offerTTL)
+	}
 
 	switch {
 	case offerErr == nil:
@@ -76,6 +83,7 @@ func (s *service) offerToCandidate(
 			"driver_id", driver.ID,
 			"distance_meters", candidate.DistanceMeters,
 			"pickup_eta_seconds", candidate.PickupETASeconds,
+			"after_trip_id", afterTripID,
 			"ttl", s.offerTTL,
 		)
 
@@ -85,6 +93,7 @@ func (s *service) offerToCandidate(
 			DistanceMeters:   candidate.DistanceMeters,
 			PickupETASeconds: candidate.PickupETASeconds,
 			Offered:          true,
+			AfterTripID:      afterTripID,
 		}, true, nil
 
 	case errors.Is(offerErr, ErrOfferPending):

@@ -14,6 +14,8 @@
 #   - takes the ride, drives to the pickup along the road (the rider sees the car move),
 #     says it has arrived, waits --wait seconds, starts, drives to the destination and completes
 #   - stops following a ride the rider cancels
+#   - with a rider in the car, takes a ride offered to do right after this one (a
+#     next trip: its pickup near this drop-off), and goes to it once this one ends
 # It refuses to run unless instance/instance.env says IDENTITY_APP_ENV=test.
 set -Euo pipefail
 export LC_ALL=C # awk prints 36.19, never 36,19
@@ -220,9 +222,28 @@ drive() { # <trip> <to lat> <to lng>: along the road, a position every 2 s; fail
     if [ $((i % 5)) = 0 ]; then
       load_trip "$1"
       case "$T_STATUS" in TRIP_STATUS_ACCEPTED | TRIP_STATUS_IN_PROGRESS) ;; *) return 1 ;; esac
+      [ "$NEXT_OK" = 1 ] && take_next_offer
     fi
   done <<< "$path"
   report "$2" "$3"
+}
+
+NEXT_OK=0
+take_next_offer() { # with a rider in the car: a ride offered to do after this one is taken
+  local trip eta
+  api GET "/v1/drivers/$DRIVER/offer"
+  [ "$STATUS" = 200 ] || return 0
+  [ "$(echo "$BODY" | field offer.afterCurrentTrip)" = True ] || return 0
+  trip="$(echo "$BODY" | field offer.tripId)"
+  eta="$(echo "$BODY" | field offer.pickupEtaSeconds)"
+  api POST "/v1/trips/$trip:accept-offer" "{\"driverId\":\"$DRIVER\"}"
+  echo "==> offered ride $trip to do after this one (${eta:-?} s to its pickup): accepted ($STATUS)"
+}
+
+ready_again() { # online for a new ride, unless a next trip is waiting
+  api GET "/v1/trips:active?driver_id=$DRIVER"
+  [ "$STATUS" = 200 ] && { echo "==> going on to the next ride"; return; }
+  availability AVAILABLE
 }
 
 run_trip() { # <trip id>: follows it to its end
@@ -242,7 +263,9 @@ run_trip() { # <trip id>: follows it to its end
   fi
   if [ "$T_STATUS" = TRIP_STATUS_IN_PROGRESS ]; then
     echo "==> driving to the destination"
-    drive "$trip" "$D_LAT" "$D_LNG" || { echo "==> the ride ended ($T_STATUS)"; return; }
+    NEXT_OK=1
+    drive "$trip" "$D_LAT" "$D_LNG" || { NEXT_OK=0; echo "==> the ride ended ($T_STATUS)"; return; }
+    NEXT_OK=0
     api POST "/v1/trips/$trip:complete" '{}'
     echo "==> completed ($STATUS). Waiting for the next ride."
   fi
@@ -277,14 +300,14 @@ while true; do
     api POST "/v1/trips/$trip:accept-offer" "{\"driverId\":\"$DRIVER\"}"
     echo "==> offered ride $trip: accepted ($STATUS)"
     [ "$STATUS" = 200 ] && run_trip "$trip"
-    availability AVAILABLE
+    ready_again
     continue
   fi
 
   api GET "/v1/trips:active?driver_id=$DRIVER"
   if [ "$STATUS" = 200 ]; then
     run_trip "$(echo "$BODY" | field trip.id)"
-    availability AVAILABLE
+    ready_again
     continue
   fi
 
