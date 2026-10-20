@@ -11071,6 +11071,13 @@
         "comment": {
           "type": "string",
           "description": "Optional, at most 500 characters. Kept for the operating company; never shown to the\nperson rated."
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1RatingTag"
+          },
+          "description": "Optional: what the rating was for. The rider tags the driver with SAFE_DRIVING,\nCLEAN_CAR, FRIENDLY, KNOWS_THE_WAY; the driver tags the rider with ON_TIME,\nPOLITE. Another side's tag is INVALID_ARGUMENT. Kept like the comment."
         }
       }
     },
@@ -16454,6 +16461,19 @@
           "title": "five counts: 1 star first, 5 stars last"
         }
       }
+    },
+    "v1RatingTag": {
+      "type": "string",
+      "enum": [
+        "RATING_TAG_UNSPECIFIED",
+        "RATING_TAG_SAFE_DRIVING",
+        "RATING_TAG_CLEAN_CAR",
+        "RATING_TAG_FRIENDLY",
+        "RATING_TAG_KNOWS_THE_WAY",
+        "RATING_TAG_ON_TIME",
+        "RATING_TAG_POLITE"
+      ],
+      "default": "RATING_TAG_UNSPECIFIED"
     },
     "v1ReachStopResponse": {
       "type": "object",

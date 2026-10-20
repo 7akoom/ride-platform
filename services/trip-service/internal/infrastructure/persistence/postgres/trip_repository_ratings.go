@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -34,8 +35,8 @@ func (r *TripRepository) CreateRating(
 	err = tx.QueryRow(
 		ctx,
 		`INSERT INTO trip_ratings
-            (id, trip_id, rated_by, rater_id, ratee_id, stars, comment)
-         VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7::text, ''))
+            (id, trip_id, rated_by, rater_id, ratee_id, stars, comment, tags)
+         VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7::text, ''), $8)
          RETURNING created_at`,
 		input.ID,
 		input.TripID,
@@ -44,6 +45,7 @@ func (r *TripRepository) CreateRating(
 		input.RateeID,
 		input.Stars,
 		input.Comment,
+		nonNilTags(input.Tags),
 	).Scan(&createdAt)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -62,6 +64,7 @@ func (r *TripRepository) CreateRating(
 		"rater_id":  input.RaterID,
 		"ratee_id":  input.RateeID,
 		"stars":     strconv.Itoa(input.Stars),
+		"tags":      strings.Join(input.Tags, ","),
 	}); err != nil {
 		return trip.Rating{}, err
 	}
@@ -78,6 +81,7 @@ func (r *TripRepository) CreateRating(
 		RateeID:   input.RateeID,
 		Stars:     input.Stars,
 		Comment:   input.Comment,
+		Tags:      input.Tags,
 		CreatedAt: createdAt,
 	}, nil
 }
@@ -108,4 +112,13 @@ func (r *TripRepository) FindRating(
 	}
 
 	return rating, true, nil
+}
+
+// nonNilTags: a nil slice would be NULL, and the column is NOT NULL.
+func nonNilTags(tags []string) []string {
+	if tags == nil {
+		return []string{}
+	}
+
+	return tags
 }

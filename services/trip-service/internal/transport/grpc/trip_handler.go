@@ -380,6 +380,7 @@ func (h *TripHandler) mapTripError(err error) error {
 
 	case errors.Is(err, trip.ErrInvalidRatedBy),
 		errors.Is(err, trip.ErrInvalidStars),
+		errors.Is(err, trip.ErrInvalidRatingTag),
 		errors.Is(err, trip.ErrRatingCommentTooLong):
 		return status.Error(codes.InvalidArgument, err.Error())
 

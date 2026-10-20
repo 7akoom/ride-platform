@@ -42,6 +42,8 @@ type RateTripInput struct {
 	RatedBy RatedBy
 	Stars   int
 	Comment string
+	// Tags are what the rating was for (see rating_tags.go); optional.
+	Tags []string
 }
 
 // CreateRatingInput is a validated rating, ready to be written.
@@ -53,6 +55,7 @@ type CreateRatingInput struct {
 	RateeID string
 	Stars   int
 	Comment string
+	Tags    []string
 }
 
 // Rating is a recorded rating.
@@ -64,6 +67,7 @@ type Rating struct {
 	RateeID   string
 	Stars     int
 	Comment   string
+	Tags      []string
 	CreatedAt time.Time
 }
 
@@ -90,6 +94,11 @@ func (s *service) RateTrip(
 	comment := strings.TrimSpace(input.Comment)
 	if utf8.RuneCountInString(comment) > MaxRatingCommentLength {
 		return Rating{}, ErrRatingCommentTooLong
+	}
+
+	tags, err := normalizeRatingTags(input.RatedBy, input.Tags)
+	if err != nil {
+		return Rating{}, err
 	}
 
 	found, err := s.repository.FindByID(ctx, tripID)
@@ -123,6 +132,7 @@ func (s *service) RateTrip(
 		RateeID: rateeID,
 		Stars:   input.Stars,
 		Comment: comment,
+		Tags:    tags,
 	})
 	if err != nil {
 		return Rating{}, fmt.Errorf("create rating: %w", err)

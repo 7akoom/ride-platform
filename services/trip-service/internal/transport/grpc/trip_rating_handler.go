@@ -25,6 +25,7 @@ func (h *TripHandler) RateTrip(
 		RatedBy: toDomainRatedBy(request.GetRatedBy()),
 		Stars:   int(request.GetStars()),
 		Comment: request.GetComment(),
+		Tags:    toDomainRatingTags(request.GetTags()),
 	})
 	if err != nil {
 		return nil, h.mapTripError(err)
@@ -70,4 +71,30 @@ func toDomainRatedBy(r tripv1.RatedBy) trip.RatedBy {
 	default:
 		return ""
 	}
+}
+
+// toDomainRatingTags names the tags; an unknown one stays unknown, so the service
+// refuses it.
+func toDomainRatingTags(tags []tripv1.RatingTag) []string {
+	out := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		switch tag {
+		case tripv1.RatingTag_RATING_TAG_SAFE_DRIVING:
+			out = append(out, trip.TagSafeDriving)
+		case tripv1.RatingTag_RATING_TAG_CLEAN_CAR:
+			out = append(out, trip.TagCleanCar)
+		case tripv1.RatingTag_RATING_TAG_FRIENDLY:
+			out = append(out, trip.TagFriendly)
+		case tripv1.RatingTag_RATING_TAG_KNOWS_THE_WAY:
+			out = append(out, trip.TagKnowsTheWay)
+		case tripv1.RatingTag_RATING_TAG_ON_TIME:
+			out = append(out, trip.TagOnTime)
+		case tripv1.RatingTag_RATING_TAG_POLITE:
+			out = append(out, trip.TagPolite)
+		default:
+			out = append(out, "unknown")
+		}
+	}
+
+	return out
 }

@@ -651,6 +651,20 @@ message RateTripRequest {
   // Optional, at most 500 characters. Kept for the operating company; never shown to the
   // person rated.
   string comment = 4;
+  // Optional: what the rating was for. The rider tags the driver with SAFE_DRIVING,
+  // CLEAN_CAR, FRIENDLY, KNOWS_THE_WAY; the driver tags the rider with ON_TIME,
+  // POLITE. Another side's tag is INVALID_ARGUMENT. Kept like the comment.
+  repeated RatingTag tags = 5;
+}
+
+enum RatingTag {
+  RATING_TAG_UNSPECIFIED = 0;
+  RATING_TAG_SAFE_DRIVING = 1;
+  RATING_TAG_CLEAN_CAR = 2;
+  RATING_TAG_FRIENDLY = 3;
+  RATING_TAG_KNOWS_THE_WAY = 4;
+  RATING_TAG_ON_TIME = 5;
+  RATING_TAG_POLITE = 6;
 }
 
 message RateTripResponse {}
