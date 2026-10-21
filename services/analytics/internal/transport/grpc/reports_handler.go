@@ -87,6 +87,7 @@ func (h *AnalyticsHandler) GetMoneyFlows(ctx context.Context, req *analyticsv1.G
 			Transferred:      head.Transferred.String(),
 			AdjustmentsIn:    head.AdjustmentsIn.String(),
 			AdjustmentsOut:   head.AdjustmentsOut.String(),
+			CashToppedUp:     head.CashToppedUp.String(),
 		},
 		Held: &analyticsv1.MoneyHeld{
 			RiderBalances:    flows.Held.RiderBalances.String(),

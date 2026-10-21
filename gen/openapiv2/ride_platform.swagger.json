@@ -197,6 +197,53 @@
         ]
       }
     },
+    "/v1/admin/cash-topups": {
+      "get": {
+        "summary": "ListCashTopUps (staff, wallets.read) is the office's cash taken in a time\nrange, newest first, with its total: for counting the till.",
+        "operationId": "WalletService_ListCashTopUps",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListCashTopUpsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "from",
+            "description": "Default: the last 24 hours; at most 31 days.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "createdBy",
+            "description": "Optional: only this staff member's (their identity id).",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/admin/cities": {
       "get": {
         "summary": "Staff with zones.manage (or the internal token) manage cities; the admin\nlist includes inactive ones. Switching a city off stops serving all its\nzones at once.",
@@ -3737,6 +3784,45 @@
         ]
       }
     },
+    "/v1/admin/wallets/{ownerId}/cash-topups": {
+      "post": {
+        "summary": "CashTopUp (staff, wallets.cash_topup) credits a rider's or a captain's\nwallet with cash paid at the company's office, against a receipt: a\ncash_top_up row of its own, apart from corrections. A receipt number is used\nonce. A rider's wallet pays what they owe first; a captain's may lift their\nsuspension. The owner is told (wallet.topped_up, provider \"office\").",
+        "operationId": "WalletService_CashTopUp",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AdjustmentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ownerId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WalletServiceCashTopUpBody"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
     "/v1/admin/wallets/{ownerId}/statement": {
       "get": {
         "operationId": "WalletService_GetStatementForStaff",
@@ -3782,7 +3868,7 @@
           },
           {
             "name": "types",
-            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.\n - TRANSACTION_TYPE_INCENTIVE: An incentive campaign's bonus, paid by the platform to the driver.",
+            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.\n - TRANSACTION_TYPE_INCENTIVE: An incentive campaign's bonus, paid by the platform to the driver.\n - TRANSACTION_TYPE_CASH_TOP_UP: Cash paid at the company's office, credited by staff against a receipt.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -3804,7 +3890,8 @@
                 "TRANSACTION_TYPE_REFUND",
                 "TRANSACTION_TYPE_PAYOUT_RETURN",
                 "TRANSACTION_TYPE_TIP",
-                "TRANSACTION_TYPE_INCENTIVE"
+                "TRANSACTION_TYPE_INCENTIVE",
+                "TRANSACTION_TYPE_CASH_TOP_UP"
               ]
             },
             "collectionFormat": "multi"
@@ -9337,7 +9424,7 @@
           },
           {
             "name": "types",
-            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.\n - TRANSACTION_TYPE_INCENTIVE: An incentive campaign's bonus, paid by the platform to the driver.",
+            "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.\n - TRANSACTION_TYPE_INCENTIVE: An incentive campaign's bonus, paid by the platform to the driver.\n - TRANSACTION_TYPE_CASH_TOP_UP: Cash paid at the company's office, credited by staff against a receipt.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -9359,7 +9446,8 @@
                 "TRANSACTION_TYPE_REFUND",
                 "TRANSACTION_TYPE_PAYOUT_RETURN",
                 "TRANSACTION_TYPE_TIP",
-                "TRANSACTION_TYPE_INCENTIVE"
+                "TRANSACTION_TYPE_INCENTIVE",
+                "TRANSACTION_TYPE_CASH_TOP_UP"
               ]
             },
             "collectionFormat": "multi"
@@ -11225,6 +11313,30 @@
         }
       }
     },
+    "WalletServiceCashTopUpBody": {
+      "type": "object",
+      "properties": {
+        "ownerType": {
+          "$ref": "#/definitions/v1OwnerType"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Positive decimal string: what was paid in cash."
+        },
+        "receiptNumber": {
+          "type": "string",
+          "description": "The office receipt, 1-60 characters; used once."
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional, up to 300 characters."
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "description": "Required: a retry with the same key is the same top-up."
+        }
+      }
+    },
     "WalletServiceCreateMoneyRequestBody": {
       "type": "object",
       "properties": {
@@ -11693,7 +11805,7 @@
         },
         "kind": {
           "type": "string",
-          "description": "adjustment or refund."
+          "description": "adjustment, refund or cash_top_up."
         },
         "ownerType": {
           "$ref": "#/definitions/v1OwnerType"
@@ -11729,6 +11841,10 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "receiptNumber": {
+          "type": "string",
+          "description": "For a cash top-up: the office receipt's number."
         }
       },
       "description": "Adjustment is a staff member's correction or refund."
@@ -14890,6 +15006,34 @@
         }
       }
     },
+    "v1ListCashTopUpsResponse": {
+      "type": "object",
+      "properties": {
+        "cashTopUps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Adjustment"
+          },
+          "description": "Newest first, at most 500."
+        },
+        "totalAmount": {
+          "type": "string",
+          "description": "Of every top-up in the range, also when more than 500."
+        },
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "truncated": {
+          "type": "boolean",
+          "description": "There were more than 500: narrow the range to see them all."
+        }
+      }
+    },
     "v1ListCitiesResponse": {
       "type": "object",
       "properties": {
@@ -15838,6 +15982,10 @@
         },
         "adjustmentsOut": {
           "type": "string"
+        },
+        "cashToppedUp": {
+          "type": "string",
+          "title": "cash paid at the office"
         }
       },
       "description": "The figures most dashboards show, from the lines."
@@ -18212,10 +18360,11 @@
         "TRANSACTION_TYPE_REFUND",
         "TRANSACTION_TYPE_PAYOUT_RETURN",
         "TRANSACTION_TYPE_TIP",
-        "TRANSACTION_TYPE_INCENTIVE"
+        "TRANSACTION_TYPE_INCENTIVE",
+        "TRANSACTION_TYPE_CASH_TOP_UP"
       ],
       "default": "TRANSACTION_TYPE_UNSPECIFIED",
-      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.\n - TRANSACTION_TYPE_INCENTIVE: An incentive campaign's bonus, paid by the platform to the driver."
+      "description": " - TRANSACTION_TYPE_CHANGE_CREDIT: Change the driver could not return in cash, credited to the rider's wallet.\n - TRANSACTION_TYPE_TRANSFER_OUT: Money sent to another rider, and received from one.\n - TRANSACTION_TYPE_DUE_PAYMENT: A cancelled trip's fee the rider owed, paid from money that reached the\nwallet later.\n - TRANSACTION_TYPE_VOUCHER: A voucher redeemed into the rider's wallet.\n - TRANSACTION_TYPE_REFUND: Money given back for a trip (to the rider; from the driver when they\nshare it).\n - TRANSACTION_TYPE_PAYOUT_RETURN: A rejected payout's held amount, back in the driver's wallet.\n - TRANSACTION_TYPE_TIP: A tip: out of the rider's wallet, into the driver's.\n - TRANSACTION_TYPE_INCENTIVE: An incentive campaign's bonus, paid by the platform to the driver.\n - TRANSACTION_TYPE_CASH_TOP_UP: Cash paid at the company's office, credited by staff against a receipt."
     },
     "v1Transfer": {
       "type": "object",

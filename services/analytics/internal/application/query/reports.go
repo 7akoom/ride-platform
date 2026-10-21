@@ -152,6 +152,7 @@ func SumMoneyFlows(ledger domain.Ledger) domain.MoneyFlows {
 		Transferred:      debited("rider", "transfer_out"),
 		AdjustmentsIn:    credited("", "adjustment"),
 		AdjustmentsOut:   debited("", "adjustment"),
+		CashToppedUp:     credited("", "cash_top_up"),
 	}
 
 	return out

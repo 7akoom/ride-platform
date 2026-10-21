@@ -295,7 +295,8 @@ func (h *WalletHandler) mapOperationsError(err error) error {
 		errors.Is(err, operations.ErrTripNotSettled):
 		return status.Error(codes.NotFound, err.Error())
 
-	case errors.Is(err, operations.ErrKeyReused):
+	case errors.Is(err, operations.ErrKeyReused),
+		errors.Is(err, operations.ErrReceiptUsed):
 		return status.Error(codes.AlreadyExists, err.Error())
 
 	case errors.Is(err, operations.ErrRefundTooLarge),
@@ -314,6 +315,10 @@ func (h *WalletHandler) mapOperationsError(err error) error {
 		errors.Is(err, operations.ErrReferenceRequired),
 		errors.Is(err, operations.ErrInvalidStatus),
 		errors.Is(err, operations.ErrInvalidPageToken),
+		errors.Is(err, operations.ErrReceiptRequired),
+		errors.Is(err, operations.ErrNoteTooLong),
+		errors.Is(err, operations.ErrInvalidCashAmount),
+		errors.Is(err, operations.ErrInvalidRange),
 		errors.Is(err, wallet.ErrInvalidAmount):
 		return status.Error(codes.InvalidArgument, err.Error())
 
@@ -382,5 +387,6 @@ func toProtoAdjustment(a operations.Adjustment) *walletv1.Adjustment {
 		TransactionId: a.TransactionID,
 		CreatedBy:     a.CreatedBy,
 		CreatedAt:     timestamppb.New(a.CreatedAt),
+		ReceiptNumber: a.ReceiptNumber,
 	}
 }

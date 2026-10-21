@@ -362,6 +362,8 @@ func toDomainTransactionType(t walletv1.TransactionType) (wallet.TransactionType
 		return wallet.TxTip, true
 	case walletv1.TransactionType_TRANSACTION_TYPE_INCENTIVE:
 		return wallet.TxIncentive, true
+	case walletv1.TransactionType_TRANSACTION_TYPE_CASH_TOP_UP:
+		return wallet.TxCashTopUp, true
 	default:
 		return "", false
 	}

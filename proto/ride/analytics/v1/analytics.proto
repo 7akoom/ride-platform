@@ -288,6 +288,7 @@ message MoneyHeadline {
   string transferred = 8;        // rider to rider
   string adjustments_in = 9;
   string adjustments_out = 10;
+  string cash_topped_up = 11;    // cash paid at the office
 }
 
 // What wallets hold now (not in the range).

@@ -2019,6 +2019,7 @@ type MoneyHeadline struct {
 	Transferred      string                 `protobuf:"bytes,8,opt,name=transferred,proto3" json:"transferred,omitempty"`        // rider to rider
 	AdjustmentsIn    string                 `protobuf:"bytes,9,opt,name=adjustments_in,json=adjustmentsIn,proto3" json:"adjustments_in,omitempty"`
 	AdjustmentsOut   string                 `protobuf:"bytes,10,opt,name=adjustments_out,json=adjustmentsOut,proto3" json:"adjustments_out,omitempty"`
+	CashToppedUp     string                 `protobuf:"bytes,11,opt,name=cash_topped_up,json=cashToppedUp,proto3" json:"cash_topped_up,omitempty"` // cash paid at the office
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -2119,6 +2120,13 @@ func (x *MoneyHeadline) GetAdjustmentsIn() string {
 func (x *MoneyHeadline) GetAdjustmentsOut() string {
 	if x != nil {
 		return x.AdjustmentsOut
+	}
+	return ""
+}
+
+func (x *MoneyHeadline) GetCashToppedUp() string {
+	if x != nil {
+		return x.CashToppedUp
 	}
 	return ""
 }
@@ -2805,7 +2813,7 @@ const file_ride_analytics_v1_analytics_proto_rawDesc = "" +
 	"\adebited\x18\x05 \x01(\tR\adebited\"Z\n" +
 	"\fMoneyFlowDay\x12\x12\n" +
 	"\x04date\x18\x01 \x01(\tR\x04date\x126\n" +
-	"\x05lines\x18\x02 \x03(\v2 .ride.analytics.v1.MoneyFlowLineR\x05lines\"\xd4\x02\n" +
+	"\x05lines\x18\x02 \x03(\v2 .ride.analytics.v1.MoneyFlowLineR\x05lines\"\xfa\x02\n" +
 	"\rMoneyHeadline\x12\x1b\n" +
 	"\ttopped_up\x18\x01 \x01(\tR\btoppedUp\x12+\n" +
 	"\x11vouchers_redeemed\x18\x02 \x01(\tR\x10vouchersRedeemed\x12\x1e\n" +
@@ -2821,7 +2829,8 @@ const file_ride_analytics_v1_analytics_proto_rawDesc = "" +
 	"\vtransferred\x18\b \x01(\tR\vtransferred\x12%\n" +
 	"\x0eadjustments_in\x18\t \x01(\tR\radjustmentsIn\x12'\n" +
 	"\x0fadjustments_out\x18\n" +
-	" \x01(\tR\x0eadjustmentsOut\"\xc4\x01\n" +
+	" \x01(\tR\x0eadjustmentsOut\x12$\n" +
+	"\x0ecash_topped_up\x18\v \x01(\tR\fcashToppedUp\"\xc4\x01\n" +
 	"\tMoneyHeld\x12%\n" +
 	"\x0erider_balances\x18\x01 \x01(\tR\rriderBalances\x12#\n" +
 	"\rdriver_credit\x18\x02 \x01(\tR\fdriverCredit\x12\x1f\n" +

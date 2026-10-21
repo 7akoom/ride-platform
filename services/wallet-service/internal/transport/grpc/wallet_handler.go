@@ -451,6 +451,8 @@ func toProtoTransactionType(t wallet.TransactionType) walletv1.TransactionType {
 		return walletv1.TransactionType_TRANSACTION_TYPE_TIP
 	case wallet.TxIncentive:
 		return walletv1.TransactionType_TRANSACTION_TYPE_INCENTIVE
+	case wallet.TxCashTopUp:
+		return walletv1.TransactionType_TRANSACTION_TYPE_CASH_TOP_UP
 	default:
 		return walletv1.TransactionType_TRANSACTION_TYPE_UNSPECIFIED
 	}

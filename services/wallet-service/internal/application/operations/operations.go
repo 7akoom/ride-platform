@@ -34,6 +34,17 @@ var (
 	// ErrPayoutState: approved only when pending; paid only when pending or
 	// approved; rejected only before it is paid.
 	ErrPayoutState = errors.New("the payout request is not in a state that allows this")
+
+	// ErrReceiptRequired: a cash top-up names its office receipt (1-60 characters).
+	ErrReceiptRequired = errors.New("receipt_number is required (1-60 characters)")
+	// ErrReceiptUsed: that receipt was already credited.
+	ErrReceiptUsed = errors.New("this receipt was already credited")
+	// ErrNoteTooLong: a cash top-up's note is at most 300 characters.
+	ErrNoteTooLong = errors.New("note must be at most 300 characters")
+	// ErrInvalidCashAmount: a cash top-up is positive, at most 3 decimal places.
+	ErrInvalidCashAmount = errors.New("amount must be positive, with at most 3 decimal places")
+	// ErrInvalidRange: a list's range is backwards or longer than 31 days.
+	ErrInvalidRange = errors.New("the range must end after it starts and be at most 31 days")
 )
 
 // Kind is what an adjustment row is.
@@ -42,6 +53,7 @@ type Kind string
 const (
 	KindAdjustment Kind = "adjustment"
 	KindRefund     Kind = "refund"
+	KindCashTopUp  Kind = "cash_top_up"
 )
 
 // Adjustment is a staff member's correction of a balance, or a refund.
@@ -59,6 +71,8 @@ type Adjustment struct {
 	TransactionID string
 	CreatedBy     string
 	CreatedAt     time.Time
+	// ReceiptNumber is the office receipt of a cash top-up.
+	ReceiptNumber string
 }
 
 // PayoutStatus is where a payout request stands.

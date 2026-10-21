@@ -35,7 +35,7 @@ func (s *OperationsStore) Config(ctx context.Context) (wallet.Config, error) {
 
 const adjustmentColumns = `id, kind, owner_type, owner_id, currency_code, amount,
         COALESCE(trip_id::text, ''), COALESCE(driver_id::text, ''), driver_amount,
-        reason, transaction_id, created_by, created_at`
+        reason, transaction_id, created_by, created_at, COALESCE(receipt_number, '')`
 
 func scanAdjustment(row pgx.Row) (operations.Adjustment, error) {
 	var (
@@ -46,7 +46,7 @@ func scanAdjustment(row pgx.Row) (operations.Adjustment, error) {
 	err := row.Scan(
 		&a.ID, &kind, &ownerType, &a.OwnerID, &a.CurrencyCode, &a.Amount,
 		&a.TripID, &a.DriverID, &a.DriverAmount,
-		&a.Reason, &a.TransactionID, &a.CreatedBy, &a.CreatedAt,
+		&a.Reason, &a.TransactionID, &a.CreatedBy, &a.CreatedAt, &a.ReceiptNumber,
 	)
 	a.Kind = operations.Kind(kind)
 	a.OwnerType = wallet.OwnerType(ownerType)

@@ -90,6 +90,8 @@ const (
 	TxTip TransactionType = "tip"
 	// An incentive campaign's bonus, paid by the platform to the driver.
 	TxIncentive TransactionType = "incentive"
+	// TxCashTopUp is cash paid at the company's office, credited by staff.
+	TxCashTopUp TransactionType = "cash_top_up"
 )
 
 type Wallet struct {

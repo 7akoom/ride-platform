@@ -77,6 +77,8 @@ var methodAccess = map[string]accessLevel{
 	"/ride.wallet.v1.WalletService/InspectWallet":        accessStaff,
 	"/ride.wallet.v1.WalletService/GetStatementForStaff": accessStaff,
 	"/ride.wallet.v1.WalletService/AdjustWallet":         accessStaff,
+	"/ride.wallet.v1.WalletService/CashTopUp":            accessStaff,
+	"/ride.wallet.v1.WalletService/ListCashTopUps":       accessStaff,
 	"/ride.wallet.v1.WalletService/RefundTrip":           accessStaff,
 	"/ride.wallet.v1.WalletService/ListTripRefunds":      accessStaff,
 	"/ride.wallet.v1.WalletService/ListPayoutRequests":   accessStaff,
@@ -111,6 +113,8 @@ var staffPermissions = map[string]string{
 	"/ride.wallet.v1.WalletService/GetStatementForStaff": permissionWalletsRead,
 	"/ride.wallet.v1.WalletService/ListTripRefunds":      permissionWalletsRead,
 	"/ride.wallet.v1.WalletService/AdjustWallet":         permissionWalletsAdjust,
+	"/ride.wallet.v1.WalletService/CashTopUp":            permissionWalletsCashTopUp,
+	"/ride.wallet.v1.WalletService/ListCashTopUps":       permissionWalletsRead,
 	"/ride.wallet.v1.WalletService/RefundTrip":           permissionWalletsAdjust,
 	"/ride.wallet.v1.WalletService/ListPayoutRequests":   permissionPayoutsManage,
 	"/ride.wallet.v1.WalletService/ApprovePayout":        permissionPayoutsManage,
@@ -128,7 +132,10 @@ const (
 	permissionVouchersManage = "vouchers.manage"
 	permissionWalletsRead    = "wallets.read"
 	permissionWalletsAdjust  = "wallets.adjust"
-	permissionPayoutsManage  = "payouts.manage"
+	// permissionWalletsCashTopUp: the office cashier, who credits cash paid at
+	// the counter (and nothing else).
+	permissionWalletsCashTopUp = "wallets.cash_topup"
+	permissionPayoutsManage    = "payouts.manage"
 	// permissionIncentivesManage: driver incentive campaigns.
 	permissionIncentivesManage = "incentives.manage"
 )

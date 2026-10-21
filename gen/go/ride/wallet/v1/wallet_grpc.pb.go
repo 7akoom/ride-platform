@@ -62,6 +62,8 @@ const (
 	WalletService_InspectWallet_FullMethodName           = "/ride.wallet.v1.WalletService/InspectWallet"
 	WalletService_GetStatementForStaff_FullMethodName    = "/ride.wallet.v1.WalletService/GetStatementForStaff"
 	WalletService_AdjustWallet_FullMethodName            = "/ride.wallet.v1.WalletService/AdjustWallet"
+	WalletService_CashTopUp_FullMethodName               = "/ride.wallet.v1.WalletService/CashTopUp"
+	WalletService_ListCashTopUps_FullMethodName          = "/ride.wallet.v1.WalletService/ListCashTopUps"
 	WalletService_RefundTrip_FullMethodName              = "/ride.wallet.v1.WalletService/RefundTrip"
 	WalletService_ListTripRefunds_FullMethodName         = "/ride.wallet.v1.WalletService/ListTripRefunds"
 	WalletService_ListPayoutRequests_FullMethodName      = "/ride.wallet.v1.WalletService/ListPayoutRequests"
@@ -237,6 +239,15 @@ type WalletServiceClient interface {
 	// reason: an adjustment row. A rider's balance never goes below zero; a
 	// driver's may (their commission balance), with the suspension rule.
 	AdjustWallet(ctx context.Context, in *AdjustWalletRequest, opts ...grpc.CallOption) (*AdjustmentResponse, error)
+	// CashTopUp (staff, wallets.cash_topup) credits a rider's or a captain's
+	// wallet with cash paid at the company's office, against a receipt: a
+	// cash_top_up row of its own, apart from corrections. A receipt number is used
+	// once. A rider's wallet pays what they owe first; a captain's may lift their
+	// suspension. The owner is told (wallet.topped_up, provider "office").
+	CashTopUp(ctx context.Context, in *CashTopUpRequest, opts ...grpc.CallOption) (*AdjustmentResponse, error)
+	// ListCashTopUps (staff, wallets.read) is the office's cash taken in a time
+	// range, newest first, with its total: for counting the till.
+	ListCashTopUps(ctx context.Context, in *ListCashTopUpsRequest, opts ...grpc.CallOption) (*ListCashTopUpsResponse, error)
 	// RefundTrip gives a rider back money for a settled trip (or a cancelled
 	// trip's fee), paid by the platform, or partly taken back from the driver
 	// (driver_amount). All the refunds of a trip add up to at most its fare (or
@@ -705,6 +716,26 @@ func (c *walletServiceClient) AdjustWallet(ctx context.Context, in *AdjustWallet
 	return out, nil
 }
 
+func (c *walletServiceClient) CashTopUp(ctx context.Context, in *CashTopUpRequest, opts ...grpc.CallOption) (*AdjustmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdjustmentResponse)
+	err := c.cc.Invoke(ctx, WalletService_CashTopUp_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletServiceClient) ListCashTopUps(ctx context.Context, in *ListCashTopUpsRequest, opts ...grpc.CallOption) (*ListCashTopUpsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCashTopUpsResponse)
+	err := c.cc.Invoke(ctx, WalletService_ListCashTopUps_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *walletServiceClient) RefundTrip(ctx context.Context, in *RefundTripRequest, opts ...grpc.CallOption) (*AdjustmentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AdjustmentResponse)
@@ -1004,6 +1035,15 @@ type WalletServiceServer interface {
 	// reason: an adjustment row. A rider's balance never goes below zero; a
 	// driver's may (their commission balance), with the suspension rule.
 	AdjustWallet(context.Context, *AdjustWalletRequest) (*AdjustmentResponse, error)
+	// CashTopUp (staff, wallets.cash_topup) credits a rider's or a captain's
+	// wallet with cash paid at the company's office, against a receipt: a
+	// cash_top_up row of its own, apart from corrections. A receipt number is used
+	// once. A rider's wallet pays what they owe first; a captain's may lift their
+	// suspension. The owner is told (wallet.topped_up, provider "office").
+	CashTopUp(context.Context, *CashTopUpRequest) (*AdjustmentResponse, error)
+	// ListCashTopUps (staff, wallets.read) is the office's cash taken in a time
+	// range, newest first, with its total: for counting the till.
+	ListCashTopUps(context.Context, *ListCashTopUpsRequest) (*ListCashTopUpsResponse, error)
 	// RefundTrip gives a rider back money for a settled trip (or a cancelled
 	// trip's fee), paid by the platform, or partly taken back from the driver
 	// (driver_amount). All the refunds of a trip add up to at most its fare (or
@@ -1177,6 +1217,12 @@ func (UnimplementedWalletServiceServer) GetStatementForStaff(context.Context, *G
 }
 func (UnimplementedWalletServiceServer) AdjustWallet(context.Context, *AdjustWalletRequest) (*AdjustmentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdjustWallet not implemented")
+}
+func (UnimplementedWalletServiceServer) CashTopUp(context.Context, *CashTopUpRequest) (*AdjustmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CashTopUp not implemented")
+}
+func (UnimplementedWalletServiceServer) ListCashTopUps(context.Context, *ListCashTopUpsRequest) (*ListCashTopUpsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCashTopUps not implemented")
 }
 func (UnimplementedWalletServiceServer) RefundTrip(context.Context, *RefundTripRequest) (*AdjustmentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefundTrip not implemented")
@@ -1997,6 +2043,42 @@ func _WalletService_AdjustWallet_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WalletService_CashTopUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CashTopUpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).CashTopUp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_CashTopUp_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).CashTopUp(ctx, req.(*CashTopUpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WalletService_ListCashTopUps_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCashTopUpsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServiceServer).ListCashTopUps(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WalletService_ListCashTopUps_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServiceServer).ListCashTopUps(ctx, req.(*ListCashTopUpsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WalletService_RefundTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RefundTripRequest)
 	if err := dec(in); err != nil {
@@ -2423,6 +2505,14 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AdjustWallet",
 			Handler:    _WalletService_AdjustWallet_Handler,
+		},
+		{
+			MethodName: "CashTopUp",
+			Handler:    _WalletService_CashTopUp_Handler,
+		},
+		{
+			MethodName: "ListCashTopUps",
+			Handler:    _WalletService_ListCashTopUps_Handler,
 		},
 		{
 			MethodName: "RefundTrip",

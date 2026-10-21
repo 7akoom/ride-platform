@@ -225,6 +225,8 @@ type MoneyHeadline struct {
 	Transferred      decimal.Decimal
 	AdjustmentsIn    decimal.Decimal
 	AdjustmentsOut   decimal.Decimal
+	// CashToppedUp is cash paid at the office and credited by staff.
+	CashToppedUp decimal.Decimal
 }
 
 // MoneyFlows is the ledger report.

@@ -350,6 +350,24 @@ service WalletService {
       body: "*"
     };
   }
+  // CashTopUp (staff, wallets.cash_topup) credits a rider's or a captain's
+  // wallet with cash paid at the company's office, against a receipt: a
+  // cash_top_up row of its own, apart from corrections. A receipt number is used
+  // once. A rider's wallet pays what they owe first; a captain's may lift their
+  // suspension. The owner is told (wallet.topped_up, provider "office").
+  rpc CashTopUp(CashTopUpRequest) returns (AdjustmentResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/wallets/{owner_id}/cash-topups"
+      body: "*"
+    };
+  }
+  // ListCashTopUps (staff, wallets.read) is the office's cash taken in a time
+  // range, newest first, with its total: for counting the till.
+  rpc ListCashTopUps(ListCashTopUpsRequest) returns (ListCashTopUpsResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/cash-topups"
+    };
+  }
   // RefundTrip gives a rider back money for a settled trip (or a cancelled
   // trip's fee), paid by the platform, or partly taken back from the driver
   // (driver_amount). All the refunds of a trip add up to at most its fare (or
@@ -496,6 +514,8 @@ enum TransactionType {
   TRANSACTION_TYPE_TIP = 14;
   // An incentive campaign's bonus, paid by the platform to the driver.
   TRANSACTION_TYPE_INCENTIVE = 15;
+  // Cash paid at the company's office, credited by staff against a receipt.
+  TRANSACTION_TYPE_CASH_TOP_UP = 16;
 }
 
 message Wallet {
@@ -1179,7 +1199,7 @@ message AdjustWalletRequest {
 // Adjustment is a staff member's correction or refund.
 message Adjustment {
   string id = 1;
-  // adjustment or refund.
+  // adjustment, refund or cash_top_up.
   string kind = 2;
   OwnerType owner_type = 3;
   string owner_id = 4;
@@ -1193,6 +1213,40 @@ message Adjustment {
   string transaction_id = 11;
   string created_by = 12;
   google.protobuf.Timestamp created_at = 13;
+  // For a cash top-up: the office receipt's number.
+  string receipt_number = 14;
+}
+
+message CashTopUpRequest {
+  OwnerType owner_type = 1;
+  string owner_id = 2;
+  // Positive decimal string: what was paid in cash.
+  string amount = 3;
+  // The office receipt, 1-60 characters; used once.
+  string receipt_number = 4;
+  // Optional, up to 300 characters.
+  string note = 5;
+  // Required: a retry with the same key is the same top-up.
+  string idempotency_key = 6;
+}
+
+message ListCashTopUpsRequest {
+  // Default: the last 24 hours; at most 31 days.
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  // Optional: only this staff member's (their identity id).
+  string created_by = 3;
+}
+
+message ListCashTopUpsResponse {
+  // Newest first, at most 500.
+  repeated Adjustment cash_top_ups = 1;
+  // Of every top-up in the range, also when more than 500.
+  string total_amount = 2;
+  int32 count = 3;
+  string currency_code = 4;
+  // There were more than 500: narrow the range to see them all.
+  bool truncated = 5;
 }
 
 message AdjustmentResponse {

@@ -27,6 +27,9 @@ const (
 	PermissionWalletsRead   = "wallets.read"
 	PermissionWalletsAdjust = "wallets.adjust"
 	PermissionPayoutsManage = "payouts.manage"
+	// PermissionWalletsCashTopUp: the office cashier crediting cash paid at the
+	// counter against a receipt. Only the owner holds it by default.
+	PermissionWalletsCashTopUp = "wallets.cash_topup"
 	// PermissionIncentivesManage: drivers' incentive campaigns (bonuses
 	// paid from the platform's money). Only the owner holds it by default.
 	PermissionIncentivesManage = "incentives.manage"
@@ -73,6 +76,7 @@ var permissionCatalog = map[string]string{
 	PermissionWalletsRead:      "Look at any rider's or driver's wallet, its statement and a trip's refunds",
 	PermissionWalletsAdjust:    "Credit or debit a wallet with a reason, and refund trips (optionally charging the driver)",
 	PermissionPayoutsManage:    "Work the drivers' payout queue: approve, mark paid, reject",
+	PermissionWalletsCashTopUp: "Credit a rider's or captain's wallet with cash paid at the office, against a receipt",
 	PermissionIncentivesManage: "Create and cancel drivers' incentive campaigns and see who was paid",
 	PermissionSupportRead:      "See the support queue and tickets (not safety ones)",
 	PermissionSupportReply:     "Claim and answer support tickets, change their status and priority",
