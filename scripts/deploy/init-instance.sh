@@ -110,6 +110,9 @@ cat > instance/identity-service.env <<'IDENTITY'
 #
 # Phone codes: OTP_PHONE_DEFAULT_CHANNEL=whatsapp sends them by WhatsApp and
 # needs WHATSAPP_DEFAULT_PROVIDER; "sms" (or empty) needs SMS_DEFAULT_PROVIDER.
+#
+# OTP_BRAND_NAME is the name the code emails and texts carry (the app's name).
+OTP_BRAND_NAME=
 OTP_PHONE_DEFAULT_CHANNEL=whatsapp
 WHATSAPP_DEFAULT_PROVIDER=bulksmsiraq
 SMS_DEFAULT_PROVIDER=

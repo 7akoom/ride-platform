@@ -969,6 +969,7 @@ func buildEmailSender(
 	emailRenderer, err :=
 		otp.NewDefaultEmailMessageRenderer(
 			cfg.OTPBrandName,
+			emailCodeLifetimeOptions(cfg)...,
 		)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -1039,4 +1040,15 @@ func buildEmailSender(
 	}
 
 	return emailSender, nil
+}
+
+// emailCodeLifetimeOptions tells the email how long its code works
+// (OTP_CHALLENGE_TTL); a value that does not parse just leaves it out.
+func emailCodeLifetimeOptions(cfg config.Config) []otp.DefaultEmailMessageRendererOption {
+	lifetime, err := time.ParseDuration(strings.TrimSpace(cfg.OTPChallengeTTL))
+	if err != nil || lifetime < time.Minute {
+		return nil
+	}
+
+	return []otp.DefaultEmailMessageRendererOption{otp.WithEmailCodeLifetime(lifetime)}
 }
