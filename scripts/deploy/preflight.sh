@@ -41,8 +41,19 @@ shared_token="$(sed -n 's/^INTERNAL_SERVICE_TOKEN=//p' instance/shared.env | tai
   && ok "the access-token key pair is there" || fail "instance/keys has no key pair"
 
 identity() { sed -n "s/^$1=//p" instance/identity-service.env 2> /dev/null | tail -1; }
+bulksmsiraq_keys() {
+  for key in BULKSMSIRAQ_API_KEY BULKSMSIRAQ_SENDER_ID; do
+    [ -n "$(identity "$key")" ] || fail "$key is empty in instance/identity-service.env"
+  done
+}
 if [ "$(value IDENTITY_APP_ENV)" = test ]; then
-  warn "STAGING: login codes are written to identity-service's log, not sent. Never launch like this."
+  warn "STAGING: login codes are written to identity-service's log. Never launch like this."
+  if [ "$(identity OTP_STAGING_WHATSAPP)" = true ]; then
+    [ -n "$(identity WHATSAPP_DEFAULT_PROVIDER)" ] \
+      || fail "OTP_STAGING_WHATSAPP=true but no WHATSAPP_DEFAULT_PROVIDER in instance/identity-service.env"
+    [ "$(identity WHATSAPP_DEFAULT_PROVIDER)" = bulksmsiraq ] && bulksmsiraq_keys
+    ok "staging: phone codes also go by WhatsApp ($(identity WHATSAPP_DEFAULT_PROVIDER))"
+  fi
 else
   case "$(identity OTP_PHONE_DEFAULT_CHANNEL)" in
     whatsapp)
@@ -56,9 +67,7 @@ else
     *) fail "OTP_PHONE_DEFAULT_CHANNEL must be sms or whatsapp" ;;
   esac
   if [ "$(identity WHATSAPP_DEFAULT_PROVIDER)" = bulksmsiraq ] || [ "$(identity SMS_DEFAULT_PROVIDER)" = bulksmsiraq ]; then
-    for key in BULKSMSIRAQ_ENDPOINT BULKSMSIRAQ_OTP_ENDPOINT BULKSMSIRAQ_API_KEY BULKSMSIRAQ_SENDER_ID; do
-      [ -n "$(identity "$key")" ] || fail "$key is empty in instance/identity-service.env"
-    done
+    bulksmsiraq_keys
   fi
   if [ -n "$(identity RESEND_API_KEY)" ] && [ -n "$(identity RESEND_FROM)" ]; then ok "email codes go by Resend"
   else fail "RESEND_API_KEY and RESEND_FROM are needed in instance/identity-service.env (staff sign in by email)"; fi

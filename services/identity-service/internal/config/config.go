@@ -52,6 +52,10 @@ type Config struct {
 	BulkSMSIraqAPIKey      string
 	BulkSMSIraqSenderID    string
 
+	// OTPStagingWhatsApp (OTP_STAGING_WHATSAPP=true, staging only) also sends
+	// phone codes by WhatsApp; the code stays in the log as well.
+	OTPStagingWhatsApp bool
+
 	EmailProvider string
 
 	ResendEndpoint string
@@ -259,7 +263,7 @@ func Load() Config {
 
 		BulkSMSIraqEndpoint: getEnv(
 			"BULKSMSIRAQ_ENDPOINT",
-			"",
+			"https://gateway.standingtech.com/api/v4/sms/send",
 		),
 
 		BulkSMSIraqOTPEndpoint: getEnv(
@@ -276,6 +280,8 @@ func Load() Config {
 			"BULKSMSIRAQ_SENDER_ID",
 			"",
 		),
+
+		OTPStagingWhatsApp: getEnv("OTP_STAGING_WHATSAPP", "") == "true",
 
 		EmailProvider: getEnv("EMAIL_PROVIDER", "resend"),
 

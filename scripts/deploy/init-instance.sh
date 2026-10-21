@@ -114,10 +114,15 @@ OTP_PHONE_DEFAULT_CHANNEL=whatsapp
 WHATSAPP_DEFAULT_PROVIDER=bulksmsiraq
 SMS_DEFAULT_PROVIDER=
 SMS_ROUTES=
+# BulkSMSIraq (VerifyWay): the API key from portal.verifyway.com/developers and
+# the sender name approved there. The endpoints can stay empty (the v4 gateway).
 BULKSMSIRAQ_ENDPOINT=
 BULKSMSIRAQ_OTP_ENDPOINT=
 BULKSMSIRAQ_API_KEY=
 BULKSMSIRAQ_SENDER_ID=
+# Staging only (IDENTITY_APP_ENV=test): true also sends phone codes by WhatsApp,
+# so a real phone gets them as a customer would; they stay in the log too.
+OTP_STAGING_WHATSAPP=
 #
 # Email codes (staff sign in by email): Resend, with a verified domain.
 RESEND_API_KEY=

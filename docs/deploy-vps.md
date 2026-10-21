@@ -129,8 +129,10 @@ says what is missing.
 
 - Phone codes by WhatsApp through BulkSMSIraq:
   `OTP_PHONE_DEFAULT_CHANNEL=whatsapp`, `WHATSAPP_DEFAULT_PROVIDER=bulksmsiraq`,
-  `BULKSMSIRAQ_ENDPOINT`, `BULKSMSIRAQ_OTP_ENDPOINT`, `BULKSMSIRAQ_API_KEY`,
-  `BULKSMSIRAQ_SENDER_ID`. SMS stays off while `SMS_DEFAULT_PROVIDER` and
+  `BULKSMSIRAQ_API_KEY` (portal.verifyway.com/developers) and
+  `BULKSMSIRAQ_SENDER_ID` (the sender approved there); the endpoints can stay
+  empty (the v4 gateway). To try it on staging first, `OTP_STAGING_WHATSAPP=true`
+  sends the codes by WhatsApp as well as to the log. SMS stays off while `SMS_DEFAULT_PROVIDER` and
   `SMS_ROUTES` are empty; to add it later set `SMS_DEFAULT_PROVIDER` (and
   `OTP_PHONE_DEFAULT_CHANNEL=sms` to make it the default).
 - Email codes (staff sign in by email): `RESEND_API_KEY`, and `RESEND_FROM`

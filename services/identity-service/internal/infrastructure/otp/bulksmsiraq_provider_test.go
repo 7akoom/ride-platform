@@ -28,969 +28,293 @@ func (d *testHTTPDoer) Do(
 	return d.response, d.err
 }
 
-func TestNewBulkSMSIraqProviderAcceptsValidConfiguration(
-	t *testing.T,
-) {
-	httpClient := &testHTTPDoer{}
-
-	provider, err := NewBulkSMSIraqProvider(
-		httpClient,
-		BulkSMSIraqProviderConfig{
-			Endpoint: " https://sms.example.com/api/send ",
-			APIKey:   " test-api-key ",
-			SenderID: " Ride ",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"NewBulkSMSIraqProvider() returned an error: %v",
-			err,
-		)
-	}
-
-	if provider == nil {
-		t.Fatal(
-			"NewBulkSMSIraqProvider() returned nil provider",
-		)
-	}
-
-	if provider.endpoint !=
-		"https://sms.example.com/api/send" {
-		t.Fatalf(
-			"endpoint = %q, expected normalized endpoint",
-			provider.endpoint,
-		)
-	}
-
-	if provider.apiKey != "test-api-key" {
-		t.Fatalf(
-			"API key = %q, expected normalized API key",
-			provider.apiKey,
-		)
-	}
-
-	if provider.senderID != "Ride" {
-		t.Fatalf(
-			"sender ID = %q, expected normalized sender ID",
-			provider.senderID,
-		)
+func bulkSMSIraqTestResponse(status int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: status,
+		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }
 
-func TestNewBulkSMSIraqProviderRejectsInvalidConfiguration(
-	t *testing.T,
-) {
-	httpClient := &testHTTPDoer{}
+func newTestBulkSMSIraqProvider(t *testing.T, doer *testHTTPDoer) *BulkSMSIraqProvider {
+	t.Helper()
 
+	provider, err := NewBulkSMSIraqProvider(doer, BulkSMSIraqProviderConfig{
+		Endpoint: BulkSMSIraqDefaultEndpoint,
+		APIKey:   "test-key",
+		SenderID: "LindaAgency",
+	})
+	if err != nil {
+		t.Fatalf("NewBulkSMSIraqProvider: %v", err)
+	}
+
+	return provider
+}
+
+func decodeBulkSMSIraqTestRequest(t *testing.T, request *http.Request) map[string]any {
+	t.Helper()
+
+	if request == nil {
+		t.Fatal("no request was sent")
+	}
+
+	var body map[string]any
+	if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+		t.Fatalf("decode request: %v", err)
+	}
+
+	return body
+}
+
+func TestNewBulkSMSIraqProviderAcceptsValidConfiguration(t *testing.T) {
+	provider := newTestBulkSMSIraqProvider(t, &testHTTPDoer{})
+
+	if provider.otpEndpoint != BulkSMSIraqDefaultEndpoint {
+		t.Fatalf("the code endpoint is %q, want the send endpoint", provider.otpEndpoint)
+	}
+}
+
+func TestNewBulkSMSIraqProviderRejectsInvalidConfiguration(t *testing.T) {
+	valid := BulkSMSIraqProviderConfig{
+		Endpoint: BulkSMSIraqDefaultEndpoint,
+		APIKey:   "key",
+		SenderID: "LindaAgency",
+	}
+
+	tests := map[string]func(*BulkSMSIraqProviderConfig){
+		"no endpoint":       func(c *BulkSMSIraqProviderConfig) { c.Endpoint = " " },
+		"bad endpoint":      func(c *BulkSMSIraqProviderConfig) { c.Endpoint = "gateway" },
+		"bad code endpoint": func(c *BulkSMSIraqProviderConfig) { c.OTPEndpoint = "gateway" },
+		"no API key":        func(c *BulkSMSIraqProviderConfig) { c.APIKey = "" },
+		"no sender":         func(c *BulkSMSIraqProviderConfig) { c.SenderID = "" },
+	}
+
+	for name, change := range tests {
+		t.Run(name, func(t *testing.T) {
+			config := valid
+			change(&config)
+
+			if _, err := NewBulkSMSIraqProvider(&testHTTPDoer{}, config); err == nil {
+				t.Fatal("the configuration was accepted")
+			}
+		})
+	}
+
+	if _, err := NewBulkSMSIraqProvider(nil, valid); err == nil {
+		t.Fatal("a nil HTTP client was accepted")
+	}
+}
+
+func TestBulkSMSIraqProviderSendsWhatsAppCode(t *testing.T) {
+	doer := &testHTTPDoer{
+		response: bulkSMSIraqTestResponse(http.StatusOK, `{"status":"success","data":{"uid":"6721a3f0b1c2d","status":"pending"}}`),
+	}
+	provider := newTestBulkSMSIraqProvider(t, doer)
+
+	result, err := provider.SendOTPTracked(context.Background(), WhatsAppOTPProviderInput{
+		ChallengeID: "challenge-1",
+		PhoneNumber: "+9647501234567",
+		Code:        "123654",
+		Purpose:     auth.OTPPurposeLogin,
+		Locale:      "ar-IQ",
+	})
+	if err != nil {
+		t.Fatalf("SendOTPTracked: %v", err)
+	}
+
+	if result.ProviderMessageID != "6721a3f0b1c2d" || result.ProviderStatus != "success" {
+		t.Fatalf("result = %+v", result)
+	}
+
+	request := doer.request
+	if request.Method != http.MethodPost || request.URL.String() != BulkSMSIraqDefaultEndpoint {
+		t.Fatalf("request = %s %s", request.Method, request.URL)
+	}
+
+	if got := request.Header.Get("Authorization"); got != "Bearer test-key" {
+		t.Fatalf("Authorization = %q", got)
+	}
+
+	if request.Header.Get("Content-Type") != "application/json" || request.Header.Get("Accept") != "application/json" {
+		t.Fatalf("headers = %v", request.Header)
+	}
+
+	body := decodeBulkSMSIraqTestRequest(t, request)
+	want := map[string]any{
+		"recipient": "9647501234567",
+		"sender_id": "LindaAgency",
+		"type":      "whatsapp",
+		"message":   "123654",
+		"lang":      "ar",
+	}
+
+	if len(body) != len(want) {
+		t.Fatalf("body = %v, want %v", body, want)
+	}
+
+	for key, value := range want {
+		if body[key] != value {
+			t.Fatalf("body[%s] = %v, want %v (body %v)", key, body[key], value, body)
+		}
+	}
+}
+
+func TestBulkSMSIraqProviderCodeLanguages(t *testing.T) {
+	for locale, want := range map[string]string{
+		"":      "en",
+		"en":    "en",
+		"ar":    "ar",
+		"AR_iq": "ar",
+		"ku":    "ku",
+		"ckb":   "en",
+		"fr":    "en",
+	} {
+		if got := bulkSMSIraqLanguage(locale); got != want {
+			t.Fatalf("bulkSMSIraqLanguage(%q) = %q, want %q", locale, got, want)
+		}
+	}
+}
+
+func TestBulkSMSIraqProviderSendsPlainSMS(t *testing.T) {
+	doer := &testHTTPDoer{response: bulkSMSIraqTestResponse(http.StatusOK, `{"status":"success","data":{"id":991}}`)}
+	provider := newTestBulkSMSIraqProvider(t, doer)
+
+	result, err := provider.SendTracked(context.Background(), SMSMessage{
+		To:   "+9647501234567",
+		Body: "Your Ride code is 123654",
+		Code: "123654",
+	})
+	if err != nil {
+		t.Fatalf("SendTracked: %v", err)
+	}
+
+	if result.ProviderMessageID != "991" {
+		t.Fatalf("message id = %q", result.ProviderMessageID)
+	}
+
+	body := decodeBulkSMSIraqTestRequest(t, doer.request)
+	if body["type"] != "plain" || body["message"] != "Your Ride code is 123654" || body["lang"] != nil {
+		t.Fatalf("body = %v", body)
+	}
+}
+
+func TestBulkSMSIraqProviderGivesAnIDWhenTheGatewayHasNone(t *testing.T) {
+	doer := &testHTTPDoer{response: bulkSMSIraqTestResponse(http.StatusOK, `{"status":"success","message":"sent"}`)}
+	provider := newTestBulkSMSIraqProvider(t, doer)
+
+	first, err := provider.SendOTPTracked(context.Background(), WhatsAppOTPProviderInput{PhoneNumber: "9647501234567", Code: "1"})
+	if err != nil {
+		t.Fatalf("SendOTPTracked: %v", err)
+	}
+
+	doer.response = bulkSMSIraqTestResponse(http.StatusOK, `{"status":"success"}`)
+
+	second, err := provider.SendOTPTracked(context.Background(), WhatsAppOTPProviderInput{PhoneNumber: "9647501234567", Code: "2"})
+	if err != nil {
+		t.Fatalf("SendOTPTracked: %v", err)
+	}
+
+	if !strings.HasPrefix(first.ProviderMessageID, "bulksmsiraq-") || first.ProviderMessageID == second.ProviderMessageID {
+		t.Fatalf("ids = %q, %q", first.ProviderMessageID, second.ProviderMessageID)
+	}
+}
+
+func TestBulkSMSIraqProviderFailedBodyIsAFailureEvenWithHTTP200(t *testing.T) {
+	doer := &testHTTPDoer{
+		response: bulkSMSIraqTestResponse(http.StatusOK, `{"status":"failed","error":{"code":"1103","message":"Invalid or missing token"}}`),
+	}
+	provider := newTestBulkSMSIraqProvider(t, doer)
+
+	_, err := provider.SendOTPTracked(context.Background(), WhatsAppOTPProviderInput{PhoneNumber: "9647501234567", Code: "1"})
+
+	var providerErr *SMSProviderError
+	if !errors.As(err, &providerErr) || providerErr.Kind != SMSProviderErrorPermanent {
+		t.Fatalf("err = %v", err)
+	}
+
+	if !strings.Contains(err.Error(), "1103") || !strings.Contains(err.Error(), "BULKSMSIRAQ_API_KEY") {
+		t.Fatalf("the error does not say what to fix: %v", err)
+	}
+
+	if strings.Contains(err.Error(), "test-key") {
+		t.Fatalf("the error has the API key: %v", err)
+	}
+}
+
+func TestBulkSMSIraqProviderClassifiesHTTPFailures(t *testing.T) {
 	tests := []struct {
-		name       string
-		httpClient HTTPDoer
-		config     BulkSMSIraqProviderConfig
+		status int
+		body   string
+		want   SMSProviderErrorKind
 	}{
-		{
-			name:       "missing HTTP client",
-			httpClient: nil,
-			config: BulkSMSIraqProviderConfig{
-				Endpoint: "https://sms.example.com/api/send",
-				APIKey:   "test-api-key",
-				SenderID: "Ride",
-			},
-		},
-		{
-			name:       "missing endpoint",
-			httpClient: httpClient,
-			config: BulkSMSIraqProviderConfig{
-				APIKey:   "test-api-key",
-				SenderID: "Ride",
-			},
-		},
-		{
-			name:       "invalid endpoint",
-			httpClient: httpClient,
-			config: BulkSMSIraqProviderConfig{
-				Endpoint: "not-a-url",
-				APIKey:   "test-api-key",
-				SenderID: "Ride",
-			},
-		},
-		{
-			name:       "missing API key",
-			httpClient: httpClient,
-			config: BulkSMSIraqProviderConfig{
-				Endpoint: "https://sms.example.com/api/send",
-				SenderID: "Ride",
-			},
-		},
-		{
-			name:       "missing sender ID",
-			httpClient: httpClient,
-			config: BulkSMSIraqProviderConfig{
-				Endpoint: "https://sms.example.com/api/send",
-				APIKey:   "test-api-key",
-			},
-		},
+		{http.StatusUnauthorized, `{"status":"failed","error":{"code":1103,"message":"Invalid or missing token"}}`, SMSProviderErrorPermanent},
+		{http.StatusUnprocessableEntity, `{"status":"failed","error":{"code":"1002","message":"Insufficient balance"}}`, SMSProviderErrorPermanent},
+		{http.StatusTooManyRequests, ``, SMSProviderErrorRateLimited},
+		{http.StatusBadGateway, `<html>bad gateway</html>`, SMSProviderErrorTemporary},
 	}
 
-	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			provider, err := NewBulkSMSIraqProvider(
-				testCase.httpClient,
-				testCase.config,
-			)
+	for _, test := range tests {
+		doer := &testHTTPDoer{response: bulkSMSIraqTestResponse(test.status, test.body)}
+		provider := newTestBulkSMSIraqProvider(t, doer)
 
-			if err == nil {
-				t.Fatal(
-					"NewBulkSMSIraqProvider() accepted invalid configuration",
-				)
-			}
+		_, err := provider.SendOTPTracked(context.Background(), WhatsAppOTPProviderInput{PhoneNumber: "9647501234567", Code: "1"})
 
-			if provider != nil {
-				t.Fatal(
-					"NewBulkSMSIraqProvider() returned provider for invalid configuration",
-				)
-			}
-		})
-	}
-}
-func TestBulkSMSIraqProviderSendsSMSRequest(
-	t *testing.T,
-) {
-	httpClient := &testHTTPDoer{
-		response: &http.Response{
-			StatusCode: http.StatusOK,
-			Body: io.NopCloser(
-				strings.NewReader(`{"success":true}`),
-			),
-		},
-	}
-
-	provider, err := NewBulkSMSIraqProvider(
-		httpClient,
-		BulkSMSIraqProviderConfig{
-			Endpoint: "https://sms.example.com/api/send",
-			APIKey:   "test-api-key",
-			SenderID: "Ride",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"NewBulkSMSIraqProvider() returned an error: %v",
-			err,
-		)
-	}
-
-	err = provider.Send(
-		context.Background(),
-		SMSMessage{
-			To:   "+9647501234567",
-			Body: "Your verification code is 123456",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"Send() returned an error: %v",
-			err,
-		)
-	}
-
-	if httpClient.calls != 1 {
-		t.Fatalf(
-			"HTTP calls = %d, expected 1",
-			httpClient.calls,
-		)
-	}
-
-	request := httpClient.request
-
-	if request.Method != http.MethodPost {
-		t.Fatalf(
-			"HTTP method = %q, expected POST",
-			request.Method,
-		)
-	}
-
-	if request.URL.String() !=
-		"https://sms.example.com/api/send" {
-		t.Fatalf(
-			"request URL = %q, expected configured endpoint",
-			request.URL.String(),
-		)
-	}
-
-	if request.Header.Get("Authorization") !=
-		"Bearer test-api-key" {
-		t.Fatal(
-			"unexpected Authorization header",
-		)
-	}
-
-	if request.Header.Get("Content-Type") !=
-		"application/json" {
-		t.Fatal(
-			"unexpected Content-Type header",
-		)
-	}
-
-	var payload bulkSMSIraqSendRequest
-
-	err = json.NewDecoder(
-		request.Body,
-	).Decode(
-		&payload,
-	)
-	if err != nil {
-		t.Fatalf(
-			"decode request body: %v",
-			err,
-		)
-	}
-
-	expectedPayload := bulkSMSIraqSendRequest{
-		Recipient: "9647501234567",
-		SenderID:  "Ride",
-		Type:      "plain",
-		Message:   "Your verification code is 123456",
-	}
-
-	if payload != expectedPayload {
-		t.Fatalf(
-			"request payload = %+v, expected %+v",
-			payload,
-			expectedPayload,
-		)
-	}
-}
-func TestBulkSMSIraqProviderRejectsInvalidRecipient(
-	t *testing.T,
-) {
-	httpClient := &testHTTPDoer{}
-
-	provider, err := NewBulkSMSIraqProvider(
-		httpClient,
-		BulkSMSIraqProviderConfig{
-			Endpoint: "https://sms.example.com/api/send",
-			APIKey:   "test-api-key",
-			SenderID: "Ride",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"NewBulkSMSIraqProvider() returned an error: %v",
-			err,
-		)
-	}
-
-	tests := []string{
-		"",
-		"   ",
-		"+96475abc123",
-		"+964 7501234567",
-	}
-
-	for _, recipient := range tests {
-		t.Run(recipient, func(t *testing.T) {
-			err := provider.Send(
-				context.Background(),
-				SMSMessage{
-					To:   recipient,
-					Body: "Your verification code is 123456",
-				},
-			)
-
-			if err == nil {
-				t.Fatal(
-					"Send() accepted invalid recipient",
-				)
-			}
-		})
-	}
-
-	if httpClient.calls != 0 {
-		t.Fatalf(
-			"HTTP calls = %d, expected 0",
-			httpClient.calls,
-		)
+		var providerErr *SMSProviderError
+		if !errors.As(err, &providerErr) || providerErr.Kind != test.want || providerErr.StatusCode != test.status {
+			t.Fatalf("HTTP %d: err = %v, want %s", test.status, err, test.want)
+		}
 	}
 }
 
-func TestBulkSMSIraqProviderRejectsBlankMessage(
-	t *testing.T,
-) {
-	httpClient := &testHTTPDoer{}
+func TestBulkSMSIraqProviderUnreadableSuccessIsUnknown(t *testing.T) {
+	doer := &testHTTPDoer{response: bulkSMSIraqTestResponse(http.StatusOK, `OK`)}
+	provider := newTestBulkSMSIraqProvider(t, doer)
 
-	provider, err := NewBulkSMSIraqProvider(
-		httpClient,
-		BulkSMSIraqProviderConfig{
-			Endpoint: "https://sms.example.com/api/send",
-			APIKey:   "test-api-key",
-			SenderID: "Ride",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"NewBulkSMSIraqProvider() returned an error: %v",
-			err,
-		)
-	}
-
-	err = provider.Send(
-		context.Background(),
-		SMSMessage{
-			To:   "+9647501234567",
-			Body: "   ",
-		},
-	)
-
-	if err == nil {
-		t.Fatal(
-			"Send() accepted blank message body",
-		)
-	}
-
-	if httpClient.calls != 0 {
-		t.Fatalf(
-			"HTTP calls = %d, expected 0",
-			httpClient.calls,
-		)
-	}
-}
-
-func TestBulkSMSIraqProviderPropagatesNetworkError(
-	t *testing.T,
-) {
-	expectedErr := errors.New(
-		"connection refused",
-	)
-
-	httpClient := &testHTTPDoer{
-		err: expectedErr,
-	}
-
-	provider, err := NewBulkSMSIraqProvider(
-		httpClient,
-		BulkSMSIraqProviderConfig{
-			Endpoint: "https://sms.example.com/api/send",
-			APIKey:   "test-api-key",
-			SenderID: "Ride",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"NewBulkSMSIraqProvider() returned an error: %v",
-			err,
-		)
-	}
-
-	err = provider.Send(
-		context.Background(),
-		SMSMessage{
-			To:   "+9647501234567",
-			Body: "Your verification code is 123456",
-		},
-	)
-
-	if !errors.Is(err, expectedErr) {
-		t.Fatalf(
-			"Send() error = %v, expected wrapped network error",
-			err,
-		)
-	}
-	var providerErr *SMSProviderError
-
-	if !errors.As(err, &providerErr) {
-		t.Fatalf(
-			"Send() error = %T, expected *SMSProviderError",
-			err,
-		)
-	}
-
-	if providerErr.Provider != "bulksmsiraq" {
-		t.Fatalf(
-			"provider = %q, expected %q",
-			providerErr.Provider,
-			"bulksmsiraq",
-		)
-	}
-
-	if providerErr.Kind != SMSProviderErrorUnknownDeliveryState {
-		t.Fatalf(
-			"error kind = %q, expected %q",
-			providerErr.Kind,
-			SMSProviderErrorUnknownDeliveryState,
-		)
-	}
-}
-
-func TestBulkSMSIraqProviderClassifiesHTTPFailures(
-	t *testing.T,
-) {
-	tests := []struct {
-		name         string
-		statusCode   int
-		expectedKind SMSProviderErrorKind
-	}{
-		{
-			name:         "rate limited",
-			statusCode:   http.StatusTooManyRequests,
-			expectedKind: SMSProviderErrorRateLimited,
-		},
-		{
-			name:         "temporary server failure",
-			statusCode:   http.StatusServiceUnavailable,
-			expectedKind: SMSProviderErrorTemporary,
-		},
-		{
-			name:         "permanent client failure",
-			statusCode:   http.StatusBadRequest,
-			expectedKind: SMSProviderErrorPermanent,
-		},
-	}
-
-	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			httpClient := &testHTTPDoer{
-				response: &http.Response{
-					StatusCode: testCase.statusCode,
-					Body: io.NopCloser(
-						strings.NewReader(`{}`),
-					),
-				},
-			}
-
-			provider, err := NewBulkSMSIraqProvider(
-				httpClient,
-				BulkSMSIraqProviderConfig{
-					Endpoint: "https://sms.example.com/api/send",
-					APIKey:   "test-api-key",
-					SenderID: "Ride",
-				},
-			)
-			if err != nil {
-				t.Fatalf(
-					"NewBulkSMSIraqProvider() returned an error: %v",
-					err,
-				)
-			}
-
-			err = provider.Send(
-				context.Background(),
-				SMSMessage{
-					To:   "+9647501234567",
-					Body: "Your verification code is 123456",
-				},
-			)
-
-			if err == nil {
-				t.Fatal(
-					"Send() accepted failed HTTP response",
-				)
-			}
-
-			var providerErr *SMSProviderError
-
-			if !errors.As(err, &providerErr) {
-				t.Fatalf(
-					"Send() error = %T, expected *SMSProviderError",
-					err,
-				)
-			}
-
-			if providerErr.Provider != "bulksmsiraq" {
-				t.Fatalf(
-					"provider = %q, expected %q",
-					providerErr.Provider,
-					"bulksmsiraq",
-				)
-			}
-
-			if providerErr.Kind != testCase.expectedKind {
-				t.Fatalf(
-					"error kind = %q, expected %q",
-					providerErr.Kind,
-					testCase.expectedKind,
-				)
-			}
-
-			if providerErr.StatusCode != testCase.statusCode {
-				t.Fatalf(
-					"status code = %d, expected %d",
-					providerErr.StatusCode,
-					testCase.statusCode,
-				)
-			}
-		})
-	}
-}
-
-func TestBulkSMSIraqProviderRejectsNilHTTPResponse(
-	t *testing.T,
-) {
-	httpClient := &testHTTPDoer{
-		response: nil,
-		err:      nil,
-	}
-
-	provider, err := NewBulkSMSIraqProvider(
-		httpClient,
-		BulkSMSIraqProviderConfig{
-			Endpoint: "https://sms.example.com/api/send",
-			APIKey:   "test-api-key",
-			SenderID: "Ride",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"NewBulkSMSIraqProvider() returned an error: %v",
-			err,
-		)
-	}
-
-	err = provider.Send(
-		context.Background(),
-		SMSMessage{
-			To:   "+9647501234567",
-			Body: "Your verification code is 123456",
-		},
-	)
-
-	if err == nil {
-		t.Fatal(
-			"Send() accepted nil HTTP response",
-		)
-	}
-	var providerErr *SMSProviderError
-
-	if !errors.As(err, &providerErr) {
-		t.Fatalf(
-			"Send() error = %T, expected *SMSProviderError",
-			err,
-		)
-	}
-
-	if providerErr.Kind != SMSProviderErrorUnknownDeliveryState {
-		t.Fatalf(
-			"error kind = %q, expected %q",
-			providerErr.Kind,
-			SMSProviderErrorUnknownDeliveryState,
-		)
-	}
-
-	err = provider.Send(
-		context.Background(),
-		SMSMessage{
-			To:   "+9647501234567",
-			Body: "Your verification code is 123456",
-		},
-	)
-
-	if err == nil {
-		t.Fatal(
-			"Send() accepted nil HTTP response",
-		)
-	}
-}
-func TestBulkSMSIraqProviderSendTrackedSendsOTPSMS(
-	t *testing.T,
-) {
-	httpClient := &testHTTPDoer{
-		response: &http.Response{
-			StatusCode: http.StatusOK,
-			Body: io.NopCloser(
-				strings.NewReader(
-					`{
-						"data": {
-							"request_id": "otp-request-123"
-						}
-					}`,
-				),
-			),
-		},
-	}
-
-	provider, err := NewBulkSMSIraqProvider(
-		httpClient,
-		BulkSMSIraqProviderConfig{
-			Endpoint:    "https://sms.example.com/api/send",
-			OTPEndpoint: "https://sms.example.com/api/otp/send",
-			APIKey:      "test-api-key",
-			SenderID:    "Ride",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"NewBulkSMSIraqProvider() returned an error: %v",
-			err,
-		)
-	}
-
-	result, err := provider.SendTracked(
-		context.Background(),
-		SMSMessage{
-			ChallengeID: "otp_ch_bulksmsiraq_sms",
-			To:          "+9647501234567",
-			Body:        "Your verification code is 123456",
-			Code:        "123456",
-			Locale:      "ar",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"SendTracked() returned an error: %v",
-			err,
-		)
-	}
-
-	if httpClient.calls != 1 {
-		t.Fatalf(
-			"HTTP calls = %d, want 1",
-			httpClient.calls,
-		)
-	}
-
-	request := httpClient.request
-
-	if request.Method != http.MethodPost {
-		t.Fatalf(
-			"HTTP method = %q, want POST",
-			request.Method,
-		)
-	}
-
-	if request.URL.String() !=
-		"https://sms.example.com/api/otp/send" {
-		t.Fatalf(
-			"request URL = %q, want OTP endpoint",
-			request.URL.String(),
-		)
-	}
-
-	if request.Header.Get("Authorization") !=
-		"Bearer test-api-key" {
-		t.Fatal(
-			"unexpected Authorization header",
-		)
-	}
-
-	if request.Header.Get("Content-Type") !=
-		"application/json" {
-		t.Fatal(
-			"unexpected Content-Type header",
-		)
-	}
-
-	if request.Header.Get("Accept") !=
-		"application/json" {
-		t.Fatal(
-			"unexpected Accept header",
-		)
-	}
-
-	var payload bulkSMSIraqOTPSendRequest
-
-	if err := json.NewDecoder(
-		request.Body,
-	).Decode(
-		&payload,
-	); err != nil {
-		t.Fatalf(
-			"decode OTP request body: %v",
-			err,
-		)
-	}
-
-	expectedPayload := bulkSMSIraqOTPSendRequest{
-		Recipient: "9647501234567",
-		SenderID:  "Ride",
-		Channel:   "sms",
-		Message:   "123456",
-		Fallback:  "none",
-		Lang:      "ar",
-	}
-
-	if payload != expectedPayload {
-		t.Fatalf(
-			"OTP request payload = %+v, want %+v",
-			payload,
-			expectedPayload,
-		)
-	}
-
-	if result.ProviderMessageID != "otp-request-123" {
-		t.Fatalf(
-			"provider message ID = %q, want %q",
-			result.ProviderMessageID,
-			"otp-request-123",
-		)
-	}
-
-	if result.ProviderStatus != "" {
-		t.Fatalf(
-			"provider status = %q, want empty",
-			result.ProviderStatus,
-		)
-	}
-}
-func TestBulkSMSIraqProviderSendTrackedRejectsMissingRequestID(
-	t *testing.T,
-) {
-	httpClient := &testHTTPDoer{
-		response: &http.Response{
-			StatusCode: http.StatusOK,
-			Body: io.NopCloser(
-				strings.NewReader(
-					`{
-						"data": {}
-					}`,
-				),
-			),
-		},
-	}
-
-	provider, err := NewBulkSMSIraqProvider(
-		httpClient,
-		BulkSMSIraqProviderConfig{
-			Endpoint:    "https://sms.example.com/api/send",
-			OTPEndpoint: "https://sms.example.com/api/otp/send",
-			APIKey:      "test-api-key",
-			SenderID:    "Ride",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"NewBulkSMSIraqProvider() returned an error: %v",
-			err,
-		)
-	}
-
-	_, err = provider.SendTracked(
-		context.Background(),
-		SMSMessage{
-			ChallengeID: "otp_ch_missing_request_id",
-			To:          "+9647501234567",
-			Code:        "123456",
-			Locale:      "en",
-		},
-	)
-	if err == nil {
-		t.Fatal(
-			"SendTracked() returned nil error for missing request ID",
-		)
-	}
+	_, err := provider.SendOTPTracked(context.Background(), WhatsAppOTPProviderInput{PhoneNumber: "9647501234567", Code: "1"})
 
 	var providerErr *SMSProviderError
-
-	if !errors.As(
-		err,
-		&providerErr,
-	) {
-		t.Fatalf(
-			"SendTracked() error = %T, want *SMSProviderError",
-			err,
-		)
-	}
-
-	if providerErr.Provider != "bulksmsiraq" {
-		t.Fatalf(
-			"provider = %q, want %q",
-			providerErr.Provider,
-			"bulksmsiraq",
-		)
-	}
-
-	if providerErr.Kind !=
-		SMSProviderErrorUnknownDeliveryState {
-		t.Fatalf(
-			"error kind = %q, want %q",
-			providerErr.Kind,
-			SMSProviderErrorUnknownDeliveryState,
-		)
+	if !errors.As(err, &providerErr) || providerErr.Kind != SMSProviderErrorUnknownDeliveryState {
+		t.Fatalf("err = %v", err)
 	}
 }
 
-func TestBulkSMSIraqProviderSendTrackedClassifiesNetworkFailureAsUnknown(
-	t *testing.T,
-) {
-	expectedErr := errors.New(
-		"connection reset",
-	)
+func TestBulkSMSIraqProviderNetworkErrorIsUnknown(t *testing.T) {
+	doer := &testHTTPDoer{err: errors.New("connection reset")}
+	provider := newTestBulkSMSIraqProvider(t, doer)
 
-	httpClient := &testHTTPDoer{
-		err: expectedErr,
-	}
-
-	provider, err := NewBulkSMSIraqProvider(
-		httpClient,
-		BulkSMSIraqProviderConfig{
-			Endpoint:    "https://sms.example.com/api/send",
-			OTPEndpoint: "https://sms.example.com/api/otp/send",
-			APIKey:      "test-api-key",
-			SenderID:    "Ride",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"NewBulkSMSIraqProvider() returned an error: %v",
-			err,
-		)
-	}
-
-	_, err = provider.SendTracked(
-		context.Background(),
-		SMSMessage{
-			ChallengeID: "otp_ch_network_failure",
-			To:          "+9647501234567",
-			Code:        "123456",
-			Locale:      "ku",
-		},
-	)
-	if err == nil {
-		t.Fatal(
-			"SendTracked() returned nil error",
-		)
-	}
-
-	if !errors.Is(
-		err,
-		expectedErr,
-	) {
-		t.Fatalf(
-			"SendTracked() error = %v, want wrapped network error",
-			err,
-		)
-	}
+	err := provider.SendOTP(context.Background(), WhatsAppOTPProviderInput{PhoneNumber: "9647501234567", Code: "1"})
 
 	var providerErr *SMSProviderError
-
-	if !errors.As(
-		err,
-		&providerErr,
-	) {
-		t.Fatalf(
-			"SendTracked() error = %T, want *SMSProviderError",
-			err,
-		)
+	if !errors.As(err, &providerErr) || providerErr.Kind != SMSProviderErrorUnknownDeliveryState {
+		t.Fatalf("err = %v", err)
 	}
 
-	if providerErr.Kind !=
-		SMSProviderErrorUnknownDeliveryState {
-		t.Fatalf(
-			"error kind = %q, want %q",
-			providerErr.Kind,
-			SMSProviderErrorUnknownDeliveryState,
-		)
+	doer = &testHTTPDoer{}
+	provider = newTestBulkSMSIraqProvider(t, doer)
+
+	err = provider.SendOTP(context.Background(), WhatsAppOTPProviderInput{PhoneNumber: "9647501234567", Code: "1"})
+	if !errors.As(err, &providerErr) || providerErr.Kind != SMSProviderErrorUnknownDeliveryState {
+		t.Fatalf("nil response: err = %v", err)
 	}
 }
-func TestBulkSMSIraqProviderSendOTPTrackedSendsWhatsAppOTP(
-	t *testing.T,
-) {
-	httpClient := &testHTTPDoer{
-		response: &http.Response{
-			StatusCode: http.StatusOK,
-			Body: io.NopCloser(
-				strings.NewReader(
-					`{
-						"data": {
-							"request_id": "otp-whatsapp-123"
-						}
-					}`,
-				),
-			),
-		},
+
+func TestBulkSMSIraqProviderRejectsBadInputWithoutSending(t *testing.T) {
+	doer := &testHTTPDoer{}
+	provider := newTestBulkSMSIraqProvider(t, doer)
+	ctx := context.Background()
+
+	for name, err := range map[string]error{
+		"no number":      provider.SendOTP(ctx, WhatsAppOTPProviderInput{Code: "1"}),
+		"letters":        provider.SendOTP(ctx, WhatsAppOTPProviderInput{PhoneNumber: "+964 750", Code: "1"}),
+		"no code":        provider.SendOTP(ctx, WhatsAppOTPProviderInput{PhoneNumber: "9647501234567"}),
+		"no SMS text":    provider.Send(ctx, SMSMessage{To: "9647501234567"}),
+		"SMS bad number": provider.Send(ctx, SMSMessage{To: "abc", Body: "hi"}),
+	} {
+		if err == nil {
+			t.Fatalf("%s: accepted", name)
+		}
 	}
 
-	provider, err := NewBulkSMSIraqProvider(
-		httpClient,
-		BulkSMSIraqProviderConfig{
-			Endpoint:    "https://sms.example.com/api/send",
-			OTPEndpoint: "https://sms.example.com/api/otp/send",
-			APIKey:      "test-api-key",
-			SenderID:    "Ride",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"NewBulkSMSIraqProvider() returned an error: %v",
-			err,
-		)
-	}
-
-	result, err := provider.SendOTPTracked(
-		context.Background(),
-		WhatsAppOTPProviderInput{
-			ChallengeID: "otp_ch_whatsapp",
-			PhoneNumber: "+9647501234567",
-			Code:        "123456",
-			Purpose:     auth.OTPPurposeLogin,
-			Locale:      "ku",
-		},
-	)
-	if err != nil {
-		t.Fatalf(
-			"SendOTPTracked() returned an error: %v",
-			err,
-		)
-	}
-
-	if httpClient.calls != 1 {
-		t.Fatalf(
-			"HTTP calls = %d, want 1",
-			httpClient.calls,
-		)
-	}
-
-	request := httpClient.request
-
-	if request.URL.String() !=
-		"https://sms.example.com/api/otp/send" {
-		t.Fatalf(
-			"request URL = %q, want OTP endpoint",
-			request.URL.String(),
-		)
-	}
-
-	var payload bulkSMSIraqOTPSendRequest
-
-	if err := json.NewDecoder(
-		request.Body,
-	).Decode(
-		&payload,
-	); err != nil {
-		t.Fatalf(
-			"decode OTP request body: %v",
-			err,
-		)
-	}
-
-	expectedPayload := bulkSMSIraqOTPSendRequest{
-		Recipient: "9647501234567",
-		SenderID:  "Ride",
-		Channel:   "whatsapp",
-		Message:   "123456",
-		Fallback:  "none",
-		Lang:      "ku",
-	}
-
-	if payload != expectedPayload {
-		t.Fatalf(
-			"OTP request payload = %+v, want %+v",
-			payload,
-			expectedPayload,
-		)
-	}
-
-	if result.ProviderMessageID !=
-		"otp-whatsapp-123" {
-		t.Fatalf(
-			"provider message ID = %q, want %q",
-			result.ProviderMessageID,
-			"otp-whatsapp-123",
-		)
-	}
-
-	if result.ProviderStatus != "" {
-		t.Fatalf(
-			"provider status = %q, want empty",
-			result.ProviderStatus,
-		)
+	if doer.calls != 0 {
+		t.Fatalf("%d requests were sent", doer.calls)
 	}
 }

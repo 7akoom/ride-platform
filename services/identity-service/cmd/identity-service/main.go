@@ -214,6 +214,17 @@ func run() int {
 				),
 			)
 
+		if err == nil {
+			otpDelivery, err = buildStagingOTPDelivery(
+				environment,
+				cfg,
+				otpDelivery,
+				otpDeliveryTrackingStore,
+				authMetricsRecorder,
+				logger,
+			)
+		}
+
 	case "production":
 		otpDelivery, err =
 			buildProductionOTPDeliveryWithTracking(

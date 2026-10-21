@@ -28,20 +28,23 @@ func (e *SMSProviderError) Error() string {
 		return "SMS provider error"
 	}
 
-	if e.StatusCode > 0 {
-		return fmt.Sprintf(
-			"SMS provider %s failed with %s error and HTTP status %d",
-			e.Provider,
-			e.Kind,
-			e.StatusCode,
-		)
-	}
-
-	return fmt.Sprintf(
+	text := fmt.Sprintf(
 		"SMS provider %s failed with %s error",
 		e.Provider,
 		e.Kind,
 	)
+
+	if e.StatusCode > 0 {
+		text += fmt.Sprintf(" and HTTP status %d", e.StatusCode)
+	}
+
+	// The provider's own reason (a wrong key, no balance), so the log says
+	// what to fix.
+	if e.Err != nil {
+		text += ": " + e.Err.Error()
+	}
+
+	return text
 }
 
 func (e *SMSProviderError) Unwrap() error {
