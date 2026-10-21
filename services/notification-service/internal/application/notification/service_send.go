@@ -58,7 +58,7 @@ func (s *service) Send(
 		return SendResult{}, fmt.Errorf("list devices: %w", err)
 	}
 
-	translation, err := s.repository.FindTranslation(ctx, eventKey, localeChain(input.Locale, devices))
+	translation, err := s.repository.FindTranslation(ctx, eventKey, localeChain(input.Locale, devices, s.defaultLocale))
 	if err != nil {
 		return SendResult{}, fmt.Errorf("find translation: %w", err)
 	}
@@ -185,11 +185,12 @@ func (s *service) deliverPush(
 
 // localeChain builds the preference order for picking a translation:
 // an explicit request wins, then whatever the recipient's most recent
-// device is set to, then the default. Duplicates are dropped so the
-// repository doesn't query the same locale twice.
-func localeChain(requested string, devices []Device) []string {
-	chain := make([]string, 0, 3)
-	seen := make(map[string]bool, 3)
+// device is set to, then the instance's language, then DefaultLocale.
+// Duplicates are dropped so the repository doesn't query the same locale
+// twice.
+func localeChain(requested string, devices []Device, instanceLocale string) []string {
+	chain := make([]string, 0, 4)
+	seen := make(map[string]bool, 4)
 
 	add := func(locale string) {
 		locale = strings.TrimSpace(locale)
@@ -208,6 +209,7 @@ func localeChain(requested string, devices []Device) []string {
 		add(device.Locale)
 	}
 
+	add(instanceLocale)
 	add(DefaultLocale)
 
 	return chain

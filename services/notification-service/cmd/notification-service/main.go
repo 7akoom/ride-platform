@@ -186,6 +186,13 @@ func run() int {
 		}
 	}()
 
+	defaultLocale, err := config.ParseDefaultLocale(cfg)
+	if err != nil {
+		logger.Error("invalid notification language", "error", err)
+
+		return 1
+	}
+
 	pushSender := buildPushSender(cfg, logger)
 
 	notificationRepository := postgresrepo.NewNotificationRepository(pool)
@@ -196,6 +203,7 @@ func run() int {
 		// SMS gateways are regional; wire a local provider here when
 		// the deployment has one.
 		channels.NewNoopSMSSender(),
+		notification.WithDefaultLocale(defaultLocale),
 	)
 	notificationHandler := grpcserver.NewNotificationHandler(notificationService, logger).
 		WithPersonalData(postgresrepo.NewPersonalDataExporter(pool).Export)

@@ -33,7 +33,7 @@ func (s *service) RegisterDevice(
 
 	locale := strings.TrimSpace(input.Locale)
 	if locale == "" {
-		locale = DefaultLocale
+		locale = s.defaultLocale
 	}
 
 	deviceID, err := s.repository.RegisterDevice(ctx, RegisterDeviceInput{

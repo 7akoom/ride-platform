@@ -1063,6 +1063,8 @@ services:
     environment:
       GRPC_ADDRESS: ":50059"
       METRICS_ADDRESS: ":9099"
+      # The instance's language: for someone whose devices do not say one.
+      NOTIFICATION_DEFAULT_LOCALE: ${NOTIFICATION_DEFAULT_LOCALE:-en}
       DATABASE_URL: postgres://${NOTIFICATION_DB_USER}:${NOTIFICATION_DB_PASSWORD}@notification-postgres:5432/${NOTIFICATION_DB_NAME}?sslmode=disable
       NATS_URL: nats://nats:4222
       TRIP_SERVICE_ADDRESS: trip-service:50055

@@ -3,7 +3,10 @@
 # and the per-instance settings. Run once on the server, from the repo root:
 #   bash scripts/deploy/init-instance.sh --api ride-api.example.com --files ride-files.example.com \
 #        --owner-email you@example.com [--admin-origin https://ride-admin.example.com] \
-#        [--time-zone Asia/Baghdad] [--staging]
+#        [--time-zone Asia/Baghdad] [--language ar] [--staging]
+#
+# --language: the instance's language (ar by default; en or ku): notifications to
+# someone whose phone has not told the platform its language are written in it.
 #
 # --owner-email: staff-service invites this address as the first owner (only
 # while there is no staff at all); sign in, link that email, accept.
@@ -16,7 +19,7 @@
 # somewhere safe, it is the only copy of these secrets.
 set -Eeuo pipefail
 
-API=""; FILES=""; ADMIN=""; OWNER=""; TZ_NAME="Asia/Baghdad"; STAGING=0
+API=""; FILES=""; ADMIN=""; OWNER=""; TZ_NAME="Asia/Baghdad"; LANGUAGE="ar"; STAGING=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --api) API="$2"; shift 2 ;;
@@ -24,16 +27,18 @@ while [ $# -gt 0 ]; do
     --admin-origin) ADMIN="$2"; shift 2 ;;
     --owner-email) OWNER="$2"; shift 2 ;;
     --time-zone) TZ_NAME="$2"; shift 2 ;;
+    --language) LANGUAGE="$2"; shift 2 ;;
     --staging) STAGING=1; shift ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done
 
-[ -n "$API" ] && [ -n "$FILES" ] && [ -n "$OWNER" ] || { echo "usage: $0 --api <domain> --files <domain> --owner-email <email> [--admin-origin <url>] [--time-zone <IANA>] [--staging]" >&2; exit 2; }
+[ -n "$API" ] && [ -n "$FILES" ] && [ -n "$OWNER" ] || { echo "usage: $0 --api <domain> --files <domain> --owner-email <email> [--admin-origin <url>] [--time-zone <IANA>] [--language ar|en|ku] [--staging]" >&2; exit 2; }
 case "$OWNER" in *@*.*) ;; *) echo "--owner-email is not an email address" >&2; exit 2 ;; esac
 [ -f go.work ] && [ -f infrastructure/deploy/compose.vps.yaml ] || { echo "run this from the repo root" >&2; exit 2; }
 [ ! -e instance ] || { echo "instance/ exists already; refusing to replace its secrets" >&2; exit 1; }
 [ -f "/usr/share/zoneinfo/$TZ_NAME" ] || { echo "unknown time zone $TZ_NAME" >&2; exit 2; }
+case "$LANGUAGE" in ar | en | ku) ;; *) echo "--language is ar, en or ku" >&2; exit 2 ;; esac
 command -v openssl > /dev/null || { echo "openssl is required" >&2; exit 2; }
 
 secret() { openssl rand -hex 32; }
@@ -65,6 +70,7 @@ chmod 755 instance/providers
   echo "WALLET_TIME_ZONE=$TZ_NAME"
   echo "DRIVER_DOCUMENTS_TIME_ZONE=$TZ_NAME"
   echo "DISPATCH_OFFER_TTL=15s"
+  echo "NOTIFICATION_DEFAULT_LOCALE=$LANGUAGE"
   echo "OSRM_DATASET_NAME=iraq-latest"
   if [ "$STAGING" = 1 ]; then
     echo "IDENTITY_APP_ENV=test"

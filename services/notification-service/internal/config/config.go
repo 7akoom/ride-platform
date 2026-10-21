@@ -18,6 +18,10 @@ type Config struct {
 	FCMCredentialsFile string
 	PushTimeout        time.Duration
 
+	// DefaultLocale is the instance's language (en, ar or ku): notifications to
+	// someone whose devices do not say a language are written in it.
+	DefaultLocale string
+
 	// Peers this service calls to enrich events before rendering a
 	// notification (rider ID, driver name/vehicle, dropoff location).
 	TripServiceAddress   string
@@ -76,6 +80,7 @@ func Load() Config {
 		MetricsAddress:     getEnv("METRICS_ADDRESS", ":9099"),
 		DatabaseURL:        getEnv("DATABASE_URL", ""),
 		FCMCredentialsFile: getEnv("FCM_CREDENTIALS_FILE", ""),
+		DefaultLocale:      getEnv("NOTIFICATION_DEFAULT_LOCALE", "en"),
 		PushTimeout:        10 * time.Second,
 
 		TripServiceAddress:   getEnv("TRIP_SERVICE_ADDRESS", "localhost:50055"),
