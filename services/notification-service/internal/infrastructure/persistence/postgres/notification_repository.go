@@ -569,3 +569,32 @@ func scanNotification(row scannable) (notification.Notification, error) {
 }
 
 var _ notification.Repository = (*NotificationRepository)(nil)
+
+// RidersWithDevices lists the riders with a phone registered for notifications,
+// by id, after afterID. See events.RiderAudience.
+func (r *NotificationRepository) RidersWithDevices(ctx context.Context, afterID string, limit int) ([]string, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT DISTINCT recipient_id::text FROM devices
+		 WHERE recipient_type = 'rider' AND ($1 = '' OR recipient_id > $1::uuid)
+		 ORDER BY 1
+		 LIMIT $2`,
+		afterID, limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list riders with devices: %w", err)
+	}
+	defer rows.Close()
+
+	var riders []string
+
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("list riders with devices: %w", err)
+		}
+
+		riders = append(riders, id)
+	}
+
+	return riders, rows.Err()
+}

@@ -274,16 +274,8 @@ func (r *PricingRepository) PersistFare(
 	// A cancelled trip's fee is not a completed trip, nor a coupon use.
 	if kind != pricing.FareKindTrip {
 		input.Coupon = nil
-	} else if _, err := tx.Exec(
-		ctx,
-		`INSERT INTO rider_trip_stats (rider_id, completed_trip_count, first_completed_at)
-		 VALUES ($1, 1, CURRENT_TIMESTAMP)
-		 ON CONFLICT (rider_id) DO UPDATE
-		 SET completed_trip_count = rider_trip_stats.completed_trip_count + 1,
-		     updated_at = CURRENT_TIMESTAMP`,
-		input.RiderID,
-	); err != nil {
-		return pricing.Fare{}, fmt.Errorf("update rider trip stats: %w", err)
+	} else if err := countCompletedTrip(ctx, tx, input.RiderID); err != nil {
+		return pricing.Fare{}, err
 	}
 
 	if input.Coupon != nil {

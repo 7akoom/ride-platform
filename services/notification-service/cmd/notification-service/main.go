@@ -65,6 +65,10 @@ const (
 	// tripHeadingDurable: a driver who took a trip while finishing another one
 	// has ended that one and set off for the pickup.
 	tripHeadingDurable = "notification-trip-heading"
+
+	// offersDurable: offers for riders (the loyalty discount is next, a new
+	// featured coupon), from pricing-service.
+	offersDurable = "notification-offers"
 )
 
 func main() {
@@ -227,6 +231,7 @@ func run() int {
 		clients.NewDriverClient(driverConn),
 		logger,
 		events.WithOperatorAlerter(sosAlerter, sosConfig.RetryInterval, sosConfig.GiveUpAfter),
+		events.WithRiderAudience(notificationRepository),
 	)
 
 	tripSubscription, err := natsinfra.SubscribeDurable(
@@ -454,6 +459,22 @@ func run() int {
 		return 1
 	}
 	defer headingSubscription.Stop()
+
+	riderOffersSubscription, err := natsinfra.SubscribeDurableFromNow(
+		ctx,
+		natsConnection.JetStream(),
+		"PRICING_EVENTS",
+		offersDurable,
+		events.OfferSubjects,
+		eventHandler.Dispatch,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to subscribe to offers for riders", "error", err)
+
+		return 1
+	}
+	defer riderOffersSubscription.Stop()
 
 	accessTokenVerifier, err := token.NewAccessTokenVerifier(
 		cfg.AccessTokenPublicKeyPath,

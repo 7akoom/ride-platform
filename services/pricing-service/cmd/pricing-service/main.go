@@ -385,6 +385,7 @@ func run() int {
 	// Quotes nobody requested a trip with are kept a day (demand counts the
 	// last minutes of them), then removed.
 	go runQuoteCleanup(ctx, pricingService, logger)
+	go runOfferAnnouncer(ctx, pricingRepository, logger)
 
 	serverErrors := make(chan error, 1)
 
@@ -457,6 +458,30 @@ func runQuoteCleanup(ctx context.Context, service pricing.Service, logger *slog.
 			logger.Warn("failed to remove old quotes", "error", err)
 		} else if removed > 0 {
 			logger.Info("removed old quotes", "count", removed)
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+// offerAnnounceInterval is how often featured coupons that started running are
+// announced to riders (once each).
+const offerAnnounceInterval = time.Minute
+
+func runOfferAnnouncer(ctx context.Context, repository *postgresrepo.PricingRepository, logger *slog.Logger) {
+	ticker := time.NewTicker(offerAnnounceInterval)
+	defer ticker.Stop()
+
+	for {
+		announced, err := repository.AnnounceFeaturedCoupons(ctx, time.Now().UTC())
+		if err != nil && ctx.Err() == nil {
+			logger.Warn("failed to announce featured coupons", "error", err)
+		} else if announced > 0 {
+			logger.Info("announced featured coupons to riders", "count", announced)
 		}
 
 		select {

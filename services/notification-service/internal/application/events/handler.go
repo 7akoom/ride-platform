@@ -27,6 +27,9 @@ type Handler struct {
 	driverClient        DriverClient
 	logger              *slog.Logger
 	sos                 *sosDelivery
+
+	// riders, when set, lists the riders an offer for everyone goes to.
+	riders RiderAudience
 }
 
 // Option customises a Handler at construction time.
@@ -143,6 +146,10 @@ func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) err
 		return h.handleWalletAccount(ctx, subject, envelope)
 	case SubjectScheduleFailed:
 		return h.handleScheduleFailed(ctx, envelope)
+	case SubjectLoyaltyDue:
+		return h.handleLoyaltyDue(ctx, envelope)
+	case SubjectFeaturedOffer:
+		return h.handleFeaturedOffer(ctx, envelope)
 	default:
 		h.logger.WarnContext(ctx, "no notification mapping for subject; skipping", "subject", subject)
 
