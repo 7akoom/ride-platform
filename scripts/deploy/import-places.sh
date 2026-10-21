@@ -2,7 +2,8 @@
 # Imports places for this instance's service zones from Overture Maps (open
 # places data) into place search: after curated places, before the map's own
 # results. Run on the server from the repo root once the instance's cities and
-# zones exist, again whenever zones change, and monthly for fresh data:
+# zones exist, again whenever zones change, and monthly for fresh data
+# (scripts/deploy/places-cron.sh runs it every month by itself):
 #   bash scripts/deploy/import-places.sh              # the latest release
 #   bash scripts/deploy/import-places.sh --dry-run    # read and count only
 #   bash scripts/deploy/import-places.sh --release 2026-09-23.1
