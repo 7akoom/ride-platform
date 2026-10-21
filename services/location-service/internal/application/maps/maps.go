@@ -144,6 +144,12 @@ type ImportedSearcher interface {
 	SearchImported(ctx context.Context, query string, near *Coordinates, limit int) ([]Place, error)
 }
 
+// NearbyPlaceFinder finds the imported place nearest to a point, within
+// withinMeters; found is false when there is none that close.
+type NearbyPlaceFinder interface {
+	NearestImported(ctx context.Context, at Coordinates, withinMeters float64) (place Place, found bool, err error)
+}
+
 // Router is the port to the routing engine (OSRM).
 type Router interface {
 	// Route goes from one point to another through via, in order.

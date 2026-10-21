@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/7akoom/ride-platform/services/location-service/internal/application/maps"
@@ -105,4 +107,35 @@ func importedPlace(id, name, kind, address string, at maps.Coordinates) maps.Pla
 		Coordinates: at,
 		Address:     map[string]string{},
 	}
+}
+
+var _ maps.NearbyPlaceFinder = (*ImportedPlaceStore)(nil)
+
+// NearestImported is the imported place nearest to at within withinMeters (the
+// location index answers it).
+func (s *ImportedPlaceStore) NearestImported(ctx context.Context, at maps.Coordinates, withinMeters float64) (maps.Place, bool, error) {
+	point := fmt.Sprintf("SRID=4326;POINT(%g %g)", at.Longitude, at.Latitude)
+
+	var (
+		id, name, kind, address string
+		latitude, longitude     float64
+	)
+
+	err := s.pool.QueryRow(ctx, `
+		SELECT p.id, p.name, p.kind, p.address, ST_Y(p.location::geometry), ST_X(p.location::geometry)
+		FROM imported_places p
+		WHERE ST_DWithin(p.location, ST_GeogFromText($1), $2)
+		ORDER BY p.location <-> ST_GeogFromText($1), p.weight DESC, p.id
+		LIMIT 1`,
+		point, withinMeters,
+	).Scan(&id, &name, &kind, &address, &latitude, &longitude)
+
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		return maps.Place{}, false, nil
+	case err != nil:
+		return maps.Place{}, false, fmt.Errorf("nearest imported place: %w", err)
+	}
+
+	return importedPlace(id, name, kind, address, maps.Coordinates{Latitude: latitude, Longitude: longitude}), true, nil
 }

@@ -2,6 +2,7 @@ package maps
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"math"
 	"strings"
@@ -28,8 +29,13 @@ type service struct {
 	geocoder Geocoder
 	curated  CuratedSearcher
 	imported ImportedSearcher
+	nearby   NearbyPlaceFinder
 	logger   *slog.Logger
 }
+
+// reverseFallbackMeters is how near an imported place must be to name a point
+// when the map cannot: about a block.
+const reverseFallbackMeters = 150
 
 func NewService(router Router, geocoder Geocoder) Service {
 	if router == nil {
@@ -74,6 +80,10 @@ func NewServiceWithSources(
 
 	s := NewServiceWithCurated(router, geocoder, curated, logger).(*service)
 	s.imported = imported
+
+	if nearby, ok := imported.(NearbyPlaceFinder); ok {
+		s.nearby = nearby
+	}
 
 	return s
 }
@@ -250,7 +260,29 @@ func (s *service) ReverseGeocode(ctx context.Context, input ReverseInput) (Place
 		return Place{}, err
 	}
 
-	return s.geocoder.Reverse(ctx, *input.Coordinates, languages)
+	place, err := s.geocoder.Reverse(ctx, *input.Coordinates, languages)
+	if err == nil || !errors.Is(err, ErrUnavailable) || s.nearby == nil {
+		return place, err
+	}
+
+	// The map is down: the nearest imported place names the point, so the
+	// rider still sees where the pin is.
+	nearest, found, nearErr := s.nearby.NearestImported(ctx, *input.Coordinates, reverseFallbackMeters)
+	if nearErr != nil {
+		s.logger.Error("nearest imported place failed", "error", nearErr)
+
+		return Place{}, err
+	}
+
+	if !found {
+		return Place{}, err
+	}
+
+	s.logger.Warn("map reverse geocoding failed; answering with the nearest imported place", "error", err)
+
+	nearest.Coordinates = *input.Coordinates
+
+	return nearest, nil
 }
 
 func searchLimit(requested int) (int, error) {

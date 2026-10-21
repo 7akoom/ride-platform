@@ -116,7 +116,10 @@ func run() int {
 	// dataset (scripts/tools/import-places), then the map's own results.
 	mapsService := maps.NewServiceWithSources(
 		routing.NewOSRMClient(mapsConfig.OSRMBaseURL, mapsConfig.Timeout),
-		geocoding.NewNominatimClient(mapsConfig.NominatimBaseURL, mapsConfig.CountryCodes, mapsConfig.Timeout),
+		geocoding.NewGuarded(
+			geocoding.NewNominatimClient(mapsConfig.NominatimBaseURL, mapsConfig.CountryCodes, mapsConfig.Timeout),
+			geocoding.DefaultRestAfterFailure,
+		),
 		placeService,
 		postgresrepo.NewImportedPlaceStore(pool),
 		logger,
