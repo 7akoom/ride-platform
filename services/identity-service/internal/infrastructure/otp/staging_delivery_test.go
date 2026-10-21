@@ -34,7 +34,7 @@ func TestStagingDeliveryLogsAndSendsPhoneCodes(t *testing.T) {
 	whatsApp := &stagingTestWhatsApp{err: errors.New("no balance")}
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	delivery, err := NewStagingDelivery("test", log, whatsApp, logger)
+	delivery, err := NewStagingDelivery("test", log, whatsApp, nil, logger)
 	if err != nil {
 		t.Fatalf("NewStagingDelivery: %v", err)
 	}
@@ -73,11 +73,73 @@ func TestStagingDeliveryLogsAndSendsPhoneCodes(t *testing.T) {
 func TestStagingDeliveryIsNotForProduction(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	if _, err := NewStagingDelivery("production", &stagingTestLog{}, &stagingTestWhatsApp{}, logger); err == nil {
+	if _, err := NewStagingDelivery("production", &stagingTestLog{}, &stagingTestWhatsApp{}, nil, logger); err == nil {
 		t.Fatal("staging delivery was built for production")
 	}
 
-	if _, err := NewStagingDelivery("test", &stagingTestLog{}, nil, logger); err == nil {
-		t.Fatal("staging delivery was built without WhatsApp")
+	if _, err := NewStagingDelivery("test", &stagingTestLog{}, nil, nil, logger); err == nil {
+		t.Fatal("staging delivery was built without a sender")
+	}
+}
+
+type stagingTestEmail struct{ to []string }
+
+func (e *stagingTestEmail) Send(_ context.Context, to, _ string, _ auth.OTPPurpose, _ string) error {
+	e.to = append(e.to, to)
+
+	return nil
+}
+
+func TestStagingDeliverySendsEmailCodesOnlyWithAnEmailSender(t *testing.T) {
+	log := &stagingTestLog{}
+	email := &stagingTestEmail{}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	delivery, err := NewStagingDelivery("test", log, nil, email, logger)
+	if err != nil {
+		t.Fatalf("NewStagingDelivery: %v", err)
+	}
+
+	inputs := []auth.OTPDeliveryInput{
+		{Identifier: auth.Identifier{Type: auth.IdentifierTypeEmail, Value: "staff@lenda-agency.com"}, Code: "1", Channel: auth.OTPDeliveryChannelEmail},
+		// No WhatsApp sender: the phone code stays in the log.
+		{Identifier: auth.Identifier{Type: auth.IdentifierTypePhone, Value: "+9647501234567"}, Code: "2", Channel: auth.OTPDeliveryChannelWhatsApp},
+	}
+
+	for _, input := range inputs {
+		if err := delivery.Send(context.Background(), input); err != nil {
+			t.Fatalf("Send: %v", err)
+		}
+	}
+
+	// The email went out, so only the phone code (no WhatsApp sender) is in the log.
+	if len(log.sent) != 1 || log.sent[0].Code != "2" || len(email.to) != 1 || email.to[0] != "staff@lenda-agency.com" {
+		t.Fatalf("log %d, email %v", len(log.sent), email.to)
+	}
+}
+
+func TestStagingDeliveryLogsOnlyCodesThatWereNotSent(t *testing.T) {
+	log := &stagingTestLog{}
+	whatsApp := &stagingTestWhatsApp{}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	delivery, err := NewStagingDelivery("test", log, whatsApp, nil, logger)
+	if err != nil {
+		t.Fatalf("NewStagingDelivery: %v", err)
+	}
+
+	for _, value := range []string{"+9647501234567", "+9647700000992"} {
+		input := auth.OTPDeliveryInput{
+			Identifier: auth.Identifier{Type: auth.IdentifierTypePhone, Value: value},
+			Code:       value[len(value)-1:],
+			Channel:    auth.OTPDeliveryChannelWhatsApp,
+		}
+		if err := delivery.Send(context.Background(), input); err != nil {
+			t.Fatalf("Send: %v", err)
+		}
+	}
+
+	if len(whatsApp.phones) != 1 || len(log.sent) != 1 || log.sent[0].Identifier.Value != "+9647700000992" {
+		t.Fatalf("WhatsApp %v, log %v", whatsApp.phones, log.sent)
 	}
 }

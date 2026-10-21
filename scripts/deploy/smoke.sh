@@ -74,7 +74,10 @@ sign_in() { # <phone> <how to get the code: log|ask>
 
 if [ "$(value IDENTITY_APP_ENV)" = test ]; then
   echo "==> signing in (staging: the code is read from the log)"
-  sign_in "+964750$(date +%s | tail -c 8)" log
+  # A test-range number (StagingSimulatedPhonePrefix): its code stays in the log
+  # and no WhatsApp goes to a stranger. The last digit varies so a few deploys in
+  # a row stay under the per-number code limit.
+  sign_in "+964770000098$(date +%s | tail -c 2)" log
 elif [ -n "${SMOKE_PHONE:-}" ]; then
   echo "==> signing in with a real code sent to $SMOKE_PHONE"
   sign_in "$SMOKE_PHONE" ask

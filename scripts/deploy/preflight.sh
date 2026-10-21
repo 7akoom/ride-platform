@@ -54,6 +54,11 @@ if [ "$(value IDENTITY_APP_ENV)" = test ]; then
     [ "$(identity WHATSAPP_DEFAULT_PROVIDER)" = bulksmsiraq ] && bulksmsiraq_keys
     ok "staging: phone codes also go by WhatsApp ($(identity WHATSAPP_DEFAULT_PROVIDER))"
   fi
+  if [ "$(identity OTP_STAGING_EMAIL)" = true ]; then
+    [ -n "$(identity RESEND_API_KEY)" ] && [ -n "$(identity RESEND_FROM)" ] \
+      && ok "staging: email codes also go by Resend" \
+      || fail "OTP_STAGING_EMAIL=true needs RESEND_API_KEY and RESEND_FROM in instance/identity-service.env"
+  fi
 else
   case "$(identity OTP_PHONE_DEFAULT_CHANNEL)" in
     whatsapp)

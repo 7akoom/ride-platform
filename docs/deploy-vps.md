@@ -132,11 +132,15 @@ says what is missing.
   `BULKSMSIRAQ_API_KEY` (portal.verifyway.com/developers) and
   `BULKSMSIRAQ_SENDER_ID` (the sender approved there); the endpoints can stay
   empty (the v4 gateway). To try it on staging first, `OTP_STAGING_WHATSAPP=true`
-  sends the codes by WhatsApp as well as to the log. SMS stays off while `SMS_DEFAULT_PROVIDER` and
+  sends the codes by WhatsApp (the log keeps only those it could not send, and
+  the test numbers `+96477000009…`). SMS stays off while `SMS_DEFAULT_PROVIDER` and
   `SMS_ROUTES` are empty; to add it later set `SMS_DEFAULT_PROVIDER` (and
   `OTP_PHONE_DEFAULT_CHANNEL=sms` to make it the default).
 - Email codes (staff sign in by email): `RESEND_API_KEY`, and `RESEND_FROM`
-  on a domain verified in Resend, e.g. `Ride <no-reply@example.com>`.
+  on a domain verified in Resend, e.g. `Ride <no-reply@example.com>`. A
+  subdomain (`mail.example.com`) keeps the company's own mail reputation apart;
+  the key only needs "Sending access" to that domain. On staging,
+  `OTP_STAGING_EMAIL=true` sends email codes by Resend the same way.
 - Then `IDENTITY_APP_ENV=production` in `instance/instance.env`. From then
   on codes are really sent and no longer logged. Try one:
   `SMOKE_PHONE=+9647501234567 bash scripts/deploy/smoke.sh` (it asks for the

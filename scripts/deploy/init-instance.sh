@@ -121,12 +121,15 @@ BULKSMSIRAQ_OTP_ENDPOINT=
 BULKSMSIRAQ_API_KEY=
 BULKSMSIRAQ_SENDER_ID=
 # Staging only (IDENTITY_APP_ENV=test): true also sends phone codes by WhatsApp,
-# so a real phone gets them as a customer would; they stay in the log too.
+# so a real phone gets them as a customer would; only codes that could not be
+# sent (test numbers +96477000009..., a provider failure) go to the log.
 OTP_STAGING_WHATSAPP=
 #
 # Email codes (staff sign in by email): Resend, with a verified domain.
 RESEND_API_KEY=
 RESEND_FROM=
+# Staging only: true also sends email codes by Resend (only failures go to the log).
+OTP_STAGING_EMAIL=
 IDENTITY
 cat > instance/wallet-service.env <<'WALLET'
 # ZainCash (docs/deploy-vps.md, "Wallet top-ups through ZainCash"). Off until

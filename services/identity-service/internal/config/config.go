@@ -53,8 +53,11 @@ type Config struct {
 	BulkSMSIraqSenderID    string
 
 	// OTPStagingWhatsApp (OTP_STAGING_WHATSAPP=true, staging only) also sends
-	// phone codes by WhatsApp; the code stays in the log as well.
+	// phone codes by WhatsApp; only codes it could not send go to the log.
 	OTPStagingWhatsApp bool
+	// OTPStagingEmail (OTP_STAGING_EMAIL=true, staging only) also sends email
+	// codes by Resend.
+	OTPStagingEmail bool
 
 	EmailProvider string
 
@@ -282,6 +285,7 @@ func Load() Config {
 		),
 
 		OTPStagingWhatsApp: getEnv("OTP_STAGING_WHATSAPP", "") == "true",
+		OTPStagingEmail:    getEnv("OTP_STAGING_EMAIL", "") == "true",
 
 		EmailProvider: getEnv("EMAIL_PROVIDER", "resend"),
 

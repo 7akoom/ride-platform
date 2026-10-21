@@ -129,76 +129,13 @@ func buildProductionOTPDeliveryWithTracking(
 		)
 	}
 
-	emailRenderer, err :=
-		otp.NewDefaultEmailMessageRenderer(
-			cfg.OTPBrandName,
-		)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"configure email message renderer: %w",
-			err,
-		)
-	}
-
-	var emailProvider otp.EmailProvider
-
-	emailProviderName := normalizeProviderName(
-		cfg.EmailProvider,
+	emailSender, err := buildEmailSender(
+		httpClient,
+		cfg,
+		metricsRecorder,
 	)
-
-	switch emailProviderName {
-	case "resend":
-		emailProvider, err =
-			otp.NewResendProvider(
-				httpClient,
-				otp.ResendProviderConfig{
-					Endpoint: cfg.ResendEndpoint,
-					APIKey:   cfg.ResendAPIKey,
-					From:     cfg.ResendFrom,
-				},
-			)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"configure Resend provider: %w",
-				err,
-			)
-		}
-
-	default:
-		return nil, fmt.Errorf(
-			"unsupported email provider %q",
-			cfg.EmailProvider,
-		)
-	}
-
-	emailSenderOptions := []otp.ProviderEmailSenderOption{
-		otp.WithEmailProviderName(
-			otp.DeliveryMetricProvider(
-				emailProviderName,
-			),
-		),
-	}
-
-	if metricsRecorder != nil {
-		emailSenderOptions = append(
-			emailSenderOptions,
-			otp.WithEmailDeliveryMetricsRecorder(
-				metricsRecorder,
-			),
-		)
-	}
-
-	emailSender, err :=
-		otp.NewProviderEmailSender(
-			emailProvider,
-			emailRenderer,
-			emailSenderOptions...,
-		)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"configure email sender: %w",
-			err,
-		)
+		return nil, err
 	}
 
 	delivery, err :=
@@ -1021,4 +958,85 @@ func buildSMSSender(
 	}
 
 	return smsSender, nil
+}
+
+// buildEmailSender is the instance's email code sender (Resend).
+func buildEmailSender(
+	httpClient otp.HTTPDoer,
+	cfg config.Config,
+	metricsRecorder otp.DeliveryMetricsRecorder,
+) (*otp.ProviderEmailSender, error) {
+	emailRenderer, err :=
+		otp.NewDefaultEmailMessageRenderer(
+			cfg.OTPBrandName,
+		)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"configure email message renderer: %w",
+			err,
+		)
+	}
+
+	var emailProvider otp.EmailProvider
+
+	emailProviderName := normalizeProviderName(
+		cfg.EmailProvider,
+	)
+
+	switch emailProviderName {
+	case "resend":
+		emailProvider, err =
+			otp.NewResendProvider(
+				httpClient,
+				otp.ResendProviderConfig{
+					Endpoint: cfg.ResendEndpoint,
+					APIKey:   cfg.ResendAPIKey,
+					From:     cfg.ResendFrom,
+				},
+			)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"configure Resend provider: %w",
+				err,
+			)
+		}
+
+	default:
+		return nil, fmt.Errorf(
+			"unsupported email provider %q",
+			cfg.EmailProvider,
+		)
+	}
+
+	emailSenderOptions := []otp.ProviderEmailSenderOption{
+		otp.WithEmailProviderName(
+			otp.DeliveryMetricProvider(
+				emailProviderName,
+			),
+		),
+	}
+
+	if metricsRecorder != nil {
+		emailSenderOptions = append(
+			emailSenderOptions,
+			otp.WithEmailDeliveryMetricsRecorder(
+				metricsRecorder,
+			),
+		)
+	}
+
+	emailSender, err :=
+		otp.NewProviderEmailSender(
+			emailProvider,
+			emailRenderer,
+			emailSenderOptions...,
+		)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"configure email sender: %w",
+			err,
+		)
+	}
+
+	return emailSender, nil
 }

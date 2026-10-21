@@ -13,9 +13,10 @@ import (
 	"github.com/7akoom/ride-platform/services/identity-service/internal/infrastructure/otp"
 )
 
-// buildStagingOTPDelivery is the development delivery, and with
+// buildStagingOTPDelivery is the development delivery. With
 // OTP_STAGING_WHATSAPP=true it also sends phone codes by the instance's
-// WhatsApp provider (BulkSMSIraq), so staging can be tried as a customer would.
+// WhatsApp provider (BulkSMSIraq), and with OTP_STAGING_EMAIL=true email codes
+// by its email provider (Resend), so staging can be tried as a customer would.
 func buildStagingOTPDelivery(
 	environment string,
 	cfg config.Config,
@@ -24,7 +25,7 @@ func buildStagingOTPDelivery(
 	metricsRecorder otp.DeliveryMetricsRecorder,
 	logger *slog.Logger,
 ) (auth.OTPDelivery, error) {
-	if !cfg.OTPStagingWhatsApp {
+	if !cfg.OTPStagingWhatsApp && !cfg.OTPStagingEmail {
 		return development, nil
 	}
 
@@ -33,32 +34,45 @@ func buildStagingOTPDelivery(
 		return nil, errors.New("OTP provider HTTP timeout must be a positive duration")
 	}
 
+	httpClient := &http.Client{Timeout: httpTimeout}
+
 	var metrics []otp.DeliveryMetricsRecorder
 	if metricsRecorder != nil {
 		metrics = append(metrics, metricsRecorder)
 	}
 
-	whatsApp, err := buildWhatsAppSenderWithTracking(
-		&http.Client{Timeout: httpTimeout},
-		cfg,
-		trackingStore,
-		metrics...,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("configure staging WhatsApp codes: %w", err)
+	var whatsApp otp.WhatsAppSender
+
+	if cfg.OTPStagingWhatsApp {
+		whatsApp, err = buildWhatsAppSenderWithTracking(httpClient, cfg, trackingStore, metrics...)
+		if err != nil {
+			return nil, fmt.Errorf("configure staging WhatsApp codes: %w", err)
+		}
+
+		if whatsApp == nil {
+			return nil, errors.New("OTP_STAGING_WHATSAPP=true needs WHATSAPP_DEFAULT_PROVIDER (bulksmsiraq)")
+		}
 	}
 
-	if whatsApp == nil {
-		return nil, errors.New("OTP_STAGING_WHATSAPP=true needs WHATSAPP_DEFAULT_PROVIDER (bulksmsiraq)")
+	var email otp.EmailSender
+
+	if cfg.OTPStagingEmail {
+		sender, err := buildEmailSender(httpClient, cfg, metricsRecorder)
+		if err != nil {
+			return nil, fmt.Errorf("configure staging email codes (RESEND_API_KEY, RESEND_FROM): %w", err)
+		}
+
+		email = sender
 	}
 
-	delivery, err := otp.NewStagingDelivery(environment, development, whatsApp, logger)
+	delivery, err := otp.NewStagingDelivery(environment, development, whatsApp, email, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	logger.Info("staging: phone codes are sent by WhatsApp as well as written to the log",
-		"provider", cfg.WhatsAppDefaultProvider,
+	logger.Info("staging: codes are sent for real; only those that cannot be go to the log",
+		"whatsapp", cfg.OTPStagingWhatsApp,
+		"email", cfg.OTPStagingEmail,
 	)
 
 	return delivery, nil
