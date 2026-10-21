@@ -46,6 +46,9 @@ type Export struct {
 	MediaID     string
 	SizeBytes   int64
 	Attempts    int
+	// Locale is the language the person asked in (en, ar, ku): index.html is
+	// written in it.
+	Locale string
 }
 
 // Section is one file of the ZIP.
@@ -117,6 +120,8 @@ type Settings struct {
 	KeepFor     time.Duration
 	MaxAttempts int
 	RetryAfter  time.Duration
+	// TimeZone shows the times of index.html (UTC when nil).
+	TimeZone *time.Location
 }
 
 type Service struct {
@@ -160,9 +165,19 @@ func (s *Service) nextRequestAt(latest []Export) time.Time {
 	return time.Time{}
 }
 
-// Request asks for a new export.
+// Request asks for a new export, its readable page in English.
 func (s *Service) Request(ctx context.Context, identityID string) (Export, error) {
+	return s.RequestIn(ctx, identityID, "en")
+}
+
+// RequestIn asks for a new export whose readable page is in locale (en, ar or
+// ku; anything else is English).
+func (s *Service) RequestIn(ctx context.Context, identityID, locale string) (Export, error) {
 	identityID = strings.TrimSpace(identityID)
+
+	if _, ok := pageText[locale]; !ok {
+		locale = "en"
+	}
 
 	latest, err := s.store.List(ctx, identityID, 5)
 	if err != nil {
@@ -174,7 +189,7 @@ func (s *Service) Request(ctx context.Context, identityID string) (Export, error
 	}
 
 	now := s.clock.Now()
-	created := Export{ID: s.ids.NewID(), IdentityID: identityID, Status: StatusPending, RequestedAt: now}
+	created := Export{ID: s.ids.NewID(), IdentityID: identityID, Status: StatusPending, RequestedAt: now, Locale: locale}
 
 	if err := s.store.Create(ctx, created); err != nil {
 		return Export{}, err
@@ -284,7 +299,12 @@ func (s *Service) make(ctx context.Context, export Export) error {
 		sections = append(sections, got...)
 	}
 
-	archive, err := BuildZIP(export, sections)
+	readable, err := BuildReadable(export, sections, s.settings.TimeZone)
+	if err != nil {
+		return err
+	}
+
+	archive, err := BuildZIP(export, append([]Section{{Name: ReadableName, Content: readable}}, sections...))
 	if err != nil {
 		return err
 	}
@@ -345,12 +365,13 @@ func (s *Service) RemoveExpired(ctx context.Context) int {
 const readme = `YOUR DATA / بياناتك
 ====================
 
-This archive holds what the service keeps about your account, as JSON files
-(one per subject), readable by people and by other programs. It was made on
-%s for account %s.
+This archive holds what the service keeps about your account. Open index.html
+in a browser to read it as tables; the JSON files (one per subject) hold the
+same data for other programs. It was made on %s for account %s.
 
-يحتوي هذا الملف على ما يحتفظ به التطبيق عن حسابك، بصيغة JSON (ملف لكل
-موضوع)، يمكن قراءتها مباشرة أو بأي برنامج. أُنشئ بتاريخ %s للحساب %s.
+يحتوي هذا الملف على ما يحتفظ به التطبيق عن حسابك. افتح index.html في
+المتصفح لقراءته كجداول؛ وملفات JSON (ملف لكل موضوع) فيها نفس البيانات
+لاستخدامها في برامج أخرى. أُنشئ بتاريخ %s للحساب %s.
 
 Files / الملفات:
 %s`

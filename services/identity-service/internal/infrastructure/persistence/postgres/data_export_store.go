@@ -31,7 +31,7 @@ func NewDataExportStore(pool *pgxpool.Pool) *DataExportStore {
 }
 
 const dataExportColumns = `id::text, identity_id::text, status, requested_at, ready_at, expires_at,
-	COALESCE(media_id::text, ''), size_bytes, attempts`
+	COALESCE(media_id::text, ''), size_bytes, attempts, locale`
 
 func scanDataExport(row pgx.Row) (dataexport.Export, error) {
 	var (
@@ -40,7 +40,7 @@ func scanDataExport(row pgx.Row) (dataexport.Export, error) {
 	)
 
 	if err := row.Scan(&e.ID, &e.IdentityID, &status, &e.RequestedAt, &e.ReadyAt, &e.ExpiresAt,
-		&e.MediaID, &e.SizeBytes, &e.Attempts); err != nil {
+		&e.MediaID, &e.SizeBytes, &e.Attempts, &e.Locale); err != nil {
 		return dataexport.Export{}, err
 	}
 
@@ -72,8 +72,8 @@ func (s *DataExportStore) list(ctx context.Context, query string, args ...any) (
 
 func (s *DataExportStore) Create(ctx context.Context, e dataexport.Export) error {
 	if _, err := s.pool.Exec(ctx,
-		`INSERT INTO data_exports (id, identity_id, status, requested_at, next_attempt_at)
-		 VALUES ($1::uuid, $2::uuid, 'pending', $3, $3)`, e.ID, e.IdentityID, e.RequestedAt); err != nil {
+		`INSERT INTO data_exports (id, identity_id, status, requested_at, next_attempt_at, locale)
+		 VALUES ($1::uuid, $2::uuid, 'pending', $3, $3, COALESCE(NULLIF($4, ''), 'en'))`, e.ID, e.IdentityID, e.RequestedAt, e.Locale); err != nil {
 		return fmt.Errorf("record data export: %w", err)
 	}
 

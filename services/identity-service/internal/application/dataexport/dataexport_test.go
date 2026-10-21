@@ -197,7 +197,7 @@ func TestAnExportIsMadeKeptAndExpired(t *testing.T) {
 		names = append(names, f.Name)
 	}
 
-	if strings.Join(names, ",") != "README.txt,a.json,b.json" {
+	if strings.Join(names, ",") != "README.txt,index.html,a.json,b.json" {
 		t.Fatalf("files %v", names)
 	}
 

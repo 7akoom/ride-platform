@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	_ "time/tzdata" // the image has no zone files
 )
 
 // DataExport is "Download your data": how often a person may ask, how long
@@ -14,6 +15,10 @@ type DataExport struct {
 	MinInterval   time.Duration
 	KeepFor       time.Duration
 	CheckInterval time.Duration
+
+	// TimeZone shows the times of the readable page: DATA_EXPORT_TIME_ZONE, or
+	// the instance's WALLET_TIME_ZONE, or UTC.
+	TimeZone *time.Location
 
 	SupportServiceAddress      string
 	NotificationServiceAddress string
@@ -51,6 +56,15 @@ func LoadDataExport() (DataExport, error) {
 
 		*d.target = parsed
 	}
+
+	zone := strings.TrimSpace(getEnv("DATA_EXPORT_TIME_ZONE", getEnv("WALLET_TIME_ZONE", "UTC")))
+
+	location, err := time.LoadLocation(zone)
+	if err != nil {
+		return DataExport{}, fmt.Errorf("DATA_EXPORT_TIME_ZONE %q is not a time zone: %w", zone, err)
+	}
+
+	out.TimeZone = location
 
 	if out.SupportServiceAddress == "" || out.NotificationServiceAddress == "" {
 		return DataExport{}, fmt.Errorf("SUPPORT_SERVICE_ADDRESS and NOTIFICATION_SERVICE_ADDRESS are required")

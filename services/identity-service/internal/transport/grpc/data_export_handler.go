@@ -34,7 +34,7 @@ func (h *DataExportHandler) RequestDataExport(ctx context.Context, _ *identityv1
 		return nil, status.Error(codes.Unauthenticated, "authenticated identity is required")
 	}
 
-	created, err := h.service.Request(ctx, principal.IdentityID)
+	created, err := h.service.RequestIn(ctx, principal.IdentityID, requestLocaleFromIncomingContext(ctx))
 	if err != nil {
 		return nil, h.mapError(err)
 	}

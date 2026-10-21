@@ -32,7 +32,7 @@ func TestDataExportStoreLifecycle(t *testing.T) {
 	}
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
-	export := dataexport.Export{ID: ids.NewID(), IdentityID: identityID, Status: dataexport.StatusPending, RequestedAt: now}
+	export := dataexport.Export{ID: ids.NewID(), IdentityID: identityID, Status: dataexport.StatusPending, RequestedAt: now, Locale: "ku"}
 
 	if err := store.Create(ctx, export); err != nil {
 		t.Fatal(err)
@@ -56,7 +56,7 @@ func TestDataExportStoreLifecycle(t *testing.T) {
 	}
 
 	found, err := store.Find(ctx, identityID, export.ID)
-	if err != nil || found.Status != dataexport.StatusReady || found.MediaID != mediaID || found.SizeBytes != 1234 {
+	if err != nil || found.Status != dataexport.StatusReady || found.MediaID != mediaID || found.SizeBytes != 1234 || found.Locale != "ku" {
 		t.Fatalf("found %+v %v", found, err)
 	}
 

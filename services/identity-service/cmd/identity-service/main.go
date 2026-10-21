@@ -756,7 +756,7 @@ func run() int {
 		accounts.NewMedia(deletionConns["media"]),
 		identifier.NewUUIDGenerator(),
 		systemClock,
-		dataexport.Settings{MinInterval: exportConfig.MinInterval, KeepFor: exportConfig.KeepFor, MaxAttempts: 5, RetryAfter: time.Minute},
+		dataexport.Settings{MinInterval: exportConfig.MinInterval, KeepFor: exportConfig.KeepFor, MaxAttempts: 5, RetryAfter: time.Minute, TimeZone: exportConfig.TimeZone},
 		logger,
 	)
 
