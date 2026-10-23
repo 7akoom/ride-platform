@@ -442,6 +442,9 @@ func (r *NotificationRepository) List(
 		args = append(args, families)
 	}
 
+	query += fmt.Sprintf(` AND event_key <> ALL($%d)`, len(args)+1)
+	args = append(args, notification.PushOnlyEventKeys())
+
 	query += ` ORDER BY created_at DESC, id::text DESC LIMIT $3`
 
 	rows, err := r.pool.Query(ctx, query, args...)
@@ -479,9 +482,11 @@ func (r *NotificationRepository) UnreadCount(
 		ctx,
 		`SELECT COUNT(*)
 		 FROM notifications
-		 WHERE recipient_type = $1 AND recipient_id = $2 AND read_at IS NULL`,
+		 WHERE recipient_type = $1 AND recipient_id = $2 AND read_at IS NULL
+		   AND event_key <> ALL($3)`,
 		string(recipientType),
 		recipientID,
+		notification.PushOnlyEventKeys(),
 	).Scan(&count); err != nil {
 		return 0, fmt.Errorf("count unread: %w", err)
 	}
