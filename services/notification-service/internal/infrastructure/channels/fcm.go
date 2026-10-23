@@ -135,6 +135,7 @@ type fcmMessage struct {
 		Token        string            `json:"token"`
 		Notification fcmNotification   `json:"notification"`
 		Data         map[string]string `json:"data,omitempty"`
+		Android      *fcmAndroid       `json:"android,omitempty"`
 	} `json:"message"`
 }
 
@@ -152,6 +153,7 @@ func (s *FCMSender) sendOne(
 	message.Message.Token = deviceToken
 	message.Message.Notification = fcmNotification{Title: title, Body: body}
 	message.Message.Data = data
+	message.Message.Android = androidOptions(data, time.Now())
 
 	payload, err := json.Marshal(message)
 	if err != nil {

@@ -60,6 +60,9 @@ func (h *Handler) handleTripOffered(ctx context.Context, envelope Envelope) erro
 			"type":       "trip.offer_received",
 			"trip_id":    payload.TripID,
 			"expires_at": payload.ExpiresAt,
+			// The Captain app's loud channel (a ring, like a call), at high priority;
+			// expires_at above also keeps FCM from delivering it once the offer is over.
+			"android_channel": "trip_offers",
 		},
 		IdempotencyKey: envelope.EventID,
 	})

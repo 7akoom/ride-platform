@@ -81,7 +81,11 @@ func TestTripOffered_PushesToTheDriverWithoutAnythingAboutTheRider(t *testing.T)
 		t.Errorf("push data = %v, want the trip id and the kind of push", got.Data)
 	}
 
-	allowed := map[string]bool{"type": true, "trip_id": true, "expires_at": true}
+	if got.Data["android_channel"] != "trip_offers" {
+		t.Errorf("push data = %v, want the Captain app's loud channel for offers", got.Data)
+	}
+
+	allowed := map[string]bool{"type": true, "trip_id": true, "expires_at": true, "android_channel": true}
 	for key := range got.Data {
 		if !allowed[key] {
 			t.Errorf("push data carries %q, which the driver's lock screen should not see", key)
