@@ -46,7 +46,12 @@ func (h *PricingHandler) UpdateDispatchSettings(
 		return nil, status.Error(codes.Unimplemented, dispatchsettings.ErrUnavailable.Error())
 	}
 
-	settings, err := h.dispatchSettings.Update(ctx, request.GetNextTripsEnabled(), int(request.GetNextTripRadiusMeters()), staffIdentity(ctx))
+	settings, err := h.dispatchSettings.Update(ctx, dispatchsettings.Settings{
+		NextTripsEnabled:     request.GetNextTripsEnabled(),
+		NextTripRadiusMeters: int(request.GetNextTripRadiusMeters()),
+		OfferSeconds:         int(request.GetOfferSeconds()),
+		UpdatedBy:            staffIdentity(ctx),
+	})
 	if err != nil {
 		return nil, h.mapDispatchSettingsError(err)
 	}
@@ -55,7 +60,7 @@ func (h *PricingHandler) UpdateDispatchSettings(
 }
 
 func (h *PricingHandler) mapDispatchSettingsError(err error) error {
-	if errors.Is(err, dispatchsettings.ErrInvalidRadius) {
+	if errors.Is(err, dispatchsettings.ErrInvalidRadius) || errors.Is(err, dispatchsettings.ErrInvalidOfferSeconds) {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -68,6 +73,7 @@ func toProtoDispatchSettings(s dispatchsettings.Settings) *pricingv1.DispatchSet
 	settings := &pricingv1.DispatchSettings{
 		NextTripsEnabled:     s.NextTripsEnabled,
 		NextTripRadiusMeters: int32(s.NextTripRadiusMeters),
+		OfferSeconds:         int32(s.OfferSeconds),
 		UpdatedBy:            s.UpdatedBy,
 	}
 

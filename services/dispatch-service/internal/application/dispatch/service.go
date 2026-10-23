@@ -30,6 +30,10 @@ type service struct {
 	// instead of assigning it (see WithOffers).
 	offerTTL time.Duration
 
+	// offerDurations, when set, lets staff change offerTTL from the admin panel
+	// (see WithOfferDurations).
+	offerDurations OfferDurationSource
+
 	// travelTimes, when set, ranks candidates by time to the pickup by road (see
 	// WithRoadRanking); maxPickup leaves out those further than it.
 	travelTimes TravelTimeClient

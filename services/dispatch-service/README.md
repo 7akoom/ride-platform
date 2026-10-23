@@ -62,6 +62,15 @@ free driver of the class by road, the one dispatch would send.
 
 End to end: `bash scripts/e2e/test-road-dispatch.sh`.
 
+## How long an offer lasts
+
+`DISPATCH_OFFER_TTL` is the instance's own time (0 = no offers: trips are
+assigned directly). Staff may change it from the admin panel without a restart:
+`offerSeconds` (5-60, 0 = the instance's) in the same dispatch settings as next
+trips, read again every 30 s (`PRICING_SERVICE_ADDRESS`). It only changes the
+time: an instance without offers stays without them. When the settings cannot
+be read, the instance's time is used.
+
 ## Next trips
 
 A driver whose rider is in the car may be offered a trip to do right after,

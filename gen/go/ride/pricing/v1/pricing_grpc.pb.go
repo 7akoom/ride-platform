@@ -110,7 +110,8 @@ type PricingServiceClient interface {
 	UpdatePromotionSettings(ctx context.Context, in *UpdatePromotionSettingsRequest, opts ...grpc.CallOption) (*PromotionSettingsResponse, error)
 	// How trips are given out (staff, dispatch.manage; dispatch-service reads them
 	// with the internal token): whether a driver finishing a trip may be offered a
-	// new one whose pickup is near where they drop their rider, and how near.
+	// new one whose pickup is near where they drop their rider, and how near; and
+	// how long a driver has to accept an offer.
 	GetDispatchSettings(ctx context.Context, in *GetDispatchSettingsRequest, opts ...grpc.CallOption) (*DispatchSettingsResponse, error)
 	UpdateDispatchSettings(ctx context.Context, in *UpdateDispatchSettingsRequest, opts ...grpc.CallOption) (*DispatchSettingsResponse, error)
 	// Offers (the rider, for their own profile): what the app's home shows.
@@ -504,7 +505,8 @@ type PricingServiceServer interface {
 	UpdatePromotionSettings(context.Context, *UpdatePromotionSettingsRequest) (*PromotionSettingsResponse, error)
 	// How trips are given out (staff, dispatch.manage; dispatch-service reads them
 	// with the internal token): whether a driver finishing a trip may be offered a
-	// new one whose pickup is near where they drop their rider, and how near.
+	// new one whose pickup is near where they drop their rider, and how near; and
+	// how long a driver has to accept an offer.
 	GetDispatchSettings(context.Context, *GetDispatchSettingsRequest) (*DispatchSettingsResponse, error)
 	UpdateDispatchSettings(context.Context, *UpdateDispatchSettingsRequest) (*DispatchSettingsResponse, error)
 	// Offers (the rider, for their own profile): what the app's home shows.

@@ -567,7 +567,7 @@
     },
     "/v1/admin/dispatch-settings": {
       "get": {
-        "summary": "How trips are given out (staff, dispatch.manage; dispatch-service reads them\nwith the internal token): whether a driver finishing a trip may be offered a\nnew one whose pickup is near where they drop their rider, and how near.",
+        "summary": "How trips are given out (staff, dispatch.manage; dispatch-service reads them\nwith the internal token): whether a driver finishing a trip may be offered a\nnew one whose pickup is near where they drop their rider, and how near; and\nhow long a driver has to accept an offer.",
         "operationId": "PricingService_GetDispatchSettings",
         "responses": {
           "200": {
@@ -606,7 +606,7 @@
         "parameters": [
           {
             "name": "body",
-            "description": "UpdateDispatchSettingsRequest replaces the settings.",
+            "description": "UpdateDispatchSettingsRequest replaces the settings (an offer_seconds left out\nis 0: the instance's default).",
             "in": "body",
             "required": true,
             "schema": {
@@ -12936,9 +12936,13 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "offerSeconds": {
+          "type": "integer",
+          "format": "int32"
         }
       },
-      "description": "DispatchSettings: next_trips_enabled lets a driver whose rider is in the car\nbe offered a trip whose pickup is within next_trip_radius_meters (500-10000)\nof where they drop that rider, to take once they do."
+      "description": "DispatchSettings: next_trips_enabled lets a driver whose rider is in the car\nbe offered a trip whose pickup is within next_trip_radius_meters (500-10000)\nof where they drop that rider, to take once they do. offer_seconds is how long\na driver has to accept an offer (5-60); 0 keeps the instance's own default\n(DISPATCH_OFFER_TTL). It only applies while the instance works by offers: it\nnever turns them on for an instance that assigns drivers directly."
     },
     "v1DispatchSettingsResponse": {
       "type": "object",
@@ -18744,9 +18748,13 @@
         "nextTripRadiusMeters": {
           "type": "integer",
           "format": "int32"
+        },
+        "offerSeconds": {
+          "type": "integer",
+          "format": "int32"
         }
       },
-      "description": "UpdateDispatchSettingsRequest replaces the settings."
+      "description": "UpdateDispatchSettingsRequest replaces the settings (an offer_seconds left out\nis 0: the instance's default)."
     },
     "v1UpdateDriverProfileResponse": {
       "type": "object",

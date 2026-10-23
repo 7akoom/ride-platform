@@ -68,12 +68,14 @@ func (s *service) offerToCandidate(
 ) (result Result, done bool, err error) {
 	var offerErr error
 
+	ttl := s.offerTTLFor(ctx, tripID)
+
 	if chained, ok := s.tripClient.(ChainedTripOfferer); ok {
 		eta := time.Duration(candidate.PickupETASeconds * float64(time.Second))
-		offerErr = chained.OfferTripWithChain(ctx, tripID, driver.ID, s.offerTTL, afterTripID, eta)
+		offerErr = chained.OfferTripWithChain(ctx, tripID, driver.ID, ttl, afterTripID, eta)
 	} else {
 		offerer, _ := s.tripClient.(TripOfferer)
-		offerErr = offerer.OfferTrip(ctx, tripID, driver.ID, s.offerTTL)
+		offerErr = offerer.OfferTrip(ctx, tripID, driver.ID, ttl)
 	}
 
 	switch {
@@ -84,7 +86,7 @@ func (s *service) offerToCandidate(
 			"distance_meters", candidate.DistanceMeters,
 			"pickup_eta_seconds", candidate.PickupETASeconds,
 			"after_trip_id", afterTripID,
-			"ttl", s.offerTTL,
+			"ttl", ttl,
 		)
 
 		return Result{

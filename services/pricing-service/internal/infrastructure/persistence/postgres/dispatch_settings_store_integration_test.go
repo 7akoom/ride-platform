@@ -13,13 +13,23 @@ func TestTheDispatchSettings(t *testing.T) {
 	repo := NewPricingRepository(pool)
 
 	seeded, err := repo.GetDispatchSettings(ctx)
-	if err != nil || !seeded.NextTripsEnabled || seeded.NextTripRadiusMeters != 3000 || seeded.UpdatedBy != "" {
+	if err != nil || !seeded.NextTripsEnabled || seeded.NextTripRadiusMeters != 3000 || seeded.OfferSeconds != 0 || seeded.UpdatedBy != "" {
 		t.Fatalf("seeded %+v %v", seeded, err)
 	}
 
-	saved, err := repo.SetDispatchSettings(ctx, dispatchSettings(false, 1500))
-	if err != nil || saved.NextTripsEnabled || saved.NextTripRadiusMeters != 1500 || saved.UpdatedBy != testStaff {
+	withOffer := dispatchSettings(false, 1500)
+	withOffer.OfferSeconds = 20
+
+	saved, err := repo.SetDispatchSettings(ctx, withOffer)
+	if err != nil || saved.NextTripsEnabled || saved.NextTripRadiusMeters != 1500 || saved.OfferSeconds != 20 || saved.UpdatedBy != testStaff {
 		t.Fatalf("saved %+v %v", saved, err)
+	}
+
+	tooLong := dispatchSettings(true, 3000)
+	tooLong.OfferSeconds = 61
+
+	if _, err := repo.SetDispatchSettings(ctx, tooLong); err == nil {
+		t.Fatal("the table refuses an offer over a minute")
 	}
 
 	if _, err := repo.SetDispatchSettings(ctx, dispatchSettings(true, 20000)); err == nil {

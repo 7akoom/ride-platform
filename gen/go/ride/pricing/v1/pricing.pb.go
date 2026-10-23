@@ -2081,13 +2081,17 @@ func (*GetDispatchSettingsRequest) Descriptor() ([]byte, []int) {
 
 // DispatchSettings: next_trips_enabled lets a driver whose rider is in the car
 // be offered a trip whose pickup is within next_trip_radius_meters (500-10000)
-// of where they drop that rider, to take once they do.
+// of where they drop that rider, to take once they do. offer_seconds is how long
+// a driver has to accept an offer (5-60); 0 keeps the instance's own default
+// (DISPATCH_OFFER_TTL). It only applies while the instance works by offers: it
+// never turns them on for an instance that assigns drivers directly.
 type DispatchSettings struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	NextTripsEnabled     bool                   `protobuf:"varint,1,opt,name=next_trips_enabled,json=nextTripsEnabled,proto3" json:"next_trips_enabled,omitempty"`
 	NextTripRadiusMeters int32                  `protobuf:"varint,2,opt,name=next_trip_radius_meters,json=nextTripRadiusMeters,proto3" json:"next_trip_radius_meters,omitempty"`
 	UpdatedBy            string                 `protobuf:"bytes,3,opt,name=updated_by,json=updatedBy,proto3" json:"updated_by,omitempty"`
 	UpdatedAt            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	OfferSeconds         int32                  `protobuf:"varint,5,opt,name=offer_seconds,json=offerSeconds,proto3" json:"offer_seconds,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -2150,11 +2154,20 @@ func (x *DispatchSettings) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
-// UpdateDispatchSettingsRequest replaces the settings.
+func (x *DispatchSettings) GetOfferSeconds() int32 {
+	if x != nil {
+		return x.OfferSeconds
+	}
+	return 0
+}
+
+// UpdateDispatchSettingsRequest replaces the settings (an offer_seconds left out
+// is 0: the instance's default).
 type UpdateDispatchSettingsRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	NextTripsEnabled     bool                   `protobuf:"varint,1,opt,name=next_trips_enabled,json=nextTripsEnabled,proto3" json:"next_trips_enabled,omitempty"`
 	NextTripRadiusMeters int32                  `protobuf:"varint,2,opt,name=next_trip_radius_meters,json=nextTripRadiusMeters,proto3" json:"next_trip_radius_meters,omitempty"`
+	OfferSeconds         int32                  `protobuf:"varint,3,opt,name=offer_seconds,json=offerSeconds,proto3" json:"offer_seconds,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -2199,6 +2212,13 @@ func (x *UpdateDispatchSettingsRequest) GetNextTripsEnabled() bool {
 func (x *UpdateDispatchSettingsRequest) GetNextTripRadiusMeters() int32 {
 	if x != nil {
 		return x.NextTripRadiusMeters
+	}
+	return 0
+}
+
+func (x *UpdateDispatchSettingsRequest) GetOfferSeconds() int32 {
+	if x != nil {
+		return x.OfferSeconds
 	}
 	return 0
 }
@@ -5295,17 +5315,19 @@ const file_ride_pricing_v1_pricing_proto_rawDesc = "" +
 	"\x12loyalty_max_amount\x18\x05 \x01(\tR\x10loyaltyMaxAmount\"[\n" +
 	"\x19PromotionSettingsResponse\x12>\n" +
 	"\bsettings\x18\x01 \x01(\v2\".ride.pricing.v1.PromotionSettingsR\bsettings\"\x1c\n" +
-	"\x1aGetDispatchSettingsRequest\"\xd1\x01\n" +
+	"\x1aGetDispatchSettingsRequest\"\xf6\x01\n" +
 	"\x10DispatchSettings\x12,\n" +
 	"\x12next_trips_enabled\x18\x01 \x01(\bR\x10nextTripsEnabled\x125\n" +
 	"\x17next_trip_radius_meters\x18\x02 \x01(\x05R\x14nextTripRadiusMeters\x12\x1d\n" +
 	"\n" +
 	"updated_by\x18\x03 \x01(\tR\tupdatedBy\x129\n" +
 	"\n" +
-	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x84\x01\n" +
+	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12#\n" +
+	"\roffer_seconds\x18\x05 \x01(\x05R\fofferSeconds\"\xa9\x01\n" +
 	"\x1dUpdateDispatchSettingsRequest\x12,\n" +
 	"\x12next_trips_enabled\x18\x01 \x01(\bR\x10nextTripsEnabled\x125\n" +
-	"\x17next_trip_radius_meters\x18\x02 \x01(\x05R\x14nextTripRadiusMeters\"Y\n" +
+	"\x17next_trip_radius_meters\x18\x02 \x01(\x05R\x14nextTripRadiusMeters\x12#\n" +
+	"\roffer_seconds\x18\x03 \x01(\x05R\fofferSeconds\"Y\n" +
 	"\x18DispatchSettingsResponse\x12=\n" +
 	"\bsettings\x18\x01 \x01(\v2!.ride.pricing.v1.DispatchSettingsR\bsettings\"3\n" +
 	"\x16ListRiderOffersRequest\x12\x19\n" +

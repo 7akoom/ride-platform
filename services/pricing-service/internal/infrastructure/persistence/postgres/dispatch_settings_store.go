@@ -9,12 +9,18 @@ import (
 	"github.com/7akoom/ride-platform/services/pricing-service/internal/application/dispatchsettings"
 )
 
-const dispatchSettingsColumns = `next_trips_enabled, next_trip_radius_meters, COALESCE(updated_by::text, ''), updated_at`
+const dispatchSettingsColumns = `next_trips_enabled, next_trip_radius_meters, offer_seconds, COALESCE(updated_by::text, ''), updated_at`
 
 func scanDispatchSettings(row pgx.Row) (dispatchsettings.Settings, error) {
 	var settings dispatchsettings.Settings
 
-	err := row.Scan(&settings.NextTripsEnabled, &settings.NextTripRadiusMeters, &settings.UpdatedBy, &settings.UpdatedAt)
+	err := row.Scan(
+		&settings.NextTripsEnabled,
+		&settings.NextTripRadiusMeters,
+		&settings.OfferSeconds,
+		&settings.UpdatedBy,
+		&settings.UpdatedAt,
+	)
 
 	return settings, err
 }
@@ -39,16 +45,18 @@ func (r *PricingRepository) SetDispatchSettings(
 ) (dispatchsettings.Settings, error) {
 	saved, err := scanDispatchSettings(r.pool.QueryRow(
 		ctx,
-		`INSERT INTO dispatch_settings (id, next_trips_enabled, next_trip_radius_meters, updated_by, updated_at)
-		 VALUES (true, $1, $2, $3, CURRENT_TIMESTAMP)
+		`INSERT INTO dispatch_settings (id, next_trips_enabled, next_trip_radius_meters, offer_seconds, updated_by, updated_at)
+		 VALUES (true, $1, $2, $3, $4, CURRENT_TIMESTAMP)
 		 ON CONFLICT (id) DO UPDATE
 		 SET next_trips_enabled = EXCLUDED.next_trips_enabled,
 		     next_trip_radius_meters = EXCLUDED.next_trip_radius_meters,
+		     offer_seconds = EXCLUDED.offer_seconds,
 		     updated_by = EXCLUDED.updated_by,
 		     updated_at = EXCLUDED.updated_at
 		 RETURNING `+dispatchSettingsColumns,
 		settings.NextTripsEnabled,
 		settings.NextTripRadiusMeters,
+		settings.OfferSeconds,
 		nullableUUID(settings.UpdatedBy),
 	))
 	if err != nil {

@@ -23,7 +23,7 @@ type DispatchSettingsClient struct {
 	now    func() time.Time
 
 	mu      sync.Mutex
-	cached  dispatch.NextTripSettings
+	cached  *pricingv1.DispatchSettings
 	readAt  time.Time
 	hasRead bool
 }
@@ -38,6 +38,29 @@ func NewDispatchSettingsClient(conn *grpc.ClientConn) *DispatchSettingsClient {
 
 // NextTripSettings: see dispatch.NextTripSettingsSource.
 func (c *DispatchSettingsClient) NextTripSettings(ctx context.Context) (dispatch.NextTripSettings, error) {
+	settings, err := c.settings(ctx)
+	if err != nil {
+		return dispatch.NextTripSettings{}, err
+	}
+
+	return dispatch.NextTripSettings{
+		Enabled:      settings.GetNextTripsEnabled(),
+		RadiusMeters: float64(settings.GetNextTripRadiusMeters()),
+	}, nil
+}
+
+// OfferDuration: see dispatch.OfferDurationSource. Zero when staff left it to the
+// instance's default.
+func (c *DispatchSettingsClient) OfferDuration(ctx context.Context) (time.Duration, error) {
+	settings, err := c.settings(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return time.Duration(settings.GetOfferSeconds()) * time.Second, nil
+}
+
+func (c *DispatchSettingsClient) settings(ctx context.Context) (*pricingv1.DispatchSettings, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -51,13 +74,10 @@ func (c *DispatchSettingsClient) NextTripSettings(ctx context.Context) (dispatch
 			return c.cached, nil
 		}
 
-		return dispatch.NextTripSettings{}, fmt.Errorf("call pricing-service GetDispatchSettings: %w", err)
+		return nil, fmt.Errorf("call pricing-service GetDispatchSettings: %w", err)
 	}
 
-	c.cached = dispatch.NextTripSettings{
-		Enabled:      response.GetSettings().GetNextTripsEnabled(),
-		RadiusMeters: float64(response.GetSettings().GetNextTripRadiusMeters()),
-	}
+	c.cached = response.GetSettings()
 	c.readAt = c.now()
 	c.hasRead = true
 

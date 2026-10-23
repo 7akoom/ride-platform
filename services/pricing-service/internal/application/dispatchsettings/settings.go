@@ -16,19 +16,30 @@ const (
 	DefaultNextTripRadiusMeters = 3000
 	MinNextTripRadiusMeters     = 500
 	MaxNextTripRadiusMeters     = 10000
+
+	// OfferSeconds bounds how long a driver has to accept an offer; 0 is the
+	// instance's own default (DISPATCH_OFFER_TTL in dispatch-service).
+	MinOfferSeconds = 5
+	MaxOfferSeconds = 60
 )
 
 // ErrInvalidRadius: the radius is outside MinNextTripRadiusMeters..MaxNextTripRadiusMeters.
 var ErrInvalidRadius = fmt.Errorf("next_trip_radius_meters must be between %d and %d", MinNextTripRadiusMeters, MaxNextTripRadiusMeters)
+
+// ErrInvalidOfferSeconds: offer_seconds is neither 0 nor within MinOfferSeconds..MaxOfferSeconds.
+var ErrInvalidOfferSeconds = fmt.Errorf("offer_seconds must be 0 (the instance's default) or between %d and %d", MinOfferSeconds, MaxOfferSeconds)
 
 // ErrUnavailable: the service was built without a store.
 var ErrUnavailable = errors.New("dispatch settings are not configured")
 
 // Settings: NextTripsEnabled lets a driver whose rider is in the car be offered a
 // trip whose pickup is within NextTripRadiusMeters of where they drop that rider.
+// OfferSeconds is how long a driver has to accept an offer; 0 for the instance's
+// default.
 type Settings struct {
 	NextTripsEnabled     bool
 	NextTripRadiusMeters int
+	OfferSeconds         int
 	UpdatedBy            string
 	UpdatedAt            time.Time
 }
@@ -60,15 +71,18 @@ func (s *Service) Get(ctx context.Context) (Settings, error) {
 	return s.store.GetDispatchSettings(ctx)
 }
 
-// Update replaces the settings; updatedBy is the staff member's identity.
-func (s *Service) Update(ctx context.Context, enabled bool, radiusMeters int, updatedBy string) (Settings, error) {
-	if radiusMeters < MinNextTripRadiusMeters || radiusMeters > MaxNextTripRadiusMeters {
+// Update replaces the settings with these; UpdatedBy is the staff member's identity.
+func (s *Service) Update(ctx context.Context, settings Settings) (Settings, error) {
+	if settings.NextTripRadiusMeters < MinNextTripRadiusMeters || settings.NextTripRadiusMeters > MaxNextTripRadiusMeters {
 		return Settings{}, ErrInvalidRadius
 	}
 
-	return s.store.SetDispatchSettings(ctx, Settings{
-		NextTripsEnabled:     enabled,
-		NextTripRadiusMeters: radiusMeters,
-		UpdatedBy:            strings.TrimSpace(updatedBy),
-	})
+	if settings.OfferSeconds != 0 && (settings.OfferSeconds < MinOfferSeconds || settings.OfferSeconds > MaxOfferSeconds) {
+		return Settings{}, ErrInvalidOfferSeconds
+	}
+
+	settings.UpdatedBy = strings.TrimSpace(settings.UpdatedBy)
+	settings.UpdatedAt = time.Time{}
+
+	return s.store.SetDispatchSettings(ctx, settings)
 }

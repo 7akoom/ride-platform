@@ -158,7 +158,8 @@ service PricingService {
 
   // How trips are given out (staff, dispatch.manage; dispatch-service reads them
   // with the internal token): whether a driver finishing a trip may be offered a
-  // new one whose pickup is near where they drop their rider, and how near.
+  // new one whose pickup is near where they drop their rider, and how near; and
+  // how long a driver has to accept an offer.
   rpc GetDispatchSettings(GetDispatchSettingsRequest) returns (DispatchSettingsResponse) {
     option (google.api.http) = {
       get: "/v1/admin/dispatch-settings"
@@ -512,18 +513,24 @@ message GetDispatchSettingsRequest {}
 
 // DispatchSettings: next_trips_enabled lets a driver whose rider is in the car
 // be offered a trip whose pickup is within next_trip_radius_meters (500-10000)
-// of where they drop that rider, to take once they do.
+// of where they drop that rider, to take once they do. offer_seconds is how long
+// a driver has to accept an offer (5-60); 0 keeps the instance's own default
+// (DISPATCH_OFFER_TTL). It only applies while the instance works by offers: it
+// never turns them on for an instance that assigns drivers directly.
 message DispatchSettings {
   bool next_trips_enabled = 1;
   int32 next_trip_radius_meters = 2;
   string updated_by = 3;
   google.protobuf.Timestamp updated_at = 4;
+  int32 offer_seconds = 5;
 }
 
-// UpdateDispatchSettingsRequest replaces the settings.
+// UpdateDispatchSettingsRequest replaces the settings (an offer_seconds left out
+// is 0: the instance's default).
 message UpdateDispatchSettingsRequest {
   bool next_trips_enabled = 1;
   int32 next_trip_radius_meters = 2;
+  int32 offer_seconds = 3;
 }
 
 message DispatchSettingsResponse {

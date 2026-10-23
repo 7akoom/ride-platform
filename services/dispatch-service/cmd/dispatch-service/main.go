@@ -169,11 +169,13 @@ func run() int {
 		}
 		defer pricingConn.Close()
 
-		dispatchOptions = append(dispatchOptions, dispatch.WithNextTrips(
-			clients.NewTripClient(tripConn),
-			clients.NewDispatchSettingsClient(pricingConn),
-		))
-		logger.Info("drivers finishing a ride nearby may be offered next trips, as the dispatch settings say")
+		dispatchSettings := clients.NewDispatchSettingsClient(pricingConn)
+
+		dispatchOptions = append(dispatchOptions,
+			dispatch.WithNextTrips(clients.NewTripClient(tripConn), dispatchSettings),
+			dispatch.WithOfferDurations(dispatchSettings),
+		)
+		logger.Info("drivers finishing a ride nearby may be offered next trips, and offers last as long as the dispatch settings say")
 	}
 
 	dispatchService := dispatch.NewService(
