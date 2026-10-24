@@ -173,3 +173,35 @@ func TestPayoutsRefundsAndTopUpsAreAnnounced(t *testing.T) {
 		t.Fatalf("top-ups %v", topped)
 	}
 }
+
+func TestTheRiderIsToldTheChangeWentToTheirWallet(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	repo := NewWalletRepository(pool)
+	const trip = "c1c1c1c1-c1c1-4c1c-8c1c-c1c1c1c1c1c1"
+	settleWalletTrip(t, repo, trip, 6000)
+
+	input := wallet.ChangeCreditInput{
+		TripID: trip, RiderID: riderA, DriverID: driverD, CurrencyCode: "IQD",
+		CashDue: dec(6000), CashReceived: dec(7500), ChangeAmount: dec(1500),
+	}
+
+	if _, err := repo.CreditTripChange(ctx, input); err != nil {
+		t.Fatal(err)
+	}
+
+	// The same change again is the one already recorded: no second notice.
+	if _, err := repo.CreditTripChange(ctx, input); err != nil {
+		t.Fatal(err)
+	}
+
+	events := outboxPayloads(t, pool, EventChangeCredited)
+	if len(events) != 1 {
+		t.Fatalf("want one wallet.change_credited, got %d", len(events))
+	}
+
+	e := events[0]
+	if e["rider_id"] != riderA || e["trip_id"] != trip || e["amount"] != "1500" || e["currency_code"] != "IQD" {
+		t.Errorf("payload %v", e)
+	}
+}

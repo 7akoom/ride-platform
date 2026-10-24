@@ -19,6 +19,7 @@ const (
 	SubjectPayoutPaid       = "wallet.payout_paid"
 	SubjectPayoutRejected   = "wallet.payout_rejected"
 	SubjectRefundIssued     = "wallet.refund_issued"
+	SubjectChangeCredited   = "wallet.change_credited"
 )
 
 // WalletAccountSubjects are read by the notification-wallet-account consumer.
@@ -30,6 +31,7 @@ var WalletAccountSubjects = []string{
 	SubjectPayoutPaid,
 	SubjectPayoutRejected,
 	SubjectRefundIssued,
+	SubjectChangeCredited,
 }
 
 // walletAccountPayload is the union of the fields these events carry.
@@ -109,6 +111,11 @@ func (h *Handler) handleWalletAccount(ctx context.Context, subject string, envel
 
 	case SubjectRefundIssued:
 		input.EventKey = "wallet.refund_issued"
+		input.RecipientType, input.RecipientID = notification.RecipientRider, p.RiderID
+		input.Data["trip_id"] = p.TripID
+
+	case SubjectChangeCredited:
+		input.EventKey = "wallet.change_credited"
 		input.RecipientType, input.RecipientID = notification.RecipientRider, p.RiderID
 		input.Data["trip_id"] = p.TripID
 

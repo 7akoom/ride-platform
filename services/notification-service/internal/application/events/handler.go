@@ -142,7 +142,7 @@ func (h *Handler) Dispatch(ctx context.Context, subject string, data []byte) err
 	case SubjectSupportReplyReceived, SubjectSupportTicketResolved, SubjectSupportLostItemReported:
 		return h.handleSupport(ctx, subject, envelope)
 	case SubjectTipReceived, SubjectToppedUp, SubjectDriverSuspended, SubjectDriverReinstated,
-		SubjectPayoutPaid, SubjectPayoutRejected, SubjectRefundIssued:
+		SubjectPayoutPaid, SubjectPayoutRejected, SubjectRefundIssued, SubjectChangeCredited:
 		return h.handleWalletAccount(ctx, subject, envelope)
 	case SubjectScheduleFailed:
 		return h.handleScheduleFailed(ctx, envelope)

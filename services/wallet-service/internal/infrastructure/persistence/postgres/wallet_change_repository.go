@@ -70,6 +70,16 @@ func (r *WalletRepository) CreditTripChange(
 		return wallet.ChangeCredit{}, err
 	}
 
+	// The rider is told the change is in their wallet (notification-service).
+	if err := insertOutboxEvent(ctx, tx, "wallet", riderWallet.ID, EventChangeCredited, map[string]any{
+		"rider_id":      input.RiderID,
+		"trip_id":       input.TripID,
+		"amount":        input.ChangeAmount.String(),
+		"currency_code": input.CurrencyCode,
+	}); err != nil {
+		return wallet.ChangeCredit{}, err
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return wallet.ChangeCredit{}, fmt.Errorf("commit transaction: %w", err)
 	}

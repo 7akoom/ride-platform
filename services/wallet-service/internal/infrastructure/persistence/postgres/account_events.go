@@ -13,8 +13,8 @@ import (
 
 // Events that tell a person about their own money, for notification-service:
 // a driver's wallet crossing the suspension floor either way, a payout paid or
-// rejected, a refund, and a top-up through a payment provider that went
-// through. Each is written in the same transaction as the money it is about.
+// rejected, a refund, a top-up through a payment provider that went through,
+// and change credited to a rider. Each is written in the same transaction as the money it is about.
 const (
 	EventDriverSuspended  = "wallet.driver_suspended"
 	EventDriverReinstated = "wallet.driver_reinstated"
@@ -22,6 +22,9 @@ const (
 	EventPayoutRejected   = "wallet.payout_rejected"
 	EventRefundIssued     = "wallet.refund_issued"
 	EventToppedUp         = "wallet.topped_up"
+	// EventChangeCredited: the change a driver could not return in cash went to the
+	// rider's wallet.
+	EventChangeCredited = "wallet.change_credited"
 )
 
 func insertOutboxEvent(ctx context.Context, tx pgx.Tx, aggregateType, aggregateID, eventType string, payload map[string]any) error {

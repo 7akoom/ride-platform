@@ -47,6 +47,11 @@ func TestWalletAccountEventsReachTheRightPerson(t *testing.T) {
 			map[string]string{"amount": "2000.00"}, map[string]string{"trip_id": "trip-1"},
 		},
 		{
+			"wallet.change_credited", `{"rider_id":"rider-1","trip_id":"trip-1","amount":"1500","currency_code":"IQD"}`,
+			"rider", "rider-1", "wallet.change_credited",
+			map[string]string{"amount": "1500.00", "currency": "IQD"}, map[string]string{"trip_id": "trip-1"},
+		},
+		{
 			"trip.schedule_failed", `{"scheduled_trip_id":"s1","rider_id":"rider-1","reason":"no driver"}`,
 			"rider", "rider-1", "trip.schedule_failed", nil, map[string]string{"scheduled_trip_id": "s1"},
 		},
