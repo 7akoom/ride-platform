@@ -779,6 +779,10 @@ message GetTripSettlementResponse {
   string due_paid = 12;
   // What the rider tipped the driver for this trip. "0" if nothing.
   string tip_amount = 13;
+  // The driver's own view of a trip with cash to collect: the most change that
+  // RecordTripChange may credit to the rider's wallet (the deployment's
+  // max_change_credit). Empty otherwise.
+  string max_change_credit = 14;
 }
 
 message RecordTripChangeRequest {

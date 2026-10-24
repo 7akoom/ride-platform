@@ -44,6 +44,10 @@ func (h *WalletHandler) GetTripSettlement(
 	if ownerType == wallet.OwnerDriver {
 		response.CommissionAmount = found.CommissionAmount.String()
 		response.DriverEarning = found.DriverEarning.String()
+
+		if found.CashAmount.IsPositive() {
+			response.MaxChangeCredit = found.MaxChangeCredit.String()
+		}
 	}
 
 	return response, nil

@@ -2451,9 +2451,13 @@ type GetTripSettlementResponse struct {
 	// rider's wallet).
 	DuePaid string `protobuf:"bytes,12,opt,name=due_paid,json=duePaid,proto3" json:"due_paid,omitempty"`
 	// What the rider tipped the driver for this trip. "0" if nothing.
-	TipAmount     string `protobuf:"bytes,13,opt,name=tip_amount,json=tipAmount,proto3" json:"tip_amount,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	TipAmount string `protobuf:"bytes,13,opt,name=tip_amount,json=tipAmount,proto3" json:"tip_amount,omitempty"`
+	// The driver's own view of a trip with cash to collect: the most change that
+	// RecordTripChange may credit to the rider's wallet (the deployment's
+	// max_change_credit). Empty otherwise.
+	MaxChangeCredit string `protobuf:"bytes,14,opt,name=max_change_credit,json=maxChangeCredit,proto3" json:"max_change_credit,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetTripSettlementResponse) Reset() {
@@ -2573,6 +2577,13 @@ func (x *GetTripSettlementResponse) GetDuePaid() string {
 func (x *GetTripSettlementResponse) GetTipAmount() string {
 	if x != nil {
 		return x.TipAmount
+	}
+	return ""
+}
+
+func (x *GetTripSettlementResponse) GetMaxChangeCredit() string {
+	if x != nil {
+		return x.MaxChangeCredit
 	}
 	return ""
 }
@@ -8804,7 +8815,7 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"\n" +
 	"owner_type\x18\x01 \x01(\x0e2\x19.ride.wallet.v1.OwnerTypeR\townerType\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x17\n" +
-	"\atrip_id\x18\x03 \x01(\tR\x06tripId\"\xec\x03\n" +
+	"\atrip_id\x18\x03 \x01(\tR\x06tripId\"\x98\x04\n" +
 	"\x19GetTripSettlementResponse\x12\x17\n" +
 	"\atrip_id\x18\x01 \x01(\tR\x06tripId\x12D\n" +
 	"\x0epayment_method\x18\x02 \x01(\x0e2\x1d.ride.wallet.v1.PaymentMethodR\rpaymentMethod\x12#\n" +
@@ -8823,7 +8834,8 @@ const file_ride_wallet_v1_wallet_proto_rawDesc = "" +
 	"due_amount\x18\v \x01(\tR\tdueAmount\x12\x19\n" +
 	"\bdue_paid\x18\f \x01(\tR\aduePaid\x12\x1d\n" +
 	"\n" +
-	"tip_amount\x18\r \x01(\tR\ttipAmount\"t\n" +
+	"tip_amount\x18\r \x01(\tR\ttipAmount\x12*\n" +
+	"\x11max_change_credit\x18\x0e \x01(\tR\x0fmaxChangeCredit\"t\n" +
 	"\x17RecordTripChangeRequest\x12\x1b\n" +
 	"\tdriver_id\x18\x01 \x01(\tR\bdriverId\x12\x17\n" +
 	"\atrip_id\x18\x02 \x01(\tR\x06tripId\x12#\n" +

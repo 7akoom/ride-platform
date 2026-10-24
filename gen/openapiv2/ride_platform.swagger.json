@@ -8640,6 +8640,37 @@
         ]
       }
     },
+    "/v1/trips/{tripId}/driver-terms": {
+      "get": {
+        "summary": "GetDriverTripTerms is what the driver of the trip needs to wait at the pickup\nand act on time, by the rate card the trip was priced with (pricing-service):\nuntil when waiting is free, from when they may report that the rider did not\ncome and the fee the rider then pays, and how near the pickup or a stop they\nmust be to say they have arrived. Only the driver of the trip may ask.",
+        "operationId": "TripService_GetDriverTripTerms",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDriverTripTermsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
     "/v1/trips/{tripId}/path": {
       "get": {
         "summary": "GetTripPath returns every waypoint recorded for a trip, oldest\nfirst — the reconstructed route for a completed trip, or the route\nso far for one still in progress (e.g. right after an SOS alert).",
@@ -8738,6 +8769,37 @@
               "RATED_BY_DRIVER"
             ],
             "default": "RATED_BY_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "TripService"
+        ]
+      }
+    },
+    "/v1/trips/{tripId}/rider": {
+      "get": {
+        "summary": "GetTripRider is how the Captain app shows who it is picking up: the rider's\nfirst name and rating. Only the driver of the trip may ask. It has no phone\nnumber (a ride for someone else carries the passenger's on the trip itself),\nno identity and nothing about the rider's account.",
+        "operationId": "TripService_GetTripRider",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTripRiderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -13834,6 +13896,45 @@
         }
       }
     },
+    "v1GetDriverTripTermsResponse": {
+      "type": "object",
+      "properties": {
+        "currencyCode": {
+          "type": "string"
+        },
+        "freeWaitingMinutes": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Minutes waited for free at the pickup, then the price of each further minute\n(\"0\": waiting costs nothing)."
+        },
+        "waitingPerMinute": {
+          "type": "string"
+        },
+        "freeWaitingUntil": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Until when waiting is free; unset before the driver arrived."
+        },
+        "noShowWaitMinutes": {
+          "type": "integer",
+          "format": "int32",
+          "description": "How long the driver waits before they may report a no-show, from when, and\nthe fee the rider then pays (added to the driver's earnings after the\ncommission). no_show_from is unset before the driver arrived."
+        },
+        "noShowFrom": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "noShowFee": {
+          "type": "string"
+        },
+        "arrivalRadiusMeters": {
+          "type": "integer",
+          "format": "int32",
+          "description": "How near the pickup (or a stop) the driver must be to mark arriving."
+        }
+      },
+      "description": "Money fields are decimal strings in currency_code."
+    },
     "v1GetInstanceInfoResponse": {
       "type": "object",
       "properties": {
@@ -14464,6 +14565,14 @@
         }
       }
     },
+    "v1GetTripRiderResponse": {
+      "type": "object",
+      "properties": {
+        "rider": {
+          "$ref": "#/definitions/v1TripRider"
+        }
+      }
+    },
     "v1GetTripSettlementResponse": {
       "type": "object",
       "properties": {
@@ -14513,6 +14622,10 @@
         "tipAmount": {
           "type": "string",
           "description": "What the rider tipped the driver for this trip. \"0\" if nothing."
+        },
+        "maxChangeCredit": {
+          "type": "string",
+          "description": "The driver's own view of a trip with cash to collect: the most change that\nRecordTripChange may credit to the rider's wallet (the deployment's\nmax_change_credit). Empty otherwise."
         }
       }
     },
@@ -18665,6 +18778,24 @@
           "format": "int32"
         }
       }
+    },
+    "v1TripRider": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "description": "The first word of the rider's name; empty when they gave none."
+        },
+        "ratingAverage": {
+          "type": "number",
+          "format": "double"
+        },
+        "ratingCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "TripRider is what a driver may know about the rider of their trip."
     },
     "v1TripStatus": {
       "type": "string",

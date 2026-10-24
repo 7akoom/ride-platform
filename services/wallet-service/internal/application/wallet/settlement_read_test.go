@@ -16,12 +16,13 @@ type settlementRepoFake struct {
 	settlement wallet.Settlement
 	found      bool
 	err        error
+	config     wallet.Config
 
 	askedFor []string
 }
 
 func (r *settlementRepoFake) GetActiveConfig(context.Context) (wallet.Config, error) {
-	return wallet.Config{}, nil
+	return r.config, nil
 }
 
 func (r *settlementRepoFake) FindOrCreateWallet(
@@ -203,4 +204,27 @@ func (r *settlementRepoFake) CreditTripChange(
 
 func (r *settlementRepoFake) ListDues(context.Context, string) ([]wallet.Due, error) {
 	return nil, nil
+}
+
+func TestTheDriverCollectingCashIsToldTheChangeLimit(t *testing.T) {
+	repo := settledTripRepo()
+	repo.config = wallet.Config{MaxChangeCredit: decimal.RequireFromString("2000")}
+	svc := wallet.NewService(repo)
+
+	driver, err := svc.GetTripSettlement(context.Background(), wallet.OwnerDriver, settlementDriverID, settlementTripID)
+	if err != nil || !driver.MaxChangeCredit.Equal(decimal.RequireFromString("2000")) {
+		t.Fatalf("driver view: %+v, %v", driver.MaxChangeCredit, err)
+	}
+
+	rider, err := svc.GetTripSettlement(context.Background(), wallet.OwnerRider, settlementRiderID, settlementTripID)
+	if err != nil || !rider.MaxChangeCredit.IsZero() {
+		t.Fatalf("a rider is not told the change limit: %+v, %v", rider.MaxChangeCredit, err)
+	}
+
+	repo.settlement.CashAmount = decimal.Zero
+
+	walletOnly, err := svc.GetTripSettlement(context.Background(), wallet.OwnerDriver, settlementDriverID, settlementTripID)
+	if err != nil || !walletOnly.MaxChangeCredit.IsZero() {
+		t.Fatalf("no cash to collect, no change limit: %+v, %v", walletOnly.MaxChangeCredit, err)
+	}
 }

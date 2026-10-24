@@ -66,5 +66,16 @@ func (s *service) GetTripSettlement(
 		return Settlement{}, ErrSettlementNotFound
 	}
 
+	// The driver collecting cash may be handed more than is due with no change to
+	// give: the app says beforehand how much of the difference can go to the rider.
+	if ownerType == OwnerDriver && found.CashAmount.IsPositive() {
+		config, err := s.repository.GetActiveConfig(ctx)
+		if err != nil {
+			return Settlement{}, fmt.Errorf("get active wallet config: %w", err)
+		}
+
+		found.MaxChangeCredit = config.MaxChangeCredit
+	}
+
 	return found, nil
 }

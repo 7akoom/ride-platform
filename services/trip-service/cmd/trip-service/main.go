@@ -221,6 +221,7 @@ func run() int {
 
 	locationClient := clients.NewLocationClient(locationConn)
 	driverDirectory := clients.NewDriverDirectory(driverConn)
+	riderDirectory := clients.NewRiderDirectory(riderConn)
 
 	tripRepository := postgresrepo.NewTripRepository(pool)
 	idGenerator := identifier.NewUUIDGenerator()
@@ -242,7 +243,10 @@ func run() int {
 			trip.WithTripOffers(
 				trip.WithTripHistory(
 					trip.WithDriverTracking(
-						trip.WithDriverProfile(baseService, driverDirectory),
+						trip.WithDriverTerms(
+							trip.WithRiderProfile(trip.WithDriverProfile(baseService, driverDirectory), riderDirectory),
+							clients.NewQuoteBook(pricingConn),
+						),
 						locationClient,
 					),
 					tripRepository,

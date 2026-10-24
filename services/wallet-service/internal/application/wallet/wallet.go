@@ -203,6 +203,9 @@ type Settlement struct {
 	DuePaid Money
 	// TipAmount is what the rider tipped the driver for the trip.
 	TipAmount Money
+	// MaxChangeCredit is the most change RecordTripChange may credit: filled only
+	// for the driver's own view of a trip with cash to collect.
+	MaxChangeCredit Money
 }
 
 // CommissionFor returns the platform's cut of a fare, rounded to the

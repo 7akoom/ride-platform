@@ -129,6 +129,27 @@ service TripService {
     };
   }
 
+  // GetTripRider is how the Captain app shows who it is picking up: the rider's
+  // first name and rating. Only the driver of the trip may ask. It has no phone
+  // number (a ride for someone else carries the passenger's on the trip itself),
+  // no identity and nothing about the rider's account.
+  rpc GetTripRider(GetTripRiderRequest) returns (GetTripRiderResponse) {
+    option (google.api.http) = {
+      get: "/v1/trips/{trip_id}/rider"
+    };
+  }
+
+  // GetDriverTripTerms is what the driver of the trip needs to wait at the pickup
+  // and act on time, by the rate card the trip was priced with (pricing-service):
+  // until when waiting is free, from when they may report that the rider did not
+  // come and the fee the rider then pays, and how near the pickup or a stop they
+  // must be to say they have arrived. Only the driver of the trip may ask.
+  rpc GetDriverTripTerms(GetDriverTripTermsRequest) returns (GetDriverTripTermsResponse) {
+    option (google.api.http) = {
+      get: "/v1/trips/{trip_id}/driver-terms"
+    };
+  }
+
   // GetActiveTrip is how an app finds the trip it should be showing: the caller's
   // requested, accepted or in-progress trip, for example when the app is opened
   // again after being closed. Name exactly one of rider_id and driver_id, and it
@@ -711,6 +732,47 @@ message GetTripRatingResponse {
   bool can_rate = 3;
   // Until when it can be rated; set when can_rate.
   google.protobuf.Timestamp can_rate_until = 4;
+}
+
+// --- Driver view of the rider ---------------------------------------------
+
+message GetTripRiderRequest {
+  string trip_id = 1;
+}
+
+message GetTripRiderResponse {
+  TripRider rider = 1;
+}
+
+// TripRider is what a driver may know about the rider of their trip.
+message TripRider {
+  // The first word of the rider's name; empty when they gave none.
+  string first_name = 1;
+  double rating_average = 2;
+  int32 rating_count = 3;
+}
+
+message GetDriverTripTermsRequest {
+  string trip_id = 1;
+}
+
+// Money fields are decimal strings in currency_code.
+message GetDriverTripTermsResponse {
+  string currency_code = 1;
+  // Minutes waited for free at the pickup, then the price of each further minute
+  // ("0": waiting costs nothing).
+  int32 free_waiting_minutes = 2;
+  string waiting_per_minute = 3;
+  // Until when waiting is free; unset before the driver arrived.
+  google.protobuf.Timestamp free_waiting_until = 4;
+  // How long the driver waits before they may report a no-show, from when, and
+  // the fee the rider then pays (added to the driver's earnings after the
+  // commission). no_show_from is unset before the driver arrived.
+  int32 no_show_wait_minutes = 5;
+  google.protobuf.Timestamp no_show_from = 6;
+  string no_show_fee = 7;
+  // How near the pickup (or a stop) the driver must be to mark arriving.
+  int32 arrival_radius_meters = 8;
 }
 
 // --- Rider view of the driver ---------------------------------------------

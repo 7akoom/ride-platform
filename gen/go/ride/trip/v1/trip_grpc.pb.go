@@ -34,6 +34,8 @@ const (
 	TripService_GetTripPath_FullMethodName            = "/ride.trip.v1.TripService/GetTripPath"
 	TripService_GetDriverLocation_FullMethodName      = "/ride.trip.v1.TripService/GetDriverLocation"
 	TripService_GetTripDriver_FullMethodName          = "/ride.trip.v1.TripService/GetTripDriver"
+	TripService_GetTripRider_FullMethodName           = "/ride.trip.v1.TripService/GetTripRider"
+	TripService_GetDriverTripTerms_FullMethodName     = "/ride.trip.v1.TripService/GetDriverTripTerms"
 	TripService_GetActiveTrip_FullMethodName          = "/ride.trip.v1.TripService/GetActiveTrip"
 	TripService_ListTrips_FullMethodName              = "/ride.trip.v1.TripService/ListTrips"
 	TripService_ListActivityFeed_FullMethodName       = "/ride.trip.v1.TripService/ListActivityFeed"
@@ -115,6 +117,17 @@ type TripServiceClient interface {
 	// accepted (FAILED_PRECONDITION before that). It has no phone number, no identity and
 	// nothing about the driver's account.
 	GetTripDriver(ctx context.Context, in *GetTripDriverRequest, opts ...grpc.CallOption) (*GetTripDriverResponse, error)
+	// GetTripRider is how the Captain app shows who it is picking up: the rider's
+	// first name and rating. Only the driver of the trip may ask. It has no phone
+	// number (a ride for someone else carries the passenger's on the trip itself),
+	// no identity and nothing about the rider's account.
+	GetTripRider(ctx context.Context, in *GetTripRiderRequest, opts ...grpc.CallOption) (*GetTripRiderResponse, error)
+	// GetDriverTripTerms is what the driver of the trip needs to wait at the pickup
+	// and act on time, by the rate card the trip was priced with (pricing-service):
+	// until when waiting is free, from when they may report that the rider did not
+	// come and the fee the rider then pays, and how near the pickup or a stop they
+	// must be to say they have arrived. Only the driver of the trip may ask.
+	GetDriverTripTerms(ctx context.Context, in *GetDriverTripTermsRequest, opts ...grpc.CallOption) (*GetDriverTripTermsResponse, error)
 	// GetActiveTrip is how an app finds the trip it should be showing: the caller's
 	// requested, accepted or in-progress trip, for example when the app is opened
 	// again after being closed. Name exactly one of rider_id and driver_id, and it
@@ -353,6 +366,26 @@ func (c *tripServiceClient) GetTripDriver(ctx context.Context, in *GetTripDriver
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetTripDriverResponse)
 	err := c.cc.Invoke(ctx, TripService_GetTripDriver_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) GetTripRider(ctx context.Context, in *GetTripRiderRequest, opts ...grpc.CallOption) (*GetTripRiderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTripRiderResponse)
+	err := c.cc.Invoke(ctx, TripService_GetTripRider_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tripServiceClient) GetDriverTripTerms(ctx context.Context, in *GetDriverTripTermsRequest, opts ...grpc.CallOption) (*GetDriverTripTermsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDriverTripTermsResponse)
+	err := c.cc.Invoke(ctx, TripService_GetDriverTripTerms_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -618,6 +651,17 @@ type TripServiceServer interface {
 	// accepted (FAILED_PRECONDITION before that). It has no phone number, no identity and
 	// nothing about the driver's account.
 	GetTripDriver(context.Context, *GetTripDriverRequest) (*GetTripDriverResponse, error)
+	// GetTripRider is how the Captain app shows who it is picking up: the rider's
+	// first name and rating. Only the driver of the trip may ask. It has no phone
+	// number (a ride for someone else carries the passenger's on the trip itself),
+	// no identity and nothing about the rider's account.
+	GetTripRider(context.Context, *GetTripRiderRequest) (*GetTripRiderResponse, error)
+	// GetDriverTripTerms is what the driver of the trip needs to wait at the pickup
+	// and act on time, by the rate card the trip was priced with (pricing-service):
+	// until when waiting is free, from when they may report that the rider did not
+	// come and the fee the rider then pays, and how near the pickup or a stop they
+	// must be to say they have arrived. Only the driver of the trip may ask.
+	GetDriverTripTerms(context.Context, *GetDriverTripTermsRequest) (*GetDriverTripTermsResponse, error)
 	// GetActiveTrip is how an app finds the trip it should be showing: the caller's
 	// requested, accepted or in-progress trip, for example when the app is opened
 	// again after being closed. Name exactly one of rider_id and driver_id, and it
@@ -763,6 +807,12 @@ func (UnimplementedTripServiceServer) GetDriverLocation(context.Context, *GetDri
 }
 func (UnimplementedTripServiceServer) GetTripDriver(context.Context, *GetTripDriverRequest) (*GetTripDriverResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTripDriver not implemented")
+}
+func (UnimplementedTripServiceServer) GetTripRider(context.Context, *GetTripRiderRequest) (*GetTripRiderResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTripRider not implemented")
+}
+func (UnimplementedTripServiceServer) GetDriverTripTerms(context.Context, *GetDriverTripTermsRequest) (*GetDriverTripTermsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDriverTripTerms not implemented")
 }
 func (UnimplementedTripServiceServer) GetActiveTrip(context.Context, *GetActiveTripRequest) (*GetActiveTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetActiveTrip not implemented")
@@ -1093,6 +1143,42 @@ func _TripService_GetTripDriver_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TripServiceServer).GetTripDriver(ctx, req.(*GetTripDriverRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_GetTripRider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTripRiderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetTripRider(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetTripRider_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetTripRider(ctx, req.(*GetTripRiderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TripService_GetDriverTripTerms_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDriverTripTermsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).GetDriverTripTerms(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_GetDriverTripTerms_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).GetDriverTripTerms(ctx, req.(*GetDriverTripTermsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1519,6 +1605,14 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTripDriver",
 			Handler:    _TripService_GetTripDriver_Handler,
+		},
+		{
+			MethodName: "GetTripRider",
+			Handler:    _TripService_GetTripRider_Handler,
+		},
+		{
+			MethodName: "GetDriverTripTerms",
+			Handler:    _TripService_GetDriverTripTerms_Handler,
 		},
 		{
 			MethodName: "GetActiveTrip",

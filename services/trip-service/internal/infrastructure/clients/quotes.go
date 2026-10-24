@@ -85,3 +85,27 @@ func (b *QuoteBook) NoShowWait(ctx context.Context, tripID, riderID string) (tim
 
 	return time.Duration(response.GetNoShowWaitMinutes()) * time.Minute, nil
 }
+
+// RateTerms is what the trip's rate card says about waiting and no-shows
+// (pricing-service, asked with the internal token). See trip.RateTermsReader.
+func (b *QuoteBook) RateTerms(ctx context.Context, tripID, riderID string) (trip.RateTerms, error) {
+	ctx, cancel := context.WithTimeout(ctx, lookupTimeout)
+	defer cancel()
+
+	response, err := b.pricing.GetTripTerms(ctx, &pricingv1.GetTripTermsRequest{RiderId: riderID, TripId: tripID})
+	if status.Code(err) == codes.NotFound {
+		return trip.RateTerms{}, trip.ErrDriverTermsUnavailable
+	}
+
+	if err != nil {
+		return trip.RateTerms{}, fmt.Errorf("pricing-service GetTripTerms: %w", err)
+	}
+
+	return trip.RateTerms{
+		CurrencyCode:       response.GetCurrencyCode(),
+		FreeWaitingMinutes: int(response.GetFreeWaitingMinutes()),
+		WaitingPerMinute:   response.GetWaitingPerMinute(),
+		NoShowWaitMinutes:  int(response.GetNoShowWaitMinutes()),
+		NoShowFee:          response.GetNoShowFee(),
+	}, nil
+}
