@@ -3,6 +3,9 @@
 # rider can be played beside the Rider app on a phone (next trips, for one). Run it on
 # the server, from the repo root:
 #   bash scripts/dev/sim-ride.sh [--from 36.1911,44.0092] [--to 36.2050,44.0200] [--class economy|comfort]
+#     [--from-name "Family Mall"] [--to-name "Erbil Citadel"]
+# The names are the addresses the captain sees (a rider's app sends the place picked);
+# without them the ride carries placeholder ones.
 #
 # The test rider is SIM_RIDER_PHONE (+9647700000992 by default), the one
 # try-topup.sh uses; the first run signs it in with the code identity-service writes
@@ -20,12 +23,14 @@ value() { sed -n "s/^$1=//p" instance/instance.env | tail -1; }
   die "this instance is not staging (IDENTITY_APP_ENV=test); a test rider has no place on a real one"
 command -v python3 > /dev/null || die "python3 is needed"
 
-FROM="36.1911,44.0092"; TO="36.2050,44.0200"; CLASS="economy"; PHONE="${SIM_RIDER_PHONE:-+9647700000992}"
+FROM="36.1911,44.0092"; TO="36.2050,44.0200"; CLASS="economy"; FROM_NAME="Test pickup"; TO_NAME="Test destination"; PHONE="${SIM_RIDER_PHONE:-+9647700000992}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --from) FROM="$2"; shift 2 ;;
     --to) TO="$2"; shift 2 ;;
     --class) CLASS="$2"; shift 2 ;;
+    --from-name) FROM_NAME="$2"; shift 2 ;;
+    --to-name) TO_NAME="$2"; shift 2 ;;
     *) die "unknown option $1" ;;
   esac
 done
@@ -124,7 +129,14 @@ fi
 api GET "/v1/trips:active?rider_id=$RIDER"
 [ "$STATUS" = 200 ] && die "the test rider already has a ride ($(echo "$BODY" | field trip.id)); cancel it first"
 
-api POST /v1/trips "{\"riderId\":\"$RIDER\",\"pickup\":{\"latitude\":${FROM%,*},\"longitude\":${FROM#*,}},\"dropoff\":{\"latitude\":${TO%,*},\"longitude\":${TO#*,}},\"vehicleClass\":\"$CLASS\",\"paymentMethod\":\"cash\"}"
+REQUEST="$(RIDER="$RIDER" FROM="$FROM" TO="$TO" CLASS="$CLASS" FROM_NAME="$FROM_NAME" TO_NAME="$TO_NAME" python3 -c '
+import json, os
+e = os.environ
+point = lambda v: {"latitude": float(v.split(",")[0]), "longitude": float(v.split(",")[1])}
+print(json.dumps({"riderId": e["RIDER"], "pickup": point(e["FROM"]), "dropoff": point(e["TO"]),
+  "pickupAddress": e["FROM_NAME"], "dropoffAddress": e["TO_NAME"],
+  "vehicleClass": e["CLASS"], "paymentMethod": "cash"}))')"
+api POST /v1/trips "$REQUEST"
 [ "$STATUS" = 200 ] || die "the ride was refused ($STATUS): $BODY"
 TRIP="$(echo "$BODY" | field trip.id)"
 echo "==> the test rider ($PHONE) asked for a ride $FROM -> $TO: $TRIP"
