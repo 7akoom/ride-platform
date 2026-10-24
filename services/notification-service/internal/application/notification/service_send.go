@@ -63,8 +63,8 @@ func (s *service) Send(
 		return SendResult{}, fmt.Errorf("find translation: %w", err)
 	}
 
-	title := Render(translation.Title, input.Variables)
-	body := Render(translation.Body, input.Variables)
+	title := RenderFor(translation.Title, input.Variables, translation.Locale)
+	body := RenderFor(translation.Body, input.Variables, translation.Locale)
 
 	channels := input.Channels
 	if len(channels) == 0 {

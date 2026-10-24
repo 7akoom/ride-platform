@@ -236,8 +236,8 @@ func (s *service) inLocale(ctx context.Context, notifications []Notification, lo
 			continue
 		}
 
-		notifications[i].Title = Render(translation.Title, found.Variables)
-		notifications[i].Body = Render(translation.Body, found.Variables)
+		notifications[i].Title = RenderFor(translation.Title, found.Variables, locale)
+		notifications[i].Body = RenderFor(translation.Body, found.Variables, locale)
 		notifications[i].Locale = locale
 	}
 
