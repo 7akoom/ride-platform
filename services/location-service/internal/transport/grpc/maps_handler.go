@@ -49,6 +49,8 @@ func (h *LocationHandler) GetRoute(
 		Origin:      toMapsPoint(request.GetOrigin()),
 		Destination: toMapsPoint(request.GetDestination()),
 		Via:         toMapsPoints(request.GetVia()),
+		Heading:     request.Heading,
+		Steps:       request.GetSteps(),
 	})
 	if err != nil {
 		return nil, h.mapMapsError(err)
@@ -58,7 +60,32 @@ func (h *LocationHandler) GetRoute(
 		DistanceMeters:  route.DistanceMeters,
 		DurationSeconds: route.DurationSeconds,
 		Polyline:        route.Polyline,
+		Steps:           toRouteSteps(route.Steps),
 	}, nil
+}
+
+func toRouteSteps(steps []maps.Step) []*locationv1.RouteStep {
+	out := make([]*locationv1.RouteStep, 0, len(steps))
+
+	for _, step := range steps {
+		out = append(out, &locationv1.RouteStep{
+			Maneuver: &locationv1.RouteManeuver{
+				Type:          step.Maneuver.Type,
+				Modifier:      step.Maneuver.Modifier,
+				Exit:          int32(step.Maneuver.Exit),
+				Location:      &locationv1.Coordinates{Latitude: step.Maneuver.Location.Latitude, Longitude: step.Maneuver.Location.Longitude},
+				BearingBefore: int32(step.Maneuver.BearingBefore),
+				BearingAfter:  int32(step.Maneuver.BearingAfter),
+			},
+			Name:            step.Name,
+			Ref:             step.Ref,
+			DistanceMeters:  step.DistanceMeters,
+			DurationSeconds: step.DurationSeconds,
+			Leg:             int32(step.Leg),
+		})
+	}
+
+	return out
 }
 
 // GetTravelTimes is how long by road from each origin to one destination.
@@ -160,6 +187,7 @@ func (h *LocationHandler) mapMapsError(err error) error {
 		errors.Is(err, maps.ErrInvalidLimit),
 		errors.Is(err, maps.ErrInvalidLanguage),
 		errors.Is(err, maps.ErrTooManyVia),
+		errors.Is(err, maps.ErrInvalidHeading),
 		errors.Is(err, maps.ErrOriginsRequired),
 		errors.Is(err, maps.ErrTooManyOrigins):
 		return status.Error(codes.InvalidArgument, err.Error())

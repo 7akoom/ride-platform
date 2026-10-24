@@ -175,6 +175,15 @@ fi
 
 expect "and the way back"                               200 POST "/v1/routes:compute" "$TOKEN" "{\"origin\":{\"latitude\":$AIRPORT_LAT,\"longitude\":$AIRPORT_LNG},\"destination\":{\"latitude\":$ERBIL_LAT,\"longitude\":$ERBIL_LNG}}"
 
+if [ "$(body_field 'not d.get("steps")')" = "True" ]; then pass "no turn-by-turn steps unless asked"; else fail "steps came without asking"; fi
+
+STEPS_BODY="{\"origin\":{\"latitude\":$ERBIL_LAT,\"longitude\":$ERBIL_LNG},\"destination\":{\"latitude\":$AIRPORT_LAT,\"longitude\":$AIRPORT_LNG},\"steps\":true,\"heading\":90}"
+expect "the route with its steps, from a car heading east" 200 POST "/v1/routes:compute" "$TOKEN" "$STEPS_BODY"
+echo "    $(body_field 'len(d.get("steps", []))') steps, first: $(body_field 'd["steps"][0]["maneuver"].get("type")'), last: $(body_field 'd["steps"][-1]["maneuver"].get("type")')"
+if [ "$(body_field 'd["steps"][0]["maneuver"]["type"] == "depart" and d["steps"][-1]["maneuver"]["type"] == "arrive"')" = "True" ]; then pass "the steps start with depart and end with arrive"; else fail "unexpected steps: $(head -c 400 "$BODY_FILE")"; fi
+if [ "$(body_field 'all("location" in s["maneuver"] for s in d["steps"])')" = "True" ]; then pass "every maneuver has its place"; else fail "a maneuver has no place"; fi
+expect "a heading of 400 degrees"                       400 POST "/v1/routes:compute" "$TOKEN" "{\"origin\":{\"latitude\":$ERBIL_LAT,\"longitude\":$ERBIL_LNG},\"destination\":{\"latitude\":$AIRPORT_LAT,\"longitude\":$AIRPORT_LNG},\"heading\":400}"
+
 echo "==> [4/5] bad requests are refused with the right code"
 expect "a route with no destination"                    400 POST "/v1/routes:compute" "$TOKEN" "{\"origin\":{\"latitude\":$ERBIL_LAT,\"longitude\":$ERBIL_LNG}}"
 expect "a route with no points at all"                  400 POST "/v1/routes:compute" "$TOKEN" '{}'

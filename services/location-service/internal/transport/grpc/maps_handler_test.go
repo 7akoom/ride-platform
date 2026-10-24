@@ -92,6 +92,49 @@ func TestGetRouteReturnsTheDistanceTheTimeAndTheLine(t *testing.T) {
 	}
 }
 
+func TestGetRouteAsksForStepsWithTheHeadingAndReturnsThem(t *testing.T) {
+	fake := &mapsFake{route: maps.Route{Steps: []maps.Step{{
+		Maneuver: maps.Maneuver{
+			Type: "roundabout", Modifier: "right", Exit: 2,
+			Location:      maps.Coordinates{Latitude: 36.2, Longitude: 43.99},
+			BearingBefore: 358, BearingAfter: 10,
+		},
+		Name: "شارع 100", Ref: "Road 2", DistanceMeters: 350, DurationSeconds: 30, Leg: 1,
+	}}}}
+	heading := 268.0
+
+	response, err := newMapsHandler(t, fake).GetRoute(context.Background(), &locationv1.GetRouteRequest{
+		Origin: coords(36.19, 44.01), Destination: coords(36.23, 43.96), Steps: true, Heading: &heading,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !fake.routeInput.Steps || fake.routeInput.Heading == nil || *fake.routeInput.Heading != 268 {
+		t.Errorf("unexpected input: %+v", fake.routeInput)
+	}
+
+	if len(response.GetSteps()) != 1 {
+		t.Fatalf("steps %+v", response.GetSteps())
+	}
+
+	step := response.GetSteps()[0]
+	m := step.GetManeuver()
+
+	if m.GetType() != "roundabout" || m.GetModifier() != "right" || m.GetExit() != 2 || m.GetBearingAfter() != 10 ||
+		m.GetLocation().GetLatitude() != 36.2 || step.GetName() != "شارع 100" || step.GetRef() != "Road 2" ||
+		step.GetDistanceMeters() != 350 || step.GetLeg() != 1 {
+		t.Errorf("step %+v", step)
+	}
+
+	// Without asking, no heading reaches the service.
+	_, _ = newMapsHandler(t, fake).GetRoute(context.Background(), &locationv1.GetRouteRequest{Origin: coords(36.19, 44.01), Destination: coords(36.23, 43.96)})
+
+	if fake.routeInput.Heading != nil || fake.routeInput.Steps {
+		t.Errorf("unexpected input: %+v", fake.routeInput)
+	}
+}
+
 func TestAMissingPointStaysMissingInsteadOfBecomingZeroZero(t *testing.T) {
 	fake := &mapsFake{}
 

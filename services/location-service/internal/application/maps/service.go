@@ -105,6 +105,10 @@ func (s *service) GetRoute(ctx context.Context, input RouteInput) (Route, error)
 		return Route{}, ErrTooManyVia
 	}
 
+	if input.Heading != nil && (*input.Heading < 0 || *input.Heading > 360 || math.IsNaN(*input.Heading)) {
+		return Route{}, ErrInvalidHeading
+	}
+
 	via := make([]Coordinates, 0, len(input.Via))
 
 	for _, point := range input.Via {
@@ -119,7 +123,13 @@ func (s *service) GetRoute(ctx context.Context, input RouteInput) (Route, error)
 		via = append(via, *point)
 	}
 
-	return s.router.Route(ctx, *input.Origin, *input.Destination, via...)
+	return s.router.Route(ctx, RouteQuery{
+		From:    *input.Origin,
+		To:      *input.Destination,
+		Via:     via,
+		Heading: input.Heading,
+		Steps:   input.Steps,
+	})
 }
 
 // TravelTimes is how long by road from each origin to the destination.

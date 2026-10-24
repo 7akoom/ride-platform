@@ -18,6 +18,7 @@ var (
 	ErrInvalidLimit     = errors.New("limit must not be negative")
 	ErrInvalidLanguage  = errors.New("language must be ar, ku or en")
 	ErrTooManyVia       = errors.New("a route passes through at most 5 points")
+	ErrInvalidHeading   = errors.New("heading must be between 0 and 360 degrees")
 	ErrOriginsRequired  = errors.New("at least one origin is required")
 	ErrTooManyOrigins   = errors.New("at most 50 origins at a time")
 
@@ -62,6 +63,10 @@ type Route struct {
 	// Polyline is the whole path as a Google encoded polyline with 5 digits of
 	// precision (about a metre), ready to draw on a map.
 	Polyline string
+
+	// Steps are the turn-by-turn instructions along the path, in order; only when
+	// asked for (RouteInput.Steps).
+	Steps []Step
 }
 
 // TravelTime is how long by road from one origin to a destination.
@@ -108,6 +113,14 @@ type RouteInput struct {
 	Destination *Coordinates
 	// Via are points to pass through on the way, in order (at most MaxVia).
 	Via []*Coordinates
+
+	// Heading, when known, is the direction the driver is moving at the origin, in
+	// degrees clockwise from north: the route then starts on the road and the side
+	// they are driving on, not one behind them.
+	Heading *float64
+
+	// Steps asks for the turn-by-turn instructions (in-app navigation).
+	Steps bool
 }
 
 // MaxVia is how many points a route may pass through between its ends.
@@ -152,8 +165,8 @@ type NearbyPlaceFinder interface {
 
 // Router is the port to the routing engine (OSRM).
 type Router interface {
-	// Route goes from one point to another through via, in order.
-	Route(ctx context.Context, from Coordinates, to Coordinates, via ...Coordinates) (Route, error)
+	// Route goes from one point to another through the via points, in order.
+	Route(ctx context.Context, query RouteQuery) (Route, error)
 
 	// TravelTimes is how long by road from each origin to the destination, in the
 	// origins' order.

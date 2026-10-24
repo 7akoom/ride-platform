@@ -40,7 +40,7 @@ func TestARouteIsReadFromOSRMsAnswer(t *testing.T) {
 
 	client := NewOSRMClient(osrmServer(t, http.StatusOK, okRoute, &seen).URL, time.Second)
 
-	route, err := client.Route(context.Background(), erbil, airport)
+	route, err := client.Route(context.Background(), maps.RouteQuery{From: erbil, To: airport})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestOSRMsVerdictsBecomeWhatTheAppsCanActOn(t *testing.T) {
 	for _, tc := range cases {
 		client := NewOSRMClient(osrmServer(t, tc.status, tc.body, nil).URL, time.Second)
 
-		_, err := client.Route(context.Background(), erbil, airport)
+		_, err := client.Route(context.Background(), maps.RouteQuery{From: erbil, To: airport})
 		if err == nil {
 			t.Errorf("%s: expected an error", tc.name)
 
@@ -106,7 +106,7 @@ func TestAnOSRMThatCannotBeReachedIsUnavailable(t *testing.T) {
 	url := server.URL
 	server.Close() // nothing listens any more
 
-	if _, err := NewOSRMClient(url, time.Second).Route(context.Background(), erbil, airport); !errors.Is(err, maps.ErrUnavailable) {
+	if _, err := NewOSRMClient(url, time.Second).Route(context.Background(), maps.RouteQuery{From: erbil, To: airport}); !errors.Is(err, maps.ErrUnavailable) {
 		t.Errorf("expected ErrUnavailable, got %v", err)
 	}
 }
@@ -120,7 +120,7 @@ func TestASlowOSRMTimesOutAsUnavailable(t *testing.T) {
 	}))
 	defer server.Close()
 
-	if _, err := NewOSRMClient(server.URL, 50*time.Millisecond).Route(context.Background(), erbil, airport); !errors.Is(err, maps.ErrUnavailable) {
+	if _, err := NewOSRMClient(server.URL, 50*time.Millisecond).Route(context.Background(), maps.RouteQuery{From: erbil, To: airport}); !errors.Is(err, maps.ErrUnavailable) {
 		t.Errorf("expected ErrUnavailable, got %v", err)
 	}
 }
@@ -129,7 +129,7 @@ func TestACancelledRequestIsNotSentOn(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	if _, err := NewOSRMClient(osrmServer(t, http.StatusOK, okRoute, nil).URL, time.Second).Route(ctx, erbil, airport); err == nil {
+	if _, err := NewOSRMClient(osrmServer(t, http.StatusOK, okRoute, nil).URL, time.Second).Route(ctx, maps.RouteQuery{From: erbil, To: airport}); err == nil {
 		t.Error("a cancelled context must fail the call")
 	}
 }
@@ -138,7 +138,7 @@ func TestATrailingSlashInTheBaseURLDoesNotBreakThePath(t *testing.T) {
 	var seen string
 
 	client := NewOSRMClient(osrmServer(t, http.StatusOK, okRoute, &seen).URL+"/", time.Second)
-	if _, err := client.Route(context.Background(), erbil, airport); err != nil {
+	if _, err := client.Route(context.Background(), maps.RouteQuery{From: erbil, To: airport}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -153,12 +153,113 @@ func TestViaPointsGoBetweenTheEndsInOrderEachWithASnapRadius(t *testing.T) {
 	client := NewOSRMClient(osrmServer(t, http.StatusOK, okRoute, &seen).URL, time.Second)
 	stop := maps.Coordinates{Latitude: 36.2, Longitude: 44.0}
 
-	if _, err := client.Route(context.Background(), erbil, airport, stop); err != nil {
+	if _, err := client.Route(context.Background(), maps.RouteQuery{From: erbil, To: airport, Via: []maps.Coordinates{stop}}); err != nil {
 		t.Fatal(err)
 	}
 
 	if !strings.Contains(seen, "/route/v1/driving/44.009200,36.191100;44.000000,36.200000;43.963100,36.236700?") ||
 		!strings.Contains(seen, "radiuses=1000;1000;1000") {
 		t.Errorf("asked %q", seen)
+	}
+}
+
+// Two steps of a real Erbil answer, trimmed: leave west on 60 Meter Street, then
+// turn right onto a street with a number but no name, then arrive.
+const stepsRoute = `{"code":"Ok","routes":[{"distance":1200,"duration":120,"geometry":"abc","legs":[` +
+	`{"steps":[` +
+	`{"name":"شارع 60 متري","ref":"","distance":800,"duration":80,"maneuver":{"type":"depart","location":[44.0092,36.1911],"bearing_before":0,"bearing_after":268}},` +
+	`{"name":"","ref":"Road 2","distance":400,"duration":40,"maneuver":{"type":"turn","modifier":"right","location":[44.0001,36.1912],"bearing_before":268,"bearing_after":358}}` +
+	`]},` +
+	`{"steps":[` +
+	`{"name":"","distance":0,"duration":0,"maneuver":{"type":"roundabout","modifier":"right","exit":2,"location":[43.99,36.2],"bearing_before":358,"bearing_after":10}},` +
+	`{"name":"","distance":0,"duration":0,"maneuver":{"type":"arrive","location":[43.9631,36.2367],"bearing_before":10,"bearing_after":0}}` +
+	`]}]}],"waypoints":[]}`
+
+func TestStepsAreAskedForAndReadLegByLeg(t *testing.T) {
+	var seen string
+
+	client := NewOSRMClient(osrmServer(t, http.StatusOK, stepsRoute, &seen).URL, time.Second)
+
+	route, err := client.Route(context.Background(), maps.RouteQuery{From: erbil, To: airport, Steps: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(seen, "steps=true") {
+		t.Errorf("asked %q", seen)
+	}
+
+	if len(route.Steps) != 4 {
+		t.Fatalf("want 4 steps, got %+v", route.Steps)
+	}
+
+	depart, turn, roundabout, arrive := route.Steps[0], route.Steps[1], route.Steps[2], route.Steps[3]
+
+	if depart.Maneuver.Type != "depart" || depart.Name != "شارع 60 متري" || depart.DistanceMeters != 800 || depart.Maneuver.BearingAfter != 268 || depart.Leg != 0 {
+		t.Errorf("depart %+v", depart)
+	}
+
+	if turn.Maneuver.Type != "turn" || turn.Maneuver.Modifier != "right" || turn.Ref != "Road 2" ||
+		turn.Maneuver.Location != (maps.Coordinates{Latitude: 36.1912, Longitude: 44.0001}) {
+		t.Errorf("turn %+v", turn)
+	}
+
+	if roundabout.Maneuver.Exit != 2 || roundabout.Leg != 1 || arrive.Maneuver.Type != "arrive" || arrive.Leg != 1 {
+		t.Errorf("second leg %+v, %+v", roundabout, arrive)
+	}
+}
+
+func TestWithoutAskingThereAreNoSteps(t *testing.T) {
+	client := NewOSRMClient(osrmServer(t, http.StatusOK, stepsRoute, nil).URL, time.Second)
+
+	route, err := client.Route(context.Background(), maps.RouteQuery{From: erbil, To: airport})
+	if err != nil || route.Steps != nil {
+		t.Fatalf("got %+v, %v", route.Steps, err)
+	}
+}
+
+func TestAHeadingConstrainsOnlyTheStart(t *testing.T) {
+	var seen string
+
+	heading := 359.6
+	client := NewOSRMClient(osrmServer(t, http.StatusOK, okRoute, &seen).URL, time.Second)
+	stop := maps.Coordinates{Latitude: 36.2, Longitude: 44.0}
+
+	if _, err := client.Route(context.Background(), maps.RouteQuery{From: erbil, To: airport, Via: []maps.Coordinates{stop}, Heading: &heading}); err != nil {
+		t.Fatal(err)
+	}
+
+	// 359.6 rounds to 360, which OSRM wants as 0.
+	if !strings.Contains(seen, "bearings=0,60;;") || strings.Contains(seen, "bearings=0,60;;;") {
+		t.Errorf("asked %q", seen)
+	}
+}
+
+func TestAHeadingNoRoadFollowsIsDroppedRatherThanFailing(t *testing.T) {
+	var asked []string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asked = append(asked, r.URL.String())
+
+		if strings.Contains(r.URL.RawQuery, "bearings=") {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"code":"NoSegment","message":"Could not find a matching segment"}`))
+
+			return
+		}
+
+		_, _ = w.Write([]byte(okRoute))
+	}))
+	t.Cleanup(server.Close)
+
+	heading := 90.0
+
+	route, err := NewOSRMClient(server.URL, time.Second).Route(context.Background(), maps.RouteQuery{From: erbil, To: airport, Heading: &heading})
+	if err != nil || route.DistanceMeters != 8693.4 {
+		t.Fatalf("got %+v, %v", route, err)
+	}
+
+	if len(asked) != 2 || strings.Contains(asked[1], "bearings=") {
+		t.Errorf("asked %v", asked)
 	}
 }

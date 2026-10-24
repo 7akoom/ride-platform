@@ -3,6 +3,7 @@ package maps
 import (
 	"context"
 	"errors"
+	"math"
 	"strings"
 	"testing"
 )
@@ -13,12 +14,13 @@ type fakeRouter struct {
 
 	from, to Coordinates
 	via      []Coordinates
+	query    RouteQuery
 	calls    int
 }
 
-func (f *fakeRouter) Route(_ context.Context, from Coordinates, to Coordinates, via ...Coordinates) (Route, error) {
+func (f *fakeRouter) Route(_ context.Context, query RouteQuery) (Route, error) {
 	f.calls++
-	f.from, f.to, f.via = from, to, via
+	f.from, f.to, f.via, f.query = query.From, query.To, query.Via, query
 
 	return f.route, f.err
 }
@@ -137,6 +139,31 @@ func TestARoutePassesThroughItsViaPointsInOrder(t *testing.T) {
 
 		if _, err := service.GetRoute(context.Background(), RouteInput{Origin: point(36, 44), Destination: point(36.1, 44.1), Via: via}); err == nil || router.calls != 0 {
 			t.Errorf("%s: %v, %d calls", name, err, router.calls)
+		}
+	}
+}
+
+func TestTheHeadingAndTheStepsReachTheRouter(t *testing.T) {
+	service, router, _ := newRig()
+	heading := 268.0
+
+	if _, err := service.GetRoute(context.Background(), RouteInput{
+		Origin: point(36.19, 44.01), Destination: point(36.23, 43.96), Heading: &heading, Steps: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if router.query.Heading == nil || *router.query.Heading != 268 || !router.query.Steps {
+		t.Errorf("asked %+v", router.query)
+	}
+
+	for _, bad := range []float64{-1, 360.5, math.NaN()} {
+		service, router, _ := newRig()
+
+		if _, err := service.GetRoute(context.Background(), RouteInput{
+			Origin: point(36.19, 44.01), Destination: point(36.23, 43.96), Heading: &bad,
+		}); !errors.Is(err, ErrInvalidHeading) || router.calls != 0 {
+			t.Errorf("heading %v: %v, %d calls", bad, err, router.calls)
 		}
 	}
 }

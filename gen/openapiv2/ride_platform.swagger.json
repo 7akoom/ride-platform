@@ -14251,6 +14251,15 @@
             "$ref": "#/definitions/rideLocationV1Coordinates"
           },
           "description": "Points to pass through on the way, in order; at most 5."
+        },
+        "steps": {
+          "type": "boolean",
+          "description": "Asks for the turn-by-turn steps (the Captain app's in-app navigation)."
+        },
+        "heading": {
+          "type": "number",
+          "format": "double",
+          "description": "The direction the driver is moving at the origin, in degrees clockwise from\nnorth (0 to 360), when known: the route then starts on a road going their way.\nWhen no road near the origin goes that way the route is computed without it."
         }
       }
     },
@@ -14268,6 +14277,14 @@
         "polyline": {
           "type": "string",
           "description": "The whole path as a Google encoded polyline with 5 digits of precision (about a\nmetre), ready to decode and draw."
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1RouteStep"
+          },
+          "description": "The turn-by-turn steps along the path, in order; only when asked for."
         }
       }
     },
@@ -17399,6 +17416,67 @@
           "$ref": "#/definitions/v1Role"
         }
       }
+    },
+    "v1RouteManeuver": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "What happens, in OSRM's words: \"depart\", \"turn\", \"new name\", \"continue\",\n\"merge\", \"on ramp\", \"off ramp\", \"fork\", \"end of road\", \"roundabout\", \"rotary\",\n\"roundabout turn\", \"exit roundabout\", \"exit rotary\", \"notification\", \"arrive\".\nAn app treats a type it does not know as \"continue\"."
+        },
+        "modifier": {
+          "type": "string",
+          "description": "Which way: \"uturn\", \"sharp right\", \"right\", \"slight right\", \"straight\",\n\"slight left\", \"left\", \"sharp left\"; empty when it does not apply."
+        },
+        "exit": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Which exit to take at a roundabout (1 is the first), or 0."
+        },
+        "location": {
+          "$ref": "#/definitions/rideLocationV1Coordinates",
+          "description": "Where it happens."
+        },
+        "bearingBefore": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The direction of travel just before and just after it, in degrees from north."
+        },
+        "bearingAfter": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1RouteStep": {
+      "type": "object",
+      "properties": {
+        "maneuver": {
+          "$ref": "#/definitions/v1RouteManeuver"
+        },
+        "name": {
+          "type": "string",
+          "description": "The road's name and its number (\"Road 2\") as OpenStreetMap knows them; either\nmay be empty, as many streets have neither."
+        },
+        "ref": {
+          "type": "string"
+        },
+        "distanceMeters": {
+          "type": "number",
+          "format": "double",
+          "description": "The stretch after the maneuver, up to the next one."
+        },
+        "durationSeconds": {
+          "type": "number",
+          "format": "double"
+        },
+        "leg": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Which part of the route the step is on: 0 up to the first via point, then 1..."
+        }
+      },
+      "description": "One instruction along a route: the maneuver that starts it, then the road\ndriven until the next one."
     },
     "v1SavedAddress": {
       "type": "object",

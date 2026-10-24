@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -38,22 +39,62 @@ func NewOSRMClient(baseURL string, timeout time.Duration) *OSRMClient {
 	}
 }
 
+// headingRangeDegrees is how far from the driver's heading the first road may
+// point: wide enough for a GPS heading that is a little off, narrow enough to
+// keep the route from starting on the other side of a divided road.
+const headingRangeDegrees = 60
+
 type osrmResponse struct {
 	Code   string `json:"code"`
 	Routes []struct {
-		Distance float64 `json:"distance"` // meters
-		Duration float64 `json:"duration"` // seconds
-		Geometry string  `json:"geometry"` // encoded polyline, 5 digits
+		Distance float64   `json:"distance"` // meters
+		Duration float64   `json:"duration"` // seconds
+		Geometry string    `json:"geometry"` // encoded polyline, 5 digits
+		Legs     []osrmLeg `json:"legs"`
 	} `json:"routes"`
 }
 
+type osrmLeg struct {
+	Steps []struct {
+		Name     string  `json:"name"`
+		Ref      string  `json:"ref"`
+		Distance float64 `json:"distance"`
+		Duration float64 `json:"duration"`
+		Maneuver struct {
+			Type          string    `json:"type"`
+			Modifier      string    `json:"modifier"`
+			Exit          int       `json:"exit"`
+			Location      []float64 `json:"location"` // longitude, latitude
+			BearingBefore int       `json:"bearing_before"`
+			BearingAfter  int       `json:"bearing_after"`
+		} `json:"maneuver"`
+	} `json:"steps"`
+}
+
 // Route returns the best route by road from one point to another, through the
-// via points in order, with its full geometry.
-func (c *OSRMClient) Route(ctx context.Context, from maps.Coordinates, to maps.Coordinates, via ...maps.Coordinates) (maps.Route, error) {
-	points := make([]maps.Coordinates, 0, len(via)+2)
-	points = append(points, from)
-	points = append(points, via...)
-	points = append(points, to)
+// via points in order, with its full geometry and, when asked, the turn-by-turn
+// steps.
+//
+// With a heading, the route starts on a road going the driver's way. When no road
+// near the start goes that way (the GPS heading was wrong, say), the route is asked
+// again without it rather than failing.
+func (c *OSRMClient) Route(ctx context.Context, query maps.RouteQuery) (maps.Route, error) {
+	route, err := c.route(ctx, query)
+
+	if query.Heading != nil && (errors.Is(err, maps.ErrNoRoute) || errors.Is(err, maps.ErrNotNearRoad)) {
+		query.Heading = nil
+
+		return c.route(ctx, query)
+	}
+
+	return route, err
+}
+
+func (c *OSRMClient) route(ctx context.Context, query maps.RouteQuery) (maps.Route, error) {
+	points := make([]maps.Coordinates, 0, len(query.Via)+2)
+	points = append(points, query.From)
+	points = append(points, query.Via...)
+	points = append(points, query.To)
 
 	// OSRM writes coordinates as longitude,latitude: the reverse of everywhere else
 	// in this codebase.
@@ -74,8 +115,15 @@ func (c *OSRMClient) Route(ctx context.Context, from maps.Coordinates, to maps.C
 
 	// The query is written out rather than encoded: OSRM wants the ';' in radiuses
 	// as it is, not as %3B.
-	endpoint.RawQuery = "overview=full&geometries=polyline&steps=false&alternatives=false" +
-		"&radiuses=" + strings.Join(radiuses, ";")
+	endpoint.RawQuery = "overview=full&geometries=polyline&steps=" + strconv.FormatBool(query.Steps) +
+		"&alternatives=false&radiuses=" + strings.Join(radiuses, ";")
+
+	if query.Heading != nil {
+		// One entry per point; only the start is constrained.
+		bearings := make([]string, len(points))
+		bearings[0] = strconv.Itoa(int(math.Round(*query.Heading))%360) + "," + strconv.Itoa(headingRangeDegrees)
+		endpoint.RawQuery += "&bearings=" + strings.Join(bearings, ";")
+	}
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
 	if err != nil {
@@ -109,11 +157,17 @@ func (c *OSRMClient) Route(ctx context.Context, from maps.Coordinates, to maps.C
 
 		best := decoded.Routes[0]
 
-		return maps.Route{
+		route := maps.Route{
 			DistanceMeters:  best.Distance,
 			DurationSeconds: best.Duration,
 			Polyline:        best.Geometry,
-		}, nil
+		}
+
+		if query.Steps {
+			route.Steps = stepsOf(best.Legs)
+		}
+
+		return route, nil
 
 	case "NoRoute":
 		return maps.Route{}, maps.ErrNoRoute
@@ -125,6 +179,41 @@ func (c *OSRMClient) Route(ctx context.Context, from maps.Coordinates, to maps.C
 		// InvalidQuery, TooBig...: not something the caller can fix by trying again.
 		return maps.Route{}, errors.New("OSRM refused the request with code " + decoded.Code)
 	}
+}
+
+// stepsOf flattens OSRM's legs into one list of steps, each marked with its leg.
+func stepsOf(legs []osrmLeg) []maps.Step {
+	steps := []maps.Step{}
+
+	for leg, each := range legs {
+		for _, step := range each.Steps {
+			maneuver := maps.Maneuver{
+				Type:          step.Maneuver.Type,
+				Modifier:      step.Maneuver.Modifier,
+				Exit:          step.Maneuver.Exit,
+				BearingBefore: step.Maneuver.BearingBefore,
+				BearingAfter:  step.Maneuver.BearingAfter,
+			}
+
+			if len(step.Maneuver.Location) == 2 {
+				maneuver.Location = maps.Coordinates{
+					Longitude: step.Maneuver.Location[0],
+					Latitude:  step.Maneuver.Location[1],
+				}
+			}
+
+			steps = append(steps, maps.Step{
+				Maneuver:        maneuver,
+				Name:            step.Name,
+				Ref:             step.Ref,
+				DistanceMeters:  step.Distance,
+				DurationSeconds: step.Duration,
+				Leg:             leg,
+			})
+		}
+	}
+
+	return steps
 }
 
 func formatCoordinate(value float64) string {
